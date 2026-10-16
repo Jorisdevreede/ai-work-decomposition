@@ -1,0 +1,436 @@
+{
+ "job_code": "53-7065.00",
+ "tasks": [
+  {
+   "uid": "53-7065.00:23871",
+   "short": "Complete order fulfillment receipts.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather the order lines and confirmed quantities handed over.",
+     "actor": "stocker",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "released order",
+      "confirmed handover"
+     ],
+     "outputs": [
+      "receipt facts"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Complete order receipts with item quantities, dates and discrepancy details.",
+     "actor": "stocker",
+     "today_means": "document",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "receipt facts",
+      "receipt format"
+     ],
+     "outputs": [
+      "order receipt v1"
+     ],
+     "handoff_to": "none",
+     "share_pct": 50,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Check the completed receipt against handover facts and finalize it.",
+     "actor": "stocker",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "order receipt v1",
+      "confirmed handover"
+     ],
+     "outputs": [
+      "final order receipt"
+     ],
+     "handoff_to": "shipping clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 70,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "stocker",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "Test native receipt generation in {OPS_SYSTEM} from the released order and confirmed handover events. The stocker checks actual quantities, units and discrepancy meaning against the generated receipt before finalizing that exact version.",
+   "previous_blocker": "Fulfillment facts may be copied into a separate receipt form.",
+   "enabler_now": "Native document layouts can reuse structured order and handover records.",
+   "still_hard": "Missing handover evidence and partial deliveries cannot be inferred from the order.",
+   "human_edge": "Recognize when the receipt misrepresents what physically changed hands.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Provide a clear partial-fulfillment receipt without waiting for end-of-shift paperwork."
+   },
+   "altitude": "Less receipt transcription; authority remains limited to recording verified fulfillment.",
+   "reach": [
+    {
+     "role": "shipping clerk",
+     "task": "Prepare a partial-delivery documentation pack.",
+     "learn": "Receipt status, discrepancy codes and version control."
+    }
+   ],
+   "build_days": {
+    "coding": "0-3",
+    "integration": "2-6",
+    "testing_rollout": "4-7",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Model knowledge: structured fulfillment events can populate an order receipt, subject to review of actual quantities and discrepancies.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "Interpret order receipts as outbound fulfillment receipts, not the separate inbound goods-receipt entry task. Boundary starts after physical handover and ends at internal receipt finalization; customer signature collection is not replaced.",
+    "Order team supplies order_id, version, line_id, item_id, ordered_quantity and unit; handover worker supplies event_id, actual_quantity, timestamp and discrepancy_code. Missing events retain manual evidence collection and receipt entry; no guessed extraction.",
+    "Test native generation before custom code. Existing generation runtime gives no labour saving; baseline assumes material manual copying remains. Finalization binds receipt v1 plus order and event snapshots; any edit requires another review."
+   ],
+   "unknowns": [
+    "Local meaning of order receipt and present manual copying time.",
+    "Handover event completeness and native document layouts."
+   ],
+   "research_questions": [
+    "Can generated receipts faithfully represent partial quantities, units and damage without manual reconstruction?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Check receipt meaning and finalize the exact version.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 14,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Resolve failed generation and report missing handover mappings.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     },
+     {
+      "description": "Maintain document layout and event mappings.",
+      "labour_scope": "other_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3",
+     "approved_version": "order receipt v1 with order version and handover event snapshot; changes void finalization approval",
+     "approval_step_id": "s3",
+     "approver": "stocker"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 0,
+    "high": 75,
+    "basis": "B=100 R=14 gross=86 net=84 after 2 upkeep. Low: native receipt generation already used, so no incremental labour benefit; high: manual copying replaced with reliable event inputs. Physical handover is outside and unchanged."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 86.0,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 84.0,
+   "speedup": 6.25,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "53-7065.00:23895",
+   "short": "Maintain outgoing-order records.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect finalized receipts and shipment confirmations for outgoing orders.",
+     "actor": "stocker",
+     "today_means": "document",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "final order receipt",
+      "shipment confirmation"
+     ],
+     "outputs": [
+      "outgoing order evidence"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Copy outgoing orders and dispatch details into the separate records log.",
+     "actor": "stocker",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "outgoing order evidence"
+     ],
+     "outputs": [
+      "outgoing order log"
+     ],
+     "handoff_to": "none",
+     "share_pct": 45,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Compare recorded orders with dispatch evidence and resolve missing or duplicate records.",
+     "actor": "stocker",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "outgoing order log",
+      "outgoing order evidence"
+     ],
+     "outputs": [
+      "reconciled outbound record"
+     ],
+     "handoff_to": "shipping clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "Use {OPS_SYSTEM} as the outbound record and eliminate the separate {SPREADSHEET} tally after testing native event and exception views. Link each final receipt and dispatch event to one order, highlight missing or duplicate evidence and retain stocker correction of the underlying facts.",
+   "previous_blocker": "The warehouse record and local tally can become competing copies.",
+   "enabler_now": "Event-linked native records and exception filters can replace the extra register.",
+   "still_hard": "Unscanned dispatches and incorrect event quantities still require investigation.",
+   "human_edge": "Resolve whether a missing record means an unrecorded shipment or goods still on site.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Investigate unmatched outbound confirmations before the end of each dispatch wave."
+   },
+   "altitude": "Less log maintenance and more exception checking; dispatch authority stays unchanged.",
+   "reach": [
+    {
+     "role": "shipping clerk",
+     "task": "Investigate a missing dispatch confirmation.",
+     "learn": "Shipment states, event identifiers and correction controls."
+    }
+   ],
+   "build_days": {
+    "coding": "0-3",
+    "integration": "3-7",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "The digest identifies Boltrics 3PL Dynamics as warehouse management software for logistics service providers; this establishes the system category, not a measured recordkeeping saving.",
+     "grade": "E2",
+     "source": "[S1]",
+     "kind": "capability"
+    },
+    {
+     "claim": "Model knowledge: reusing outbound events can eliminate a separate tally while retaining exception review.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The digest describes Dutch works-council consent requirements for systems capable of monitoring staff; national rules elsewhere vary.",
+     "grade": "E1",
+     "source": "[S3]",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "Boundary starts with already finalized receipt and shipment events and ends with reconciled outbound records. Receipt creation, physical picks and loading are not counted again.",
+    "Shipping staff supply shipment_id, order_id, event_id, dispatch_time, actual_quantity, unit and discrepancy_code; receipt workflow supplies receipt_id and final_version. Missing or paper evidence uses manual reconciliation; no assumed extraction.",
+    "Native exception configuration first. A separate tally exists in this modeled baseline; if already absent, the low scenario earns no labour saving. The future outgoing order log is the native view over the same evidence, not a new copied register.",
+    "Consultation, access and retention design are included; no per-person performance scoring is proposed."
+   ],
+   "unknowns": [
+    "Whether the local tally duplicates native records.",
+    "Dispatch event completeness and correction permissions."
+   ],
+   "research_questions": [
+    "Can one authoritative outbound record support all current downstream consumers?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Investigate and correct unmatched outbound evidence.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 10,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Report feed failures and resolve new event-mapping exceptions.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     },
+     {
+      "description": "Maintain outbound event views and retention settings.",
+      "labour_scope": "other_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 0,
+    "high": 80,
+    "basis": "B=100 R=10 gross=90 net=88 after 2 upkeep. Low: local tally already removed; high: reliable final receipt and dispatch feeds replace manual copying. No physical pick, load or receipt-generation saving is repeated."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 90.0,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 88.0,
+   "speedup": 8.333333,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "Replace duplicate documents and tallies with native fulfillment evidence and focused exception checks.",
+  "reach": [
+   "Partial-delivery documentation preparation",
+   "Missing dispatch investigation"
+  ],
+  "skills_to_grow": [
+   "Event completeness checks",
+   "Quantity and unit validation",
+   "Receipt version control"
+  ],
+  "ambitious_version": "A stocker who keeps outbound evidence clear enough to resolve dispatch questions within the shift."
+ },
+ "_meta": {
+  "model": "sol-6.1",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "53-7065.00",
+   "title": "Stockers and Order Fillers",
+   "tasks": 14,
+   "all_tasks": 30,
+   "function": "Transport and logistics",
+   "employment_share": 2804300.0,
+   "uids": [
+    "53-7065.00:23885",
+    "53-7065.00:23877",
+    "53-7065.00:23878",
+    "53-7065.00:23900",
+    "53-7065.00:23897",
+    "53-7065.00:23886",
+    "53-7065.00:23873",
+    "53-7065.00:23893",
+    "53-7065.00:23891",
+    "53-7065.00:23894",
+    "53-7065.00:23896",
+    "53-7065.00:23882",
+    "53-7065.00:23871",
+    "53-7065.00:23895"
+   ]
+  },
+  "digest": "research/digests-minor/53-7.md",
+  "digest_sha256": "40d800f84f87034227435d0cdf1b4981914a9b2ebb255e0eee49e7b06d462afa",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-16T11:12:51"
+ }
+}

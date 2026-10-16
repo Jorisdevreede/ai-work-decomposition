@@ -398,3 +398,36 @@ MOCKUP-c fixes 2026-10-15 11:57 CEST mockups/c-conversation/index.html — all 3
 11:06 S1 TOOL ERROR 41-2011.00__1 FileNotFoundError: missing runs/v5/sol-6.1 output directory
 2026-10-16 11:10 CEST O1 TOOL BUG tools/fleet_v3.py digest_source_ids: regex ^\s*\[S(\d+)\] misses bulleted '- [S1] ...' source lines, used in 61 of 91 digests (incl. 41-2), so every valid digest citation fails 'source ids absent from digest'. Suggested fix: r"^\s*(?:[-*]\s+)?\[S(\d+)\]\s+\S". O1 keeps correct citations; affected files stay .blocked.json with only that reason, re-finalize them after the fix.
 2026-10-16 11:11 CEST lead fixed digest_source_ids for bulleted [S#] lines (O1 report); workers told to re-finalize source-id-only blocks. S1 output-dir error resolved.
+2026-10-16 11:21 CEST R ALERT grok-4.7: unchanged listening/speaking/judgement retains less than 100% without an action-specific mechanism, repeated across policy questions and paging; restore or explain each reduction. runs/v5/grok-4.7/41-2011.00__2.json
+2026-10-16 11:21 CEST R fleet/v5-review/REVIEW-B3.md — round1: 6 seeded files/24 tasks/114 steps, 4 fix/2 good/0 redo; Grok2 fix, Opus2 fix, Sol2 good. All6 read-only checks pass. Structural snapshot19 passes/67 tasks: no text templates, one Grok approval cycle (:2416 s5/s6). Next13:16 CEST.
+11:22 S1 10 passed, 0 blocked, last 31-1131.00__1
+2026-10-16 11:23 CEST Q fleet/v5-review/REVIEW-B3-Q.md round 1: seed batch3-Q-round1-20261016, 7 files (opus 2, sol 2, grok 3), 26 tasks: 6 fix, 1 good (sol 35-3031.00__3); all pass read-only checks; scan of 21 passes finds no templates, one Grok approval cycle (41-2011.00__4 :2416 a1). Next round ~13:25.
+2026-10-16 11:23 CEST Q ALERT grok-4.7: in-person steps the design does not change (listening, telling the customer, taking payment, noticing) lose 15-45%; keep them at 100% or name the mechanism that shortens that exact step. runs/v5/grok-4.7/41-2011.00__2.json (2408 s1/s6/s7), runs/v5/grok-4.7/41-2011.00__6.json (2413/s4)
+2026-10-16 11:23 CEST Q ALERT all labels: a machine/0% step relies on a structured input no step or contract produces, or whose capture is not counted (sold-out flags, discrepancy codes, par levels, structured address); name the producer and count the capture. runs/v5/opus-5.5/35-3031.00__2.json (2283/s6), runs/v5/sol-6.1/53-7065.00__4.json (23871/s2), runs/v5/grok-4.7/37-2011.00__1.json (9545/s2)
+2026-10-16 11:23 CEST Q ALERT opus-5.5: already_counted entries name unchanged core work (still recommends, still tells each table) instead of the review or exception time the design adds. runs/v5/opus-5.5/35-3031.00__2.json (2283, 2284), runs/v5/opus-5.5/53-7065.00__3.json
+2026-10-16 11:27 CEST lead forwarded R/Q round-1 alerts (unchanged in-person steps keep 100%; structured-input producers; already_counted) to workers.
+2026-10-16 11:33 CEST O1 10 passed, 0 blocked, last 25-2021.00__9
+11:36 S1 20 passed, 0 blocked, last 35-1012.00__1
+2026-10-16T09:48:43Z S1 TOOL ERROR 53-3033.00__1 Shell quoting interrupted answer write; rewriting with literal heredoc
+2026-10-16 11:53 CEST O1 18 passed, 0 blocked, last 31-9092.00__2
+2026-10-16T09:54:05Z S1 30 passed, 0 blocked, last 49-3023.00__1
+2026-10-16 11:56 CEST O1 20 passed, 0 blocked, last 47-2111.00__2
+2026-10-16T10:10:16Z S1 40 passed, 0 blocked, last 29-1141.02__4
+2026-10-16 12:15 CEST O1 29 passed, 0 blocked, last 29-1141.04__2
+2026-10-16T10:26:26Z S1 50 passed, 0 blocked, last 25-2022.00__2
+2026-10-16 12:30 G4 10 passed, 0 blocked, last 29-1141.04__3
+2026-10-16 12:33 CEST G3 10 passed, 0 blocked, last 29-2061.00__1
+2026-10-16 12:33 CEST O1 38 passed, 0 blocked, last 49-1011.00__4
+2026-10-16T10:43:01Z S1 60 passed, 0 blocked, last 25-2011.00__6
+2026-10-16 12:50 CEST O1 49 passed, 0 blocked, last 39-9011.01__1
+2026-10-16 12:55 CEST G1 10 passed, 0 blocked, last 45-2092.00__3
+2026-10-16T10:56:34Z S1 70 passed, 0 blocked, last 29-2052.00__4
+2026-10-16 13:06 CEST O1 58 passed, 0 blocked, last 49-9041.00__1
+2026-10-16T11:12:07Z S1 80 passed, 0 blocked, last 49-9021.00__2
+2026-10-16 13:15 CEST G2 10 passed, 0 blocked, last 35-9031.00__1
+2026-10-16 13:18 CEST O1 68 passed, 0 blocked, last 41-2021.00__2
+2026-10-16 13:26 CEST R ALERT opus-5.5: shared IDs join distinct contributions to one record: exit assessment vs reading results (lesson-goal-results), nurse daily report vs assistant wellbeing entry (daily-care-report); split actions or define shared ownership runs/v5/opus-5.5/25-2021.00__1.json
+2026-10-16 13:26 CEST R ALERT grok-4.7: read authority repeats on writes and external demonstrations (:2414 variance notes, :18768 till demonstration), matching earlier physical-cash label defects runs/v5/grok-4.7/41-2011.00__5.json
+2026-10-16 13:26 CEST R fleet/v5-review/REVIEW-B3.md round2 six new files/24 tasks/115 steps: 4 fix, 2 good, 0 redo; cumulative 8 fix/4 good; all-pass scan 200 files/698 tasks, one existing approval cycle; next15:16 CEST
+2026-10-16 13:22:00 CEST R timestamp correction: preceding R round2 receipt and two alerts marked 13:26 were written about 13:22 CEST; content unchanged, next round15:16 CEST.
+2026-10-16T11:26:11Z S1 90 passed, 0 blocked, last 33-3012.00__3

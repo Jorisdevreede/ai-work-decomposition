@@ -1,0 +1,1195 @@
+{
+ "job_code": "49-9071.00",
+ "tasks": [
+  {
+   "uid": "49-9071.00:20674",
+   "short": "Order parts and supplies from catalogs or suppliers.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Note failed parts from the machine nameplate at the job.",
+     "actor": "maintenance worker",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "machine nameplate"
+     ],
+     "outputs": [
+      "part note"
+     ],
+     "handoff_to": "none",
+     "share_pct": 28,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Read catalogs for lines that fit this maintenance asset.",
+     "actor": "maintenance worker",
+     "today_means": "document",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "part note"
+     ],
+     "outputs": [
+      "catalog candidates"
+     ],
+     "handoff_to": "none",
+     "share_pct": 16,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Match the noted parts to one catalog line.",
+     "actor": "maintenance worker",
+     "today_means": "document",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "part note",
+      "catalog candidates"
+     ],
+     "outputs": [
+      "draft purchase request"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "match",
+      "input": "Part note with the asset id, the words the worker wrote, and the size on the nameplate, plus catalog candidates.",
+      "output": "One catalog line id, its description, unit price and supplier, or a blank line.",
+      "check": "The worker reads the description against the failed part and rejects a line that is a different part or size.",
+      "stop": "One pass. No match, or a price over the set limit, leaves the line blank. No second call.",
+      "why_not_simpler": "The part note is free text, so an exact code lookup misses sizes that are written in words."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Decide whether that catalog line may be ordered.",
+     "actor": "buyer",
+     "today_means": "document",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "draft purchase request"
+     ],
+     "outputs": [
+      "accepted purchase request"
+     ],
+     "handoff_to": "none",
+     "share_pct": 14,
+     "fate": "person_reviews",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Send the accepted parts order to the suppliers.",
+     "actor": "maintenance worker",
+     "today_means": "email_chat",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "accepted purchase request"
+     ],
+     "outputs": [
+      "supplier order"
+     ],
+     "handoff_to": "supplier",
+     "share_pct": 12,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "buyer",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
+     "id": "s6",
+     "what": "File the supplier confirmation on the parts order.",
+     "actor": "maintenance worker",
+     "today_means": "email_chat",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "supplier order",
+      "supplier confirmation"
+     ],
+     "outputs": [
+      "filed confirmation"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "The worker writes a part note at the machine. {PROCUREMENT} lists catalog lines for that asset, and one bounded pass proposes a single line. The worker rejects a line that is a different part. The buyer accepts that draft, and only the accepted version is sent to the supplier. The confirmation then sits on the same order, so the mailed list stops.",
+   "previous_blocker": "Catalogues sat on paper or on a supplier site, and the part note was free text, so each order was retyped into mail.",
+   "enabler_now": "The purchasing record can hold supplier catalog lines, and a short pass can propose one line for the worker to accept or reject.",
+   "still_hard": "A similar description can still be the wrong size, and nothing is sent until the buyer has seen the price.",
+   "human_edge": "The worker knows which part failed. The buyer knows whether the price and any substitute are acceptable.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Check a substitute catalog line the same day the original part is out of stock."
+   },
+   "altitude": "Ordering shrinks to a part note and a yes on one proposed line. The buyer still decides what may be sent.",
+   "reach": [
+    {
+     "role": "First-Line Supervisors of Mechanics, Installers, and Repairers",
+     "task": "Approve parts orders for the crew",
+     "learn": "Reuse the accepted catalog line, quantity and unit price instead of a mailed description."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "3-6",
+    "testing_rollout": "2-4",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A purchasing record can store supplier catalog lines and raise a request from a line a person has confirmed.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "OutSmart carries installer jobs from quote to invoice and links them to the finance system.",
+     "grade": "E2",
+     "source": "[S3]",
+     "kind": "capability"
+    },
+    {
+     "claim": "Dutch works-council consent comes first when a work order stores who requested a part together with a time stamp, because that can be used to watch technicians.",
+     "grade": "E1",
+     "source": "[S10]",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The focal boundary is the maintenance worker, from the part note to the sent order and the filed confirmation. The buyer is another role and is not sped up.",
+    "Fields are asset id, part note, catalog line id, description, unit price, quantity, supplier id and requester. The catalog produces the line id, description and price. The worker enters the note and the quantity. If there is no line, the same fields are written by hand and the pass does not invent one.",
+    "Use the purchasing system's own catalog and requisition screens before custom code.",
+    "No match, or a price over the set limit, stops the send. A later change to the line voids the buyer's acceptance."
+   ],
+   "unknowns": [
+    "Whether this company's supplier catalogs already sit in the purchasing system.",
+    "The price limit the buyer uses.",
+    "Which suppliers accept an electronic order."
+   ],
+   "research_questions": [
+    "What share of failed parts already have a catalog line on the asset?",
+    "How often is the first proposed line the wrong size?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Time still spent at the machine writing the part note.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 26,
+      "counted_step_ids": [
+       "s1"
+      ]
+     },
+     {
+      "description": "Time still spent reading the proposed line against the failed part.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 8,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Keep the price-limit rule and the short list of part-note aliases the match may use.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 3
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5",
+     "approved_version": "Purchase request for this asset and part note, with one catalog line, unit price and quantity, as the buyer accepted.",
+     "approval_step_id": "s4",
+     "approver": "buyer"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 34,
+    "high": 48,
+    "basis": "The nameplate check stays. Lookup, send and filing shrink only when the asset already has catalog lines. A week of odd sizes, where most lines are rejected, saves less. The three hours of alias upkeep are already taken off."
+   },
+   "focal_role_share_pct": 86,
+   "excluded_labour_share_pct": 14,
+   "gross_time_saved_pct": 58.139535,
+   "incremental_hours_per_100_baseline_hours": 3,
+   "time_saved_pct": 55.139535,
+   "speedup": 2.229134,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "49-9071.00:3023",
+   "short": "Diagnose mechanical problems and decide the correction from manuals.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Diagnose mechanical problems while the machine is stopped.",
+     "actor": "maintenance worker",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "stopped machine"
+     ],
+     "outputs": [
+      "fault observation"
+     ],
+     "handoff_to": "none",
+     "share_pct": 46,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "facilities-and-workplace",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Open the repair manuals and the blueprints for this asset.",
+     "actor": "maintenance worker",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "fault observation"
+     ],
+     "outputs": [
+      "linked manual pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 14,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "facilities-and-workplace",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Determine how to correct the fault using those manuals.",
+     "actor": "maintenance worker",
+     "today_means": "in_person",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "fault observation",
+      "linked manual pack"
+     ],
+     "outputs": [
+      "correction note"
+     ],
+     "handoff_to": "none",
+     "share_pct": 28,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "facilities-and-workplace",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Accept the correction before it is filed on the asset.",
+     "actor": "maintenance supervisor",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "correction note"
+     ],
+     "outputs": [
+      "accepted correction note"
+     ],
+     "handoff_to": "none",
+     "share_pct": 8,
+     "fate": "person_reviews",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "facilities-and-workplace",
+     "approver": "none",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "File the accepted correction against the asset record.",
+     "actor": "maintenance worker",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "accepted correction note"
+     ],
+     "outputs": [
+      "filed correction"
+     ],
+     "handoff_to": "none",
+     "share_pct": 4,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "maintenance supervisor",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "The worker still stops the machine and decides the fault. {DOCS} opens the manual, the blueprint and the last repair already linked to that asset. The worker writes the correction, citing the page they used. The maintenance supervisor accepts that note, and only the accepted note is filed on the asset. Nothing proposes the repair.",
+   "previous_blocker": "Manuals lived in a cabinet, and the last repair was on a paper card, so finding them took as long as the diagnosis.",
+   "enabler_now": "A document store can keep a manual and past repairs against an asset id, which is ordinary configuration.",
+   "still_hard": "The fault is in the machine, not in the file. A linked manual does not say which correction is safe.",
+   "human_edge": "The worker sees the failed part and hears the machine. The supervisor judges whether that correction is safe to file for the next person.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Open the last repair on this asset before choosing the correction."
+   },
+   "altitude": "Diagnosis stays at the machine. The week loses the cabinet search. The supervisor still accepts the note that others will follow.",
+   "reach": [
+    {
+     "role": "Industrial Machinery Mechanics",
+     "task": "Use the filed correction when they overhaul the same machine",
+     "learn": "The note cites the manual page and the fault observed, so they do not start from a blank page."
+    }
+   ],
+   "build_days": {
+    "coding": "1-2",
+    "integration": "1-3",
+    "testing_rollout": "1-3",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "none",
+   "evidence": [
+    {
+     "claim": "Ultimo EAM keeps preventive plans and repair history on the asset.",
+     "grade": "E2",
+     "source": "[S1]",
+     "kind": "capability"
+    },
+    {
+     "claim": "Linking a manual file to an asset id is records configuration. It does not diagnose the fault.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "A work order with a technician name and a time stamp can be used to watch staff, so works-council consent comes before that store is switched on.",
+     "grade": "E1",
+     "source": "[S10]",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The focal boundary is the maintenance worker's diagnosis up to the filed correction. The supervisor's acceptance is other-role time and is not sped up.",
+    "Fields are asset id, fault observed, manual id, page and correction text. The document store returns the manual id from the asset link. If there is no link, the worker names the manual and the page by hand.",
+    "Use the document store's own asset link before a custom search. No model chooses the repair.",
+    "The filed note is about the asset. It is not a score of the worker."
+   ],
+   "unknowns": [
+    "How many assets already have a manual file linked.",
+    "Whether a supervisor already signs every correction, or only safety-critical ones."
+   ],
+   "research_questions": [
+    "What share of diagnoses cite a manual page today?",
+    "How often is the linked manual the wrong revision?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Time still spent diagnosing the stopped machine.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 44,
+      "counted_step_ids": [
+       "s1"
+      ]
+     },
+     {
+      "description": "Time still spent choosing the correction from the manual.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 26,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Refresh the asset-to-manual link when a manual is replaced.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1.5
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5",
+     "approved_version": "Correction note for this asset and fault, citing the manual page, as the maintenance supervisor accepted.",
+     "approval_step_id": "s4",
+     "approver": "maintenance supervisor"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 7,
+    "high": 16,
+    "basis": "Watching the machine and choosing the correction stay. Only the cabinet search and the filing shrink, and only where the manual is already linked. The link-upkeep time is taken off."
+   },
+   "focal_role_share_pct": 92,
+   "excluded_labour_share_pct": 8,
+   "gross_time_saved_pct": 19.565217,
+   "incremental_hours_per_100_baseline_hours": 1.5,
+   "time_saved_pct": 18.065217,
+   "speedup": 1.220483,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "49-9071.00:20679",
+   "short": "Design a simple aid for a repeated repair on the machines.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Watch the repair and note the awkward step on the machines.",
+     "actor": "maintenance worker",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "live repair"
+     ],
+     "outputs": [
+      "awkward-step note"
+     ],
+     "handoff_to": "none",
+     "share_pct": 32,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Sketch the new equipment by hand for that repair.",
+     "actor": "maintenance worker",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "awkward-step note"
+     ],
+     "outputs": [
+      "hand sketch"
+     ],
+     "handoff_to": "none",
+     "share_pct": 26,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Write the measurements for the new equipment.",
+     "actor": "maintenance worker",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "hand sketch"
+     ],
+     "outputs": [
+      "measurement note"
+     ],
+     "handoff_to": "none",
+     "share_pct": 14,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Draft a build sheet from those equipment measurements.",
+     "actor": "maintenance worker",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "measurement note",
+      "hand sketch"
+     ],
+     "outputs": [
+      "draft build sheet"
+     ],
+     "handoff_to": "none",
+     "share_pct": 12,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "The measurement note and a short description of the hand sketch.",
+      "output": "A build sheet with materials, each dimension, and how the aid helps the repair.",
+      "check": "The worker compares each dimension to the measurement note and rejects a figure that differs.",
+      "stop": "One pass. A missing measurement stays blank. No second call.",
+      "why_not_simpler": "The notes are free text, so a fixed template cannot tell which dimension was measured."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Decide if the new equipment is safe to build.",
+     "actor": "maintenance engineer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft build sheet"
+     ],
+     "outputs": [
+      "accepted build sheet"
+     ],
+     "handoff_to": "none",
+     "share_pct": 8,
+     "fate": "person_reviews",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6",
+     "what": "File the accepted build sheet for that equipment.",
+     "actor": "maintenance worker",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "accepted build sheet"
+     ],
+     "outputs": [
+      "filed build sheet"
+     ],
+     "handoff_to": "none",
+     "share_pct": 8,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "maintenance engineer",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "The worker still watches the awkward step, sketches the aid and writes the measurements. A bounded pass copies those measurements onto a build sheet in {DOCS}. The worker rejects any figure that is not in the note. The maintenance engineer accepts the sheet, and only that accepted sheet is filed. The pass does not invent a design.",
+   "previous_blocker": "The sketch stayed on paper, and writing a build sheet someone else could follow was a second job.",
+   "enabler_now": "A short pass can lay out materials and dimensions from notes the worker already measured, if a person checks every figure.",
+   "still_hard": "Whether the aid is safe, and whether it is worth building, is a judgement about the machine. A wrong copied dimension is still dangerous if nobody checks it.",
+   "human_edge": "The worker sees the awkward step and takes the measurements. The engineer decides whether the aid is safe to build.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "File a small aid the second time the same awkward repair shows up."
+   },
+   "altitude": "Sketching and measuring stay. The blank build sheet goes away. The engineer still decides what may be built.",
+   "reach": [
+    {
+     "role": "Millwrights",
+     "task": "Build the aid from the filed sheet",
+     "learn": "Materials and dimensions are on the sheet, with the engineer's acceptance, so they do not rebuild the design from a sketch."
+    }
+   ],
+   "build_days": {
+    "coding": "1-3",
+    "integration": "0-2",
+    "testing_rollout": "2-4",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A draft sheet of materials and dimensions can be laid out from notes a person wrote, and it is not a judgement that the aid is safe.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "From 20 January 2027 the Machinery Regulation covers AI-powered safety functions, not a build-sheet record. An aid that becomes a safety function needs a separate check.",
+     "grade": "E1",
+     "source": "[S9]",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The focal boundary is the maintenance worker's design of a simple aid, from the awkward-step note to the filed build sheet. The engineer's acceptance is other-role time.",
+    "Fields are asset id, awkward step, material, dimension name, dimension value and unit. The worker writes every value. The pass may only copy them. A blank measurement stays blank.",
+    "The sheet is a document. It is not a safety function and it does not operate the machine.",
+    "Watching, sketching and measuring do not shrink."
+   ],
+   "unknowns": [
+    "Whether an engineer already signs every aid, or only aids that touch a guard or a lift.",
+    "How often the same awkward step actually repeats."
+   ],
+   "research_questions": [
+    "What share of these aids are built more than once?",
+    "Who is allowed to accept a sheet under national machinery practice?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Time still spent watching, sketching and measuring.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 70,
+      "counted_step_ids": [
+       "s1",
+       "s2",
+       "s3"
+      ]
+     },
+     {
+      "description": "Time still spent checking each copied dimension.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s4"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Keep the build-sheet fields and the unit list current.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s6",
+     "approved_version": "Build sheet for this aid, with materials and dimensions copied from the worker's measurements, as the maintenance engineer accepted.",
+     "approval_step_id": "s5",
+     "approver": "maintenance engineer"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 5,
+    "high": 12,
+    "basis": "Watching, sketching and measuring stay in full. Only the blank-page write-up and the filing shrink, and only when the worker has already written the measurements. Two hours of field upkeep are taken off."
+   },
+   "focal_role_share_pct": 92,
+   "excluded_labour_share_pct": 8,
+   "gross_time_saved_pct": 16.521739,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 14.521739,
+   "speedup": 1.169888,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "49-9071.00:3025",
+   "short": "Record the type and cost of each maintenance or repair job.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Note the maintenance or repair type and the parts used.",
+     "actor": "maintenance worker",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "finished job"
+     ],
+     "outputs": [
+      "job note"
+     ],
+     "handoff_to": "none",
+     "share_pct": 34,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Read part prices and the labour rate for this repair.",
+     "actor": "maintenance worker",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT",
+      "ERP"
+     ],
+     "inputs": [
+      "job note"
+     ],
+     "outputs": [
+      "price lines"
+     ],
+     "handoff_to": "none",
+     "share_pct": 16,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Draft the maintenance record in the work-order system from the voice note.",
+     "actor": "maintenance worker",
+     "today_means": "document",
+     "systems": [
+      "OTHER",
+      "ERP"
+     ],
+     "inputs": [
+      "job note",
+      "price lines"
+     ],
+     "outputs": [
+      "draft maintenance record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 22,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "The job note, spoken or written, plus part prices, labour hours and the labour rate.",
+      "output": "Work type, fault code, parts cost and labour cost.",
+      "check": "The worker reads the work type and each cost against the note and the price lines, and rejects a line that changes the job or the amount.",
+      "stop": "One pass. A fault code that is not on the list stays blank. No second call.",
+      "why_not_simpler": "The note is free text, so a pick list alone cannot hear what the worker said was done."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Check the repair cost before the record is stored.",
+     "actor": "maintenance planner",
+     "today_means": "document",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "draft maintenance record"
+     ],
+     "outputs": [
+      "accepted maintenance record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 12,
+     "fate": "person_reviews",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "record-to-report",
+     "approver": "none",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Store the accepted maintenance record in the work-order system.",
+     "actor": "maintenance worker",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "ERP"
+     ],
+     "inputs": [
+      "accepted maintenance record"
+     ],
+     "outputs": [
+      "closed work order"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 16,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "maintenance planner",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "{OTHER} here is the maintenance work-order system. Closing the job writes the work type, the fault code and the cost. Prices come from {PROCUREMENT} and the labour rate from {ERP}. A bounded pass drafts those fields from the worker's note, and the worker rejects a line that changes the job or the amount. The planner accepts that version, and only then is it stored. Cost is kept by asset and job, not as a score of the named worker.",
+   "previous_blocker": "Type and cost were written again after the job, often on paper, because prices and the note lived in different places.",
+   "enabler_now": "The work-order close can take part prices and a labour rate from records that already exist, and a voice note can be drafted into those fields if the worker confirms them.",
+   "still_hard": "A missing price, a blank fault code, and any refrigeration leak check still need a person. Time stamps on the order can show who worked when.",
+   "human_edge": "The worker knows what was done and which parts were used. The planner accepts the cost before it is stored.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "See the parts cost and the labour cost on the day the job is closed."
+   },
+   "altitude": "The worker still notes what was done. Retyping prices stops. The planner still accepts the record. The worker does not gain a right to post a cost nobody has checked.",
+   "reach": [
+    {
+     "role": "First-Line Supervisors of Mechanics, Installers, and Repairers",
+     "task": "Review repair cost by asset",
+     "learn": "The stored record already has the work type, the parts cost and the labour cost for that job."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "2-5",
+    "testing_rollout": "2-4",
+    "consent_and_access": "3-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "MaintainX transcribes a voice memo into the work order and can prompt a person to confirm an unusual reading.",
+     "grade": "E2",
+     "source": "[S4]",
+     "kind": "capability"
+    },
+    {
+     "claim": "Ultimo EAM keeps repair history on the asset, so a closed job can hold the work that was done.",
+     "grade": "E2",
+     "source": "[S1]",
+     "kind": "capability"
+    },
+    {
+     "claim": "Altitude Infra, about 500 technicians on Praxedo work orders, reported about 8 hours per technician per week saved on work-order mail, entry and reports. The period is not stated.",
+     "grade": "E3",
+     "source": "[S5]",
+     "kind": "case"
+    },
+    {
+     "claim": "Suggesting a fault code from a free-text note, and leaving an unknown code blank, is a bounded draft. The technician still confirms it.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "Work orders with time stamps or location can be used to watch technicians, so works-council consent comes first.",
+     "grade": "E1",
+     "source": "[S10]",
+     "kind": "legal"
+    },
+    {
+     "claim": "F-gas rules require leak checks and a logbook. Those fields belong on the work order when the job is refrigeration.",
+     "grade": "E1",
+     "source": "[S7]",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The focal boundary is recording the type and cost after the job, not doing the repair. The planner's check is other-role time.",
+    "Fields are asset id, work type, fault code, part id, quantity, unit price, labour hours, labour rate, parts cost and labour cost. Prices come from the purchasing record. Hours come from the worker. A missing price stays blank for the planner.",
+    "Use the work-order system's own close screen before a new app. {OTHER} means that maintenance work-order system.",
+    "Reports are by asset and job. They are not a performance score of the named worker. Consent still applies because the order stores a name and times.",
+    "A refrigeration leak check still needs the logbook fields. This record does not replace that logbook."
+   ],
+   "unknowns": [
+    "Whether labour hours are already clocked on the work order or written afterwards.",
+    "Whether the company does F-gas work in this role.",
+    "The labour rate source and who may change it."
+   ],
+   "research_questions": [
+    "What share of closed jobs already have a part id and a price?",
+    "How often does the planner change the drafted cost?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Time still spent noting the work type and the parts used.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 32,
+      "counted_step_ids": [
+       "s1"
+      ]
+     },
+     {
+      "description": "Time still spent reading the drafted type and the cost lines.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 7,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Keep the fault-code list and the labour-rate link current.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2.5
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5",
+     "approved_version": "Maintenance record for this asset and job, with work type, fault code, parts cost and labour cost, as the maintenance planner accepted.",
+     "approval_step_id": "s4",
+     "approver": "maintenance planner"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 30,
+    "high": 44,
+    "basis": "Noting what was done stays. Price lookup, retyping and filing shrink only when part prices already exist. Jobs with missing prices or a blank fault code save less. Fault-code upkeep is taken off. The Altitude Infra hours are a vendor case about entry and reports, not a measure for this company."
+   },
+   "focal_role_share_pct": 88,
+   "excluded_labour_share_pct": 12,
+   "gross_time_saved_pct": 52.613636,
+   "incremental_hours_per_100_baseline_hours": 2.5,
+   "time_saved_pct": 50.113636,
+   "speedup": 2.004556,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "The week stays on the tools. A parts order can go the same day without a mailed list, the diagnosis and the equipment sketch stay with the worker, and the job cost sits on the closed order. The buyer still releases a parts order, the maintenance supervisor still accepts a correction, the maintenance engineer still accepts a new aid, and the maintenance planner still accepts a cost record.",
+  "reach": [
+   "The buyer reuses the accepted catalog line and unit price when the same part is needed for another crew.",
+   "An industrial machinery mechanic opens the filed correction, including the manual page, instead of starting from a blank fault."
+  ],
+  "skills_to_grow": [
+   "Reject a catalog line that is a similar but wrong part.",
+   "Compare a drafted cost line with the price on the screen before accepting it.",
+   "Write measurements that a build sheet can copy without guessing a figure."
+  ],
+  "ambitious_version": "Every failed part has a catalog line checked the same day, and every closed job shows its type and cost before the worker leaves the asset."
+ },
+ "_meta": {
+  "model": "grok-4.7",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "49-9071.00",
+   "title": "Maintenance and Repair Workers, General",
+   "tasks": 6,
+   "all_tasks": 27,
+   "function": "Maintenance and repair",
+   "employment_share": 1621800.0,
+   "uids": [
+    "49-9071.00:20674",
+    "49-9071.00:3023",
+    "49-9071.00:20679",
+    "49-9071.00:3025",
+    "49-9071.00:3028",
+    "49-9071.00:20676"
+   ]
+  },
+  "digest": "research/digests-minor/49-9.md",
+  "digest_sha256": "3849b8b576c7677a1e7ae770e6a9c9fcdb1d2658bb90352f893da1a8394bdd4b",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-16T11:27:22"
+ }
+}
