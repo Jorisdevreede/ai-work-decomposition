@@ -284,7 +284,7 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_does",
-     "remaining_pct": 70,
+     "remaining_pct": 100,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -299,7 +299,7 @@
     },
     {
      "id": "s3",
-     "what": "Radiographer completes the exam and sends images to the archive",
+     "what": "Radiographer completes the exam in the radiology system",
      "actor": "radiographer",
      "today_means": "system_screen",
      "systems": [
@@ -309,18 +309,18 @@
       "exam record"
      ],
      "outputs": [
-      "images archived"
+      "exam completed"
      ],
-     "handoff_to": "radiologist",
-     "share_pct": 15,
-     "fate": "machine",
-     "remaining_pct": 0,
-     "block": "integration",
-     "rung": "configure",
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
-     "boundary": "system_or_means",
+     "boundary": "decision",
      "workflow": "documents-and-records",
      "approver": "none",
      "labour_scope": "focal_role",
@@ -329,6 +329,38 @@
     },
     {
      "id": "s4",
+     "what": "Radiographer sends images to the archive",
+     "actor": "radiographer",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "exam completed"
+     ],
+     "outputs": [
+      "images archived"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "radiographer",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
+     "id": "s5",
      "what": "Radiographer writes technical notes for the radiologist",
      "actor": "radiographer",
      "today_means": "system_screen",
@@ -358,7 +390,7 @@
      "approval_refs": []
     },
     {
-     "id": "s5",
+     "id": "s6",
      "what": "Radiographer prepares monthly dose and exam reports in a spreadsheet",
      "actor": "radiographer",
      "today_means": "spreadsheet",
@@ -388,7 +420,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Scanners send dose and technique data as structured reports to the radiology system ({OTHER}) and the dose register; the radiographer only scans the contrast batch barcode. Completing the exam sends images to the archive automatically, technical notes use pick lists, and a dose dashboard replaces the monthly spreadsheet. Incident reports keep a short form.",
+   "design": "Scanners send dose and technique data as structured reports to the radiology system ({OTHER}) and the dose register; the radiographer only scans the contrast batch barcode. When the radiographer completes the exam, its images go to the archive automatically; technical notes use pick lists, and a dose dashboard replaces the monthly spreadsheet. Incident reports stay a person's account on the existing form.",
    "previous_blocker": "Dose and technique were retyped, and statistics compiled by hand.",
    "enabler_now": "Scanners export dose and technique data that radiology systems and dose registers read.",
    "still_hard": "Older scanners do not send structured dose data.",
@@ -454,18 +486,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "The images of the exam as completed by the radiographer in s3; added images need the exam completed again.",
+     "approval_step_id": "s3",
+     "approver": "radiographer"
+    }
+   ],
    "time_saved_range_pct": {
     "low": 25,
     "high": 42,
-    "basis": "Departments with older scanners save less."
+    "basis": "Low: older scanners without structured dose reports keep typing; high: all scanners send structured reports."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 66.5,
+   "gross_time_saved_pct": 57.0,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 65.5,
-   "speedup": 2.898551,
+   "time_saved_pct": 56.0,
+   "speedup": 2.272727,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -618,8 +658,8 @@
     }
    ],
    "design": "Rejected images are logged at the console with a reason from a pick list ({OTHER}), and a reject-analysis dashboard shows rates per exam type and reason each month. Judging image quality, deciding retakes and discussing quality with radiologists stay with the radiographer; rates are shown per exam type, not per person.",
-   "previous_blocker": "Rejects were noted on paper and counted by hand.",
-   "enabler_now": "Imaging systems log rejected images with reasons for reject analysis.",
+   "previous_blocker": "The console's reject logging was not set up with reason codes, so rejects were noted on paper and counted by hand.",
+   "enabler_now": "Imaging consoles can log rejected images with a reason from a pick list once it is configured.",
    "still_hard": "Whether an image is good enough is clinical judgement.",
    "human_edge": "Seeing that a slight rotation will hide the fracture line.",
    "ambition": {
@@ -681,7 +721,7 @@
    "time_saved_range_pct": {
     "low": 5,
     "high": 10,
-    "basis": "Most of this task is looking at images."
+    "basis": "Low: the console export needs manual clean-up each month; high: reasons are picked at the console and the dashboard runs by itself."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
@@ -727,43 +767,6 @@
     },
     {
      "id": "s2",
-     "what": "Radiographer chooses the protocol from the department list",
-     "actor": "radiographer",
-     "today_means": "system_screen",
-     "systems": [
-      "OTHER"
-     ],
-     "inputs": [
-      "clinical question"
-     ],
-     "outputs": [
-      "chosen protocol"
-     ],
-     "handoff_to": "none",
-     "share_pct": 25,
-     "fate": "person_reviews",
-     "remaining_pct": 50,
-     "block": "judgement_step",
-     "rung": "deterministic_plus_loop",
-     "loop": {
-      "purpose": "classify",
-      "input": "The request text, the clinical question and the department's fixed protocol list.",
-      "output": "One protocol from the list with the request phrase it rests on.",
-      "check": "Code accepts only protocol codes on the department list; the radiographer confirms every protocol; unclear requests go to the radiologist.",
-      "stop": "One proposal per request; no confident match means the radiographer chooses.",
-      "why_not_simpler": "Requests are free text; keyword rules miss clinical questions."
-     },
-     "authority": "draft",
-     "human_gate": false,
-     "boundary": "decision",
-     "workflow": "other",
-     "approver": "none",
-     "labour_scope": "focal_role",
-     "shared_step_id": "",
-     "approval_refs": []
-    },
-    {
-     "id": "s3",
      "what": "Radiographer looks up prior exams and implants in the record",
      "actor": "radiographer",
      "today_means": "system_screen",
@@ -793,7 +796,7 @@
      "approval_refs": []
     },
     {
-     "id": "s4",
+     "id": "s3",
      "what": "Radiographer phones the requesting physician about unclear requests",
      "actor": "radiographer",
      "today_means": "paper_phone",
@@ -807,15 +810,54 @@
       "request clarified"
      ],
      "handoff_to": "none",
-     "share_pct": 15,
+     "share_pct": 12,
      "fate": "person_does",
      "remaining_pct": 100,
      "block": "conversation",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "read",
+     "authority": "write_internal",
      "human_gate": false,
      "boundary": "actor",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Radiographer chooses the protocol from the department list",
+     "actor": "radiographer",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "clinical question",
+      "prior exams",
+      "request clarified"
+     ],
+     "outputs": [
+      "proposed protocol"
+     ],
+     "handoff_to": "none",
+     "share_pct": 23,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "The request text, the clinical question, prior exams and implants, any clarification from the physician, and the department's fixed protocol list.",
+      "output": "One protocol from the list with the request phrase it rests on.",
+      "check": "Code accepts only protocol codes on the department list; the radiographer confirms every protocol; unclear requests go to the radiologist.",
+      "stop": "One proposal per request; no confident match means the radiographer chooses.",
+      "why_not_simpler": "Requests are free text; keyword rules miss clinical questions."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
      "workflow": "other",
      "approver": "none",
      "labour_scope": "focal_role",
@@ -829,20 +871,19 @@
      "today_means": "in_person",
      "systems": [],
      "inputs": [
-      "chosen protocol",
-      "prior exams"
+      "proposed protocol"
      ],
      "outputs": [
-      "protocol confirmed"
+      "radiologist advice"
      ],
      "handoff_to": "none",
-     "share_pct": 15,
+     "share_pct": 10,
      "fate": "person_does",
      "remaining_pct": 100,
      "block": "conversation",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "read",
+     "authority": "write_internal",
      "human_gate": false,
      "boundary": "actor",
      "workflow": "other",
@@ -850,9 +891,72 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s6",
+     "what": "Radiographer confirms the final protocol for the exam",
+     "actor": "radiographer",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "proposed protocol",
+      "radiologist advice"
+     ],
+     "outputs": [
+      "confirmed protocol"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s7",
+     "what": "Radiographer sets the protocol on the scanner worklist",
+     "actor": "radiographer",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "confirmed protocol"
+     ],
+     "outputs": [
+      "protocol on worklist"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "other",
+     "approver": "radiographer",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     }
    ],
-   "design": "A bounded step proposes a protocol from the department's fixed list for each request, quoting the request phrase it rests on, and the radiographer confirms it; prior exams and implant records are shown with the request in the radiology system ({OTHER}). Reading requests, phoning physicians and consulting the radiologist stay with people.",
+   "design": "Prior exams and implant records are shown with the request in the radiology system ({OTHER}). After the radiographer has read priors and any physician clarification, a bounded step proposes a protocol from the department's fixed list, quoting the request phrase it rests on. The radiographer confirms the final protocol, with the radiologist when in doubt, and only the confirmed protocol goes to the scanner worklist. Reading requests, phoning physicians and consulting the radiologist stay with people.",
    "previous_blocker": "Protocols were chosen by reading each request and searching the list.",
    "enabler_now": "A study found language models choosing from fixed protocol lists rarely chose unacceptably.",
    "still_hard": "Accuracy dropped at another hospital; local validation is needed before use.",
@@ -916,7 +1020,7 @@
       "labour_scope": "focal_role",
       "hours_per_100_baseline_hours": 3,
       "counted_step_ids": [
-       "s2"
+       "s4"
       ]
      }
     ],
@@ -928,18 +1032,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s7",
+     "approved_version": "The protocol as confirmed by the radiographer in s6 after priors, the physician and the radiologist; a change needs a new confirmation.",
+     "approval_step_id": "s6",
+     "approver": "radiographer"
+    }
+   ],
    "time_saved_range_pct": {
     "low": 7,
     "high": 14,
-    "basis": "Unclear requests still need calls."
+    "basis": "Low: many requests are unclear and need calls and radiologist advice; high: most requests match a standard protocol and priors are in the system."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 22.5,
+   "gross_time_saved_pct": 26.5,
    "incremental_hours_per_100_baseline_hours": 0,
-   "time_saved_pct": 22.5,
-   "speedup": 1.290323,
+   "time_saved_pct": 26.5,
+   "speedup": 1.360544,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -990,6 +1102,6 @@
   "digest": "research/digests-minor/29-2.md",
   "digest_sha256": "b8bd66fb5c85e7c8a1fa26f1cded445238cbc7e74ade18211b6edeb0116b4232",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T15:28:34"
+  "finalized": "2026-10-16T15:37:21"
  }
 }

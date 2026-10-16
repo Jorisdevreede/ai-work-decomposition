@@ -464,3 +464,28 @@ MOCKUP-c fixes 2026-10-15 11:57 CEST mockups/c-conversation/index.html — all 3
 2026-10-16 15:30 CEST Q ALERT all labels: a send or commit leaves without a gate on its final version, or is folded into another step; act_external is for sends outside the organisation, not talks with colleagues. runs/v5/opus-5.5/25-2058.00__8.json (6817 draft minutes e-mailed by machine, no approval), runs/v5/sol-6.1/25-9044.00__3.json (10971/s3 supplier order ungated), runs/v5/opus-5.5/35-3011.00__2.json (2239 allergen text still unapproved after re-finalize)
 2026-10-16 15:30 CEST Q fleet/v5-review/REVIEW-B3-Q.md round 3: 8 files, 7 fix 1 redo 0 good; cumulative 23: 20 fix 2 good 1 redo. Uptake after 13:40: Opus face-to-face cuts 23%->13% (sample 4/6 explained), Sol zero tasks 60%->36% (sample 4/6 honest); Opus 35-3011.00__2:2239 still open. R/Q: no open disagreement (R took Q's 25-2021.00__8 finding). Next ~17:30 CEST
 15:33 LEAD moved 22 G4 files (13:37-15:31, paper-card template per Q ALERT) to runs/g4-rejected-b3/; claims released; G4 reset
+2026-10-16T13:37:26Z S1 170 passed, 0 blocked, last 39-2021.00__2
+2026-10-16 15:44 CEST O1 Q ALERT fix: own-step gated sends across opus files: 25-2058.00__8 (minutes gated by chair, recording producer and deletion steps, leave/booking approvals, parents step), 35-3011.00__2:2239 (allergen text approved before publish), 29-2034.00__1 (protocol after priors, gated worklist and archive sends), 35-1012.00__5 (2161 gate at supplier choice; 2164 booking and confirmation split); plus 20 ungated machine sends gated, 15 folded sends split, 11 older dupout ERRs fixed, 50 colleague talks moved off act_external; all re-finalized, passed
+2026-10-16 15:48 CEST G2 20 passed, 0 blocked, last 51-5112.00__3
+2026-10-16 15:55 CEST O1 156 passed, 0 blocked, last 49-2022.00__3
+2026-10-16T13:55:57Z S1 180 passed, 0 blocked, last 53-7081.00__1
+2026-10-16T14:10:27Z S1 190 passed, 0 blocked, last 51-9011.00__2
+2026-10-16 16:11 CEST O1 166 passed, 0 blocked, last 49-3011.00__3
+2026-10-16T14:11:53Z S1 TOOL ERROR 49-3011.00__1 Command blocked by PreToolUse hook: dcg core.git:git-alias-semantic-unverified
+2026-10-16 16:26 CEST O1 176 passed, 0 blocked, last 39-3031.00__2
+2026-10-16T14:27:47Z S1 200 passed, 0 blocked, last 39-3031.00__4
+2026-10-16 16:30 CEST G1 30 passed, 0 blocked, last 51-3021.00__1
+2026-10-16T14:41:46Z S1 210 passed, 0 blocked, last 49-3093.00__1
+2026-10-16 16:43 CEST O1 186 passed, 0 blocked, last 25-2012.00__2
+2026-10-16 16:52 CEST G2 30 passed, 0 blocked, last 25-2012.00__8
+2026-10-16T14:58:18Z S1 220 passed, 0 blocked, last 53-2011.00__2
+2026-10-16 16:58 CEST O1 196 passed, 0 blocked, last 53-2011.00__5
+2026-10-16 17:05 CEST G3 40 passed, 0 blocked, last 39-5094.00__2
+2026-10-16T15:10:36Z S1 230 passed, 0 blocked, last 49-9098.00__1
+2026-10-16 17:12 CEST O1 206 passed, 0 blocked, last 21-1015.00__2
+2026-10-16 17:22 CEST R ALERT grok-4.7: 32 approval cycles in 20 current passed files; machine draft/file waits for later check of its own output. Split draft creation from gated release. Examples runs/v5/grok-4.7/21-1022.00__2.json/:267 s6->s7 and 19-5011.00__4.json/:11079 s3->s4; full list in R round4 ledger.
+2026-10-16 17:22 CEST R ALERT grok-4.7: posted-line semantic template repeats across 29 tasks/8 files in 17:17 snapshot (33/9 by 17:21): read a posted line at 75% remaining, rest unchanged, generic hunt for sheet/card saving. Read three representatives; coordinator/therapist/fire-officer posting treated as already present without clear unchanged-work basis; validate actual baseline and transfer before retaining savings. Examples runs/v5/grok-4.7/25-1011.00__1.json, 31-2021.00__2.json, 33-1021.00__2.json. Exact text uniqueness does not clear this pattern.
+2026-10-16T15:22:58Z S1 240 passed, 0 blocked, last 25-2057.00__9
+17:25 LEAD moved 23 G2 files (13:40-17:20, posted-line template per R ALERT) to runs/g2-rejected-b3/; claims released; G2 reset
+2026-10-16 17:25 CEST O1 215 passed, 0 blocked, last 39-9041.00__1
+2026-10-16 17:26 CEST R fleet/v5-review/REVIEW-B3.md round4 six new files/21 tasks/101 steps: 4 fix/2 good; cumulative18 fix/6 good; all-pass574 files/2026 tasks, 32 confirmed Grok approval cycles plus posted-line family alert; Opus bar-allergen approval repaired; authority calibration recorded; next19:16 CEST

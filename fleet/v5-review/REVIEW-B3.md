@@ -2,11 +2,11 @@
 
 | Model | fix | good | redo | Reviewed files |
 |---|---:|---:|---:|---:|
-| grok-4.7 | 6 | 0 | 0 | 6 |
-| opus-5.5 | 6 | 0 | 0 | 6 |
-| sol-6.1 | 2 | 4 | 0 | 6 |
+| grok-4.7 | 8 | 0 | 0 | 8 |
+| opus-5.5 | 7 | 1 | 0 | 8 |
+| sol-6.1 | 3 | 5 | 0 | 8 |
 
-Through round 3: **14 fix, 4 good, 0 redo** across 18 files, 68 tasks and 311 steps, including one revised round-2 verdict. Savings remain provisional. Samples differ by job; these counts do not establish a model quality ranking.
+Through round 4: **18 fix, 6 good, 0 redo** across 24 files, 89 tasks and 412 steps, including one revised round-2 verdict. Savings remain provisional. Samples differ by job; these counts do not establish a model quality ranking.
 
 ## Review protocol and continuation
 
@@ -185,3 +185,90 @@ A second scan checked inputs created between approval and the gated action. Conf
 Round 3 new sample: **5 fix, 1 good, 0 redo**. With the one earlier reclassification: **14 fix, 4 good, 0 redo**, 18 distinct sampled files, 68 tasks, 311 steps. No controlled model ranking.
 
 Next scheduled round: **16 October 2026, 17:16 CEST**. All round-3 sample slots filled.
+
+## Round 4 — 16 October 2026, 17:16–17:26 CEST
+
+Selection at 17:16:56, two new files per model, sorted eligible paths and the recorded seeds:
+
+- `batch3-R-round4-grok-4.7-20261016`: 131 passes, 125 eligible.
+- `batch3-R-round4-opus-5.5-20261016`: 208 passes, 202 eligible.
+- `batch3-R-round4-sol-6.1-20261016`: 235 passes, 229 eligible.
+
+Read 21 original statements and 101 steps against the prompt contract and batch-2 defect classes. Compared evidence with supplied digests 29-1, 35-1, 31-9, 51-4, 25-4 and 39-9. This is a digest-support check, with no fresh source or legal verification. All six pass a read-only rerun of `fleet_v3.checks` with their exact prompt task sets plus `template_checks`; hashes match selection.
+
+| File | Verdict | Findings |
+|---|---|---|
+| `runs/v5/grok-4.7/29-1141.00__3.json` | fix | :1849's assumptions say s2 records needs as text, but s2 only hears the family in person with read authority and no writing means; the loop needs that written text. Represent and label capture within the retained budget, splitting the change in means. :1842 similarly needs explicit capture of s3's free-text plan decision: deciding in person alone does not make text available to a no-microphone loop. The full retained budgets may cover this work, so this is a producer/boundary ambiguity rather than a proven zero-hour transfer. Clinical decisions, visits and public sessions remain fully retained; final filing/release gates and supplied source kinds are sound. |
+| `runs/v5/grok-4.7/35-1011.00__2.json` | fix | :11138/s3 costs labour from labour minutes, but neither its inputs nor the contract names a wage/loaded-labour rate, its unit or its producer. Finance's overhead rate is a different input. Add the labour-rate contract and residual handling before claiming automated labour costing. Quantity, portion and supplier-price capture are explicitly counted; physical stock checks, purchasing decisions and directing the pass remain full. Conservative ranges name concrete menu/site scenarios. |
+| `runs/v5/opus-5.5/31-9097.00__1.json` | good | All four originals covered. Barcode/order lookup has a retained human identity check and mismatch call. Electronic orders, tariff ownership, paper fallback, transport scans and failed-delivery work are named. Exact checked versions gate billing and result sending; critical calls and physician questions remain full. Low/high cases depend on electronic-order/card coverage and home visits. Digest legal context uses E1 legal, rather than case grades. Provisional design; no local saving measurement. |
+| `runs/v5/opus-5.5/51-4031.00__1.json` | fix | :10111/:10112/:10115/:10132 ranges explain that most work remains manual but give no actual conservative low/high operating cases. Specify, for example, telemetry availability, repeat-job frequency and remaining paper orders, and tie these to the affected steps. :10115/s4's check explicitly verifies numbers and says the operator edits/confirms; make preservation of the free-text stop reasons and operational meaning explicit too. Running, inspection, sorting, planning and testing retain full time. The Sintex claim matches the supplied vendor-case digest and is not applied as this role's measured saving. |
+| `runs/v5/sol-6.1/25-4022.00__1.json` | fix | :22411/s1 captures a reference brief and :22416/s1 captures identifying information/content notes, yet both carry read authority. Label the internal capture correctly and show the means/artefact boundary. The assumptions already place capture inside the retained 15h/20h budgets: do not invent an additional unpaid-capture finding. The remaining designs are task-specific, use native reporting/copy cataloguing first, retain source/subject-meaning review and full teaching, and state explicit conservative scenarios. Named product claims match the digest's abstract/metadata/subject-suggestion scope. |
+| `runs/v5/sol-6.1/39-9011.01__4.json` | good | One original, three steps. Needs assessment, suitability decisions, shopping, payment and transport remain full with a zero saving. No invented online-order baseline, structured stock feed or free parent capture. Zero upkeep is justified because no system is added. Evidence stays E1 model knowledge. |
+
+### Authority calibration and Q comparison
+
+Q's round-3 clarification is accepted: an internal colleague conversation is not `act_external` solely because somebody speaks. The schema supplies no complete taxonomy for physical internal actions. Withdraw the standalone earlier suggestions that cash sorting, internal demonstrations, plating or talking to colleagues necessarily require external authority. This qualifies round-1 cash-handling wording, round-2 demo/plating wording and round-3 internal clarification wording; the affected file verdicts remain fix on their other concrete findings. Actual record writes labelled read and combined decision/write/handoff boundaries remain valid findings. The crew-assignment finding is a separate boundary issue, not proof that internal communication requires external authority.
+
+No new sample overlaps Q's completed ledger as checked at 17:21; the earlier teacher-duty disagreement remains resolved as fix. Four previously sampled Opus paths have changed versions since their original receipts (35-3031__2, 41-2011__3, 29-1141__2, 29-2072__4). Historical verdicts describe the recorded hashes; changed versions are not automatically upgraded without re-review.
+
+### Structural scan
+
+Frozen snapshot at 2026-10-16T17:17:12+02:00: **574 files, 2,026 tasks, 8,083 steps**. All frozen hashes remained unchanged during the follow-up structural pass.
+
+| Model | Files | Tasks | Steps | Distinct task-step texts | Full shapes | Economic shapes | Largest coarse group |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| grok-4.7 | 131 | 452 | 2016 | 452 | 434 | 400 | 52 |
+| opus-5.5 | 208 | 736 | 4043 | 736 | 736 | 736 | 12 |
+| sol-6.1 | 235 | 838 | 2024 | 834 | 786 | 414 | 210 |
+
+No repeated adjacent text pair. Sol's new exact single-action matches are the same underlying manual duties: collaborating on teaching/research (:5673/:6108) and participating in campus/community events (:6121/:6142). Together with the previously read encouragement-only tasks, these are legitimate single-action repetitions, not evidence of templated multi-step answers. Numerical shapes alone establish no defect.
+
+The dependency scan gives 35 Grok cycle candidates. Three use earlier versions: preschool concern/watch-point records already scoped in round 2, and librarian :22434 reads the last filed inventory (or an empty first-run list), explicitly stated in assumptions. **32 are confirmed approval cycles in 20 files**. For each below, the later approval consumes the gated action's output. Create the draft/calculation first; gate a separate accepted-version release/commit, rather than making creation wait for its own review.
+
+| Grok file under runs/v5/grok-4.7 | Task suffix / gated action → check |
+|---|---|
+| `19-5011.00__4.json` | `11079/s3→s4`, `11081/s4→s5` |
+| `21-1022.00__2.json` | `267/s6→s7`, `15227/s4→s5` |
+| `25-1071.00__2.json` | `6101/s4→s5`, `6105/s3→s4` |
+| `25-1121.00__4.json` | `6276/s4→s5`, `6278/s3→s4`, `6280/s3→s4` |
+| `25-2032.00__1.json` | `6674/s3→s4`, `6681/s3→s4` |
+| `25-2058.00__1.json` | `6784/s2→s3` |
+| `25-3041.00__3.json` | `17032/s2→s3` |
+| `29-1127.00__1.json` | `18524/s2→s3` |
+| `29-1127.00__6.json` | `1882/s2→s3`, `1885/s3→s4` |
+| `29-2053.00__1.json` | `6947/s3→s4` |
+| `29-2072.00__3.json` | `22884/s2→s3` |
+| `31-9011.00__1.json` | `7884/s2→s3`, `7881/s2→s3` |
+| `31-9096.00__3.json` | `21195/s3→s4` |
+| `39-3031.00__3.json` | `5106/s3→s4`, `5112/s3→s4`, `20768/s3→s4` |
+| `41-2011.00__4.json` | `2416/s5→s6` |
+| `47-2141.00__1.json` | `11515/s3→s4`, `11522/s4→s5` |
+| `47-2181.00__1.json` | `20793/s4→s5` |
+| `49-3011.00__2.json` | `9968/s3→s4` |
+| `51-3092.00__3.json` | `4936/s4→s5` |
+| `51-5112.00__3.json` | `19416/s2→s3`, `19432/s2→s3` |
+
+No exact dependency-order hit remains in Opus or Sol. A late-draft scan produced four Opus candidates, all scoped on reading: :6646's later feedback is not part of the grade list being committed; :6682 uploads the approved unit objectives rather than the separately drafted lesson objectives; :2038's signed-letter gate does not claim to sign a distinct insurance form; :2134's shift-report gate covers the shift report, with a separate incident-report gate. Do not claim these as premature approval.
+
+The formerly confirmed bar-menu defect is repaired at SHA-256 `24699eec72fa833f62a8cc99f0cc608601e96ae80b81bd46f0144160f038593a`: Opus `35-3011.00__2/:2239` now creates menu/allergen text in s5 before manager review s4, and a1 binds the line-up, prices and allergen text before s6 publication. This closes that specific defect, not a whole-file re-review.
+
+### Repeated semantic design beyond exact text
+
+Q's earlier paper-card family was quarantined by the lead; those quarantined versions are outside the current pass-folder scan. A new related family remains: **29 tasks across eight frozen files** say the “hunt for that sheet/card is shorter”, read a posted line at 75% remaining, and retain the main duty unchanged. At 17:21 the live count was 33 tasks/nine files after an additional file arrived. Exact step-text uniqueness does not clear this kind of repetition.
+
+Targeted reading covered business teacher `25-1011.00__1`, therapy assistant `31-2021.00__2` and fire supervisor `33-1021.00__2`. Each repeatedly uses the same posted-line arrangement, field-check upkeep and missing-line fallback. Source posting by a coordinator, therapist or fire officer is assumed already present, without a clear account of whether that exact structured line is unchanged upstream work. The step is described as reading, whereas the claimed reduction is a separate hunt for a paper sheet; confirm that baseline and split its changed action. Some source records can genuinely pre-exist, so this is a repeated design/unsupported-baseline alert requiring task-specific review, not proof of a script or a blanket whole-file redo. Supplemental checks do not enter the seeded sample counts.
+
+Frozen family paths: `25-1011.00__1`, `25-1121.00__1`, `25-1194.00__3`, `25-2012.00__8`, `31-2021.00__2`, `33-1021.00__2`, `39-1014.00__3`, `47-2211.00__2`. Live additional path: `25-1072.00__2`. The lead received STATUS alerts for this family and the 32 cycles.
+
+### Receipts and next round
+
+- `runs/v5/grok-4.7/29-1141.00__3.json` SHA-256 `4409ce677679b385d91e3db2bfcdc1f136ff3b0630f72f91289d8939525e57a6`.
+- `runs/v5/grok-4.7/35-1011.00__2.json` SHA-256 `92ad8af3d34cb2fb94e40f842d25d0f88f415c445978666bab38060bd88c765d`.
+- `runs/v5/opus-5.5/31-9097.00__1.json` SHA-256 `af7f84fc7836b1a26ee963a494c8c3cc514d1e93399b213ffd6b9dff76adc3db`.
+- `runs/v5/opus-5.5/51-4031.00__1.json` SHA-256 `c5d7b220bf51e09068264106412bcf3c635aff31c37fdd672050293cf797e112`.
+- `runs/v5/sol-6.1/25-4022.00__1.json` SHA-256 `061114fd882b034b9a65ead546968aa818acf3c65ffb2d172eb5ae2c3bd70ee6`.
+- `runs/v5/sol-6.1/39-9011.01__4.json` SHA-256 `fc57210c00261d6f2b367100f39dd8236c0a6459cd0df326db758af1d0a14b93`.
+
+Round 4: **4 fix, 2 good, 0 redo**. Cumulative: **18 fix, 6 good, 0 redo**, 24 distinct sampled files, 89 tasks, 412 steps. Supplemental pattern/repair checks are excluded from those totals.
+
+Next scheduled round: **16 October 2026, 19:16 CEST**. All round-4 sample slots filled; continue every two hours through Sunday 23:59 CEST.

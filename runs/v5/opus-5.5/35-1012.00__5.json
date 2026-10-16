@@ -624,8 +624,8 @@
     {
      "id": "a2",
      "action_step_id": "s3",
-     "approved_version": "Order proposal with lines and quantities as reviewed in s1; edits after review need a new review.",
-     "approval_step_id": "s1",
+     "approved_version": "Order lines, quantities and suppliers as chosen by the supervisor in s2; edits after that need a new check.",
+     "approval_step_id": "s2",
      "approver": "food service supervisor"
     }
    ],
@@ -723,7 +723,7 @@
       "party requirements"
      ],
      "handoff_to": "none",
-     "share_pct": 25,
+     "share_pct": 22,
      "fate": "person_does",
      "remaining_pct": 80,
      "block": "conversation",
@@ -800,7 +800,38 @@
     },
     {
      "id": "s6",
-     "what": "Supervisor schedules the party in the reservations system and sends the confirmation",
+     "what": "Supervisor checks the accepted quote against the reviewed version",
+     "actor": "food service supervisor",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "party quote",
+      "accepted quote"
+     ],
+     "outputs": [
+      "confirmed quote"
+     ],
+     "handoff_to": "guest",
+     "share_pct": 3,
+     "fate": "person_reviews",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "opportunity-to-order",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s7",
+     "what": "Supervisor schedules the party in the reservations system",
      "actor": "food service supervisor",
      "today_means": "system_screen",
      "systems": [
@@ -808,20 +839,19 @@
       "EMAIL"
      ],
      "inputs": [
-      "accepted quote"
+      "confirmed quote"
      ],
      "outputs": [
-      "party reservation",
-      "booking confirmation"
+      "party reservation"
      ],
      "handoff_to": "guest",
-     "share_pct": 10,
+     "share_pct": 5,
      "fate": "machine",
      "remaining_pct": 0,
      "block": "workflow_automation",
      "rung": "configure",
      "loop": null,
-     "authority": "act_external",
+     "authority": "write_internal",
      "human_gate": true,
      "boundary": "system_or_means",
      "workflow": "opportunity-to-order",
@@ -833,7 +863,39 @@
      ]
     },
     {
-     "id": "s7",
+     "id": "s8",
+     "what": "Supervisor sends the booking confirmation to the guest",
+     "actor": "food service supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "confirmed quote"
+     ],
+     "outputs": [
+      "booking confirmation"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "food service supervisor",
+     "labour_scope": "focal_role",
+     "shared_step_id": "reservation-entry",
+     "approval_refs": [
+      "a2"
+     ]
+    },
+    {
+     "id": "s9",
      "what": "Supervisor writes the event sheet for kitchen and service team",
      "actor": "food service supervisor",
      "today_means": "document",
@@ -863,7 +925,7 @@
      "approval_refs": []
     },
     {
-     "id": "s8",
+     "id": "s10",
      "what": "Supervisor confirms final numbers and diets with the guest before the party",
      "actor": "food service supervisor",
      "today_means": "paper_phone",
@@ -894,7 +956,7 @@
      "approval_refs": []
     }
    ],
-   "design": "An online group enquiry form in the reservation system ({OTHER}) captures date, numbers, budget and dietary counts and shows availability; a quote generator in {DOCS} builds the offer from party packages with prices, which the supervisor adjusts for custom wishes. On acceptance the booking and confirmation are created automatically, the event sheet is generated from the booking, and the guest updates final numbers through a link with an automatic reminder.",
+   "design": "An online group enquiry form in the reservation system ({OTHER}) captures date, numbers, budget and dietary counts and shows availability; a quote generator in {DOCS} builds the offer from party packages with prices, which the supervisor adjusts for custom wishes. Once the supervisor has checked the accepted version, the booking is created and the confirmation sent automatically, the event sheet is generated from the booking, and the guest updates final numbers through a link with an automatic reminder.",
    "previous_blocker": "Each party was a thread of calls and e-mails, with the quote and event sheet typed by hand.",
    "enabler_now": "Reservation systems offer group forms and confirmations, and quote templates fill from package data.",
    "still_hard": "Custom menus and nervous hosts need conversation; guests often change numbers late.",
@@ -948,7 +1010,7 @@
     "Boundary: from the enquiry to final numbers passed to the kitchen; running the party is outside.",
     "Input contract: party packages with menu, price per person and terms kept by the restaurant manager; enquiry fields filled by the guest online or by the supervisor on the phone; fallback is the e-mail thread.",
     "Diets are collected as counts per type, not per named guest.",
-    "Guest time is outside the supervisor's savings."
+    "Guest time is priced as customer time, not as the supervisor's savings."
    ],
    "unknowns": [
     "How many party enquiries arrive per week and through which channel.",
@@ -972,7 +1034,7 @@
       "labour_scope": "focal_role",
       "hours_per_100_baseline_hours": 3,
       "counted_step_ids": [
-       "s7"
+       "s9"
       ]
      }
     ],
@@ -986,15 +1048,27 @@
       "description": "Manager keeps party packages, prices and terms current.",
       "labour_scope": "other_role",
       "hours_per_100_baseline_hours": 1
+     },
+     {
+      "description": "Guests fill in the online enquiry form and update final numbers through the link instead of phoning.",
+      "labour_scope": "customer",
+      "hours_per_100_baseline_hours": 1
      }
     ]
    },
    "approvals": [
     {
      "id": "a1",
-     "action_step_id": "s6",
-     "approved_version": "Party quote with menu, numbers, price and terms as reviewed by the supervisor in s4 and accepted by the guest; a changed quote needs a new review.",
-     "approval_step_id": "s4",
+     "action_step_id": "s7",
+     "approved_version": "The quote as accepted by the guest and checked by the supervisor in s6; a changed quote needs a new check.",
+     "approval_step_id": "s6",
+     "approver": "food service supervisor"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s8",
+     "approved_version": "The quote as accepted by the guest and checked by the supervisor in s6; the confirmation states only that version.",
+     "approval_step_id": "s6",
      "approver": "food service supervisor"
     }
    ],
@@ -1005,10 +1079,10 @@
    },
    "focal_role_share_pct": 90,
    "excluded_labour_share_pct": 10,
-   "gross_time_saved_pct": 54.444444,
+   "gross_time_saved_pct": 53.777778,
    "incremental_hours_per_100_baseline_hours": 1.5,
-   "time_saved_pct": 52.944444,
-   "speedup": 2.125148,
+   "time_saved_pct": 52.277778,
+   "speedup": 2.09546,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -1378,6 +1452,6 @@
   "digest": "research/digests-minor/35-1.md",
   "digest_sha256": "817d97cb65a23ca2a830b42850a1eec8751b3632ac3cce0645184fefdaff3028",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T15:30:02"
+  "finalized": "2026-10-16T15:37:51"
  }
 }
