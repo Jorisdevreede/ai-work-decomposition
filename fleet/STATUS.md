@@ -395,3 +395,6 @@ MOCKUP-c fixes 2026-10-15 11:57 CEST mockups/c-conversation/index.html — all 3
 2026-10-16 02:53 CEST G0 PORTFOLIO DONE
 2026-10-16 02:57 CEST lead prototypes/flow portfolio checked in browser (goal link, policy card, pilot card earned, production refused, go/no-go prefill); goal suggestions now use name + 3 biggest tasks and skip generic office words. Tests pass, clean console, 1440/390 no overflow.
 2026-10-16 11:05 CEST R fleet/v5-review/REVIEW-B3.md — reviewer ready; 0 finalized passes, first round waits for 10; then every 2h through 18 October.
+11:06 S1 TOOL ERROR 41-2011.00__1 FileNotFoundError: missing runs/v5/sol-6.1 output directory
+2026-10-16 11:10 CEST O1 TOOL BUG tools/fleet_v3.py digest_source_ids: regex ^\s*\[S(\d+)\] misses bulleted '- [S1] ...' source lines, used in 61 of 91 digests (incl. 41-2), so every valid digest citation fails 'source ids absent from digest'. Suggested fix: r"^\s*(?:[-*]\s+)?\[S(\d+)\]\s+\S". O1 keeps correct citations; affected files stay .blocked.json with only that reason, re-finalize them after the fix.
+2026-10-16 11:11 CEST lead fixed digest_source_ids for bulleted [S#] lines (O1 report); workers told to re-finalize source-id-only blocks. S1 output-dir error resolved.

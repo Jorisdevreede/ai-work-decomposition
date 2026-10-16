@@ -204,7 +204,7 @@ def digest_for(code):
 
 def digest_source_ids(digest):
     # Only source definitions count; stray citations in prose are not a registry.
-    return set(re.findall(r"^\s*\[S(\d+)\]\s+\S", digest, re.M))
+    return set(re.findall(r"^\s*(?:[-*]\s+)?\[S(\d+)\]\s+\S", digest, re.M))
 
 
 def labour_metrics(task):
