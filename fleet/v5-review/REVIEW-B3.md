@@ -2,11 +2,11 @@
 
 | Model | fix | good | redo | Reviewed files |
 |---|---:|---:|---:|---:|
-| grok-4.7 | 12 | 0 | 0 | 12 |
-| opus-5.5 | 11 | 1 | 0 | 12 |
-| sol-6.1 | 5 | 7 | 0 | 12 |
+| grok-4.7 | 14 | 0 | 0 | 14 |
+| opus-5.5 | 13 | 1 | 0 | 14 |
+| sol-6.1 | 6 | 8 | 0 | 14 |
 
-Through round 6: **28 fix, 8 good, 0 redo** across 36 files, 132 tasks and 592 steps, including one revised round-2 verdict. Savings remain provisional. Samples differ by job; these counts do not establish a model quality ranking.
+Through round 7: **33 fix, 9 good, 0 redo** across 42 files, 151 tasks and 675 steps, including one revised round-2 verdict. Savings remain provisional. Samples differ by job; these counts do not establish a model quality ranking.
 
 ## Review protocol and continuation
 
@@ -403,3 +403,60 @@ These close the specific ID defects, not the whole files. Q agreed the superviso
 Round 6: **5 fix, 1 good, 0 redo**. Cumulative: **28 fix, 8 good, 0 redo**, 36 distinct sampled files, 132 tasks and 592 steps. Supplements are excluded from those counts.
 
 Next scheduled round: **16 October 2026, 23:16 CEST**. All round-6 sample slots filled; continue every two hours through Sunday 23:59 CEST.
+
+
+## Round 7 — 16 October 2026, 23:16–23:30 CEST
+
+Selection at 23:16:31, two new files per model from sorted eligible paths:
+
+- `batch3-R-round7-grok-4.7-20261016`: 110 passes, 104 eligible.
+- `batch3-R-round7-opus-5.5-20261016`: 397 passes, 385 eligible.
+- `batch3-R-round7-sol-6.1-20261016`: 616 passes, 604 eligible.
+
+Read 19 originals and 83 steps against the prompt contract and batch-2 defects. Evidence comparison uses supplied digests 27-1, 37-3, 29-1, 21-1, 39-3 and 39-9. No fresh web/source/legal verification. All six pass the exact-prompt read-only checks plus template checks; sampled hashes were unchanged.
+
+| File | Verdict | Findings |
+|---|---|---|
+| `runs/v5/grok-4.7/27-1023.00__2.json` | fix | :1727/s1 asks about plants and place in person but outputs a written note that s2 needs. Make the note-capture action and means explicit inside the retained 16h; full retention means free labour is not proved. The 12h current written-draft baseline also needs a stated condition: the supplied task context says care is said at the bench from the plant in hand, whereas the design saves a separate prose-drafting step. Explain when that written baseline exists before counting its saving. The other three tasks retain their manual design, selection, checking, calls and delivery; ordering uses named fields and an exact release gate. |
+| `runs/v5/grok-4.7/37-3011.00__1.json` | fix | :9601 retains site walking and planting judgement, but cuts reading quantities to 75% merely because the same quantities appear on screen with the design. Specify the particular reading/lookup work removed or retain it fully. Automatic bed/revision lookup has a separate stated mechanism. Central savings also require an existing structured plant schedule; explain coverage and fallback when, as the range basis says, many beds start from paper. Inputs name the designer and schedule fields, and upkeep is priced. |
+| `runs/v5/opus-5.5/29-1141.04__2.json` | fix | :18013 combines observing a nurse's actual competence with signing the card and reduces both to 80%, although only tablet entry changes; split unchanged observation from entry and avoid counting the removed re-entry again in s5. :18002/s5 combines evaluating quality and writing the report at deterministic rung with 75% retention: separate professional judgement from chart/report assembly before allocating the saving. Its incident-classification loop should explicitly check that cited facts support the selected label, beyond checking that a quote and permitted label exist. :18001 shifts consultation-reason entry to ward nurses: state whether this is an existing order capture or price added typing. |
+| `runs/v5/opus-5.5/21-1012.00__6.json` | fix | :18626's incremental 0.2h is learning the checklist, which is one-off training rather than ongoing upkeep; name actual recurring maintenance or justify no ongoing cost. :18624 charges 0.5h to marking the agreement final while s5 already contains that approval: place the same work under already-counted with its step, or identify a distinct additional action. :18632 cites [S11]'s criminal-risk/reoffending provision to support a different claim about count-based student rules; label the latter E1 model knowledge rather than implying that source establishes it. Teaching, meetings and discipline judgement remain full, and publication/sending gates bind the actual versions. |
+| `runs/v5/sol-6.1/39-3091.00__4.json` | fix | :5127's original includes renting, selling or issuing equipment and supplies. The single physical-issue step excludes payment and separately assigned rental-record work without a demonstrated sibling boundary, so the selling/rental transaction is not fully represented. State that boundary and cover the actual transaction work, without inventing paperwork or forcing positive savings. :5126's ride operation/explanation is an honest full-time zero. This is the same version reviewed by Q; R agrees with Q's coverage finding. |
+| `runs/v5/sol-6.1/39-9032.00__4.json` | good | All four originals covered. Project inspection explicitly captures actual findings at full effort; existing project/coordinator/purchaser/designer records supply the assembly inputs, with missing/manual work retained. Programme collaboration and balance judgement stay full, and the latter has a written current means. Encouragement, entertainment and physical setup remain honest zeros. Both changed tasks price upkeep and give concrete manual/structured coverage cases; evidence stays E1. |
+
+### Structural scan
+
+Frozen at 2026-10-16T23:16:32+02:00: **1,123 files, 4,015 tasks, 16,165 steps**. Frozen hashes were unchanged during follow-up checks. Hash verification was chunked and the adjacent-pair scan also ran across the complete model population.
+
+| Model | Files | Tasks | Steps | Distinct task-step texts | Full shapes | Economic shapes | Largest coarse group |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| grok-4.7 | 110 | 381 | 1882 | 381 | 380 | 371 | 49 |
+| opus-5.5 | 397 | 1400 | 7269 | 1400 | 1400 | 1392 | 35 |
+| sol-6.1 | 616 | 2234 | 7014 | 2227 | 2050 | 1120 | 450 |
+
+No repeated adjacent text pair. Sol now has five exact full-manual groups, including additional academic/vocational advice and lectures/discussions/demonstrations. Reading the matching duties confirms these are legitimate identical actions, not copied automation designs. Numerical shapes alone do not prove templates.
+
+The Grok cash-count cycle `41-2011.00__4/:2416` remains. The other eight previously recorded Grok cycles are absent after quarantine, not verified repaired. The three prior-version false positives remain scoped. Sol `21-1091.00__4/:20237` still combines before-training enrolment/notices with after-training completion administration while consuming the later attendance record.
+
+New confirmed forward dependency: Opus `29-1211.00__3/:24035` delivers lectures at s2 using teaching material that s3 only then prepares. No prior-cycle exception is stated. Move preparation before delivery or explicitly supply existing material. SHA-256 `3e5bc0771d1fab82832eecb9ff051499a8ed3b192db9e483669cb4e8c7703673`.
+
+Four Opus late-draft hits remain the previously cleared distinct artefacts. Four Sol candidates were read: the concierge explanation already has a return-to-check condition; `25-3011.00__1/:6830` explains approved objectives with changed text explicitly requiring recheck; `29-9099.01__5/:23926,:17480` holds patient conversations after checking an existing leaflet/handout and separately records the actual conversation afterward. Those conversations do not create a replacement leaflet/handout, so they are not premature approval. Their spoken actions' draft labels do not establish artefact changes. Supplemental Sol hashes: adult instructor `af9e9a39f3c5f1dff11a020de17fac0178d4621c6211d10ea93f275ae18b8084`; midwife `3695cea15918d605f1cce6dc9383881daf51671bdc381603847e6d33b340f427`.
+
+### Quarantine and Q comparison
+
+The lead's 22:03 action stood G4 down and removed its nine recent files plus 27 remaining G2/G3 files; these removals explain the smaller Grok population. Historical reviewed hashes remain counted and are not upgraded by disappearance. The new florist/groundskeeper samples do not establish a blanket numerical-template finding.
+
+Q's 22:00 ledger reports continued missing-producer, means-bucket and same-system-save findings. S2 reports 34 earlier files patched at 23:12; this round does not claim those repairs independently verified. R agrees with Q on the exact amusement-equipment sample. No new open R/Q verdict disagreement.
+
+### Receipts and next round
+
+- `runs/v5/grok-4.7/27-1023.00__2.json` SHA-256 `e6e6cf466ea16eaab730617f322f294bec9330aa7c56ea86ae106c680f0eabb0`.
+- `runs/v5/grok-4.7/37-3011.00__1.json` SHA-256 `eef2a7a32f481f6970ce8977e181b2b5b4e32940066f4ce6930e85f37e98fea9`.
+- `runs/v5/opus-5.5/29-1141.04__2.json` SHA-256 `a9abe5ac51b87646602e4a2930c839cbfa94535a8b9f89bbfff0107a3426e7c1`.
+- `runs/v5/opus-5.5/21-1012.00__6.json` SHA-256 `1422b61b610fa97e6c2da938dcdec7469b93455e66518af2c624dd37da6d494f`.
+- `runs/v5/sol-6.1/39-3091.00__4.json` SHA-256 `cfd5d620f627ca738120e42b233074b08fe988f63aaf2308e3af25402426047b`.
+- `runs/v5/sol-6.1/39-9032.00__4.json` SHA-256 `45ba7ea6d233838a1a284e80c1c8ef1340714bc5cad37a0cac5898da039dec33`.
+
+Round 7: **5 fix, 1 good, 0 redo**. Cumulative: **33 fix, 9 good, 0 redo**, 42 distinct sampled files, 151 tasks and 675 steps. Supplements do not enter these counts.
+
+Next scheduled round: **17 October 2026, 01:16 CEST**. All round-7 sample slots filled; continue every two hours through Sunday 23:59 CEST.

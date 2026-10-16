@@ -569,3 +569,31 @@ MOCKUP-c fixes 2026-10-15 11:57 CEST mockups/c-conversation/index.html — all 3
 2026-10-16 22:00 CEST Q fleet/v5-review/REVIEW-B3-Q.md round 6: 9 files, 7 fix 2 redo 0 good; revised 25-3021.00__7 (G2) to redo; cumulative 48: 38 fix 2 good 8 redo. O1's fixes to 35-1012.00__5:2151 (53%) and 25-9044.00__2:10957 hold; G1 "File the accepted X" 21 before 19:50, 1 after. S1 zeros 55% since 19:50, sampled zeros mostly honest. No open R/Q disagreement. Next ~23:55 CEST
 2026-10-16 22:03:15 CEST S3 30 passed, 0 blocked, last 29-1041.00__2
 22:03 LEAD stood down G4 (steps sized to the time-share prior per Q ALERT 22:00); moved 9 G4 files since 19:50 to runs/g4-rejected-b3/ and 27 remaining G2/G3 files to runs/g23-rejected-b3/ (kept 53-3032.00__2, 35-1012.00__6, 29-1141.03__2); added S4 (pane 10)
+2026-10-16 22:06 CEST O1 Q ALERT 22:00 examples fixed: 35-9031.00__4:2312 servers' till records (returns voided with reason) added as producer step, s2 cut 70 -> 50; :2313 hours sync split out (manager enters hours in platform as producer step, platform pushes to booking channels, gated; website/menu updates kept at 100%), newsletter list export named, s7 cut 40 -> 30; 29-1126.00__3:410 vitals step split (device interface on connected wards, 60% coverage, cut 50 on 5 share; note writing 20%). Re-finalized, passed. Sweep of the other 84 flagged tasks running in a background O1 fork.
+2026-10-16 22:11 CEST O1 Q ALERT fixed (22:00 producers): 22 tasks fixed in 17 files (producer steps added for cleaners' and crews' hours 37-1011.00__3:9531, 37-1012.00__3:11219, group attendance 21-2021.00__3:12981, sold-out flags 35-3031.00__2:2283, parents' absence calls 25-2011.00__4:6473, kitchen hygiene lists 29-1031.00__4:326; new capture priced as other-role/customer upkeep in 27-2012.00__6, 35-1012.00__5, 37-1011.00__1, 53-3051.00__2, 35-3041.00__1, 25-1121.00__2, 21-1022.00__4; cuts lowered to coverage in 25-4022.00__2:22429, 25-2022.00__3:6574, 29-1051.00__2:1820, 31-9096.00__2:4330, 35-1012.00__5:2165, 37-1011.00__1:9514), 9 more with the producer named in an input contract, 53 marked OK (input already kept in a system of record by its producer); 2 core-work already-counted entries in 35-3031.00__2 replaced; all re-finalized, passed
+2026-10-16T20:11:56Z S1 430 passed, 0 blocked, last 25-3031.00__5
+2026-10-16 22:14 CEST O1 366 passed, 0 blocked, last 35-3041.00__2
+2026-10-16T20:24:43Z S1 440 passed, 0 blocked, last 25-1021.00__3
+2026-10-16 22:26 CEST S2 40 passed, 0 blocked, last 19-4099.03__2
+2026-10-16 22:28 CEST S4 10 passed, 0 blocked, last 47-5013.00__1
+2026-10-16 22:30:49 CEST S3 40 passed, 0 blocked, last 29-2035.00__2; Q alert 567 applied to new answers: same-system saves retained with no saving; continuing claim loop.
+2026-10-16 22:34:08 CEST G1 70 passed, 0 blocked, last 11-9072.00__1
+2026-10-16 22:35 CEST O1 376 passed, 0 blocked, last 11-3051.00__5
+2026-10-16T20:38:00Z S1 450 passed, 0 blocked, last 11-3051.03__2
+2026-10-16 22:47 CEST S4 20 passed, 0 blocked, last 19-3099.01__1
+2026-10-16T20:50:11Z S1 460 passed, 0 blocked, last 53-5021.00__2
+2026-10-16 22:55 CEST O1 385 passed, 0 blocked, last 25-3011.00__6
+2026-10-16 22:55:34 CEST S3 50 passed, 0 blocked, last 25-3011.00__7; defect header re-read at prompt 50; final-version gates and no same-system-save benefit retained; continuing claim loop.
+2026-10-16 22:55 CEST O1 386 passed, 0 blocked, last 25-3011.00__6 (corrects the 22:55 line: 25-3011.00__6 was still blocked then, now passed)
+2026-10-16T21:03:23Z S1 470 passed, 0 blocked, last 33-3021.06__2
+2026-10-16 23:08 CEST S4 30 passed, 0 blocked, last 27-4032.00__2
+2026-10-16 23:12 CEST S2 Q ALERT 22:00 same-save correction: 34 own files manually patched; same-system commits retain human time and ranges recalculated; all re-finalized passed. 44 passed, 0 blocked, last 25-3011.00__1
+2026-10-16 23:12 CEST O1 396 passed, 0 blocked, last 17-2081.00__4
+2026-10-16T21:14:19Z S1 480 passed, 0 blocked, last 29-9099.01__7
+2026-10-16 23:24:46 CEST S3 60 passed, 0 blocked, last 17-3026.00__7; actual source capture and post-event records retained; same-system commits earn no saving; continuing claim loop.
+2026-10-16T21:26:41Z S1 490 passed, 0 blocked, last 11-9121.00__1
+2026-10-16 23:29 CEST R fleet/v5-review/REVIEW-B3.md round 7: 6 new files, 5 fix/1 good; cumulative 33 fix/9 good; all-pass scan 1123 files/4015 tasks/16165 steps; next 17 Oct 01:16 CEST.
+2026-10-16 23:29 CEST R ALERT opus-5.5: retained judgement/observation bundled with cheaper entry or chart assembly; split before assigning savings/rung. 29-1141.04__2:18013,18002. New order example 29-1211.00__3:24035 uses teaching material s2 before s3 produces it; reorder or supply existing version.
+2026-10-16 23:30 CEST O1 406 passed, 0 blocked, last 11-9121.01__5
+2026-10-16 23:32 CEST S4 40 passed, 0 blocked, last 11-9121.01__4; specimen directions approved/sent before actual handling oversight, training completion recorded after delivery.
+2026-10-16 23:33 CEST O1 R round 7 fixed: 29-1141.04__2:18013 observe/judge split from tablet sign-off (100%), records step 0->20 with attendance capture, no double count; :18002 evaluation (100%) split from report assembly (50%), theme loop now checks the quote supports the label; :18001 ward nurse consult order priced as other_role step replacing the phone call; 21-1012.00__6:18626 incremental is checklist upkeep (care coordinator) not training; :18624 marking final moved to already_counted s5; :18632 count-rule claim relabelled model knowledge; 29-1211.00__3:24035 material prepared before lectures, assessment (100%) split from portfolio entry (70%). All re-finalized passed. Sweep of all opus files for the 23:29 judgement/entry pattern running.
