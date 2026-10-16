@@ -1,34 +1,35 @@
 # Batch 3 second review (Q, pane 5, Opus 5.5)
 
-**Running verdict after round 3 (16 Oct 15:30): 23 files read, 20 fix, 2 good, 1 redo.** Not a model ranking:
-different jobs, six to eleven files each. All 23 pass the finalize checks; every fix is a semantic defect.
+**Running verdict after round 4 (16 Oct 17:37): 31 files read, 26 fix, 2 good, 3 redo.** Not a model ranking:
+different jobs, eight to fifteen files each. All 31 passed the finalize checks when read; every fix is a semantic
+defect. Round 4 revised Q's round-3 fix on Grok `35-1011.00__1` to redo (G3 list-step template, below).
 
 | Model | Files read | Fix | Good | Redo |
 |---|---:|---:|---:|---:|
-| opus-5.5 | 6 | 6 | 0 | 0 |
-| sol-6.1 | 6 | 5 | 1 | 0 |
-| grok-4.7 | 11 | 9 | 1 | 1 |
+| opus-5.5 | 8 | 8 | 0 | 0 |
+| sol-6.1 | 8 | 7 | 1 | 0 |
+| grok-4.7 | 15 | 11 | 1 | 3 |
 
-Open defect classes (through round 3):
-- **All models:** a step relies on an input no step or contract produces, or a machine action named in the
-  design has no step; a record write or a send is folded into a conversation or manual step, so its saving or its
-  gate is missing; act_external is used for talks with internal colleagues.
-- **Opus:** cuts to face-to-face steps are falling (23% of such steps 11:30-13:40, 13% after; a sample of six
-  after 13:40 has four explained and two partly supported). Final artefacts still leave without a gate:
-  `25-2058.00__8:6817` sends draft minutes by machine, `35-3011.00__2:2239` publishes unapproved allergen text
-  (re-finalized, still open).
-- **Grok:** pane G4 has used one paper-card template since 13:37 (19 of its 20 files, 60 tasks): a colleague
-  writes a paper card, the task's first step "reads the card", stays manual and is cut to 60%. Other panes invent
-  look-up hunts to cut. Ten approval cycles in the scan; `41-2011.00__4:2416` is unchanged.
-- **Sol:** zero-saving tasks fell from 60% (11:30-13:40) to 36% after; a sample of six after 13:40 has four honest
-  zeros and two that still fold a record write into an in-person or phone step. A supplier order is committed
-  with no authorization gate (`25-9044.00__3:10971`).
+Open defect classes (through round 4):
+- **All models:** a fill, sync, alert or send the design names has no step (prefill, POS total, tachograph
+  download, reorder proposal); a consumed input has no producer edge; authority labels on person-held steps
+  (write_internal on in-person decisions, act_external for colleagues).
+- **Grok templates.** Three pane-level families, each a fixed design shape with job words swapped in: G4 paper card
+  (13:37-15:31, 22 files pulled by the lead at 15:33), G2 posted line (R, 23 files pulled at 17:25) and G3 list step
+  (11:58-16:25, 21 files, 49 tasks, still in `runs/v5`): a "List/Show X" step goes to machine at 0% because an
+  existing system "lists X only when already stored", while the person still reads the list. G1 now draws its
+  saving from filing "the accepted X" by machine, sometimes where nothing is filed today, with self-approvals of a
+  plain save. Approval cycles: R counts 32.
+- **Opus:** most face-to-face cuts are now explained (round 4 sample: 3 explained, 2 partly, 1 unsupported);
+  machine steps the design relies on are missing. `35-3011.00__2:2239` is fixed (approval binds the allergen text).
+- **Sol:** zero-saving tasks are back to 53% of tasks in files new since 15:2x (157/299; 36% in 13:40-15:35);
+  half the sampled zeros still fold a record write into an in-person step.
 
 **R/Q comparison:** four files read by both at the same hash, all fix in both: Grok `41-2011.00__2`,
-`41-2011.00__4`, `41-2011.00__5`, Opus `35-3031.00__2`. The one task-level disagreement is settled: R accepted
-Q's finding on Sol `25-2021.00__8:6567` and revised its good to fix at 15:20. R also confirmed Q's
-`35-3011.00__2:2239`. R has not flagged the G4 paper-card template; its wording changes with each job, so a
-repeated-text scan does not find it.
+`41-2011.00__4`, `41-2011.00__5`, Opus `35-3031.00__2`. R accepted Q's `25-2021.00__8:6567` finding (15:20). R found
+the G2 posted-line family (the lead pulled it); Q has read none of those files. One family-level difference: R rated Grok
+`29-1123.00__3` fix (SHA `857ea21400d0`, unchanged); tasks `:369` and `:377` carry the G3 list-step template,
+which Q judges as templated (redo). Q has not read the rest of that file.
 
 ## Method
 
@@ -270,6 +271,89 @@ Findings per file:
 
 Next round about 17:30.
 
+### Round 4 — selected 17:30 CEST, written 17:37
+
+Seed `batch3-Q-round4-20261016`. Finalized passes 574 (grok 113, opus 218, sol 243) after the lead moved 22 G4
+files (15:33, Q's paper-card alert) to `runs/g4-rejected-b3/` and 23 G2 files (17:25, R's posted-line alert) to
+`runs/g2-rejected-b3/`. Q's redo `41-2022.00__1` is among the moved G4 files. Unreviewed populations opus 213, sol
+237, grok 103 (G1 34, G2 8, G3 40, G4 21). Selected: opus `49-1011.00__1`, `25-1072.00__7`; sol `51-4041.00__2`,
+`25-1071.00__5`; Grok `25-4022.00__6` (G1), `53-3033.00__2` (G2), `49-3011.00__2` (G3), `25-2011.00__2` (G4).
+All eight pass the finalize checks rerun read-only; hashes unchanged at 17:36. None was read by R.
+
+Since the 15:2x checkpoint Opus re-finalized 80 older files and added 72; Sol added 84 and re-finalized none. So
+Opus before/after rates by finalize time now mix revisions with new work, and Q reports samples instead.
+
+**Uptake.** Seeded samples (`batch3-Q-round4-targets-20261016`) from files finalized after 15:35:
+- Opus face-to-face cuts: three explained (`31-1131.00__2:19333/s6`, `37-1011.00__3:9517/s2`,
+  `29-2055.00__2:15245/s1`), two partly (`25-2021.00__9:6568/s7` card goes to parents only, no authoring step;
+  `35-3011.00__2:2238/s1` till note has no machine step), one unsupported (`21-2021.00__1:12983/s3` a contact list
+  does not shorten booking venues by phone).
+- Sol zero-saving tasks: 157 of 299 tasks (53%) in files new since 15:2x, against 36% for 13:40-15:35. Sample of
+  six: three honest (`25-1121.00__5:6279`, `39-3031.00__1:5099`, `29-2043.00__1:22870`), three under-decomposed
+  (`31-9096.00__1:4316` concern note for the vet inside the exam; `29-2056.00__3:18549` feedback write inside an
+  in-person step; `53-6031.00__1:10712` till entry inside s1).
+- Opus `35-3011.00__2:2239` (now `24699eec72fa`) is fixed: s5 writes the menu and allergen text before s4, and a1
+  binds publishing to that version. Grok `41-2011.00__4:2416` is unchanged (`61dac988d7f8`).
+
+**New pattern: Grok G3 list-step template.** In 21 G3 files finalized 11:58-16:25, 49 tasks contain a "List/Show
+<fields> from <system>" step at configure rung, fate machine, 0% remaining, authority read; in 36 of them it is the
+only cut, so net saving equals its 4-12% share minus 0.2-0.3h upkeep. The design frame recurs: "The <record> in
+{SLOT} lists <A, B and C> only when <those fields> are already stored. She still <does the task> herself"; later
+files "{DOCS} lists the stored <X> before she <Y>"; the assumption "That capture is outside this task and is not
+counted as time saved" (21 tasks verbatim). A targeted read of five tasks (`21-1021.00__4:252`,
+`39-9032.00__2:2390`, `29-1123.00__3:369`, `25-9044.00__4:10966`, `31-9096.00__3:4307`) and the full read of
+`49-3011.00__2` find the same defect each time: the existing system already shows the list, the person still opens
+and reads it, and the baseline ("hunting", "paging", "re-reading the rota") is invented; in `:4307` a 0% read of
+drug, dose and route before drawing up is also unsafe. Judged as templated (redo). G3's seven files after 16:25
+do not use it. Files: `47-2031.00__2`, `21-1021.00__4`, `39-9032.00__2`, `29-1171.00__2`, `29-1123.00__3`,
+`41-2022.00__4`, `37-1011.00__4`, `25-9031.00__2`, `37-1012.00__5`, `35-1011.00__1`, `25-9044.00__4`,
+`29-2072.00__3`, `51-3092.00__3`, `47-2181.00__1`, `29-2053.00__1`, `31-9011.00__1`, `19-5011.00__4`,
+`47-2141.00__1`, `21-1022.00__2`, `49-3011.00__2`, `31-9096.00__3`. Q's round-3 `35-1011.00__1` has the step in all
+four tasks and is revised to redo.
+
+**G1 filing saving (watch).** 14 of G1's 43 tasks since 15:30 end in a machine step that "files the accepted X"
+at 0%, usually after "Accept/Confirm the X" and "Draft an unsaved X" steps. Splitting draft from gated release is
+what R's cycle alerts asked for. But in `25-4022.00__6` the filing is not today's work (the handout "sat in her own
+notes", faults "stayed in her memory"), and the approvals are the librarian approving her own plain save. One file
+read; not yet a template finding.
+
+Findings per file:
+
+- **opus `49-1011.00__1` (fix).** `:15262` the design's reorder proposal and the send of confirmed lines to
+  {PROCUREMENT} have no step; s2 confirms a requisition under draft authority; s6 cuts a facilities call by 40%
+  for a form that takes as long. `:2914/s5` relies on coaching notes kept through the year that no step writes.
+  `:15263/s2` cuts a step that holds the physical gear exam to change a due-date lookup; s3's system actions have
+  no step. Strengths: hazard walk, coaching and inspection at 100%; works-council limits shape the design.
+- **opus `25-1072.00__7` (fix).** `:6143/s6` the gated final proposal does not take the research plan as input;
+  `:6144/s4` the board's activity plan and budget have no producer edge and the form check has no step;
+  `:21122/s1` a machine prefill folded into person_does. Talks and meetings labelled write_internal. Range bases
+  scale by size only. Strengths: gross matches the steps; gates bind final versions; the one loop checks prose.
+- **sol `51-4041.00__2` (fix).** `:20296/s2` the maintenance escalation write and the spec and fault-history
+  lookups sit inside the in-person diagnosis, so the zero is untested; `:20297/s2` the written recommendation sits
+  inside a 90% judgement step. `:3112` honest zero but act_external for internal colleagues. Strengths: small cuts
+  on touched steps only; honest E1 evidence.
+- **sol `25-1071.00__5` (fix, light).** `:6118/s2` the 25% cut rests on an assumed re-entry of actions, sized at
+  30% of all admin; `:6118/s3` act_external for colleagues; three low bounds are an upkeep formula, not a scenario.
+  `:6121` honest zero. Strengths: delivery and research design at 100%; loop checks claims against sources; [S22]
+  cited under legal.
+- **Grok `25-4022.00__6` (G1, fix).** `:22436/s5-s6` and `:22421/s5-s6` cut filing that the file's own blockers say
+  does not happen today; all four approvals are the librarian approving her own save; `:22436` the handout and
+  agreed time are written after the session. The reader proposed redo; Q keeps fix because each task's work steps
+  follow its statement and only the filing idiom repeats.
+- **Grok `53-3033.00__2` (G2, fix).** `:8621` the cash sheet and receipt filing come after the hand-in that needs
+  them; the POS card total has no step; `:8622/s3` the hours check is cut 30% though the design keeps it;
+  already_counted lists every unchanged step; [S12] fine graded E3 case instead of legal. Finalized 12:09, before
+  the posted-line window; no template. Strengths: counts, walks and calls kept whole; task-specific ranges.
+- **Grok `49-3011.00__2` (G3, redo).** `:9972`, `:9961`, `:9982` are the list-step template (4% "List" step to 0%,
+  the O*NET work at 96% and 100%, identical upkeep, range and wording); `:9982` assumes an electronic tech log the
+  blocker says is paper. `:9968` s3 files requisition v1 before the s4 check (cycle) and no step keys the parts.
+- **Grok `25-2011.00__2` (G4, fix).** `:6469/s1` cuts a "hunt through the plan book" the blocker says does not
+  happen; `:6471/s1` opens the child's note before s2 identifies the child; `:6482/s1` the attendance tick is folded
+  into the door handover with no system. write_internal on in-person decisions. The previous-cycle inputs flagged
+  by the scan are stated loops (false positives). Strengths: no model judges a child; producers and fallbacks named.
+
+Next round about 19:40.
+
 ## Verdicts
 
 | File | Label | Pane | Round | Verdict | sha256[:12] | Reason |
@@ -295,5 +379,13 @@ Next round about 17:30.
 | 25-9044.00__3 | sol-6.1 | S1 | 3 | fix | df4040b04e5e | 10971/s3 supplier order ungated, authorization no producer; 10958/s1 draft/approve/publish in one step |
 | 35-2021.00__2 | grok-4.7 | G1 | 3 | fix | d301dbba3608 | 2216/s4 post repeats s2 write; 2222/s2 needless loop, clerk keying uncounted; already_counted on baseline |
 | 25-3021.00__7 | grok-4.7 | G2 | 3 | fix | 9f0f7bf9c0b0 | 8686/8689 cuts shift work to studio lead uncounted; 8691 checklist after evaluation, tick replaces paragraph |
-| 35-1011.00__1 | grok-4.7 | G3 | 3 | fix | 11c8eeea2ed2 | 11129/11132/11135 invented look-up hunts cut to 0%; 11131 count no structured producer, send folded in |
-| 41-2022.00__1 | grok-4.7 | G4 | 3 | redo | b9b4f063b216 | G4 paper-card template in all four tasks: s1 read-the-card stays_manual cut to 60%, invented baseline |
+| 35-1011.00__1 | grok-4.7 | G3 | 3 | redo | 11c8eeea2ed2 | Revised round 4 (was fix): all four tasks carry the G3 list-step template; invented look-up hunts cut to 0% |
+| 41-2022.00__1 | grok-4.7 | G4 | 3 | redo | b9b4f063b216 | G4 paper-card template in all four tasks: s1 read-the-card stays_manual cut to 60%; lead moved it to runs/g4-rejected-b3 |
+| 49-1011.00__1 | opus-5.5 | O1 | 4 | fix | f8f06727a2de | 15262 reorder proposal and PROCUREMENT send no step, s6 call cut 40%; 2914/s5 notes no producer; 15263/s2 mixed |
+| 25-1072.00__7 | opus-5.5 | O1 | 4 | fix | dd9b05bbd6c8 | 6143/s6 gated proposal lacks research plan input; 6144/s4 board plan no producer, form check no step |
+| 51-4041.00__2 | sol-6.1 | S1 | 4 | fix | 519c93013524 | 20296/s2 escalation write and spec lookup folded into diagnosis; 20297/s2 written recommendation folded in |
+| 25-1071.00__5 | sol-6.1 | S1 | 4 | fix | 24f6b309a43c | 6118/s2 cut rests on assumed re-entry; act_external for colleagues; low bounds a formula; 6121 honest zero |
+| 25-4022.00__6 | grok-4.7 | G1 | 4 | fix | 11a4f2bbae9e | 22436/22421 filing cut where nothing is filed today; self-approvals of a plain save; handout after session |
+| 53-3033.00__2 | grok-4.7 | G2 | 4 | fix | 133fa215db80 | 8621 cash sheet after hand-in, POS total no step; 8622/s3 kept check cut 30%; already_counted on all steps |
+| 49-3011.00__2 | grok-4.7 | G3 | 4 | redo | a03bd6dad4f9 | G3 list-step template in 9972/9961/9982 (4% List step to 0%, still read); 9968 cycle, no parts keying step |
+| 25-2011.00__2 | grok-4.7 | G4 | 4 | fix | c11a84386343 | 6469/s1 invented plan-book hunt; 6471/s1 note before the child is identified; 6482/s1 attendance tick folded in |
