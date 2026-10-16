@@ -2,11 +2,11 @@
 
 | Model | fix | good | redo | Reviewed files |
 |---|---:|---:|---:|---:|
-| grok-4.7 | 8 | 0 | 0 | 8 |
-| opus-5.5 | 7 | 1 | 0 | 8 |
-| sol-6.1 | 3 | 5 | 0 | 8 |
+| grok-4.7 | 10 | 0 | 0 | 10 |
+| opus-5.5 | 9 | 1 | 0 | 10 |
+| sol-6.1 | 4 | 6 | 0 | 10 |
 
-Through round 4: **18 fix, 6 good, 0 redo** across 24 files, 89 tasks and 412 steps, including one revised round-2 verdict. Savings remain provisional. Samples differ by job; these counts do not establish a model quality ranking.
+Through round 5: **23 fix, 7 good, 0 redo** across 30 files, 110 tasks and 495 steps, including one revised round-2 verdict. Savings remain provisional. Samples differ by job; these counts do not establish a model quality ranking.
 
 ## Review protocol and continuation
 
@@ -272,3 +272,73 @@ Frozen family paths: `25-1011.00__1`, `25-1121.00__1`, `25-1194.00__3`, `25-2012
 Round 4: **4 fix, 2 good, 0 redo**. Cumulative: **18 fix, 6 good, 0 redo**, 24 distinct sampled files, 89 tasks, 412 steps. Supplemental pattern/repair checks are excluded from those totals.
 
 Next scheduled round: **16 October 2026, 19:16 CEST**. All round-4 sample slots filled; continue every two hours through Sunday 23:59 CEST.
+
+
+## Round 5 — 16 October 2026, 19:16–19:22 CEST
+
+Selection at 19:16:29, two new files per model, sorted eligible paths:
+
+- `batch3-R-round5-grok-4.7-20261016`: 133 passes, 126 eligible.
+- `batch3-R-round5-opus-5.5-20261016`: 302 passes, 294 eligible.
+- `batch3-R-round5-sol-6.1-20261016`: 316 passes, 308 eligible.
+
+Read 21 original statements and 83 steps against the prompt contract and batch-2 defects. Compared source claims with the supplied 29-1, 31-9, 25-9, 49-9, 51-4 and 25-4 digests; no fresh source or legal verification. All six pass read-only `fleet_v3.checks` with their exact prompt task sets plus `template_checks`; selection hashes remain unchanged.
+
+| File | Verdict | Findings |
+|---|---|---|
+| `runs/v5/grok-4.7/29-1122.01__5.json` | fix | :17342/s3,s5 and :17343/s3,s5 label today's actor as system while assigning positive focal-role baseline shares (6h and 5h). Assumptions say she writes these notes today. Name that human baseline actor, with machine as the future fate; if the system already does it today, its runtime earns no labour saving. Clinical interpretation and Braille instruction remain fully human; the note/plan semantic checks and exact accepted-version filing gates are sound. |
+| `runs/v5/grok-4.7/31-9096.00__2.json` | fix | All four evidence entries call ordinary model-knowledge workflow/design claims survey. They are E1, but none describes a survey; use the appropriate capability kind. The zero-saving designs honestly retain watching, recording, advising, file maintenance, physical stock checks and billing work. No requirement to invent automation merely to obtain a saving. |
+| `runs/v5/opus-5.5/25-9044.00__2.json` | fix | :10960/s1 checks objective-tag/key presence and duplicate wording, then says the assistant edits every question. Explicitly check factual correctness, answer-key correctness and actual objective alignment. The lecturer review is counted, but no approval record binds its exact approved exam to s3's machine production; represent that claimed approval in the contract. :10959/:10960/:20878 range bases describe mostly manual work without specific low/high operating scenarios. Proctoring and teaching stay full; the other task's exact guide and invitation gates are present. |
+| `runs/v5/opus-5.5/49-9041.00__1.json` | fix | :11821/s3's loop requires the operator's typed account, but s4 obtains that account later. Move the interview before the search or name an existing earlier producer, and expose that dependency in step inputs. Typed capture has an incremental allowance, so this is not an unpaid-capture finding. :11822's machine work-order close relies on a confirmation described inside note drafting, with no exact-version approval reference: separate and bind the confirmation/commit. :11824/s4 reduces supplier quote gathering to 40% without a stated price/delivery retrieval mechanism; parts and stock lookup alone do not explain it. |
+| `runs/v5/sol-6.1/51-4033.00__1.json` | good | Grinding observation/adjustment, studying instructions, selecting tools and physical repair/engineering notification remain fully retained. No invented paperwork or search baseline. Zero saving and zero upkeep follow from adding no system. The repair boundary excludes engineering decisions and formal return-to-service. Supplied monitoring capability is not treated as proof of autonomous diagnosis. |
+| `runs/v5/sol-6.1/25-4031.00__7.json` | fix | :1718/s3 combines final content review with release to the group, and a1 makes s3 approve itself. This is a counted manual approval, not a time-travel cycle; nevertheless split the decision and release artefact boundary within the existing 20h, binding release to the reviewed version. Source/metadata capture is explicitly budgeted in s1; abstract review checks meaning, findings, limits and relevance; scenarios and upkeep are explicit. Physical document delivery remains full. |
+
+### Structural scan
+
+Frozen at 2026-10-16T19:16:29+02:00: **751 files, 2,655 tasks, 10,312 steps**. Follow-up checks found no changed frozen hashes.
+
+| Model | Files | Tasks | Steps | Distinct task-step texts | Full shapes | Economic shapes | Largest coarse group |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| grok-4.7 | 133 | 459 | 2133 | 459 | 458 | 434 | 48 |
+| opus-5.5 | 302 | 1063 | 5545 | 1063 | 1063 | 1057 | 22 |
+| sol-6.1 | 316 | 1133 | 2634 | 1129 | 1030 | 482 | 283 |
+
+No repeated adjacent text pair. Sol's three exact manual-duty groups are the previously read collaboration, campus-event and encouragement actions; they remain legitimate repetitions. Coarse numerical groups alone are not a template finding.
+
+Nine confirmed Grok approval cycles remain from round 4, across four files:
+
+- `25-1121.00__4`: :6276/s4→s5, :6278/s3→s4, :6280/s3→s4.
+- `25-2032.00__1`: :6674/s3→s4, :6681/s3→s4.
+- `39-3031.00__3`: :5106/s3→s4, :5112/s3→s4, :20768/s3→s4.
+- `41-2011.00__4`: :2416/s5→s6.
+
+The other round-4 paths are no longer the same passed versions; removal or regeneration is not automatically a verified repair. Three prior-version false positives remain scoped as before. Three new Grok approval-output matches are also false positives: `25-1123.00__9/:6333` and `39-5011.00__1/:8061,:8060` reuse the existing draft version's name through review and release. An earlier draft producer exists. Four Opus late-draft candidates are the same distinct-artefact cases cleared in round 4.
+
+Sol `21-1091.00__4/:20237` puts enrolment, session notices and completion recording together in s2, although s3 produces attendance evidence. Its assumptions explicitly intend enrolment before delivery and completion entry afterwards. Split pre-session administration from post-session completion entry, preserving total baseline/retained hours. This is a noncontiguous-step defect, not proof that attendance is invented. Exact-name scanning missed the sample mechanic's operator account because the dependency was only in the loop input: graph scans cannot clear omitted or paraphrased dependencies.
+
+### Shared IDs and quarantine follow-up
+
+New Opus examples assign the same shared ID to different actions. These can incorrectly collapse distinct work in a team roll-up:
+
+- `47-2111.00__2/:2877`: s4 writes the inspection report and s7 sends it to the client; both `inspection-report`. :2885/s4 checks van stock and s7 places the wholesaler order; both `supplier-order-placement`.
+- `35-1012.00__5/:2164`: s7 books the party and s8 sends the guest confirmation; both `reservation-entry`.
+- `53-7065.00__3/:23891`: s5 posts the stock write-down and s8 sends a vendor return request; both `vendor-return-request`.
+
+Supplemental receipts: electrician SHA-256 `f7d0857c22a07d95be62030aa6563c6589ce0fc1792ab11060a54737f64c3bee`; food-service supervisor `9c30fc0118a58209f82fd08d13fdbf9bf1b4ab65eb6f90d60b28df5b764a97d8`; stocker `52ba09ce9e012285179cde931679af0bc463948d88f82aa1df1cbf9f78740eda`. These are structural supplements, outside seeded verdict counts.
+
+The lead quarantined the posted-line family after round 4, then 21 list-step-family files after Q's round-4 alert. R's round-3 physical-therapist sample now exists at `runs/g3-rejected-b3/29-1123.00__3.json`, with exactly the original reviewed SHA-256 `857ea21400d0668c0e143d3bfe96eb23ccd1fb79e23d0548b9a063059cd9156e`. Re-reading confirms two list-only proposals (:377/:369) claim saved human lookup merely by having a machine show existing fields, without demonstrating the old human action is removed or counting new field production. The other two tasks (:374/:375) have task-specific drafting and semantic review. Add the list-family finding to the historical fix verdict; do not automatically turn this mixed four-task file into redo solely because it was quarantined. Quarantine is excluded from the current passed population, while historical sample totals retain their recorded hashes.
+
+No new R sample overlaps Q's completed ledger as checked this round. The resolved teacher-duty disagreement and round-4 authority calibration still apply.
+
+### Receipts and next round
+
+- `runs/v5/grok-4.7/29-1122.01__5.json` SHA-256 `0a9d137e607f3dc56b46f22064eb476cb093a5937b891288895126bad0a9ff36`.
+- `runs/v5/grok-4.7/31-9096.00__2.json` SHA-256 `65ad2a429b4425a4be34ba4d2661375f4cc9b327564ab7de7bc5d9ed8f94722c`.
+- `runs/v5/opus-5.5/25-9044.00__2.json` SHA-256 `f3a04c86b53afcc615143feaf3a1d53c1c870a7d8e68ef53b2fa2652164b28c0`.
+- `runs/v5/opus-5.5/49-9041.00__1.json` SHA-256 `9ec2cb49ebfa4344cc2a2461ed0e39c6904585329d9fd5a05c6e453f89a3723d`.
+- `runs/v5/sol-6.1/51-4033.00__1.json` SHA-256 `8656f2541fd36364a0d33f6f2eab176703261f74724fc11a98da960035d524f7`.
+- `runs/v5/sol-6.1/25-4031.00__7.json` SHA-256 `ec14baee673cfcceec4e8aafad9df5209fbd5a1d16b53757f3cc6efeae2b6679`.
+
+Round 5: **5 fix, 1 good, 0 redo**. Cumulative: **23 fix, 7 good, 0 redo**, 30 distinct sampled files, 110 tasks and 495 steps. Supplemental findings do not enter those counts.
+
+Next scheduled round: **16 October 2026, 21:16 CEST**. All round-5 sample slots filled; continue every two hours through Sunday 23:59 CEST.

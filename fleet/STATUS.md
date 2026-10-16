@@ -496,3 +496,26 @@ MOCKUP-c fixes 2026-10-15 11:57 CEST mockups/c-conversation/index.html — all 3
 2026-10-16 17:37 CEST Q fleet/v5-review/REVIEW-B3-Q.md round 4: 8 files, 7 fix (one light) 1 redo 0 good; Q revised round-3 35-1011.00__1 to redo (G3 template); cumulative 31: 26 fix 2 good 3 redo. Opus 35-3011.00__2:2239 fixed; Opus cut sample 3 explained 2 partly 1 unsupported. Next ~19:40 CEST
 2026-10-16T15:39:50Z S1 250 passed, 0 blocked, last 25-1072.00__2
 17:41 LEAD moved 21 G3 files (11:58-16:25, list-step template per Q ALERT) to runs/g3-rejected-b3/; claims released
+2026-10-16 17:50 CEST O1 235 passed, 0 blocked, last 25-9044.00__4
+2026-10-16T15:55:28Z S1 260 passed, 0 blocked, last 21-1092.00__3
+2026-10-16 18:03 CEST O1 245 passed, 0 blocked, last 29-1031.00__1
+2026-10-16 18:05 G4 10 passed, 0 blocked, last 29-2072.00__3
+2026-10-16T16:10:07Z S1 270 passed, 0 blocked, last 29-1122.00__3
+2026-10-16 18:11 CEST G1 40 passed, 0 blocked, last 39-3011.00__1
+2026-10-16 18:16 CEST O1 255 passed, 0 blocked, last 33-1091.00__1
+2026-10-16 18:22 CEST G3 29 passed, 0 blocked, last 33-1091.00__4
+2026-10-16T16:24:00Z S1 280 passed, 0 blocked, last 19-3033.00__4
+2026-10-16 18:26 CEST O1 263 passed, 0 blocked, last 31-9093.00__1
+2026-10-16T16:39:31Z S1 290 passed, 0 blocked, last 19-4021.00__1
+2026-10-16 18:41 CEST O1 274 passed, 0 blocked, last 29-2081.00__1
+2026-10-16T16:53:37Z S1 300 passed, 0 blocked, last 49-9062.00__3
+2026-10-16 18:54 CEST O1 284 passed, 0 blocked, last 37-3013.00__1
+2026-10-16 19:05 CEST O1 293 passed, 0 blocked, last 47-3013.00__1
+2026-10-16T17:07:38Z S1 310 passed, 0 blocked, last 21-1094.00__4
+2026-10-16 19:16 CEST O1 302 passed, 0 blocked, last 29-2099.01__1
+2026-10-16T17:21:09Z S1 320 passed, 0 blocked, last 29-1011.00__2
+2026-10-16 19:22 CEST R ALERT opus-5.5: shared IDs still collapse different actions: 47-2111__2 :2877 s4 write report/s7 send; :2885 s4 stock check/s7 supplier order; 35-1012__5 :2164 s7 book/s8 confirm; 53-7065__3 :23891 s5 write-down/s8 vendor return. Receipts in fleet/v5-review/REVIEW-B3.md round 5.
+2026-10-16 19:22 CEST R ALERT sol-6.1: 21-1091.00__4 :20237 s2 combines pre-training enrolment/notices with post-training completion entry using attendance from s3. Split lifecycle phases; assumptions intend the right timing but the graph does not.
+2026-10-16 19:22 CEST R ALERT grok-4.7: nine old approval cycles remain in 25-1121__4,25-2032__1,39-3031__3,41-2011__4. New sample 29-1122.01__5 labels today's note-writing actor system with positive focal shares; assumptions say therapist writes today. Keep human baseline and future machine fate distinct.
+2026-10-16 19:22 CEST R fleet/v5-review/REVIEW-B3.md round 5 complete: 6 new files/21 tasks/83 steps; 5 fix,1 good; cumulative 23 fix,7 good,0 redo. Full scan 751 passes/2655 tasks/10312 steps. All sample checks pass; hashes stable. Next 21:16 CEST; weekend review active.
+2026-10-16 19:26 CEST O1 311 passed, 0 blocked, last 29-1229.03__1
