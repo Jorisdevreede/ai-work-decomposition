@@ -1,23 +1,30 @@
 # Batch 3 second review (Q, pane 5, Opus 5.5)
 
-**Running verdict after round 1 (16 Oct 11:23): 7 files read, 6 fix, 1 good, 0 redo.** Too early to rank models:
-different jobs, two or three files each.
+**Running verdict after round 2 (16 Oct 13:30): 15 files read, 13 fix, 2 good, 0 redo.** Not a model ranking:
+different jobs, four to seven files each. All 15 pass the finalize checks; every fix is a semantic defect.
 
 | Model | Files read | Fix | Good | Redo |
 |---|---:|---:|---:|---:|
-| opus-5.5 | 2 | 2 | 0 | 0 |
-| sol-6.1 | 2 | 1 | 1 | 0 |
-| grok-4.7 | 3 | 3 | 0 | 0 |
+| opus-5.5 | 4 | 4 | 0 | 0 |
+| sol-6.1 | 4 | 3 | 1 | 0 |
+| grok-4.7 | 7 | 6 | 1 | 0 |
 
-Open defect classes (round 1):
-- **All models:** a machine/0% step relies on a structured input that no step or contract produces, or whose
-  capture effort is not counted (sold-out flags, discrepancy codes, par levels, structured addresses).
-- **Grok:** in-person steps the design does not touch (listening, telling, taking payment, noticing) lose 15-45%.
-- **Opus:** steps go to machine 0% while the design keeps a scan, a code pick or hand pricing in them;
-  already-counted entries name unchanged core work instead of the review or exception time the design adds.
-- **Sol:** graphs are short (2.8 steps per task) and mostly sound; the one fix is uncounted discrepancy capture.
+Open defect classes (through round 2):
+- **All models:** a step relies on an input no step or contract produces, or a machine action named in the
+  design has no step (ERP send, alert, sheet fill, out-of-service flag); capture effort is not counted.
+- **Opus:** cuts to face-to-face steps the design keeps (24% of its focal in-person/call steps after 11:30, against
+  Grok 6% and Sol 1%); approvals before the final artefact (`29-1141.04__5:20417`, `35-3011.00__2:2239`).
+- **Grok:** the same cuts, falling since the 11:27 forward (16% of such steps before, 6% after); approval cycle
+  `41-2011.00__4:2416` unchanged; loose authority and rung labels.
+- **Sol:** short graphs. About half of its zero-saving tasks are honest; the rest fold a record write or lookup
+  into a conversation step and never test the configure rung (targeted read, 8 tasks: 4 honest, 3
+  under-decomposed, 1 missed change). Mixed steps get guessed cuts.
 
-**R/Q disagreements:** none yet. R has no verdicts at 11:23.
+**R/Q comparison:** four files read by both at the same hash, all fix in both: Grok `41-2011.00__2`,
+`41-2011.00__4`, `41-2011.00__5`, Opus `35-3031.00__2`. One task-level disagreement: Sol `25-2021.00__8`
+(R good) — Q's targeted read finds `:6567` under-decomposed (rota writing and a written evaluation folded into
+conversation steps); Q has not read the rest of that file. On Sol overall, R has 4 good and Q 1 good out of 4, on
+different files: Q fixes mixed-step cuts, uncounted capture and an under-decomposed sale.
 
 ## Method
 
@@ -106,6 +113,79 @@ Findings per file:
 
 Next round about 13:23.
 
+### Round 2 — selected 13:23 CEST, written 13:30
+
+Seed `batch3-Q-round2-20261016`. Finalized passes 211 (grok 52, opus 71, sol 88); unreviewed populations opus
+69, sol 86, grok 50 (G1 12, G2 10, G3 15, G4 13). Selected: opus `29-1141.04__5`, `25-3031.00__2`; sol
+`35-3023.01__1`, `39-3091.00__4`; Grok `41-2011.00__4` (G1), `35-2014.00__1` (G2), `41-2011.00__5` (G3),
+`35-9011.00__1` (G4). All eight pass the finalize checks rerun read-only; 31 task statements checked. Two Grok
+picks were already read by R, which gives an R/Q comparison.
+
+Structural scan at 13:25 over all passes (grok 53 files/178 tasks, opus 72/249, sol 89/320): no repeated step
+sequence; no free-text field (design, blocker, enabler, human edge, altitude, range basis) repeats inside a
+label except Opus altitude "nothing changes" (35), which the method allows. Sol's largest coarse group is 107
+one-step manual tasks. Steps per task: Grok 4.9, Opus 5.9, Sol 2.5. Zero-saving tasks: Grok 12/178, Opus 2/249,
+Sol 173/320; by prior class, Sol leaves 164/276 "human" tasks at zero against Grok 12/145 and Opus 2/207.
+
+Uptake of the 11:27 forward: cut face-to-face focal steps (in person, meeting/call, paper/phone, person_does
+below 100%) fell for Grok from 10/62 before 11:30 to 21/328 after; Opus stayed high, 24/80 before and 130/532
+after; Sol 2/61 and 3/405. The heuristic also counts cuts the design explains, so the rate is an upper bound;
+every Opus file read this round has unexplained ones.
+
+Targeted structural findings (outside the random sample):
+- **Opus `35-3011.00__2:2239` (real).** The bar manager approves menu and prices at s4; s5 then writes menu
+  text with allergen information and s6 publishes it by machine to the till and QR menu under a1. The
+  published allergen text is never approved. Approve after s5, or gate s6 on a review of the menu text.
+- Opus `35-1012.00__5:2161` (minor): the supplier is chosen at s2 after the supervisor's own s1 review that
+  gates the external order. Opus `25-2021.00__9:6572` (acceptable): the leader pre-approves a plan with an
+  explicit scope clause. Four other approval-order hits are false positives (covered by a second approval or a
+  void-on-change clause). R has read the forward-reference hits; Q does not repeat them.
+- **Sol zero-saving tasks**, seed `batch3-Q-round2-solzero-20261016`, 5 of 31 zero tasks with record/order-type
+  statements and 3 of 139 others: honest zero `25-2022.00__7:6597`, `29-2052.00__4:18546`,
+  `47-2111.00__1:2882`, `25-2011.00__6:6491`; under-decomposed `29-1141.01__1:18303` (judgement, record write
+  and handoff in one in-person step), `25-2021.00__8:6567`, `29-1141.02__3:17330` (consultation write folded into
+  a meeting step); missed change `35-3011.00__1:2228` (servers' orders reaching the bar through the existing
+  till, which the digest [S1] describes; the file rejects only QR ordering). 39 of Sol's 173 zero tasks have a
+  full-time conversation or in-person step labelled write/draft.
+
+Findings per file:
+
+- **opus `29-1141.04__5` (fix).** `:20417` the committee approves the draft programme plus comments; no step
+  revises it after the panel and physician reviews, and s7 publishes at 0% with nobody proofing the rendered
+  page. `:18009` the patient agrees the plan before team coordination and physician agreement can change it;
+  s7's cut needs progress charted per goal with no producer. `:18018` [S19] is GDPR art. 22 and does not support
+  the research-basis claim; the deviation calendar has no visit/sample-record input. Strength: `:20417/s3` loop
+  checks meaning (numbers equal the source, no option favoured).
+- **opus `25-3031.00__2` (fix).** `:22393/s4` cuts a physical drop-off of paper tests (80%) the design keeps;
+  `:22402/s1` halves reading duties because it moves to a screen. A boundary note says marking is outside next to
+  a marking step. Incremental 0.3h counts s5's remaining work a second time (understates the saving). Strengths:
+  supervision and teaching stay at 100%; [S#] claims match the digest.
+- **sol `35-3023.01__1` (fix).** `:17591/s2` cuts order entry to 50% for presets although the barista still
+  records every drink and the till already holds modifiers; the saving belongs on s3. `:17584/s1` mixes display
+  reading with probe checks and guesses the split; the central assumes networked controllers are installed.
+  Strength: every range starts from a named zero scenario; input contracts list fields and fallbacks.
+- **sol `39-3091.00__4` (fix).** `:5127` folds the rental/sale transaction into one zero step and puts payment
+  outside the boundary on a "rent, sell" task labelled order-to-cash; split it and price or reject a prepaid
+  add-on. `:5126` zero is honest (attendant at the controls for the whole cycle).
+- **Grok `41-2011.00__4` (G1, fix; R fix).** `:2416` approval cycle remains (gate on s5, witnessed at s6 from
+  s5's output). `:2406` no step issues the trading stamps the statement names; scanning and telling the balance
+  are cut although only keying changes. `:2423` high-value lines post before the review the design promises.
+  `:2412` the ERP send named in the design has no step; reading session totals is cut to 50%.
+- **Grok `35-2014.00__1` (G2, fix).** `:18723`, `:18724`, `:2180` cut store walks, equipment regulation, sight
+  and smell checks, rotation and telling the kitchen lead by 5-30% while the enabler says hands-on work is
+  unchanged; each central is above the file's own best case. The probe alert and the sheet fill have no step.
+  `:2180` [S12] overreads the digest. `:2185` a model reads handwritten delivery notes into the accounts with a
+  check against till sales, which cannot catch a wrong quantity or price.
+- **Grok `41-2011.00__5` (G3, fix; R fix).** `:2414/s3` drops count entry to 0% although the cashier still
+  enters the amount; s4 cuts explaining differences to 35% and writes variance notes under read authority.
+  `:2421` uses a model loop to label the cashier's own notes where a structured form suffices. `:18768` filing a
+  note that may not exist today supplies most of the saving; a1 is approved in the step it gates.
+- **Grok `35-9011.00__1` (G4, good).** Small, explained savings; `:11168` zero is honest; producers and
+  fallbacks for the open check, preset keys and shelf labels. Minor: server check entry may be new other-role
+  work; loose labels (integration with no new system, carrying marked write_internal).
+
+Next round about 15:23.
+
 ## Verdicts
 
 | File | Label | Pane | Round | Verdict | sha256[:12] | Reason |
@@ -117,3 +197,11 @@ Next round about 13:23.
 | 41-2011.00__2 | grok-4.7 | G2 | 1 | fix | a6cc7e2ddada | 2408 s1/s4/s6/s7 and 2419 cut unchanged in-person work; 2405 credits existing self-scan |
 | 37-2011.00__1 | grok-4.7 | G4 | 1 | fix | 39e587425323 | 9544/20590 self-written forms as person_reviews; 9545 par levels no producer, version not voided |
 | 41-2011.00__6 | grok-4.7 | G4 | 1 | fix | 63204c3f9032 | 2413/s4 payment cut; 2424/s2 invented baseline; 2409/s5 filing cut; upkeep scope |
+| 29-1141.04__5 | opus-5.5 | O1 | 2 | fix | 281fc95ec979 | 20417 approves unrevised draft, publish unproofed; 18009 patient agrees pre-final plan; 18018 [S19] miscite |
+| 25-3031.00__2 | opus-5.5 | O1 | 2 | fix | 8eeda01294b3 | 22393/s4 physical drop-off cut; 22402/s1 reading halved for moving to a screen; boundary contradicts steps |
+| 35-3023.01__1 | sol-6.1 | S1 | 2 | fix | 3dd2d527d9d1 | 17591/s2 entry cut while barista still records; 17584/s1 mixed step, guessed split, assumed feeds |
+| 39-3091.00__4 | sol-6.1 | S1 | 2 | fix | cfd5d620f627 | 5127 sale/rental transaction folded into one zero step, payment put outside; 5126 honest zero |
+| 41-2011.00__4 | grok-4.7 | G1 | 2 | fix | 61dac988d7f8 | 2416 approval cycle; 2406 stamp issuing missing, scan/tell cut; 2423 posts before review; 2412 no ERP step |
+| 35-2014.00__1 | grok-4.7 | G2 | 2 | fix | a109c81d2b74 | 18723/18724/2180 cut hands-on steps the design keeps; alert/sheet-fill steps missing; 2185 weak check |
+| 41-2011.00__5 | grok-4.7 | G3 | 2 | fix | d72c0fbb2dd6 | 2414 s3 entry dropped, s4 explain cut + read auth; 2421 needless loop; 18768 filing baseline, self-gate |
+| 35-9011.00__1 | grok-4.7 | G4 | 2 | good | 134d21fa8432 | Small explained savings, honest zero at 11168, named producers; minor label notes |

@@ -431,3 +431,30 @@ MOCKUP-c fixes 2026-10-15 11:57 CEST mockups/c-conversation/index.html — all 3
 2026-10-16 13:26 CEST R fleet/v5-review/REVIEW-B3.md round2 six new files/24 tasks/115 steps: 4 fix, 2 good, 0 redo; cumulative 8 fix/4 good; all-pass scan 200 files/698 tasks, one existing approval cycle; next15:16 CEST
 2026-10-16 13:22:00 CEST R timestamp correction: preceding R round2 receipt and two alerts marked 13:26 were written about 13:22 CEST; content unchanged, next round15:16 CEST.
 2026-10-16T11:26:11Z S1 90 passed, 0 blocked, last 33-3012.00__3
+2026-10-16 13:30 CEST Q fleet/v5-review/REVIEW-B3-Q.md round 2: seed batch3-Q-round2-20261016, 8 files (opus 2, sol 2, grok 4), 31 tasks: 7 fix, 1 good (grok 35-9011.00__1); cumulative 15 files 13 fix/2 good; R/Q agree on all 4 shared files (fix). Targeted: opus 35-3011.00__2:2239 publishes unapproved allergen text; sol zero-saving sample 4 honest/3 under-decomposed/1 missed change. Next round ~15:23.
+2026-10-16 13:30 CEST Q ALERT opus-5.5: still cuts face-to-face steps the design keeps (24% of its in-person/call focal steps after the 11:27 forward; Grok 6%, Sol 1%), and approves drafts before the final version exists. runs/v5/opus-5.5/25-3031.00__2.json (22393/s4, 22402/s1), runs/v5/opus-5.5/29-1141.04__5.json (20417 a1 approves the unrevised draft; 18009/s3), runs/v5/opus-5.5/35-3011.00__2.json (2239 allergen text written after approval, published by machine)
+2026-10-16 13:30 CEST Q ALERT all labels: a machine action named in the design has no step that does it (ERP send, out-of-range alert, sheet fill), so its effort, authority and gate are missing; add the step. runs/v5/grok-4.7/41-2011.00__4.json (2412), runs/v5/grok-4.7/35-2014.00__1.json (18723, 2180), runs/v5/opus-5.5/53-7065.00__3.json (23894)
+2026-10-16 13:30 CEST Q ALERT sol-6.1: before declaring zero, split a record write or lookup out of a conversation or in-person step and say whether a template, native view or till setting touches it; in a seeded sample of 8 zero tasks, 4 hid such a step. runs/v5/sol-6.1/39-3091.00__4.json (5127 sale folded in, payment put outside), runs/v5/sol-6.1/35-3011.00__1.json (2228 server orders via the till), runs/v5/sol-6.1/29-1141.02__3.json (17330)
+2026-10-16 13:34 CEST O1 78 passed, 0 blocked, last 21-1012.00__6
+2026-10-16T11:40:07Z S1 100 passed, 0 blocked, last 51-9111.00__2
+2026-10-16 13:47 G4 20 passed, 0 blocked, last 39-9032.00__4
+2026-10-16 13:48 CEST O1 87 passed, 0 blocked, last 33-3051.00__3
+2026-10-16T11:55:58Z S1 110 passed, 0 blocked, last 29-1051.00__1
+2026-10-16 14:08 CEST O1 97 passed, 0 blocked, last 25-1071.00__4
+2026-10-16T12:09:27Z S1 120 passed, 0 blocked, last 25-1071.00__5
+2026-10-16 14:09 CEST G3 20 passed, 0 blocked, last 29-1123.00__3
+2026-10-16 14:23 CEST O1 107 passed, 0 blocked, last 25-9031.00__6
+2026-10-16T12:27:45Z S1 130 passed, 0 blocked, last 37-1012.00__4
+2026-10-16 14:39 CEST O1 117 passed, 0 blocked, last 25-3041.00__2
+2026-10-16T12:45:36Z S1 140 passed, 0 blocked, last 51-6011.00__1
+2026-10-16 14:55 CEST O1 127 passed, 0 blocked, last 21-1022.00__4
+2026-10-16 14:57 G4 30 passed, 0 blocked, last 21-1022.00__2
+2026-10-16 15:00 CEST G1 20 passed, 0 blocked, last 21-1022.00__1
+2026-10-16T13:04:19Z S1 150 passed, 0 blocked, last 51-3092.00__2
+2026-10-16 15:08 CEST O1 137 passed, 0 blocked, last 51-9161.00__4
+2026-10-16 15:20:26 CEST R ALERT grok-4.7: seven new approval cycles gate drafts/calculations on later checks consuming their output; move gate to acceptance/commit/release. Examples 25-1071.00__2/:6101/:6105, 29-2072.00__3/:22884; all seven in R ledger runs/v5/grok-4.7/25-1071.00__2.json
+2026-10-16 15:20:26 CEST R ALERT sol-6.1: separate document/approval writes from meetings and external handoffs, even at zero or full retained time. Q duty-note finding accepted (25-2021.00__8/:6567 good revised fix); crew assignment/communication also bundled runs/v5/sol-6.1/49-9041.00__2.json
+2026-10-16 15:20:26 CEST R ALERT opus-5.5: self-service transfers still lack customer effort; booking by patients is outside focal denominator but must be represented/priced, repeating reservation-entry finding runs/v5/opus-5.5/29-2072.00__4.json
+2026-10-16 15:20:26 CEST R fleet/v5-review/REVIEW-B3.md round3 six new files/20 tasks/82 steps: 5 fix/1 good; one earlier good revised fix after Q; cumulative14 fix/4 good; all-pass399 files/1417 tasks, eight confirmed Grok cycles; next17:16 CEST
+2026-10-16 15:20 CEST O1 146 passed, 0 blocked, last 33-1012.00__2
+2026-10-16T13:21:59Z S1 160 passed, 0 blocked, last 33-1012.00__3

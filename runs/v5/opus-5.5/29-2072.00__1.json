@@ -1,0 +1,1115 @@
+{
+ "job_code": "29-2072.00",
+ "tasks": [
+  {
+   "uid": "29-2072.00:22890",
+   "short": "Check each record for missing documents and fields, check that coded diagnoses match the notes, ask clinicians to complete items, follow up overdue ones and report audit results.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Medical records specialist reviews records for completeness of mandatory documents and fields",
+     "actor": "medical records specialist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "discharged records"
+     ],
+     "outputs": [
+      "completeness flags"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "audit-and-controls",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Medical records specialist checks the accuracy of coded diagnoses against the notes",
+     "actor": "medical records specialist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "discharged records"
+     ],
+     "outputs": [
+      "accuracy flags"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "The coded diagnoses and procedures and the discharge letter of one record.",
+      "output": "A match or mismatch per code, quoting the sentence it rests on.",
+      "check": "Code accepts only codes present in the record; the specialist confirms every mismatch before it goes to a clinician.",
+      "stop": "One pass per record; unclear records go to the specialist unflagged.",
+      "why_not_simpler": "Diagnoses are written as free text; rules cannot compare them with codes."
+     },
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "audit-and-controls",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Medical records specialist e-mails clinicians to complete missing items",
+     "actor": "medical records specialist",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "completeness flags",
+      "accuracy flags"
+     ],
+     "outputs": [
+      "clinician tasks"
+     ],
+     "handoff_to": "clinician",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Medical records specialist follows up records still incomplete after the deadline",
+     "actor": "medical records specialist",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "clinician tasks"
+     ],
+     "outputs": [
+      "records completed"
+     ],
+     "handoff_to": "clinician",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "audit-and-controls",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Medical records specialist logs audit results in a spreadsheet for compliance with regulations",
+     "actor": "medical records specialist",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "records completed"
+     ],
+     "outputs": [
+      "audit report"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "audit-and-controls",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "Rules in the patient record system ({OTHER}) check every discharged record for missing signatures, consent forms, letters and codes, and the specialist reviews the flags. A bounded step compares coded diagnoses with the discharge letter and quotes the sentence for each mismatch; the specialist confirms each one. Confirmed items become tasks in the clinician's worklist, and an audit dashboard replaces the spreadsheet. Following up overdue items stays with the specialist.",
+   "previous_blocker": "Records were opened one by one and gaps chased by e-mail.",
+   "enabler_now": "Record systems run completeness rules, and models can compare codes with clinical text.",
+   "still_hard": "Clinicians ignore worklist tasks when busy; follow-up stays personal.",
+   "human_edge": "Knowing which consultant responds to a quiet word rather than a reminder.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The specialist reviews flags instead of opening every record.",
+   "reach": [
+    {
+     "role": "clinical coder",
+     "task": "Correct codes",
+     "learn": "Whether mismatch flags cut coding errors."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "2-4",
+    "testing_rollout": "3-6",
+    "consent_and_access": "3-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "DHD codes day admissions to ICD-10 from clinical text in 32 hospitals.",
+     "grade": "E2",
+     "source": "[S9]",
+     "kind": "capability"
+    },
+    {
+     "claim": "The dossier is kept 20 years and patients may ask who viewed it.",
+     "grade": "E1",
+     "source": "[S15]",
+     "kind": "legal"
+    },
+    {
+     "claim": "Large-scale processing of health data needs a DPIA.",
+     "grade": "E1",
+     "source": "[S25]",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "Boundary: from discharged records to the audit report; correcting clinical content is outside.",
+    "Input contract: completeness rules set by the medical records manager; codes from the coding team; fallback is opening records by hand.",
+    "Following up overdue items does not change.",
+    "Clinicians' time is outside the specialist's savings."
+   ],
+   "unknowns": [
+    "Records reviewed per day."
+   ],
+   "research_questions": [
+    "How many mismatch flags does the specialist confirm?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Medical records specialist reviews completeness flags.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 5,
+      "counted_step_ids": [
+       "s1"
+      ]
+     },
+     {
+      "description": "Medical records specialist confirms mismatch flags.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 3,
+      "counted_step_ids": [
+       "s2"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Medical records specialist keeps the check rules current.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 25,
+    "high": 42,
+    "basis": "Hospitals with many free-text records save less."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 64.5,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 63.5,
+   "speedup": 2.739726,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "29-2072.00:22891",
+   "short": "Prepare paper documents, scan them, link each scan to the patient and document type, check scan quality and log the batch.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Medical records specialist sorts and prepares paper documents for scanning",
+     "actor": "medical records specialist",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "paper documents"
+     ],
+     "outputs": [
+      "prepared batch"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Medical records specialist scans patients' health records into electronic formats",
+     "actor": "medical records specialist",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "prepared batch"
+     ],
+     "outputs": [
+      "scanned pages"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Medical records specialist links each scan to the patient and document type",
+     "actor": "medical records specialist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "scanned pages"
+     ],
+     "outputs": [
+      "indexed scans"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "integration",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Scanned pages without a barcode label.",
+      "output": "Patient number, date of birth, date and document type per page.",
+      "check": "Code accepts the link only if patient number and date of birth match one patient in the record system and the type is on the list; anything else goes to the specialist.",
+      "stop": "One pass per page; no match means the specialist links it.",
+      "why_not_simpler": "Letters from outside carry no barcode, and their layout varies."
+     },
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Medical records specialist checks scans for legibility and missing pages",
+     "actor": "medical records specialist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "indexed scans"
+     ],
+     "outputs": [
+      "checked scans"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Medical records specialist logs the batch and sets the paper aside for destruction",
+     "actor": "medical records specialist",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "checked scans"
+     ],
+     "outputs": [
+      "batch log"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "More referrals and letters arrive electronically, so less paper needs preparing. Documents printed in the hospital carry a barcode label that links the scan automatically; for outside letters, a bounded step reads patient number, date of birth and document type and links only when they match one patient, otherwise the specialist links it. The scanner flags blank or skewed pages, and the batch log fills from the scan run. Preparing and scanning stay with the specialist.",
+   "previous_blocker": "Every scan was linked to a patient by hand.",
+   "enabler_now": "Scan software reads barcodes and text, and record systems can match patients.",
+   "still_hard": "Handwritten and old documents are hard to read and still linked by hand.",
+   "human_edge": "Spotting a document filed under the wrong patient with the same name.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The specialist handles exceptions instead of linking every scan.",
+   "reach": [
+    {
+     "role": "outpatient secretary",
+     "task": "File incoming letters",
+     "learn": "Whether automatic linking cuts filing backlogs."
+    }
+   ],
+   "build_days": {
+    "coding": "1-3",
+    "integration": "2-4",
+    "testing_rollout": "2-4",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Scan software reads barcodes and printed text and can match pages to patients in the record system.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "Health data are special category data under the GDPR.",
+     "grade": "E1",
+     "source": "[S24]",
+     "kind": "legal"
+    },
+    {
+     "claim": "Fax is banned for sharing medical data.",
+     "grade": "E1",
+     "source": "[S15]",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "Boundary: from paper documents to the batch log; destroying paper is outside.",
+    "Input contract: barcode labels printed by the record system; outside letters from referrers; fallback is linking by hand.",
+    "Preparing and scanning do not change much.",
+    "No page is linked without a patient match."
+   ],
+   "unknowns": [
+    "Pages scanned per day."
+   ],
+   "research_questions": [
+    "Do misfiled scans fall?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Medical records specialist links pages with no match.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Medical records specialist keeps barcode labels and document types current.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 10,
+    "high": 20,
+    "basis": "Handwritten and old documents still need hand linking."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 34.0,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 33.0,
+   "speedup": 1.492537,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "29-2072.00:22887",
+   "short": "Log record requests, check the requester's identity and right to the records, decide what may be released, compile the documents, send them securely and register the release.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Medical records specialist logs requests for records from patients, lawyers and agencies",
+     "actor": "medical records specialist",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "record request"
+     ],
+     "outputs": [
+      "request log"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Medical records specialist checks the requester's identity and authorisation",
+     "actor": "medical records specialist",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "request log"
+     ],
+     "outputs": [
+      "requester checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Medical records specialist decides what information may be released according to regulations",
+     "actor": "medical records specialist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "requester checked"
+     ],
+     "outputs": [
+      "release decision"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Medical records specialist compiles the requested documents from the record",
+     "actor": "medical records specialist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "release decision"
+     ],
+     "outputs": [
+      "release package"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Medical records specialist posts or e-mails the records to the requester",
+     "actor": "medical records specialist",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "release package"
+     ],
+     "outputs": [
+      "records released"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "compliance-and-risk",
+     "approver": "medical records specialist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
+     "id": "s6",
+     "what": "Medical records specialist registers the release in the disclosure log",
+     "actor": "medical records specialist",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "records released"
+     ],
+     "outputs": [
+      "disclosure record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "Requests come in through a form in the patient portal ({OTHER}) or by secure mail and land in a request log with deadlines. The specialist checks identity and authorisation and decides what may be released; the record system then builds a package from the chosen document types and dates. Once the specialist has checked the package, it goes out by secure mail and the release is written to the disclosure log.",
+   "previous_blocker": "Requests came by post, e-mail and fax, packages were printed and releases logged in a spreadsheet.",
+   "enabler_now": "Patient portals take requests, and record systems export selected documents for secure sending.",
+   "still_hard": "Requests from third parties often lack consent or a clear legal basis.",
+   "human_edge": "Noticing that a request from an ex-partner is not authorised.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Nothing changes in decision rights.",
+   "reach": [
+    {
+     "role": "privacy officer",
+     "task": "Handle access requests",
+     "learn": "Whether a disclosure log speeds up audits."
+    }
+   ],
+   "build_days": {
+    "coding": "0-2",
+    "integration": "2-4",
+    "testing_rollout": "1-3",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Patient portals take record requests, and record systems export selected documents for secure sending.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "Medical data must be shared securely; fax is banned for sharing.",
+     "grade": "E1",
+     "source": "[S15]",
+     "kind": "legal"
+    },
+    {
+     "claim": "Health data are special category; processing them needs an exception.",
+     "grade": "E1",
+     "source": "[S24]",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "Boundary: from the request to the disclosure record; disputes are outside.",
+    "Input contract: requests from patients and third parties through the portal or secure mail; release rules set by the privacy officer; fallback is post.",
+    "Checking and deciding do not change.",
+    "No AI decides on release."
+   ],
+   "unknowns": [
+    "Requests per week."
+   ],
+   "research_questions": [
+    "Are requests answered within the legal term more often?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Medical records specialist checks each package.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 3,
+      "counted_step_ids": [
+       "s4"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Medical records specialist helps requesters who cannot use the portal.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5",
+     "approved_version": "The package as checked by the specialist in s4; changes need a new check before sending.",
+     "approval_step_id": "s4",
+     "approver": "medical records specialist"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 12,
+    "high": 22,
+    "basis": "Checking identity and deciding stay manual."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 39.0,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 38.0,
+   "speedup": 1.612903,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "29-2072.00:22880",
+   "short": "Find diagnosis, stage and treatment in the record, enter demographics, procedures and treatment dates, code the diagnosis and ask clinicians about gaps.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Medical records specialist reads the record for history and extent of disease",
+     "actor": "medical records specialist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "patient record"
+     ],
+     "outputs": [
+      "disease details"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "integration",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "The pathology report, imaging reports and clinic letters of one patient.",
+      "output": "Proposed diagnosis date, stage and extent fields, each with the sentence it comes from.",
+      "check": "Code accepts only values on the registry's code lists and dates inside the care episode; the specialist confirms every field.",
+      "stop": "One pass per patient; empty or conflicting fields go to the specialist.",
+      "why_not_simpler": "Stage and extent are written in free text in reports."
+     },
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Medical records specialist enters demographic characteristics into the computer",
+     "actor": "medical records specialist",
+     "today_means": "system_screen",
+     "systems": [
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "patient record"
+     ],
+     "outputs": [
+      "demographic fields"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Medical records specialist enters diagnostic procedures and treatment dates",
+     "actor": "medical records specialist",
+     "today_means": "system_screen",
+     "systems": [
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "disease details"
+     ],
+     "outputs": [
+      "treatment fields"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Medical records specialist codes the diagnosis",
+     "actor": "medical records specialist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "disease details"
+     ],
+     "outputs": [
+      "diagnosis code"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "The clinical text of the admission.",
+      "output": "An ICD-10 code with a confidence score.",
+      "check": "Codes above the hospital's confidence threshold are accepted; all others go to the specialist; a sample of accepted codes is audited.",
+      "stop": "One code proposal per admission.",
+      "why_not_simpler": "Diagnoses are written in free text that rules cannot map to codes."
+     },
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Medical records specialist asks the clinician about missing or unclear details",
+     "actor": "medical records specialist",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "treatment fields",
+      "diagnosis code"
+     ],
+     "outputs": [
+      "details clarified"
+     ],
+     "handoff_to": "clinician",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "Demographics, procedures and treatment dates flow from the patient record system ({OTHER}) into the registry form ({PARTNER_PORTAL}) for the specialist to check. A bounded step proposes stage and extent from the reports with the source sentence, and the specialist confirms every field. A coding step proposes the diagnosis code; codes above the hospital's threshold pass, the rest go to the specialist. Asking clinicians stays with the specialist.",
+   "previous_blocker": "Every field was read from reports and typed into the registry by hand.",
+   "enabler_now": "Record systems export structured data, and coding services propose codes from clinical text.",
+   "still_hard": "Accuracy differs per specialty; thresholds need local checking.",
+   "human_edge": "Seeing that two reports describe the same tumour differently.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The specialist confirms proposed fields and codes instead of entering them.",
+   "reach": [
+    {
+     "role": "clinical coder",
+     "task": "Code admissions",
+     "learn": "Whether thresholds hold across specialties."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "3-6",
+    "testing_rollout": "3-6",
+    "consent_and_access": "3-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "DHD codes 65% of day admissions with high certainty; codes above 70% skip the coder and are 85 to 90% correct; Rijnstate reached 72% automatic (provider figures).",
+     "grade": "E3",
+     "source": "[S9]",
+     "kind": "case"
+    },
+    {
+     "claim": "Logging coder corrections can count as staff monitoring under the works council rules.",
+     "grade": "E1",
+     "source": "[S27]",
+     "kind": "legal"
+    },
+    {
+     "claim": "Large-scale processing of health data needs a DPIA.",
+     "grade": "E1",
+     "source": "[S25]",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "Boundary: from the patient record to clarified details; registry analysis is outside.",
+    "Input contract: structured data from the record system; code lists from the registry; fallback is typing by hand.",
+    "Asking clinicians does not change.",
+    "Clinicians' time is outside the specialist's savings."
+   ],
+   "unknowns": [
+    "Registrations per week."
+   ],
+   "research_questions": [
+    "Which share of codes passes the threshold here?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Medical records specialist confirms proposed fields.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 5,
+      "counted_step_ids": [
+       "s1"
+      ]
+     },
+     {
+      "description": "Medical records specialist checks transferred treatment dates.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2,
+      "counted_step_ids": [
+       "s3"
+      ]
+     },
+     {
+      "description": "Medical records specialist codes admissions below the threshold.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 3,
+      "counted_step_ids": [
+       "s4"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Medical records specialist audits a sample of accepted codes.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 20,
+    "high": 38,
+    "basis": "Specialties with low coding confidence save less."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 61.5,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 60.5,
+   "speedup": 2.531646,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "The medical records specialist keeps release decisions, follow-up and judgement on unclear records; opening every record, linking scans and typing fields shrink.",
+  "reach": [
+   "Clinical coders' work",
+   "Privacy officers' access requests"
+  ],
+  "skills_to_grow": [
+   "Reviewing flags and proposed codes",
+   "Auditing coding samples"
+  ],
+  "ambitious_version": "A records team that reviews exceptions and audits samples instead of handling every record."
+ },
+ "_meta": {
+  "model": "opus-5.5",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "29-2072.00",
+   "title": "Medical Records Specialists",
+   "tasks": 15,
+   "all_tasks": 16,
+   "function": "Healthcare",
+   "employment_share": 200700.0,
+   "uids": [
+    "29-2072.00:22890",
+    "29-2072.00:22891",
+    "29-2072.00:22887",
+    "29-2072.00:22880",
+    "29-2072.00:22882",
+    "29-2072.00:22885",
+    "29-2072.00:22889",
+    "29-2072.00:22888",
+    "29-2072.00:22878",
+    "29-2072.00:22881",
+    "29-2072.00:22877",
+    "29-2072.00:22884",
+    "29-2072.00:22879",
+    "29-2072.00:22893",
+    "29-2072.00:22892"
+   ]
+  },
+  "digest": "research/digests-minor/29-2.md",
+  "digest_sha256": "b8bd66fb5c85e7c8a1fa26f1cded445238cbc7e74ade18211b6edeb0116b4232",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-16T14:51:38"
+ }
+}
