@@ -14,6 +14,7 @@ Your pane id and label:
 | 4 | O1 | opus-5.5 |
 | 6 | S1 | sol-6.1 |
 | 8, 9 | S2, S3 | sol-6.1 (added 19:55; G2 and G3 stood down) |
+| 10 | S4 | sol-6.1 (added 22:05; G4 stood down) |
 
 Loop until the queue says DONE:
 

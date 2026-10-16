@@ -1,0 +1,948 @@
+{
+ "job_code": "43-5011.01",
+ "tasks": [
+  {
+   "uid": "43-5011.01:17695",
+   "short": "Pay freight, insurance or other charges on a shipment",
+   "steps": [
+    {
+     "id": "p1",
+     "what": "Read the freight invoice into charge fields",
+     "actor": "freight forwarder",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "carrier invoice"
+     ],
+     "outputs": [
+      "charge fields"
+     ],
+     "handoff_to": "none",
+     "share_pct": 24,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "The carrier or insurer invoice.",
+      "output": "Payee, amount, currency, shipment reference, and whether the fee is freight, insurance, or another charge.",
+      "check": "The fee words mean freight, insurance, or the other charge named on the invoice, not only an invoice number.",
+      "stop": "Stop on a missing amount, currency, or shipment reference, a fee line that does not match those charge types, or an unsure read.",
+      "why_not_simpler": "A scanned invoice is free text, not a fixed form."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "p2",
+     "what": "Check the freight or insurance charge against terms",
+     "actor": "freight forwarder",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "charge fields",
+      "agreed freight terms"
+     ],
+     "outputs": [
+      "checked charge"
+     ],
+     "handoff_to": "none",
+     "share_pct": 32,
+     "fate": "person_reviews",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "p3",
+     "what": "Accept or query the freight or insurance payment",
+     "actor": "freight forwarder",
+     "today_means": "meeting_call",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "checked charge"
+     ],
+     "outputs": [
+      "accepted payment amount"
+     ],
+     "handoff_to": "none",
+     "share_pct": 26,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "p4",
+     "what": "Send the accepted freight or insurance payment",
+     "actor": "freight forwarder",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "ERP",
+      "BANK"
+     ],
+     "inputs": [
+      "accepted payment amount"
+     ],
+     "outputs": [
+      "payment instruction"
+     ],
+     "handoff_to": "external",
+     "share_pct": 18,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "freight forwarder",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "ap1"
+     ]
+    }
+   ],
+   "design": "The {EMAIL} invoice is read into charge fields on the {OPS_SYSTEM}. She checks the amount against the booking and accepts the freight or insurance payment. The {ERP} then sends that accepted payment instruction to the {BANK}; nothing is paid before she accepts it.",
+   "previous_blocker": "Carrier and insurer invoices arrive as scanned mail, so a fixed form cannot tell freight from insurance or another charge.",
+   "enabler_now": "A bounded read can pull payee, amount, currency and the charge type, and stop when the fee words are unsure.",
+   "still_hard": "A legitimate extra, such as detention, still looks like a charge that was never agreed until she looks.",
+   "human_edge": "She can tell a legitimate extra such as detention from a charge that was never agreed.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Query a freight or insurance charge the day it misses the agreed amount"
+   },
+   "altitude": "She still accepts every freight or insurance payment. She spends less time retyping the invoice and less time rebuilding a refused payment.",
+   "reach": [
+    {
+     "role": "brokerage clerk",
+     "task": "Tell a duty from a freight charge",
+     "learn": "Which invoice lines are customs debts the brokerage clerk files, and which are freight she may pay."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-10",
+    "testing_rollout": "3-6",
+    "consent_and_access": "3-5"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Matching a carrier invoice amount to the booking rate is ordinary operations-system configuration.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "A log of who released a freight or insurance payment records who did what, so Dutch works-council consent applies under WOR art. 27.",
+     "grade": "E1",
+     "source": "[S17]",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The workflow boundary is paying freight, insurance or another agreed charge. Booking the shipment and customs debts stay outside this task.",
+    "Agreed freight terms already sit on the shipment from booking: payee, rate, currency and shipment reference. The freight forwarder wrote them then. This task does not create them.",
+    "Charge fields are payee, amount, currency, shipment reference, and freight, insurance or another charge. The carrier or insurer invoice is the source. If the read stops, she types those fields herself.",
+    "Sending the accepted payment is work she does today. Bank batch runtime is existing machine runtime and is not her hours."
+   ],
+   "unknowns": [
+    "Whether finance must co-sign a freight or insurance payment above a set amount.",
+    "What share of carrier and insurer invoices already arrive with amount, currency and shipment reference filled in."
+   ],
+   "research_questions": [
+    "What share of freight and insurance invoices arrive as scans rather than structured files?",
+    "How often does a charge differ from the agreed rate because of a legitimate extra?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "She checks the charge against terms and accepts or queries the payment.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 40,
+      "counted_step_ids": [
+       "p2",
+       "p3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "She retypes invoices the read stopped on, and rebuilds payments the bank refused.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 6
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "ap1",
+     "action_step_id": "p4",
+     "approved_version": "accepted freight or insurance payment the freight forwarder released",
+     "approval_step_id": "p3",
+     "approver": "freight forwarder"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 8,
+    "high": 20,
+    "basis": "Structured invoices save nothing on the read. Some insurance fees still need a call before she accepts them. Low is mostly those calls and those structured invoices."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 42.0,
+   "incremental_hours_per_100_baseline_hours": 6,
+   "time_saved_pct": 36.0,
+   "speedup": 1.5625,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "43-5011.01:17692",
+   "short": "Record where goods are while they stay in transit",
+   "steps": [
+    {
+     "id": "m1",
+     "what": "List goods in transit missing a tracking reference",
+     "actor": "freight forwarder",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "shipment booking"
+     ],
+     "outputs": [
+      "transit list"
+     ],
+     "handoff_to": "none",
+     "share_pct": 14,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "m2",
+     "what": "Pull latest locations for goods in transit",
+     "actor": "freight forwarder",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "transit list"
+     ],
+     "outputs": [
+      "recorded location"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "m3",
+     "what": "Decide which missing transit location to chase",
+     "actor": "freight forwarder",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "transit list",
+      "recorded location"
+     ],
+     "outputs": [
+      "chase decision"
+     ],
+     "handoff_to": "none",
+     "share_pct": 22,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "m4",
+     "what": "Call the carrier about goods still in transit",
+     "actor": "freight forwarder",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "chase decision"
+     ],
+     "outputs": [
+      "carrier chase"
+     ],
+     "handoff_to": "external",
+     "share_pct": 34,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "She keeps the transit list on the {OPS_SYSTEM}. A feed from the {PARTNER_PORTAL} records the latest location, and she still decides which gap to chase and calls the carrier on the {TELEPHONY}. No customer message goes out from the feed.",
+   "previous_blocker": "Location messages use a different shape for each mode, so one screen cannot record every place.",
+   "enabler_now": "A partner feed can write the latest place for the modes it actually covers, and leave the rest for her.",
+   "still_hard": "A silent location may be a real delay or only a feed that often lags, and she still has to tell them apart.",
+   "human_edge": "She knows which silent location is a real delay and which feed often lags.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Chase goods the hour a transit location stops"
+   },
+   "altitude": "She still chooses which transit gap to chase and still calls the carrier. She spends less time opening status pages that a feed can record.",
+   "reach": [
+    {
+     "role": "cargo agent",
+     "task": "Tell the client where the goods are",
+     "learn": "Which location gaps the cargo agent already chases, so she does not call the same carrier twice."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-8",
+    "testing_rollout": "2-4",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Portbase, for Rotterdam, shows import status.",
+     "grade": "E2",
+     "source": "[S3]",
+     "kind": "capability"
+    },
+    {
+     "claim": "Carrier location feeds for trucks, trains and aircraft are not in the digest.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "The workflow boundary is recording where booked goods are. It does not reserve space and it does not message the customer.",
+    "The shipment booking already holds shipment id, mode and carrier, written at booking. She adds a missing tracking reference on the transit list before any location is pulled.",
+    "A recorded location is place, time and the goods it names. The partner feed produces it. If the feed is empty or wrong, she opens the carrier status by hand."
+   ],
+   "unknowns": [
+    "Which modes already send a location that names the goods, and which feeds often lag.",
+    "Whether she or the cargo agent calls the carrier when a location stops."
+   ],
+   "research_questions": [
+    "What share of in-transit goods are Rotterdam imports with a status feed, against trucks, trains and aircraft?",
+    "How often does a recorded location name the wrong goods?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "She lists goods that lack a tracking reference, chooses the chase, and calls the carrier.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 36,
+      "counted_step_ids": [
+       "m1",
+       "m3",
+       "m4"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "She opens empty or wrong location feeds by hand.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 6,
+    "high": 16,
+    "basis": "A Rotterdam import can show a status. Trucks, trains and aircraft often cannot. Low is mostly those other modes."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 30.0,
+   "incremental_hours_per_100_baseline_hours": 4,
+   "time_saved_pct": 26.0,
+   "speedup": 1.351351,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "43-5011.01:17690",
+   "short": "Keep the record of goods dispatched or received",
+   "steps": [
+    {
+     "id": "r1",
+     "what": "Read dispatched or received goods into the record",
+     "actor": "freight forwarder",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "dispatch note"
+     ],
+     "outputs": [
+      "goods record draft"
+     ],
+     "handoff_to": "none",
+     "share_pct": 48,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "The dispatch or receipt note.",
+      "output": "Goods, piece count, date, and whether the goods were dispatched or received.",
+      "check": "The goods words mean the same commodity as the shipment, not only a reference or a postcode.",
+      "stop": "Stop on missing goods, date, or dispatched-versus-received, a goods line that does not match the shipment, or an unsure read.",
+      "why_not_simpler": "A scanned note is free text, not a fixed form."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "r2",
+     "what": "Check dispatched or received goods against the shipment",
+     "actor": "freight forwarder",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "goods record draft"
+     ],
+     "outputs": [
+      "checked goods record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 28,
+     "fate": "person_reviews",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "r3",
+     "what": "Post the checked record of goods dispatched or received",
+     "actor": "freight forwarder",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "checked goods record"
+     ],
+     "outputs": [
+      "dispatch receipt record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 24,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "freight forwarder",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "ap1"
+     ]
+    }
+   ],
+   "design": "A dispatch or receipt note from {EMAIL} is read into goods, pieces, date, and dispatched or received. She checks that the goods mean the shipment. The {OPS_SYSTEM} posts only that checked record.",
+   "previous_blocker": "Dispatch and receipt notes arrive as scans, and a reference match does not prove the goods words mean the shipment.",
+   "enabler_now": "A bounded read can fill goods, pieces, date and dispatched or received, and stop when the goods line is unsure.",
+   "still_hard": "Foreign legs can still need a paper consignment note, and a matching reference can still hide the wrong goods.",
+   "human_edge": "She can see when the goods words do not mean the shipment even if the reference matches.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Flag a dispatch record the day the goods line does not match"
+   },
+   "altitude": "She still checks every dispatch and receipt record before it is posted. She spends less time retyping notes that the read can take.",
+   "reach": [
+    {
+     "role": "cargo agent",
+     "task": "File the bill of lading beside the dispatch record",
+     "learn": "Which goods facts the cargo agent already checked on the bill, so she does not retype them."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "3-6",
+    "testing_rollout": "3-5",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Qargo with TransFollow creates and signs the eCMR inside the TMS.",
+     "grade": "E2",
+     "source": "[S1]",
+     "kind": "capability"
+    },
+    {
+     "claim": "Cross Freight in Hamburg, with 35 staff, reported 80% less manual data entry per shipment after Stargo, with no baseline or period.",
+     "grade": "E3",
+     "source": "[S8]",
+     "kind": "case"
+    },
+    {
+     "claim": "Authorities must accept certified eFTI data from 9 July 2027.",
+     "grade": "E1",
+     "source": "[S11]",
+     "kind": "legal"
+    },
+    {
+     "claim": "Abroad, drivers may still need paper.",
+     "grade": "E1",
+     "source": "[S13]",
+     "kind": "legal"
+    },
+    {
+     "claim": "Brokers accepted the top HS suggestion unchanged 87% of the time.",
+     "grade": "E3",
+     "source": "[S18]",
+     "kind": "case"
+    }
+   ],
+   "assumptions": [
+    "The workflow boundary is the goods record for a dispatch or a receipt. Tariff classification stays with the brokerage clerk. No tariff code is filed from a suggestion.",
+    "The note supplies goods, piece count, date, and dispatched or received. The carrier or the warehouse writes the note. If the read stops, she types those fields herself. She does not keep a second full copy as a separate step.",
+    "The posted record is the official goods record she files today. A wrong goods line is a legal or financial error, so she checks the meaning before it is posted."
+   ],
+   "unknowns": [
+    "What share of dispatch and receipt notes already sit in the operations system rather than arriving as scans.",
+    "Whether a foreign leg still requires paper for this company's lanes."
+   ],
+   "research_questions": [
+    "What share of dispatch and receipt notes are scans rather than records already in the operations system?",
+    "On which lanes do drivers still need paper beside the electronic record?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "She checks that the dispatched or received goods mean the shipment.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 18,
+      "counted_step_ids": [
+       "r2"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "She retypes notes the read stopped on, and corrects quantities after the record is posted.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 8
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "ap1",
+     "action_step_id": "r3",
+     "approved_version": "checked dispatch or receipt record the freight forwarder released",
+     "approval_step_id": "r2",
+     "approver": "freight forwarder"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 18,
+    "high": 38,
+    "basis": "Notes already in the operations system save nothing on the read. Foreign legs can still need paper. The 80% entry figure is a vendor case with no baseline, so it is not this range."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 72.0,
+   "incremental_hours_per_100_baseline_hours": 8,
+   "time_saved_pct": 64.0,
+   "speedup": 2.777778,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "43-5011.01:17682",
+   "short": "Reserve space on ships, aircraft, trains or trucks",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Write goods, route, date and the needed space",
+     "actor": "freight forwarder",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "customer shipment"
+     ],
+     "outputs": [
+      "space request"
+     ],
+     "handoff_to": "none",
+     "share_pct": 18,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "supplier-to-contract",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "List ships, aircraft, trains or trucks with space",
+     "actor": "freight forwarder",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "space request"
+     ],
+     "outputs": [
+      "space list"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Reserve space on the chosen ship, aircraft, train or truck",
+     "actor": "freight forwarder",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "space list"
+     ],
+     "outputs": [
+      "reserved space choice"
+     ],
+     "handoff_to": "none",
+     "share_pct": 44,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "supplier-to-contract",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Send the space reservation for that ship or truck",
+     "actor": "freight forwarder",
+     "today_means": "email_chat",
+     "systems": [
+      "OPS_SYSTEM",
+      "EMAIL"
+     ],
+     "inputs": [
+      "reserved space choice"
+     ],
+     "outputs": [
+      "space reservation"
+     ],
+     "handoff_to": "external",
+     "share_pct": 18,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "supplier-to-contract",
+     "approver": "freight forwarder",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "ap1"
+     ]
+    }
+   ],
+   "design": "She writes the mode and the date on the {OPS_SYSTEM}. The same system lists ships, aircraft, trains or trucks that still have space. She reserves one, and only then does {EMAIL} send that reservation to the carrier.",
+   "previous_blocker": "Space on ships, aircraft, trains and trucks sits in separate schedules, and a cutoff can close a sailing while she is still searching.",
+   "enabler_now": "The operations system already holds those schedules, so a filter can list departures that still have space.",
+   "still_hard": "When the list has no space before the cutoff she still has to phone, and she still has to know which departure makes the customer's date.",
+   "human_edge": "She knows which sailing or flight will still make the customer's date.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Ask a second ship, aircraft, train or truck before the cutoff"
+   },
+   "altitude": "She still chooses the ship, aircraft, train or truck and still reserves the space. She spends less time searching schedules and less time rebuilding a reservation.",
+   "reach": [
+    {
+     "role": "cargo agent",
+     "task": "Book the inland leg after the ship is reserved",
+     "learn": "When the cargo agent arranges the truck so the ship reservation matches the inland time."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-8",
+    "testing_rollout": "2-5",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Listing departures that still have space is a filter on a schedule the operations system already holds.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "A log of who released a space reservation records who did what, so Dutch works-council consent applies under WOR art. 27.",
+     "grade": "E1",
+     "source": "[S17]",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The workflow boundary is reserving space on a ship, aircraft, train or truck. The inland leg after the ship is reserved is the cargo agent's work.",
+    "She writes the space request first: goods, origin, destination, date and mode. The operations system already holds the schedule. The list is a filter on that schedule, not upkeep of a mapping or a template.",
+    "If the list has no space before the cutoff, she phones a second carrier. That extra call is the incremental hours, beyond the reservation talk already in her steps."
+   ],
+   "unknowns": [
+    "Whether a supervisor must co-sign a space reservation above a set value.",
+    "Whether a booking desk, not the freight forwarder, holds ship space.",
+    "Whether a carrier portal confirms the hold without an email."
+   ],
+   "research_questions": [
+    "What share of space requests find a departure with space still open on the first list?",
+    "How often does she phone a second carrier because the first list is empty before the cutoff?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "She writes the space request and reserves the ship, aircraft, train or truck she chose.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 40,
+      "counted_step_ids": [
+       "s1",
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "She phones a second carrier when the list has no space before the cutoff.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 5
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "ap1",
+     "action_step_id": "s4",
+     "approved_version": "space reservation the freight forwarder released",
+     "approval_step_id": "s3",
+     "approver": "freight forwarder"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 8,
+    "high": 18,
+    "basis": "A mode with a live schedule saves the search only. When space is gone she still phones. Low is mostly those empty lists."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 38.0,
+   "incremental_hours_per_100_baseline_hours": 5,
+   "time_saved_pct": 33.0,
+   "speedup": 1.492537,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "She still accepts every freight and insurance payment, chooses which transit gap to chase, checks every dispatch and receipt record, and reserves the space. She spends less time retyping invoices, locations and notes, and less time rebuilding a payment or a reservation.",
+  "reach": [
+   "cargo agent",
+   "brokerage clerk"
+  ],
+  "skills_to_grow": [
+   "Write the shipment, the charge type and the amount she expects before a payment is prepared.",
+   "Treat a transit location as missing when it does not name the goods.",
+   "Reject a dispatch or receipt record whose goods line does not mean the shipment.",
+   "Name the ship, aircraft, train or truck before a reservation is sent."
+  ],
+  "ambitious_version": "Not a tool that pays a freight or insurance fee she has not accepted, posts a goods record she has not checked, reserves space she has not chosen, or sends a customer a location she has not named. Not a tariff code filed from a suggestion."
+ },
+ "_meta": {
+  "model": "grok-4.7",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "43-5011.01",
+   "title": "Freight Forwarders",
+   "tasks": 28,
+   "all_tasks": 31,
+   "function": "Office and operations",
+   "employment_share": 50150.0,
+   "uids": [
+    "43-5011.01:17693",
+    "43-5011.01:17684",
+    "43-5011.01:17700",
+    "43-5011.01:17689",
+    "43-5011.01:17687",
+    "43-5011.01:17701",
+    "43-5011.01:17696",
+    "43-5011.01:17680",
+    "43-5011.01:17686",
+    "43-5011.01:17683",
+    "43-5011.01:19830",
+    "43-5011.01:17681",
+    "43-5011.01:17695",
+    "43-5011.01:17692",
+    "43-5011.01:17690",
+    "43-5011.01:17682",
+    "43-5011.01:17694",
+    "43-5011.01:17703",
+    "43-5011.01:17704",
+    "43-5011.01:17698",
+    "43-5011.01:17699",
+    "43-5011.01:17691",
+    "43-5011.01:17697",
+    "43-5011.01:17702",
+    "43-5011.01:19832",
+    "43-5011.01:19833",
+    "43-5011.01:19829",
+    "43-5011.01:19831"
+   ]
+  },
+  "digest": "research/digests-minor/43-5.md",
+  "digest_sha256": "f86c9507b47ff719540078a8e19ca98aa4c14eb274afc44dfb26c6fa60b5df21",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-16T21:31:53"
+ }
+}
