@@ -1,0 +1,981 @@
+{
+ "tasks": [
+  {
+   "uid": "43-5032.00:2732",
+   "short": "Determine the people, vehicles, equipment and materials needed for work orders.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read work orders and identify resource requirements.",
+     "actor": "dispatcher",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "work order",
+      "service specification"
+     ],
+     "outputs": [
+      "resource requirements"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Work order and service specification.",
+      "output": "Resource requirements with source passages and missing fields.",
+      "check": "Validate units, required fields and equipment codes; dispatcher accepts extracted requirements.",
+      "stop": "At most two extraction attempts per order; unresolved fields go to the dispatcher.",
+      "why_not_simpler": "Variable document layouts and free-text specifications resist fixed field mapping. Structured orders bypass the loop."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "start",
+     "workflow": "project-intake-to-delivery",
+     "approver": "dispatcher"
+    },
+    {
+     "id": "s2",
+     "what": "Check available people, qualifications, vehicles, equipment and stock.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "HCM",
+      "LMS"
+     ],
+     "inputs": [
+      "resource requirements",
+      "availability records",
+      "qualification records",
+      "stock records"
+     ],
+     "outputs": [
+      "available resource list"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Calculate quantities and compare feasible resource combinations.",
+     "actor": "dispatcher",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "resource requirements",
+      "available resource list",
+      "capacity rules"
+     ],
+     "outputs": [
+      "resource options",
+      "resource shortfall"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "judgement_step",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Clarify unusual site conditions and shortages with the field supervisor.",
+     "actor": "dispatcher",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "resource options",
+      "resource shortfall"
+     ],
+     "outputs": [
+      "confirmed constraints"
+     ],
+     "handoff_to": "field supervisor",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Select resources and record the approved resource plan.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "resource options",
+      "confirmed constraints"
+     ],
+     "outputs": [
+      "approved resource plan"
+     ],
+     "handoff_to": "dispatch team",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "project-intake-to-delivery",
+     "approver": "dispatcher"
+    }
+   ],
+   "design": "A bounded extractor turns documents in the {DOCS} into draft requirements, while structured work orders bypass extraction. An integration reads availability and qualifications from the {OPS_SYSTEM}, {HCM} and {LMS}; deterministic capacity rules produce feasible options. The dispatcher confirms unusual constraints and approves the resource plan in the {OPS_SYSTEM}.",
+   "previous_blocker": "Requirements, availability and qualifications sit in separate records. Local capacity rules and undocumented site constraints make a reliable match expensive to maintain.",
+   "enabler_now": "Existing planning features, standard interfaces and faster development reduce the cost of connecting records. Bounded extraction can handle document variation without choosing assignments.",
+   "still_hard": "Stale availability, missing site information and competing urgent jobs remain difficult. Staff scheduling changes require GDPR assessment and consultation under applicable national rules; EU AI Act requirements depend on the actual use.",
+   "human_edge": "The dispatcher understands whether a technically feasible combination will work at the site and resolves competing operational priorities.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Resource shortage review before each dispatch wave."
+   },
+   "altitude": "Less time goes into reading specifications and comparing capacity. The dispatcher retains resource approval and can bring quantified shortage options to the operations manager; no new spending rights are assumed.",
+   "reach": [
+    {
+     "role": "logistics analyst",
+     "task": "Forecast capacity shortages for the following week.",
+     "learn": "Capacity modelling, qualification constraints and forecast error analysis."
+    }
+   ],
+   "build_days": {
+    "coding": "6-12",
+    "integration": "8-18",
+    "testing_rollout": "6-12",
+    "consent_and_access": "10-30"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Reading order documents into structured fields is an existing capability; this supports extraction, not resource selection.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Explicit capacity and qualification constraints can generate resource options with deterministic code.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "In the Netherlands, works-council consent can apply to working-time arrangements and employee monitoring systems.",
+     "grade": "E2",
+     "source": "[S17]"
+    }
+   ],
+   "assumptions": [
+    "The company handles recurring field-service or transport work with documented capacity limits.",
+    "The dispatcher normally selects resources within an existing delegation.",
+    "Time shares and build ranges are planning estimates, not measured customer results.",
+    "The design uses operational requirements and qualifications rather than behavioural scoring."
+   ],
+   "unknowns": [
+    "Availability of supported interfaces and reliable qualification records.",
+    "Which resource constraints are documented and who can approve exceptions.",
+    "Whether the existing planning module can replace custom calculation code.",
+    "Applicable national consultation requirements and existing employee agreements."
+   ],
+   "research_questions": [
+    "What proportion of orders already contains structured resource requirements?",
+    "Can existing planning configuration satisfy the required constraints?",
+    "How often does a feasible plan fail because site information was missing?"
+   ],
+   "new_work": [
+    "Review extracted requirements and resolve missing fields.",
+    "Maintain capacity rules, qualification mappings and equipment codes.",
+    "Investigate stale availability and infeasible plans.",
+    "Maintain interface access and test rule changes before rollout."
+   ],
+   "time_saved_pct": 72,
+   "speedup": 3.64
+  },
+  {
+   "uid": "43-5032.00:2733",
+   "short": "Warn field personnel about traffic, weather and other route hazards.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check traffic, weather and incident information against active routes.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "OTHER"
+     ],
+     "inputs": [
+      "active route list",
+      "traffic and weather feed"
+     ],
+     "outputs": [
+      "potential route hazards"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Confirm reported hazards and local conditions with field personnel.",
+     "actor": "dispatcher",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "potential route hazards",
+      "field report"
+     ],
+     "outputs": [
+      "confirmed hazard report"
+     ],
+     "handoff_to": "field worker",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Decide which crews need warnings and whether routes require changes.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "confirmed hazard report",
+      "active route list",
+      "vehicle restrictions"
+     ],
+     "outputs": [
+      "approved hazard advisory"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "dispatcher"
+    },
+    {
+     "id": "s4",
+     "what": "Explain the warning and agree immediate action with affected personnel.",
+     "actor": "dispatcher",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY",
+      "OTHER"
+     ],
+     "inputs": [
+      "approved hazard advisory"
+     ],
+     "outputs": [
+      "acknowledged hazard advisory",
+      "agreed route action"
+     ],
+     "handoff_to": "field worker",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Record warnings, acknowledgements and route changes in the dispatch log.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "acknowledged hazard advisory",
+      "agreed route action"
+     ],
+     "outputs": [
+      "dispatch log"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "dispatcher"
+    }
+   ],
+   "design": "An integration matches structured traffic and weather feeds from the {OTHER} traffic and weather service to active routes in the {OPS_SYSTEM}. Deterministic rules flag affected crews and draft advisories; the dispatcher checks uncertain conditions and gives urgent advice through the {TELEPHONY} or {OTHER} radio system. A short form in the {OPS_SYSTEM} records the agreed action and acknowledgement.",
+   "previous_blocker": "Traffic information and dispatch routes are viewed separately. Reliable route matching needs current positions, consistent locations and rules for vehicle restrictions.",
+   "enabler_now": "Structured feeds and route interfaces allow deterministic matching. Faster integration development makes a focused advisory screen affordable without automating live safety conversations.",
+   "still_hard": "Feed delays, road conditions and safe stopping opportunities require local judgement. Drivers must receive advice without distraction, and location data needs GDPR controls.",
+   "human_edge": "The dispatcher can clarify ambiguous hazards, check understanding and agree safe action under pressure.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Pre-shift route hazard brief for field crews."
+   },
+   "altitude": "The dispatcher spends less time scanning maps and more time confirming consequential hazards. Advice and route decisions remain within existing authority; no new decision rights are assumed.",
+   "reach": [
+    {
+     "role": "business continuity planner",
+     "task": "Prepare diversion and service-continuity plans for severe weather.",
+     "learn": "Disruption scenarios, escalation thresholds and alternative service arrangements."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "6-15",
+    "testing_rollout": "7-14",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Structured hazard locations can be matched to routes using deterministic geographic rules.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "A route match does not establish that a diversion is safe for a particular vehicle or situation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "GDPR applies when route and location records identify workers.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The company has active route records and access to a licensed structured traffic and weather service.",
+    "The OTHER systems are a traffic and weather service and a radio system.",
+    "Time shares and build ranges are estimates.",
+    "Urgent warnings remain live human communications."
+   ],
+   "unknowns": [
+    "Feed coverage, update frequency, licensing and geographic accuracy.",
+    "Whether routes and vehicle restrictions are available through supported interfaces.",
+    "Existing rules for contacting moving crews and recording acknowledgements.",
+    "Whether worker consultation is required under applicable national rules."
+   ],
+   "research_questions": [
+    "How frequently do stale feeds or incorrect route matches produce false alerts?",
+    "Which hazard categories can use standard advisory templates?",
+    "Can acknowledgements be captured safely through the existing field interface?"
+   ],
+   "new_work": [
+    "Monitor feed freshness and route-matching failures.",
+    "Maintain hazard thresholds and vehicle restriction rules.",
+    "Review false alerts and missed hazards.",
+    "Check acknowledgement records and apply location-data retention rules."
+   ],
+   "time_saved_pct": 40,
+   "speedup": 1.67
+  },
+  {
+   "uid": "43-5032.00:2729",
+   "short": "Coordinate communications and resolve dispatch issues across an assigned territory.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Monitor incoming calls, messages and job updates for the assigned territory.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "TELEPHONY",
+      "CHAT",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "incoming communication",
+      "job status"
+     ],
+     "outputs": [
+      "territory queue"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Set priorities and decide who should handle each issue.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "territory queue",
+      "territory ownership rules",
+      "escalation rules"
+     ],
+     "outputs": [
+      "prioritised territory queue"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "dispatcher"
+    },
+    {
+     "id": "s3",
+     "what": "Clarify conflicting reports and coordinate responses with crews and supervisors.",
+     "actor": "dispatcher",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY",
+      "OTHER"
+     ],
+     "inputs": [
+      "prioritised territory queue",
+      "job status"
+     ],
+     "outputs": [
+      "agreed response",
+      "escalation request"
+     ],
+     "handoff_to": "field supervisor",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Relay agreed updates to responsible teams and track outstanding replies.",
+     "actor": "dispatcher",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CHAT"
+     ],
+     "inputs": [
+      "agreed response",
+      "escalation request",
+      "territory ownership rules"
+     ],
+     "outputs": [
+      "response notification",
+      "acknowledgement status"
+     ],
+     "handoff_to": "responsible team",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Copy communication times, owners and reply status into the handover log.",
+     "actor": "dispatcher",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "response notification",
+      "acknowledgement status"
+     ],
+     "outputs": [
+      "shift handover log"
+     ],
+     "handoff_to": "next-shift dispatcher",
+     "share_pct": 10,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    }
+   ],
+   "design": "An integration brings communication metadata and job events from the {TELEPHONY}, {CHAT} and {OPS_SYSTEM} into a territory queue. Configured ownership and escalation rules suggest routing; the dispatcher settles priorities and handles ambiguous conversations through the {TELEPHONY} or {OTHER} radio system. Agreed updates trigger notifications, and the shared queue replaces the copied handover log.",
+   "previous_blocker": "Territory ownership, job identifiers and acknowledgement status are spread across channels. A copied log compensates for missing links between them.",
+   "enabler_now": "Event interfaces and configurable queues can connect communication metadata to job records. Deterministic routing covers known territories and message types without interpreting every conversation.",
+   "still_hard": "Unidentified callers, conflicting accounts and simultaneous incidents still need attention. Recording or analysing staff communications adds GDPR obligations and may require consultation under national rules.",
+   "human_edge": "The dispatcher recognises when an apparently routine update signals a larger problem and negotiates priorities between teams.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Territory backlog balancing at each shift handover."
+   },
+   "altitude": "The dispatcher spends less time finding messages and chasing routine replies. More time goes to unresolved conflicts and shift preparation; cross-territory staffing changes still require supervisor approval.",
+   "reach": [
+    {
+     "role": "management analyst",
+     "task": "Identify recurring delays between dispatch and field teams.",
+     "learn": "Queue analysis, process mapping and separating workload effects from individual performance."
+    }
+   ],
+   "build_days": {
+    "coding": "4-9",
+    "integration": "7-16",
+    "testing_rollout": "5-10",
+    "consent_and_access": "8-25"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Known job identifiers, territories and message types support deterministic queue routing and reminders.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "A shared event history can replace duplicate transcription of communication metadata.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "In the Netherlands, works-council consent can apply to systems monitoring employee activity.",
+     "grade": "E2",
+     "source": "[S17]"
+    }
+   ],
+   "assumptions": [
+    "The company has defined territories, escalation paths and shift handovers.",
+    "The OTHER system is a radio system.",
+    "Routing uses explicit identifiers and declared message types; unknown messages remain for human triage.",
+    "The target stores necessary metadata and agreed responses without adding call transcription.",
+    "Time shares and build ranges are estimates."
+   ],
+   "unknowns": [
+    "Which communication channels expose supported event interfaces.",
+    "How reliably calls and messages can be linked to jobs.",
+    "Existing retention periods and employee consultation arrangements.",
+    "Whether the current operations queue already supports acknowledgements and handovers."
+   ],
+   "research_questions": [
+    "What share of communications contains a usable job or territory identifier?",
+    "Which reminder rules reduce missed replies without creating notification overload?",
+    "Can existing queue configuration eliminate the handover spreadsheet?"
+   ],
+   "new_work": [
+    "Maintain territory ownership and escalation mappings.",
+    "Resolve unidentified messages and broken job links.",
+    "Monitor missed events, duplicate notifications and overdue acknowledgements.",
+    "Review access permissions and communication-metadata retention."
+   ],
+   "time_saved_pct": 53,
+   "speedup": 2.13
+  },
+  {
+   "uid": "43-5032.00:2735",
+   "short": "Order supplies and equipment, then issue them to personnel.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive and clarify requests for supplies or equipment.",
+     "actor": "dispatcher",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CHAT"
+     ],
+     "inputs": [
+      "supply request",
+      "approved resource plan"
+     ],
+     "outputs": [
+      "validated supply request"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "dispatcher"
+    },
+    {
+     "id": "s2",
+     "what": "Check stock, reservations and usable equipment before buying.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "validated supply request",
+      "stock records",
+      "equipment condition records"
+     ],
+     "outputs": [
+      "stock allocation",
+      "purchase requirement"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Prepare a purchase requisition using approved suppliers and catalogue prices.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "purchase requirement",
+      "approved supplier catalogue",
+      "cost centre"
+     ],
+     "outputs": [
+      "purchase requisition"
+     ],
+     "handoff_to": "budget holder",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Approve the proposed supplier, quantities, price and budget allocation.",
+     "actor": "budget holder",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "purchase requisition",
+      "approval limits"
+     ],
+     "outputs": [
+      "approved purchase requisition"
+     ],
+     "handoff_to": "buyer",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "budget holder"
+    },
+    {
+     "id": "s5",
+     "what": "Create and send the purchase order to the supplier.",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "approved purchase requisition"
+     ],
+     "outputs": [
+      "purchase order"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Check condition and physically hand supplies or equipment to personnel.",
+     "actor": "stores clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "stock allocation",
+      "supplies",
+      "equipment"
+     ],
+     "outputs": [
+      "issued supplies",
+      "issued equipment",
+      "condition exception"
+     ],
+     "handoff_to": "field worker",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Record quantities, serial numbers, recipients and expected returns.",
+     "actor": "stores clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "issued supplies",
+      "issued equipment",
+      "condition exception"
+     ],
+     "outputs": [
+      "issue record",
+      "updated stock records",
+      "equipment return date"
+     ],
+     "handoff_to": "dispatcher",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 35,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    }
+   ],
+   "design": "A catalogue request form in the {PROCUREMENT} checks stock and reservations in the {OPS_SYSTEM} before preparing a requisition. Existing approval rules route spending to the budget holder, then release a purchase order only within the approved supplier, quantity and price. Stores staff hand over items and use scanning in the {OPS_SYSTEM} to capture issue and return records.",
+   "previous_blocker": "Requests arrive informally, stock records lag physical movements, and purchasing is disconnected from equipment custody. Most of the required automation already exists but needs consistent catalogues and configuration.",
+   "enabler_now": "Configured request forms, approval flows and scanning remove repeated entry. Faster integration development makes the stock-to-purchasing link cheaper to implement.",
+   "still_hard": "Physical condition checks, missing equipment and suitable substitutions remain human work. Automated purchasing depends on trustworthy stock and enforceable approval limits.",
+   "human_edge": "People judge equipment condition, suitability and urgent substitutions, and remain accountable for physical custody.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Pre-booked equipment kits for scheduled field jobs."
+   },
+   "altitude": "The dispatcher spends less time entering requisitions and chasing routine orders. Stores staff spend more time preparing usable kits; purchasing approval and spending rights remain unchanged.",
+   "reach": [
+    {
+     "role": "shipping, receiving and inventory clerk",
+     "task": "Reconcile equipment custody and investigate stock discrepancies.",
+     "learn": "Serial-number control, stock adjustments and cycle counting."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "4-10",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Catalogue requests, stock checks and approval-based purchase orders are standard deterministic purchasing workflows.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Scanning can reduce issue-record entry, while physical handover and condition checks remain human.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Equipment custody records linked to workers are personal data subject to GDPR.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The company has approved suppliers, catalogue items and purchasing approval limits.",
+    "The task includes related buyer and stores handoffs; time shares cover that whole process.",
+    "Receipt and invoice processing are connected procure-to-pay tasks outside this task.",
+    "Automatic purchase orders cannot exceed approved commercial terms.",
+    "Time shares and build ranges are estimates."
+   ],
+   "unknowns": [
+    "Quality of stock counts, equipment identifiers and supplier catalogues.",
+    "Whether existing purchasing and operations modules support reservations and scanning.",
+    "Which purchases require additional technical or budget approval.",
+    "Whether named custody records introduce consultation requirements under national rules."
+   ],
+   "research_questions": [
+    "How often could available stock satisfy requests currently sent for purchase?",
+    "Which request fields can come directly from the approved resource plan?",
+    "What share of issue-record errors could scanning prevent?"
+   ],
+   "new_work": [
+    "Maintain catalogues, reorder settings and approval limits.",
+    "Resolve stock mismatches and failed purchase-order transmissions.",
+    "Handle substitutions, damaged equipment and overdue returns.",
+    "Maintain scanners, equipment identifiers and custody-record access."
+   ],
+   "time_saved_pct": 61,
+   "speedup": 2.56
+  }
+ ],
+ "role": {
+  "altitude": "The dispatcher moves from repeated lookup, copying and chasing toward resolving shortages, hazards and conflicting priorities. Existing assignment and escalation authority remains; wider staffing or spending rights need explicit delegation.",
+  "reach": [
+   "Logistics analyst: forecast near-term capacity shortages.",
+   "Business continuity planner: prepare disruption and diversion plans.",
+   "Management analyst: diagnose recurring communication delays.",
+   "Shipping, receiving and inventory clerk: reconcile equipment custody."
+  ],
+  "skills_to_grow": [
+   "Translate operational constraints into explicit, testable rules.",
+   "Assess data freshness and recognise infeasible plans.",
+   "Review extracted requirements against source documents.",
+   "Analyse queues, capacity shortages and stock discrepancies.",
+   "Handle urgent conversations and document clear decisions.",
+   "Apply access, retention and consultation requirements to worker data."
+  ],
+  "ambitious_version": "Run a shared dispatch service that combines capacity options, route hazard briefs and prepared equipment kits, with people retaining consequential assignment and safety decisions."
+ },
+ "job_code": "43-5032.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 199,
+  "attempts": 1,
+  "checks": [
+   "43-5032.00:2732 s3: judgement step marked deterministic",
+   "43-5032.00:2733 s3: judgement step marked deterministic"
+  ],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":2500});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-5032.00",
+   "title": "Dispatchers, Except Police, Fire, and Ambulance",
+   "tasks": 12,
+   "function": "Office and operations"
+  }
+ }
+}

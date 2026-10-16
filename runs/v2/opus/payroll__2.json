@@ -1,0 +1,740 @@
+{
+ "role_id": "payroll",
+ "role": {
+  "altitude": "Today the Payroll Specialist spends much of the month collecting hours, keying data into AFAS and checking spreadsheets by eye. Afterwards the payroll work in AFAS is fed by scheduled jobs and checked by explicit rules. The specialist decides which checks run, what thresholds they use, and which exceptions block a run. The goal is first-time-right pay runs and fewer corrections per run.",
+  "reach": [
+   "Controller: month-end labour-cost accruals and the payroll-to-ledger reconciliation, to learn what finance needs from each run.",
+   "Compensation and Benefits Specialist: the CAO scale tables and job schemes in AFAS, to learn how the pay transparency reporting will be built.",
+   "People Analytics and HRIS Analyst: the nightly AFAS extract and the data platform, to learn to maintain the check rules as code."
+  ],
+  "skills_to_grow": [
+   "Writing pay rules as explicit, testable tables (CAO allowances, shift premiums, minimum wage)",
+   "Reading and maintaining simple Python or SQL checks on the data platform",
+   "Using AFAS connectors and workflows (GetConnector, UpdateConnector, InSite approval flows)",
+   "Explaining pay to employees and the works council under the coming Wet loontransparantie"
+  ],
+  "ambitious_version": "A pre-run check catalogue runs every night during the pay cycle, not just once on run day. It covers both CAOs and all three sites. Each finding comes with a drafted explanation. By the end of each month, the specialist publishes a first-time-right score and a corrections-per-run figure to the HR Director and the Controller. The same rule tables later answer pay transparency requests within the two-month deadline."
+ },
+ "tasks": [
+  {
+   "uid": "43-3051.00:2518",
+   "short": "Check the payroll pre-run against hours, contracts and last month, then find and fix discrepancies.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export AFAS pre-run results and hours into Excel",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "payroll pre-run",
+      "timesheet export"
+     ],
+     "outputs": [
+      "payroll check sheet"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Compare each employee with last month, contract and hours; mark odd lines",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "payroll check sheet",
+      "contract data",
+      "previous payroll run"
+     ],
+     "outputs": [
+      "exception list"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Investigate each exception in mutation history and with team leads",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "AFAS Profit",
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "exception list",
+      "mutation history",
+      "timesheet export"
+     ],
+     "outputs": [
+      "exception explanation"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "explain",
+      "input": "One flagged employee: rule hit, AFAS mutation history, contract changes, hours and absence for the period",
+      "output": "Short likely cause with the record lines it rests on, plus a suggested action (correct, accept, ask team lead)",
+      "check": "Each cited mutation or hours line must exist in the source data; the model never changes amounts",
+      "stop": "One pass per exception, max two retries; if it cannot cite a source line, mark it 'unexplained' for the specialist",
+      "why_not_simpler": "Causes are spread across free-text mutation notes and mails; fixed rules find the gap but cannot say why it is there"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Correct the record in AFAS and rerun the pre-run",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "exception explanation"
+     ],
+     "outputs": [
+      "corrected payroll run"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "A scheduled Python job on the governed data platform pulls the AFAS pre-run, contracts and hours through AFAS GetConnectors. It runs an explicit rule catalogue: gross pay moved more than the set threshold, pension stopped for an enrolled employee, a leaver still paid, below minimum wage, and shift allowance without hours. Results go to a Power BI exception page. A bounded model step drafts a cited cause for each exception, and the specialist accepts it or makes the fix in AFAS.",
+   "previous_blocker": "The checks lived in one person's Excel habits. AFAS data had to be exported by hand each month, and nobody had time to write the rules down as code.",
+   "enabler_now": "AI-assisted coding makes a rule catalogue on the AFAS connectors a small build. Small model calls can now read mutation notes and draft a cause cheaply.",
+   "still_hard": "Two CAOs plus shift and site variants mean many rule thresholds, and setting them without drowning in false alarms takes several cycles. Missing hours from team leads stay a people problem.",
+   "human_edge": "Deciding whether an odd amount is right (a back-payment agreed by a manager, a settlement) and owning the correction that changes someone's pay.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Run the full pre-run check every night in the last week of the pay cycle, not once on run day, so team leads can fix hours before the deadline"
+   },
+   "altitude": "The specialist spends run week deciding on a short list of explained exceptions instead of scanning sheets. They decide which rules block a run and their thresholds.",
+   "reach": [
+    {
+     "role": "controller",
+     "task": "Payroll-to-general-ledger reconciliation at month close",
+     "learn": "Which payroll exceptions turn into ledger differences, so those checks run first"
+    },
+    {
+     "role": "people-analyst",
+     "task": "Maintaining the nightly AFAS extract",
+     "learn": "How to add a check rule to the platform without a developer"
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "3-5",
+    "testing_rollout": "10-15 (two parallel pay runs)",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A payroll provider runs pre-run checks for gross pay jumps, stopped pension, leavers paid double and below-minimum-wage rates while the calculation stays rules-based",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Workday's payroll agent will flag items outside defined parameters and audit retro adjustments, with payroll checking the result",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "AFAS Profit exposes data through GetConnectors for scheduled extraction",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Rule-based pay decisions still need a route to human review",
+     "grade": "E3",
+     "source": "[S11]"
+    }
+   ],
+   "assumptions": [
+    "The nightly AFAS extract for Power BI can also be used for pre-run data, or a similar connector can be added.",
+    "The model step sees only the data of the flagged employee and runs in an EU-hosted, governed environment."
+   ],
+   "unknowns": [
+    "How many discrepancies a typical run has today, and how many reach a payslip uncorrected",
+    "Whether a pre-run (proefverloning) is used every month in AFAS",
+    "Whether a governed data platform already exists or must be set up"
+   ],
+   "research_questions": [
+    "Over the last six runs, what share of corrections would the five named rules have caught before payment?",
+    "How many false alarms per run does a first threshold set produce, and can that be cut below 20?",
+    "Does the works council see the exception dashboard as monitoring of employees, needing consent under WOR 27?"
+   ],
+   "time_saved_pct": 73,
+   "speedup": 3.7
+  },
+  {
+   "uid": "43-3051.00:2524",
+   "short": "Turn shift lists and paper or Excel hour sheets from the sites into arrival and departure times for payroll.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect weekly shift and hour sheets from site team leads by mail",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Excel"
+     ],
+     "inputs": [
+      "shift roster",
+      "hour sheet"
+     ],
+     "outputs": [
+      "hour sheet"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 25,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Key arrival and departure times into AFAS or the hours sheet",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "hour sheet"
+     ],
+     "outputs": [
+      "timesheet export"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 40,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "integration",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Scanned or photographed paper hour sheets still used at sites during the transition",
+      "output": "Per employee and day: start time, end time, breaks, with a confidence flag",
+      "check": "Times must be valid, fall inside the rostered shift plus or minus two hours, and daily totals must match the sheet total; mismatches go to review",
+      "stop": "One extraction per page, one retry; anything unclear is shown side by side for the specialist to key",
+      "why_not_simpler": "Handwritten sheets have no fixed layout; once a site uses digital entry this loop is switched off"
+     },
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Chase team leads for missing or unclear times",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "timesheet export",
+      "shift roster"
+     ],
+     "outputs": [
+      "missing hours list"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Get manager sign-off on the weekly hours",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook"
+     ],
+     "inputs": [
+      "timesheet export"
+     ],
+     "outputs": [
+      "approved hours"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 10,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Team leads enter or confirm hours themselves in AFAS hours entry (InSite or Pocket), configured with the shift roster as the default. A manager approval workflow in AFAS replaces the mailed sign-off. A small scheduled job compares entered hours with the roster and sends a Teams reminder to the team lead about gaps two days before the cut-off. A bounded extraction step handles the remaining paper sheets until each site has switched to digital entry.",
+   "previous_blocker": "Warehouse team leads work on the floor without desks, so paper and Excel stayed the easy route. Nobody owned the change across three sites.",
+   "enabler_now": "AFAS mobile hours entry is standard, and a roster-versus-hours gap check is a small job to build. Reading photographed sheets is now cheap enough to bridge the transition.",
+   "still_hard": "Getting 750 shift workers' hours entered by team leads on time in three sites. If there is no clock system, the times are still what the team lead says.",
+   "human_edge": "Settling disputed hours with a team lead or employee, and deciding on late or retro corrections.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Close and approve hours weekly instead of at month end, so shift allowances and overtime errors are caught within days"
+   },
+   "altitude": "The specialist no longer keys hours. They watch the gap list and handle disputes, and they decide the cut-off rules and the roster defaults.",
+   "reach": [
+    {
+     "role": "bookkeeper",
+     "task": "Matching agency invoices with flex worker hours in the agency portals",
+     "learn": "Using the same roster-versus-hours check for flex hours before invoices are paid"
+    },
+    {
+     "role": "hr-admin",
+     "task": "Keeping roster and contract hours in AFAS current",
+     "learn": "Which roster data errors cause wrong default hours"
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-5",
+    "testing_rollout": "15-25 (site by site)",
+    "consent_and_access": "10-20 (works council consent on time registration)"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "In AFAS, once a person approves a Flex declaration, its payroll lines approve automatically: a rule after a human gate",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "AFAS supports hours entry and approval workflows in InSite and Pocket",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "A time-registration system for staff needs works council consent",
+     "grade": "E3",
+     "source": "[S10]"
+    }
+   ],
+   "assumptions": [
+    "There is no clock-in system feeding AFAS today; hours come from team leads.",
+    "The payroll specialist does the keying today rather than HR admins at each site."
+   ],
+   "unknowns": [
+    "Whether any site has a time clock or warehouse management system that records log-in times",
+    "Which sites still use paper sheets and how many sheets come in per week",
+    "Whether the AFAS licence includes hours registration in InSite/Pocket"
+   ],
+   "research_questions": [
+    "Can team leads at one pilot site enter and approve a week's hours in AFAS in under 15 minutes per team?",
+    "Does the warehouse management system already record scan log-ins that could pre-fill arrival times?",
+    "Will the works council consent to digital hours entry, and on what conditions about use of the data?"
+   ],
+   "time_saved_pct": 94,
+   "speedup": 16.67
+  },
+  {
+   "uid": "43-3051.00:18562",
+   "short": "Collect new-hire documents and key the employee, contract and pay data into AFAS.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive signed offer, contract and personal data by mail",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "Recruitee",
+      "Outlook",
+      "SharePoint"
+     ],
+     "inputs": [
+      "signed offer",
+      "employment contract",
+      "new hire data form"
+     ],
+     "outputs": [
+      "new hire file"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 20,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Check completeness: ID, BSN, IBAN, tax credit choice, pension data",
+     "actor": "payroll",
+     "today_means": "document",
+     "systems": [
+      "Outlook",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "new hire file",
+      "ID document",
+      "payroll tax statement"
+     ],
+     "outputs": [
+      "completeness checklist"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Enter employee, contract, CAO scale, allowances and pension into AFAS",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "new hire file",
+      "CAO scale table"
+     ],
+     "outputs": [
+      "employee record",
+      "contract record"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 40,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Check first pay setup against offer and file documents",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "SharePoint"
+     ],
+     "inputs": [
+      "contract record",
+      "signed offer",
+      "payroll pre-run"
+     ],
+     "outputs": [
+      "new hire pay check"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "judgement_step",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    }
+   ],
+   "design": "When a candidate reaches 'hired' in Recruitee, an integration creates an AFAS onboarding workflow pre-filled with offer data. The new hire completes personal data, IBAN and payroll tax choice in an AFAS InSite form. Deterministic checks validate the BSN eleven-test, IBAN check digits, required fields and the CAO scale against the offer. The specialist approves the prepared employee and contract record before it is committed. The first pre-run is then checked against the offer amount automatically.",
+   "previous_blocker": "Recruitee and AFAS were not connected, so the offer data was keyed twice. Contract variants across two CAOs made a generic import look risky.",
+   "enabler_now": "The Recruitee API and AFAS UpdateConnectors can be stitched in days with AI-assisted coding. Explicit CAO scale tables make the mapping testable.",
+   "still_hard": "Off-pattern contracts (individual deals, previous service, part-time on shift patterns) need a person. ID copies hold sensitive data and must be handled under AVG rules (BSN masked, limited retention).",
+   "human_edge": "Approving the contract record that sets someone's pay and settling odd agreements with the recruiter or manager.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Give every new hire and their manager a confirmed 'your first pay' summary before day one, starting with warehouse shift starters"
+   },
+   "altitude": "The specialist approves prepared records instead of typing them and handles only the non-standard contracts. They decide which contract variants may flow through on the standard path.",
+   "reach": [
+    {
+     "role": "recruiter",
+     "task": "Making offers in Recruitee",
+     "learn": "Which offer fields must be filled in a fixed format so the AFAS record can be built without rework"
+    },
+    {
+     "role": "hr-admin",
+     "task": "Onboarding paperwork and personnel file",
+     "learn": "Splitting the onboarding form so personnel data and payroll data are entered once"
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "5-8",
+    "testing_rollout": "8-12",
+    "consent_and_access": "5-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS Profit stores job schemes and wage-component history that the scale check can read",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Recruitee has an API and AFAS has UpdateConnectors for creating employees and contracts",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "BSN eleven-test and IBAN check digits can be validated deterministically",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The HR Administrator collects some documents today; payroll keys the payroll-relevant part.",
+    "Contract templates on SharePoint map to a limited set of CAO scales and allowance packages."
+   ],
+   "unknowns": [
+    "How many hires per month by site and CAO, and the share on non-standard terms",
+    "Whether AFAS onboarding workflows (InSite) are licensed and in use",
+    "How Recruitee offer fields are filled today (free text or structured)"
+   ],
+   "research_questions": [
+    "What share of last quarter's new hires could have been created from Recruitee offer data alone without manual fields?",
+    "How many first payslips needed a correction because of onboarding entry errors?",
+    "Does the data protection officer accept the ID document flow and retention set-up in the AFAS form?"
+   ],
+   "time_saved_pct": 86,
+   "speedup": 7.41
+  },
+  {
+   "uid": "43-3051.00:2517",
+   "short": "Gather hours, overtime, shift allowances and absence from sites and systems into the monthly payroll input.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather hours, overtime, absence and agency hours exports",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "AFAS Profit",
+      "Staffing agency portals",
+      "Outlook",
+      "Excel"
+     ],
+     "inputs": [
+      "timesheet export",
+      "absence records",
+      "agency hours export"
+     ],
+     "outputs": [
+      "payroll input sources"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Combine in Excel and apply CAO allowance and overtime codes",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "payroll input sources",
+      "CAO allowance table"
+     ],
+     "outputs": [
+      "payroll input sheet"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Import variable pay lines into AFAS",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "payroll input sheet"
+     ],
+     "outputs": [
+      "variable pay mutations"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 10,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Build labour-cost summaries per site for finance",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "Power BI"
+     ],
+     "inputs": [
+      "variable pay mutations",
+      "agency hours export"
+     ],
+     "outputs": [
+      "labour cost summary"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    }
+   ],
+   "design": "Replace the monthly Excel input sheet with a scheduled Python job on the governed data platform. It pulls approved hours and absence from AFAS and agency hours files from the three portals. It applies the CAO overtime and shift allowance rules from explicit, versioned tables and stages the variable pay lines. After the specialist approves the staged batch, the job posts it to AFAS through an UpdateConnector. A Power BI page shows labour cost per site, own staff versus flex, for the controller.",
+   "previous_blocker": "The allowance rules of two CAOs sat in Excel formulas, and agency data came as differing files from three portals, so automation looked fragile.",
+   "enabler_now": "AI-assisted coding makes per-portal parsers and rule tables with tests cheap to write and change each season.",
+   "still_hard": "Agency portal formats change without warning, and CAO changes need rule updates on time. Hours that arrive late after the cut-off still need a decision.",
+   "human_edge": "Approving the batch that goes into the pay run and deciding on late hours and CAO interpretation questions with HR and the works council.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A weekly labour-cost-per-site view, own staff and flex together, for the Controller and site managers during peak season"
+   },
+   "altitude": "The specialist reviews one staged batch per run instead of building it. They own the versioned CAO rule tables and decide the cut-off policy.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Forecasting labour cost by site for the flex season",
+     "learn": "Which payroll input fields make a weekly forecast possible"
+    },
+    {
+     "role": "bookkeeper",
+     "task": "Processing agency invoices",
+     "learn": "How agency hours and invoices reconcile, so one parser serves both"
+    }
+   ],
+   "build_days": {
+    "coding": "6-10",
+    "integration": "5-8",
+    "testing_rollout": "10-15 (two parallel runs)",
+    "consent_and_access": "3-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Payroll calculation and data handling stay deterministic and rules-based; AI sits around it",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "In payroll, a good guess is not good enough; probabilistic AI is kept out of the calculation",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "AFAS UpdateConnectors accept variable pay mutations in batch",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Agency portals offer file exports (CSV or Excel) rather than PDF only.",
+    "Flex hours are compiled for cost reporting and invoice matching, not paid through Noordhaven payroll."
+   ],
+   "unknowns": [
+    "How many allowance and overtime codes the two CAOs use in AFAS today",
+    "Export formats of the three agency portals and whether they have APIs",
+    "Whether production data (piece or performance pay) is part of pay at any site"
+   ],
+   "research_questions": [
+    "Can the rule tables reproduce last three months' Excel input sheets line for line?",
+    "How often did an agency portal export format change in the last year?",
+    "Would the controller use a weekly labour-cost view, and does it replace any existing Excel report?"
+   ],
+   "time_saved_pct": 93,
+   "speedup": 14.81
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 103,
+  "attempts": 1,
+  "warnings": [
+   "43-3051.00:18562 s4: judgement step marked deterministic"
+  ],
+  "web": "off",
+  "tool_calls": []
+ }
+}

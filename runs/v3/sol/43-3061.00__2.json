@@ -1,0 +1,1116 @@
+{
+ "tasks": [
+  {
+   "uid": "43-3061.00:2538",
+   "short": "Compare supplier bids and recommend the best combination of price, specification and delivery.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect structured bids and agreed purchase requirements.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT",
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "purchase requirements",
+      "supplier bid"
+     ],
+     "outputs": [
+      "structured bid records"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read document bids and enter prices, specifications, delivery dates and exclusions.",
+     "actor": "procurement clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "supplier bid",
+      "purchase requirements"
+     ],
+     "outputs": [
+      "document bid records"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Supplier bid documents and a fixed comparison schema.",
+      "output": "Bid fields with page references, exclusions and explicit missing values.",
+      "check": "Validate currencies, units, arithmetic and dates; show source passages for specification claims.",
+      "stop": "One extraction and one repair attempt per document; unresolved fields go to the procurement clerk.",
+      "why_not_simpler": "Document bids express specifications and exclusions in inconsistent free text; structured bids bypass the loop."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "procurement clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Normalize units and commercial terms, then calculate comparable totals and rankings.",
+     "actor": "procurement clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "structured bid records",
+      "document bid records",
+      "bid scoring rules"
+     ],
+     "outputs": [
+      "bid comparison"
+     ],
+     "handoff_to": "requester",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Resolve specification gaps and assess whether proposed alternatives meet operational needs.",
+     "actor": "requester",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "bid comparison",
+      "purchase requirements"
+     ],
+     "outputs": [
+      "technical assessment"
+     ],
+     "handoff_to": "purchasing manager",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve the preferred bid after weighing cost, delivery risk and technical suitability.",
+     "actor": "purchasing manager",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "bid comparison",
+      "technical assessment"
+     ],
+     "outputs": [
+      "approved bid selection"
+     ],
+     "handoff_to": "procurement clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "supplier-to-contract",
+     "approver": "purchasing manager"
+    },
+    {
+     "id": "s6",
+     "what": "Record the selected bid and attach supporting comparisons to the purchasing record.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT",
+      "DOCS"
+     ],
+     "inputs": [
+      "approved bid selection",
+      "bid comparison",
+      "technical assessment"
+     ],
+     "outputs": [
+      "purchase award record"
+     ],
+     "handoff_to": "purchasing agent",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    }
+   ],
+   "design": "An integration brings structured bids from the {PROCUREMENT} and {PARTNER_PORTAL} into a comparison view; a bounded extraction loop prepares document bids for review. Deterministic code calculates comparable costs and scores, while requesters assess technical suitability and the purchasing manager approves selection. The approved comparison and supporting evidence return to the {PROCUREMENT}.",
+   "previous_blocker": "Bid formats differ, commercial terms need normalization, and technical suitability is rarely captured in one reliable table.",
+   "enabler_now": "Existing interfaces and faster code development make the comparison pipeline cheaper to build. Bounded document extraction reduces transcription while keeping scoring explicit.",
+   "still_hard": "Ambiguous specifications, uncertain delivery promises and switching risk still need operational knowledge. Integration costs depend on supplier formats and available interfaces.",
+   "human_edge": "Recognizing when the cheapest compliant-looking bid creates hidden operational risk, and securing a clear technical assessment.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly review of cost-versus-delivery trade-offs for recurring purchase categories."
+   },
+   "altitude": "The clerk spends less time copying quotes and more time preparing supplier trade-offs. Under explicit delegation, they can return incomplete bids for clarification and prioritize technical reviews; award authority stays with the purchasing manager.",
+   "reach": [
+    {
+     "role": "purchasing agent",
+     "task": "Prepare a negotiation brief for a recurring purchase category.",
+     "learn": "Total cost analysis, commercial terms and supplier risk assessment."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Ramp vendor cases describe extracting quote PDFs into purchase orders; this supports transcription feasibility, not automated bid selection.",
+     "grade": "E2",
+     "source": "[S9]"
+    },
+    {
+     "claim": "Unit normalization and explicit weighted scoring can use deterministic code; technical suitability still requires judgment.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline is a mid-size European company with mixed structured and document bids.",
+    "Time shares, remaining effort and build ranges are planning estimates, not measured results.",
+    "The decomposition assigns substantial time to gathering and normalization despite the decision-heavy prior.",
+    "Access estimates cover supplier confidentiality checks and consultation under national rules where applicable."
+   ],
+   "unknowns": [
+    "Which bid formats and interfaces the company uses.",
+    "Who may approve bid selection and set scoring criteria.",
+    "Whether public procurement or sector-specific rules apply.",
+    "Whether consultation under national rules is required for this implementation."
+   ],
+   "research_questions": [
+    "How accurately can representative bids be normalized without hiding exclusions?",
+    "How often do technical reviews overturn the calculated ranking?"
+   ],
+   "new_work": [
+    "Review extracted bid fields and unresolved exclusions.",
+    "Maintain unit conversions, scoring rules and comparison templates.",
+    "Monitor interface failures and changes to supplier document layouts."
+   ],
+   "time_saved_pct": 70,
+   "speedup": 3.31
+  },
+  {
+   "uid": "43-3061.00:20786",
+   "short": "Check supplier bills, obtain approval and arrange payment through authorized finance roles.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect supplier invoices from the shared mailbox and identify the purchasing record.",
+     "actor": "procurement clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "supplier invoice",
+      "purchase order"
+     ],
+     "outputs": [
+      "invoice intake record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read invoice documents and enter supplier, line, tax and payment details.",
+     "actor": "procurement clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "ERP"
+     ],
+     "inputs": [
+      "supplier invoice",
+      "invoice intake record",
+      "supplier master"
+     ],
+     "outputs": [
+      "captured invoice"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Unstructured supplier invoice and approved supplier master.",
+      "output": "Invoice fields and lines with source references and validation flags.",
+      "check": "Check totals, tax arithmetic, duplicates, supplier identity and purchase references; never update bank details from invoice text.",
+      "stop": "One extraction and one repair attempt; failed checks go to the procurement clerk. Structured invoices bypass extraction.",
+      "why_not_simpler": "Unstructured invoice layouts vary; use existing configured capture first where it passes the same checks."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "procurement clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Match invoice lines against the purchase order and recorded receipt.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "PROCUREMENT",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "captured invoice",
+      "purchase order",
+      "goods receipt",
+      "matching tolerances"
+     ],
+     "outputs": [
+      "invoice match result"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Resolve price, quantity or receipt discrepancies with requesters and suppliers.",
+     "actor": "procurement clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "invoice match result",
+      "supplier invoice",
+      "purchase order",
+      "goods receipt"
+     ],
+     "outputs": [
+      "invoice resolution"
+     ],
+     "handoff_to": "budget owner",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 65,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve the bill against delivery evidence, budget and delegated authority.",
+     "actor": "budget owner",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "captured invoice",
+      "invoice match result",
+      "invoice resolution"
+     ],
+     "outputs": [
+      "approved invoice"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "budget owner"
+    },
+    {
+     "id": "s6",
+     "what": "Post approved bills and prepare the scheduled payment batch.",
+     "actor": "finance team",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "approved invoice",
+      "supplier master",
+      "payment calendar"
+     ],
+     "outputs": [
+      "posted payable",
+      "payment batch"
+     ],
+     "handoff_to": "authorized payment approver",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Review beneficiaries and amounts, then authorize payment release.",
+     "actor": "authorized payment approver",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK",
+      "ERP"
+     ],
+     "inputs": [
+      "payment batch",
+      "approved invoice",
+      "supplier master"
+     ],
+     "outputs": [
+      "payment confirmation"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "treasury-and-cash",
+     "approver": "authorized payment approver"
+    }
+   ],
+   "design": "Configure invoice intake, matching, approvals and payment preparation across the {ERP}, {PROCUREMENT} and {OPS_SYSTEM}, adding bounded extraction only for unstructured invoices. Matching failures go to a person, and supplier bank changes require a separate verified process. The authorized payment approver releases the batch in the {BANK}.",
+   "previous_blocker": "Invoices, orders and receipts often lack consistent references, while approvals and discrepancy discussions sit in mailboxes.",
+   "enabler_now": "Configured capture and three-way matching already exist. Cheaper integration work can connect receipt evidence and approval records without changing payment authority.",
+   "still_hard": "Missing receipts, disputed services and fraudulent bank changes require investigation. Payment release remains consequential and separate from clerical preparation.",
+   "human_edge": "Establishing whether a disputed delivery occurred and recognizing when a plausible invoice should not be paid.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The clerk spends more of the week resolving disputed bills and less entering data or chasing approvals. No additional spending or payment-release rights follow from the change.",
+   "reach": [
+    {
+     "role": "purchasing manager",
+     "task": "Review recurring supplier invoice disputes before contract renewal.",
+     "learn": "Contract interpretation, dispute patterns and supplier performance analysis."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "8-20",
+    "testing_rollout": "10-20",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS Profit supports invoice recognition and supplier identification from invoice details.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Medius supports line-level matching of invoices, orders and receipts.",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "The Huuskes vendor case reports automatic processing rising from 40% to 65% nine months after go-live.",
+     "grade": "E3",
+     "source": "[S3]"
+    },
+    {
+     "claim": "The cited invoice-processing case does not establish automated payment release or expected results for this company.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The procurement clerk prepares and verifies bills; budget owners and authorized finance roles approve and release funds.",
+    "Time shares, remaining effort and build ranges are planning estimates.",
+    "The review estimate for capture includes checks and extraction exceptions.",
+    "Access work includes segregation of duties, bank permissions and consultation under national rules where applicable."
+   ],
+   "unknowns": [
+    "Actual approval and payment-release responsibilities.",
+    "Share of structured invoices and invoices with purchase orders.",
+    "Quality of receipt records and supplier bank verification.",
+    "Available interfaces and current matching tolerances.",
+    "Whether consultation under national rules is required."
+   ],
+   "research_questions": [
+    "What proportion of historical invoices passes matching without correction?",
+    "Which exception categories consume most handling time?"
+   ],
+   "new_work": [
+    "Review extraction failures and unmatched invoices.",
+    "Maintain matching tolerances and approval delegations.",
+    "Monitor duplicate detection, posting failures and payment-batch reconciliation.",
+    "Investigate supplier master changes through the existing verification process."
+   ],
+   "time_saved_pct": 69,
+   "speedup": 3.25
+  },
+  {
+   "uid": "43-3061.00:2545",
+   "short": "Keep purchase rules current and explain their application to staff and suppliers.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check approved internal and government sources for changes affecting purchases.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS",
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "source register",
+      "purchase policy",
+      "regulatory guidance"
+     ],
+     "outputs": [
+      "rule change notice"
+     ],
+     "handoff_to": "legal adviser",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "compliance-and-risk",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Assess applicability, effective dates and required changes to purchasing practice.",
+     "actor": "legal adviser",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "rule change notice",
+      "purchase policy",
+      "regulatory guidance"
+     ],
+     "outputs": [
+      "approved rule interpretation"
+     ],
+     "handoff_to": "procurement clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "compliance-and-risk",
+     "approver": "legal adviser"
+    },
+    {
+     "id": "s3",
+     "what": "Update purchase guidance, examples and approval instructions.",
+     "actor": "procurement clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "approved rule interpretation",
+      "purchase policy",
+      "purchase guidance"
+     ],
+     "outputs": [
+      "updated purchase guidance"
+     ],
+     "handoff_to": "policy owner",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Approved interpretation, current guidance and controlled document template.",
+      "output": "Proposed guidance changes with citations and effective dates.",
+      "check": "Compare each changed instruction with the approved interpretation; policy owner approves publication.",
+      "stop": "One draft and one revision; unsupported instructions or unresolved conflicts return to the policy owner.",
+      "why_not_simpler": "Explaining changed rules in clear prose needs drafting; thresholds and approval routes remain configured fields."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "policy owner"
+    },
+    {
+     "id": "s4",
+     "what": "Find applicable guidance and draft an answer to a purchase-rule question.",
+     "actor": "procurement clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "purchase-rule question",
+      "updated purchase guidance",
+      "purchase policy"
+     ],
+     "outputs": [
+      "draft purchase-rule answer"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Question and access-filtered, approved guidance with version and effective date.",
+      "output": "Draft answer citing the applicable passages or a request for clarification.",
+      "check": "Require supporting passages for every instruction and numerical threshold; reject expired or conflicting sources.",
+      "stop": "One retrieval and draft, then one clarification request at most; unresolved questions go to the legal adviser.",
+      "why_not_simpler": "Questions use varied language and incomplete context; fixed FAQs handle exact recurring questions first."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Check the answer, escalate uncertain interpretations and reply to the requester.",
+     "actor": "procurement clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "draft purchase-rule answer",
+      "purchase-rule question"
+     ],
+     "outputs": [
+      "approved purchase-rule answer"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "procurement clerk"
+    },
+    {
+     "id": "s6",
+     "what": "Explain difficult rules and practical examples in staff and supplier briefings.",
+     "actor": "procurement clerk",
+     "today_means": "meeting_call",
+     "systems": [
+      "CALENDAR",
+      "DOCS"
+     ],
+     "inputs": [
+      "updated purchase guidance",
+      "purchase-rule question"
+     ],
+     "outputs": [
+      "briefing notes"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "compliance-and-risk",
+     "approver": "none"
+    }
+   ],
+   "design": "A scheduled job on the {DATA_PLATFORM} checks a curated source register and records changes for assessment. Approved interpretations feed versioned guidance in the {DOCS}; a bounded answer desk drafts cited replies from that guidance. The {WORKFLOW} routes publication approvals and holds outgoing replies until the procurement clerk approves them.",
+   "previous_blocker": "Rules are scattered across documents and websites, while questions require finding the right version and explaining it in context.",
+   "enabler_now": "Version checks and approval routing are ordinary deterministic work. Bounded retrieval and drafting can turn approved passages into reviewable answers.",
+   "still_hard": "A changed page does not establish legal applicability. Conflicting rules, exceptions and jurisdiction-specific interpretation need qualified advice.",
+   "human_edge": "Understanding the question behind a request, explaining a difficult restriction and knowing when specialist interpretation is needed.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Pre-submission purchase compliance checks for occasional requisitioners."
+   },
+   "altitude": "The clerk spends less time searching and repeating guidance, and more time helping requesters resolve problems before submission. They may clear routine guidance questions within a documented remit; legal exceptions remain with the legal adviser.",
+   "reach": [
+    {
+     "role": "purchasing manager",
+     "task": "Assess how a policy change affects purchasing routes and supplier participation.",
+     "learn": "Policy impact assessment, approval design and escalation boundaries."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "3-8",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "The cited EU directive changes the e-invoicing framework; implementation dates and purchasing implications still require applicability checks.",
+     "grade": "E2",
+     "source": "[S10]"
+    },
+    {
+     "claim": "Source change detection, version control and approval routing can use deterministic technology.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "A cited-answer workflow can support guidance drafting, but the digest contains no documented procurement-rule answer-desk case.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "GDPR applies to personal data in questions and records; EU AI Act duties depend on the implemented use. National rules vary.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "A legal adviser or equivalent specialist assesses material legal changes, rather than every routine question.",
+    "The source register is curated; monitoring does not claim to discover every relevant legal change.",
+    "Time shares, remaining effort and build ranges are planning estimates.",
+    "Access work covers document permissions, retention and consultation under national rules where applicable."
+   ],
+   "unknowns": [
+    "Applicable jurisdictions, sector rules and public procurement obligations.",
+    "Who approves guidance and handles legal exceptions.",
+    "Which sources and document versions are authoritative.",
+    "Whether staff and supplier questions require different access restrictions.",
+    "Whether consultation under national rules is required."
+   ],
+   "research_questions": [
+    "Can draft answers consistently cite current guidance and abstain when it is incomplete?",
+    "Which recurring questions can be answered with fixed templates instead of a model?"
+   ],
+   "new_work": [
+    "Maintain the authoritative source register and document versions.",
+    "Review guidance changes and outgoing drafted answers.",
+    "Route unresolved interpretations to the legal adviser.",
+    "Check for stale citations and inappropriate disclosure of internal guidance."
+   ],
+   "time_saved_pct": 64,
+   "speedup": 2.78
+  },
+  {
+   "uid": "43-3061.00:2532",
+   "short": "Check stock against expected needs and arrange replenishment when quantities are insufficient.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Review stock quantities, reservations and recorded consumption.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "stock ledger",
+      "material reservations",
+      "consumption history"
+     ],
+     "outputs": [
+      "stock position"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check outstanding orders and expected supplier delivery dates.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "open purchase orders",
+      "supplier delivery schedule"
+     ],
+     "outputs": [
+      "incoming stock position"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Calculate shortages and reorder quantities against demand, lead times and minimum stock.",
+     "actor": "procurement clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "stock position",
+      "incoming stock position",
+      "demand plan",
+      "replenishment rules"
+     ],
+     "outputs": [
+      "replenishment proposal"
+     ],
+     "handoff_to": "requester",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Confirm unusual demand, stock discrepancies and acceptable substitutions.",
+     "actor": "requester",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "replenishment proposal",
+      "demand plan"
+     ],
+     "outputs": [
+      "confirmed material need"
+     ],
+     "handoff_to": "procurement clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Create a purchase order using the approved supplier and current commercial terms.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "replenishment proposal",
+      "confirmed material need",
+      "supplier agreement"
+     ],
+     "outputs": [
+      "draft purchase order"
+     ],
+     "handoff_to": "budget owner",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve the replenishment commitment against budget and purchasing authority.",
+     "actor": "budget owner",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "draft purchase order",
+      "confirmed material need",
+      "budget balance"
+     ],
+     "outputs": [
+      "approved purchase order"
+     ],
+     "handoff_to": "procurement clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 65,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "budget owner"
+    },
+    {
+     "id": "s7",
+     "what": "Release the approved purchase order to the supplier and record dispatch.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT",
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "approved purchase order"
+     ],
+     "outputs": [
+      "issued purchase order"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "procurement clerk"
+    }
+   ],
+   "design": "Configure replenishment calculations in the {OPS_SYSTEM}, joining open orders from the {PROCUREMENT} through a deterministic integration. Rules account for reservations, confirmed incoming stock, lead times and order multiples, then create draft orders in the {PROCUREMENT}. Requesters resolve unusual needs, budget owners approve commitments, and the procurement clerk approves supplier release.",
+   "previous_blocker": "Stock, incoming orders and demand are often checked separately, with spreadsheet calculations compensating for incomplete configuration.",
+   "enabler_now": "Replenishment logic already exists in many operations systems. Faster integration and configuration work can connect the inputs without a model.",
+   "still_hard": "Recorded stock may differ from physical stock, and demand or lead times may change suddenly. Poor input quality cannot be solved by more frequent calculations.",
+   "human_edge": "Recognizing operational urgency, challenging unreliable stock records and agreeing substitutions before a shortage disrupts work.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily prioritization of critical-material shortage responses."
+   },
+   "altitude": "The clerk reviews a short exception queue and coordinates shortage responses instead of rebuilding stock calculations. With explicit delegation, they can adjust reorder timing within approved stock and spending limits.",
+   "reach": [
+    {
+     "role": "purchasing agent",
+     "task": "Choose an expedite, substitution or alternative supplier response for a critical shortage.",
+     "learn": "Lead-time analysis, stock-service trade-offs and supplier capacity assessment."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "5-15",
+    "testing_rollout": "8-15",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Stock netting, reorder points, lead-time offsets and order multiples can use deterministic replenishment rules.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The digest contains no direct replenishment case establishing savings or implementation duration.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Materials and stock movements are recorded in an operations system, with open orders in a purchasing system.",
+    "Existing replenishment configuration is checked before commissioning custom calculations.",
+    "No model loop is needed for the structured calculations, consistent with the low model-need prior.",
+    "Time shares, remaining effort and build ranges are planning estimates.",
+    "Access work includes approval permissions and consultation under national rules where applicable."
+   ],
+   "unknowns": [
+    "Accuracy and update frequency of stock and receipt records.",
+    "Available replenishment features and interfaces.",
+    "Who maintains demand plans, lead times and minimum stock.",
+    "Delegated authority for timing changes, substitutions and order release.",
+    "Whether consultation under national rules is required."
+   ],
+   "research_questions": [
+    "How do proposed quantities perform when replayed against historical stock and demand?",
+    "How often do inaccurate receipts or stock counts create false shortage alerts?",
+    "Which materials need separate treatment because of shelf life, criticality or erratic demand?"
+   ],
+   "new_work": [
+    "Maintain replenishment parameters and supplier lead times.",
+    "Investigate stale feeds, negative stock and duplicate order proposals.",
+    "Review shortage exceptions and approve supplier release.",
+    "Compare replenishment proposals with stockouts and excess stock after rollout."
+   ],
+   "time_saved_pct": 77,
+   "speedup": 4.35
+  }
+ ],
+ "role": {
+  "altitude": "The procurement clerk becomes a coordinator of evidence, exceptions and operational trade-offs. Any wider authority should be a specific delegation, such as adjusting replenishment timing within limits; supplier awards, legal interpretations and payment release retain their named approvers.",
+  "reach": [
+   "Support purchasing agents with negotiation briefs and shortage-response options.",
+   "Support purchasing managers with supplier dispute patterns and policy impact assessments."
+  ],
+  "skills_to_grow": [
+   "Total cost and commercial-term analysis.",
+   "Stock planning and lead-time analysis.",
+   "Evidence-based exception investigation.",
+   "Approval controls and supplier master verification.",
+   "Clear policy explanations and escalation judgment."
+  ],
+  "ambitious_version": "Run a purchasing exception service that identifies critical shortages, unresolved bid trade-offs and recurring invoice disputes early, then prepares actionable options for the responsible buyer or manager."
+ },
+ "job_code": "43-3061.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 179,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3000});text(r.output)\n"
+  ],
+  "job": {
+   "code": "43-3061.00",
+   "title": "Procurement Clerks",
+   "tasks": 19,
+   "function": "Procurement"
+  }
+ }
+}

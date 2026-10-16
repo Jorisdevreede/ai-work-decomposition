@@ -1,0 +1,996 @@
+{
+ "tasks": [
+  {
+   "uid": "43-3031.00:2505",
+   "short": "Check customer balances and loan instalments, identify overdue payments, and escalate exceptions.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve customer balances, due dates and recorded receipts from the {ERP}.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "customer ledger",
+      "payment terms"
+     ],
+     "outputs": [
+      "account ageing"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check loan schedules in the {SPREADSHEET} against instalments recorded in the {BANK}.",
+     "actor": "finance clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "BANK"
+     ],
+     "inputs": [
+      "loan schedule",
+      "bank transactions"
+     ],
+     "outputs": [
+      "loan payment status"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Combine overdue balances and missed instalments into a status workbook in the {SPREADSHEET}.",
+     "actor": "finance clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "account ageing",
+      "loan payment status"
+     ],
+     "outputs": [
+      "payment exception list"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Ask account owners about disputed balances, missing receipts and unexplained delays through the {EMAIL}.",
+     "actor": "finance clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "payment exception list",
+      "receipt evidence"
+     ],
+     "outputs": [
+      "exception explanation"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Send a prioritised status summary and unresolved exceptions through the {EMAIL}.",
+     "actor": "finance clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "payment exception list",
+      "exception explanation"
+     ],
+     "outputs": [
+      "payment status summary"
+     ],
+     "handoff_to": "treasury analyst",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure account ageing in the {ERP}, and match approved loan schedules to {BANK} transactions through the {DATA_PLATFORM}. Publish a dated exception view in the {BI}, with missing feeds shown explicitly, and send internal notifications through the {WORKFLOW}. The finance clerk investigates disputed or unexplained items; payment release and customer negotiations remain separate actions.",
+   "previous_blocker": "Account balances, loan schedules and bank confirmations sit in separate places. A person bridges them and distinguishes late data from late payment.",
+   "enabler_now": "Existing ageing reports and structured bank records cover most calculations. AI-assisted coding can reduce the effort of building schedule imports, matching rules and exception views.",
+   "still_hard": "Changing repayment terms, unapplied receipts and disputed balances require reliable source records and contextual judgement.",
+   "human_edge": "Recognise when a reported delay signals a relationship problem or a cash constraint, and involve the right owner.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily selection of payment exceptions requiring a treasury review."
+   },
+   "altitude": "The week shifts from assembling status lists to investigating causes and preparing treasury recommendations. The clerk can gain delegated authority to prioritise investigations; payment and credit decisions stay with their existing owners.",
+   "reach": [
+    {
+     "role": "treasury analyst",
+     "task": "Explain the near-term cash effect of overdue receipts and upcoming loan instalments.",
+     "learn": "Cash timing, repayment schedules and the difference between accounting balances and available cash."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "3-8",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Ageing, repayment schedules and exception thresholds can be calculated without a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Onguard CreditManager supports structured collection workflows; the Enexis reference describes use across a large debtor population.",
+     "grade": "E3",
+     "source": "[S6]"
+    },
+    {
+     "claim": "AFAS supports bank matching by payment reference, IBAN or invoice number, with unmatched items requiring attention.",
+     "grade": "E2",
+     "source": "[S2]"
+    }
+   ],
+   "assumptions": [
+    "Scope covers customer receivables and the company's own borrowing, rather than assessing consumer creditworthiness.",
+    "Loan schedules are already approved and contain structured dates, currencies and amounts.",
+    "Time shares and build ranges are planning estimates, not measured customer results.",
+    "The mailbox share exceeds the supplied prior because unresolved exceptions require contact with account owners.",
+    "Access is limited under GDPR. National rules determine whether employee consultation applies; the proposed view does not rank employees."
+   ],
+   "unknowns": [
+    "Which loans and account types the clerk actually monitors.",
+    "Whether existing reports already provide a complete exception view.",
+    "How current bank and ledger data are, and who owns repayment schedule changes.",
+    "What investigation priorities the clerk may set independently."
+   ],
+   "research_questions": [
+    "Which existing {ERP} ageing and loan-monitoring features can be configured before building an integration?",
+    "Which identifiers reliably connect loan instalments, bank entries and ledger postings?"
+   ],
+   "new_work": [
+    "Resolve missing feeds and stale-data alerts.",
+    "Maintain repayment schedules and approved exception thresholds.",
+    "Check a sample of matched instalments and investigate false exceptions.",
+    "Review access and confirm any national consultation requirements before rollout."
+   ],
+   "time_saved_pct": 86,
+   "speedup": 7.14
+  },
+  {
+   "uid": "43-3031.00:2503",
+   "short": "Match bank transactions to ledger entries, resolve differences, and retain reconciliation evidence.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Download the period's statement from the {BANK}.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK"
+     ],
+     "inputs": [
+      "bank account list",
+      "reconciliation period"
+     ],
+     "outputs": [
+      "bank statement"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Import the statement and retrieve the cash ledger from the {ERP}.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "bank statement",
+      "reconciliation period"
+     ],
+     "outputs": [
+      "bank transaction register",
+      "cash ledger"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Compare amounts, references and balances in the {SPREADSHEET}, marking matches and differences.",
+     "actor": "finance clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "bank transaction register",
+      "cash ledger"
+     ],
+     "outputs": [
+      "reconciliation matches",
+      "unmatched transaction list"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Read remittance messages in the {EMAIL} to identify payments lacking usable references.",
+     "actor": "finance clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "unmatched transaction list",
+      "remittance message",
+      "open invoice list"
+     ],
+     "outputs": [
+      "proposed payment allocation"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Unmatched bank entry, remittance message and relevant open invoices.",
+      "output": "Proposed invoice references and amounts, with supporting message excerpts.",
+      "check": "Validate customer identity, currency, exact totals, invoice availability and uniqueness; the clerk approves every proposal.",
+      "stop": "One extraction and one repair attempt per message; missing evidence or ambiguity returns the item to the clerk.",
+      "why_not_simpler": "Free-text remittance messages vary. Existing structured references and fixed parsing rules are tried first."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "finance clerk"
+    },
+    {
+     "id": "s5",
+     "what": "Investigate remaining differences and prepare proposed corrections in the {ERP}.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "unmatched transaction list",
+      "proposed payment allocation",
+      "receipt evidence"
+     ],
+     "outputs": [
+      "proposed correction",
+      "reconciliation explanation"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Review proposed corrections and approve their posting in the {ERP}.",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "proposed correction",
+      "reconciliation explanation"
+     ],
+     "outputs": [
+      "approved correction",
+      "reconciled cash ledger"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "accountant"
+    },
+    {
+     "id": "s7",
+     "what": "Save the reconciliation and supporting evidence in the {DOCS}.",
+     "actor": "finance clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "bank statement",
+      "reconciliation matches",
+      "reconciled cash ledger",
+      "reconciliation explanation"
+     ],
+     "outputs": [
+      "reconciliation evidence"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure the {BANK} feed and matching rules in the {ERP}, including duplicate detection, opening-to-closing balance checks and an unmatched queue. Add a bounded remittance reader only where references fail; its proposals require clerk approval, while journal corrections require accountant approval. Store transaction links, rule versions and approvals as reconciliation evidence in the {DOCS}.",
+   "previous_blocker": "Standard matching existed, but weak references, split payments and disconnected remittance messages left a manual tail. Exporting to the {SPREADSHEET} often became the common workspace.",
+   "enabler_now": "Structured bank feeds and existing matching configuration handle routine entries. A small, validated extraction loop can now prepare allocations from irregular messages.",
+   "still_hard": "Foreign exchange, pooled receipts, disputed deductions and missing ledger entries still need accounting judgement. A balanced total alone does not prove the allocations are correct.",
+   "human_edge": "Explain economic differences and choose the correct accounting treatment without forcing a match.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily prioritisation of unresolved cash differences before period close."
+   },
+   "altitude": "The clerk spends more time resolving unexplained cash movements and less time marking matching lines. Delegated rights can cover evidence-backed allocations within limits; correction approval remains with the accountant.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Prepare a supported recommendation for treating a reconciliation difference.",
+     "learn": "Cut-off, clearing accounts, exchange differences and journal evidence requirements."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "4-10",
+    "testing_rollout": "8-15",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS automatically matches bank entries using payment references, IBANs or invoice numbers and leaves misses for attention.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "A bounded reader can propose remittance allocations, but exact arithmetic and source-record checks should validate them.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Duplicate detection, balance checks and approval logs can use deterministic controls.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Supported bank feeds and matching features are available; otherwise integration effort increases.",
+    "Automatic matches require unique identifiers, compatible currency and exact amounts under approved rules.",
+    "Time shares cover all participants in the task, including accountant review.",
+    "The mailbox share exceeds the supplied prior because this decomposition includes remittance investigation.",
+    "Build ranges are estimates. GDPR access and retention controls apply; national rules determine consultation needs."
+   ],
+   "unknowns": [
+    "Supported bank formats, feed availability and historical data quality.",
+    "Volumes of split payments, foreign currencies and unmatched receipts.",
+    "Current posting permissions, approval thresholds and segregation of duties.",
+    "Whether remittance messages can be accessed within the permitted data boundary."
+   ],
+   "research_questions": [
+    "Which current {ERP} matching rules can remove the export-and-compare step?",
+    "What proportion of unmatched entries has usable remittance evidence?",
+    "Can replay tests distinguish correct matches from merely balanced allocations?"
+   ],
+   "new_work": [
+    "Monitor feed completeness, duplicates and failed imports.",
+    "Review proposed allocations from free-text messages.",
+    "Maintain matching rules and test changes against historical exceptions.",
+    "Handle unresolved differences and retain correction approvals.",
+    "Monitor extraction failures and changes in remittance formats."
+   ],
+   "time_saved_pct": 78,
+   "speedup": 4.44
+  },
+  {
+   "uid": "43-3031.00:2507",
+   "short": "Gather actuals, prior budgets and estimates into a checked budget workbook and supporting pack.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export actual revenues and expenses by account and cost centre from the {ERP}.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "budget scope",
+      "reporting period",
+      "general ledger"
+     ],
+     "outputs": [
+      "actuals export"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Retrieve prior budgets and check workbook versions in the {SPREADSHEET}.",
+     "actor": "finance clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "DOCS"
+     ],
+     "inputs": [
+      "budget scope",
+      "prior budget"
+     ],
+     "outputs": [
+      "budget baseline"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Collect revenue estimates, expense estimates and explanations through the {EMAIL}.",
+     "actor": "finance clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "budget scope",
+      "estimate submission"
+     ],
+     "outputs": [
+      "estimate register"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "crud_app",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Estimate submissions and attached explanations for the agreed budget scope.",
+      "output": "Draft estimate rows with owner, period, currency, amount, assumption and source reference.",
+      "check": "Validate required fields, totals and duplicates; the clerk checks each extracted row against its source.",
+      "stop": "One extraction and one repair attempt per submission; unresolved fields return to the submitter.",
+      "why_not_simpler": "Use structured intake first. A bounded reader handles residual narrative submissions that fixed field mappings cannot capture."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "plan-to-forecast",
+     "approver": "finance clerk"
+    },
+    {
+     "id": "s4",
+     "what": "Map accounts, combine inputs and check totals in the {SPREADSHEET}.",
+     "actor": "finance clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "actuals export",
+      "budget baseline",
+      "estimate register",
+      "account mapping"
+     ],
+     "outputs": [
+      "draft budget workbook",
+      "budget exception list"
+     ],
+     "handoff_to": "budget owner",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Resolve missing assumptions and approve estimate changes with the budget owner.",
+     "actor": "budget owner",
+     "today_means": "meeting_call",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "draft budget workbook",
+      "budget exception list"
+     ],
+     "outputs": [
+      "approved budget assumptions",
+      "resolved budget workbook"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "plan-to-forecast",
+     "approver": "budget owner"
+    },
+    {
+     "id": "s6",
+     "what": "Assemble the budget workbook and supporting documents in the {DOCS} for finance review.",
+     "actor": "finance clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "resolved budget workbook",
+      "approved budget assumptions",
+      "estimate submission"
+     ],
+     "outputs": [
+      "budget compilation pack"
+     ],
+     "handoff_to": "budget analyst",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    }
+   ],
+   "design": "Use the {WORKFLOW} for structured estimate intake and versioned approvals, with actuals from the {ERP} and prior budgets from the {DOCS}. A deterministic generator in the {DATA_PLATFORM} applies approved mappings, validates totals and produces the {SPREADSHEET} workbook and supporting pack. A bounded reader prepares residual narrative submissions; budget owners approve assumption changes before those changes enter the reviewed version.",
+   "previous_blocker": "The arithmetic was already manageable. Inconsistent submissions, changing account mappings and unclear version ownership made repeatable compilation difficult.",
+   "enabler_now": "Structured intake removes much of the variation. AI-assisted coding can reduce the cost of building mapping checks and repeatable packs, while bounded extraction handles remaining narrative inputs.",
+   "still_hard": "Revenue assumptions, timing shifts and disputed ownership remain judgement calls. A technically consistent workbook can still contain unrealistic estimates.",
+   "human_edge": "Spot unsupported assumptions, ask useful questions and preserve accountability for estimates.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A revised cost-centre scenario comparison after a material estimate change."
+   },
+   "altitude": "The clerk spends less time copying and formatting and more time explaining input gaps and scenario differences. They can gain authority to return incomplete submissions and prepare comparisons within approved assumptions; budget approval stays with budget owners.",
+   "reach": [
+    {
+     "role": "budget analyst",
+     "task": "Explain the drivers of a cost-centre variance between two budget versions.",
+     "learn": "Driver-based planning, timing effects, scenario discipline and variance bridges."
+    }
+   ],
+   "build_days": {
+    "coding": "4-9",
+    "integration": "3-8",
+    "testing_rollout": "6-12",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Budget compilation can use structured intake, versioned mappings and deterministic arithmetic without generating forecasts through a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Narrative estimate extraction needs source references and human checks before figures become accepted inputs.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The task is budget compilation, not setting strategy or approving the company budget.",
+    "Approved account mappings and calculation conventions can be made explicit.",
+    "The supplied judgement prior mainly applies to assumptions; it does not prevent deterministic assembly.",
+    "The mailbox share exceeds the supplied prior where cost-centre estimates arrive through email.",
+    "Build and time ranges are estimates. GDPR applies to any personal data; national rules determine employee consultation requirements."
+   ],
+   "unknowns": [
+    "Whether a current planning feature already supports structured intake and version control.",
+    "How many submissions contain narrative estimates or inconsistent formats.",
+    "Who approves account mappings, assumptions and final budgets.",
+    "Whether payroll or other employee-level data are needed.",
+    "How many entities, currencies and budget versions are in scope."
+   ],
+   "research_questions": [
+    "Which compilation work can existing {ERP} or {WORKFLOW} features cover?",
+    "Can structured intake eliminate narrative extraction for most submissions?",
+    "Which historical mapping changes and version conflicts should be included in rollout checks?"
+   ],
+   "new_work": [
+    "Review extracted estimate rows and request missing information.",
+    "Maintain account mappings and input templates.",
+    "Check version lineage and trace totals back to approved inputs.",
+    "Resolve access issues and monitor submission completeness.",
+    "Maintain the small extraction loop only while narrative submissions remain."
+   ],
+   "time_saved_pct": 81,
+   "speedup": 5.26
+  },
+  {
+   "uid": "43-3031.00:2502",
+   "short": "Compare ledger output with a separately maintained journal and investigate discrepancies.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Print or retrieve the transaction report from the {ERP}.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "reporting period",
+      "transaction register"
+     ],
+     "outputs": [
+      "ledger printout"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 20,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Retrieve the paper journal for the same period.",
+     "actor": "finance clerk",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "reporting period",
+      "manual journal"
+     ],
+     "outputs": [
+      "journal comparison set"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 15,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Tick matching entries and compare journal totals with the ledger printout.",
+     "actor": "finance clerk",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "ledger printout",
+      "journal comparison set"
+     ],
+     "outputs": [
+      "comparison result",
+      "discrepancy list"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 45,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Trace differences to entries in the {ERP} and identify their causes.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "discrepancy list",
+      "transaction evidence"
+     ],
+     "outputs": [
+      "discrepancy explanation"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "File the marked comparison and explanations as control evidence.",
+     "actor": "finance clerk",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "comparison result",
+      "discrepancy explanation"
+     ],
+     "outputs": [
+      "comparison evidence"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    }
+   ],
+   "design": "Retire the duplicate journal and print comparison once the controller accepts equivalent digital controls in the {ERP}. Configure posting completeness, duplicate and balance checks against independent transaction evidence, routing exceptions through the {WORKFLOW} and retaining results in the {DOCS}. The clerk investigates exceptions; any resulting journal correction follows the existing accountant approval process.",
+   "previous_blocker": "The manual journal often survived as a familiar control after digital posting became available. Removing it required agreement on the control objective and replacement evidence.",
+   "enabler_now": "Existing posting logs and reconciliation features can provide traceable checks. AI-assisted coding can make any remaining source-to-ledger checks cheaper to implement; no model is needed for comparison.",
+   "still_hard": "A second journal may contain genuinely independent evidence. Removing it without understanding that evidence could remove the only completeness check.",
+   "human_edge": "Distinguish a redundant comparison from an independent control, and explain what a discrepancy means.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The clerk's week loses routine printing and ticking and retains exception investigation. No new decision rights are assumed.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Document whether a source-to-ledger control proves completeness and accuracy.",
+     "learn": "Control objectives, evidence independence, audit trails and the limits of matching totals."
+    }
+   ],
+   "build_days": {
+    "coding": "0-4",
+    "integration": "1-5",
+    "testing_rollout": "5-12",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A duplicate paper journal can be retired when accepted digital controls cover its purpose and retain adequate evidence.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "AFAS bank matching illustrates an existing digital reconciliation capability, but does not establish equivalence for every manual journal control.",
+     "grade": "E2",
+     "source": "[S2]"
+    }
+   ],
+   "assumptions": [
+    "This is a legacy task where printouts and a manual journal still exist; it is not assumed universal in mid-size companies.",
+    "The manual journal duplicates approved transactions rather than serving as the only independent source.",
+    "Elimination is conditional on controller acceptance of replacement control evidence before the old control is retired.",
+    "The control objective remains; the duplicate comparison disappears. New digital control upkeep is listed separately.",
+    "Build ranges are estimates. GDPR retention and access rules apply; national rules determine consultation requirements."
+   ],
+   "unknowns": [
+    "Whether this comparison is still performed and whether the journal is paper or a manually updated file.",
+    "Whether the journal contains independent source evidence.",
+    "Which control objective, retention obligation or audit requirement the comparison satisfies.",
+    "Whether existing {ERP} controls provide sufficient evidence without new code."
+   ],
+   "research_questions": [
+    "Can each current comparison check be mapped to an existing digital control?",
+    "Which independent source records can prove completeness after duplicate journal retirement?",
+    "What evidence will the controller require to accept the replacement?"
+   ],
+   "new_work": [
+    "Document the old control objective and verify replacement coverage before retirement.",
+    "Review digital control exceptions and missing-source alerts.",
+    "Check control operation after changes to posting routes or account mappings.",
+    "Maintain access, retention settings and evidence retrieval.",
+    "Retain a digital source-to-ledger reconciliation if the journal proves independent."
+   ],
+   "time_saved_pct": 90,
+   "speedup": 9.52
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts toward resolving exceptions, checking source evidence and explaining financial differences. Clerks can gain bounded rights to prioritise investigations, return incomplete submissions and allocate clearly evidenced receipts; payment release, accounting policy and budget approval remain with the authorised roles.",
+  "reach": [
+   "Treasury analyst: explain cash timing from overdue receipts and repayment schedules.",
+   "Accountant: prepare supported treatments for reconciliation differences and document control evidence.",
+   "Budget analyst: explain changes between budget versions using approved assumptions."
+  ],
+  "skills_to_grow": [
+   "Source-to-ledger tracing and reconciliation controls.",
+   "Account mappings, cut-off and clearing-account treatment.",
+   "Cash timing and budget variance analysis.",
+   "Structured data validation and exception diagnosis.",
+   "Review of bounded extraction outputs against source evidence.",
+   "GDPR-aware access, evidence retention and applicable EU AI Act literacy."
+  ],
+  "ambitious_version": "A finance operations specialist who provides timely exception explanations, cash-impact notes and budget comparisons across connected records. Expansion follows demonstrated accounting competence and explicit delegation of decision rights."
+ },
+ "job_code": "43-3031.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 176,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3000}); text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-3031.00",
+   "title": "Bookkeeping, Accounting, and Auditing Clerks",
+   "tasks": 28,
+   "function": "Finance"
+  }
+ }
+}

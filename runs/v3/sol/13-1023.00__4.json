@@ -1,0 +1,1049 @@
+{
+ "tasks": [
+  {
+   "uid": "13-1023.00:1151",
+   "short": "Maintain purchasing records and review costs, deliveries, product performance and stock.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect purchase, receipt, stock and quality records from operational systems.",
+     "actor": "purchasing agent",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT",
+      "ERP",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "purchase order",
+      "goods receipt",
+      "stock record",
+      "quality record"
+     ],
+     "outputs": [
+      "purchasing extract"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Match records and flag missing receipts, inconsistent prices and duplicate entries.",
+     "actor": "purchasing agent",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "purchasing extract",
+      "item master",
+      "supplier master"
+     ],
+     "outputs": [
+      "record exception list"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Correct purchasing records using verified source documents.",
+     "actor": "purchasing agent",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "record exception list",
+      "purchase order",
+      "goods receipt"
+     ],
+     "outputs": [
+      "corrected purchasing record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "purchasing agent"
+    },
+    {
+     "id": "s4",
+     "what": "Review spending, delivery performance, quality and stock exceptions.",
+     "actor": "purchasing agent",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT",
+      "ERP",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "corrected purchasing record",
+      "stock record",
+      "quality record"
+     ],
+     "outputs": [
+      "purchasing review"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Resolve missing information with warehouse, finance or supplier contacts.",
+     "actor": "purchasing agent",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CHAT"
+     ],
+     "inputs": [
+      "record exception list",
+      "purchasing review"
+     ],
+     "outputs": [
+      "record clarification"
+     ],
+     "handoff_to": "procurement clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    }
+   ],
+   "design": "A scheduled integration on the {DATA_PLATFORM} matches records from the {PROCUREMENT}, {ERP} and {OPS_SYSTEM}, with source links and an exception queue. Configure correction approval in the {PROCUREMENT} and feed a {BI} view of cost, delivery, quality and stock exceptions; people investigate ambiguous records and decide responses.",
+   "previous_blocker": "Separate identifiers, inconsistent receipt timing and unclear record ownership made reconciliation expensive to maintain.",
+   "enabler_now": "Existing exports and interfaces support deterministic matching. AI-assisted coding can reduce implementation effort, without resolving poor source data.",
+   "still_hard": "Item substitutions, partial receipts and disputed quality records need operational knowledge. Financial postings require the finance team's controls.",
+   "human_edge": "Recognise when an apparent data error reveals a supplier or production problem.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly item-level reorder exception decisions."
+   },
+   "altitude": "The week shifts from copying records to investigating stock and supplier exceptions. No additional spending or accounting rights are assumed.",
+   "reach": [
+    {
+     "role": "procurement clerk",
+     "task": "Resolve unmatched receipts before invoice processing.",
+     "learn": "Receipt matching, item identifiers and correction audit trails."
+    },
+    {
+     "role": "purchasing manager",
+     "task": "Prioritise supplier performance interventions.",
+     "learn": "Delivery measures, quality trends and commercial materiality."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "5-12",
+    "testing_rollout": "4-8",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Purchasing records commonly span purchasing, finance and stock systems, with manual reconciliation between them.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Identifier matching, duplicate checks and exception dashboards can use deterministic rules without a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Build ranges and remaining time are planning estimates, not measured customer outcomes.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "A typical mid-size company has purchasing and receipt records in systems, with spreadsheets bridging gaps.",
+    "Source records remain authoritative; the solution does not silently change financial postings.",
+    "The structured-input prior fits this task. The document-time prior is reduced because system records dominate routine maintenance.",
+    "Build ranges are working-day estimates for one initial business unit, including access review and any applicable employee consultation.",
+    "GDPR applies to personal data. EU AI Act obligations depend on actual use; national rules determine consultation requirements."
+   ],
+   "unknowns": [
+    "Available interfaces, identifiers and export permissions.",
+    "Which records purchasing staff may correct and who owns unresolved differences.",
+    "Current exception volume and time spent on record maintenance.",
+    "Whether national rules require employee consultation for the proposed workflow."
+   ],
+   "research_questions": [
+    "Which mismatches can existing configuration already detect?",
+    "Which correction types require finance approval?",
+    "Can source completeness and reconciliation accuracy be measured before rollout?"
+   ],
+   "new_work": [
+    "Review proposed corrections and investigate unmatched records.",
+    "Maintain identifier mappings and matching tolerances.",
+    "Monitor failed imports, stale data and reconciliation totals."
+   ],
+   "time_saved_pct": 73,
+   "speedup": 3.7
+  },
+  {
+   "uid": "13-1023.00:1158",
+   "short": "Track supply, demand, market conditions and price movements relevant to purchasing.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect category prices and relevant futures quotations from market-data services.",
+     "actor": "purchasing agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "category watchlist",
+      "market quotation"
+     ],
+     "outputs": [
+      "market price series"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "market-insight",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read supplier notices, industry reports and news for supply changes.",
+     "actor": "purchasing agent",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "EMAIL"
+     ],
+     "inputs": [
+      "supplier notice",
+      "industry report",
+      "category watchlist"
+     ],
+     "outputs": [
+      "market signal register"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Approved supplier notices and reports, with category watchlist and source dates.",
+      "output": "Dated supply signals with quotations, source links and uncertainty flags.",
+      "check": "Require a supporting passage for each signal; verify dates, entities and numerical claims.",
+      "stop": "One extraction and one repair pass per document; unreadable or unsupported items enter manual review.",
+      "why_not_simpler": "Supply changes appear in varied prose and cannot reliably be captured by fixed fields or keywords."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "market-insight",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Compare price trends with purchasing history, currency movements and demand forecasts.",
+     "actor": "purchasing agent",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "ERP"
+     ],
+     "inputs": [
+      "market price series",
+      "purchase history",
+      "demand forecast",
+      "exchange rate"
+     ],
+     "outputs": [
+      "category exposure analysis"
+     ],
+     "handoff_to": "production planner",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "market-insight",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Discuss demand changes and operational exposure with purchasing.",
+     "actor": "production planner",
+     "today_means": "meeting_call",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "category exposure analysis",
+      "market signal register",
+      "demand forecast"
+     ],
+     "outputs": [
+      "validated demand assumptions"
+     ],
+     "handoff_to": "purchasing agent",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Write an assessment of purchasing implications and possible responses.",
+     "actor": "purchasing agent",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "category exposure analysis",
+      "market signal register",
+      "validated demand assumptions"
+     ],
+     "outputs": [
+      "market assessment"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Validated signals, calculated exposure and demand assumptions.",
+      "output": "A short assessment separating observations, assumptions and response options.",
+      "check": "Trace facts to sources and calculations; the purchasing agent checks commercial reasoning.",
+      "stop": "One draft and one revision per assessment; unresolved contradictions remain explicitly flagged.",
+      "why_not_simpler": "A template supplies structure, but explaining changing commercial implications requires synthesis of text and context."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "market-insight",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve and circulate the market assessment to relevant budget owners.",
+     "actor": "purchasing agent",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "market assessment"
+     ],
+     "outputs": [
+      "market bulletin"
+     ],
+     "handoff_to": "budget owner",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "market-insight",
+     "approver": "purchasing agent"
+    }
+   ],
+   "design": "Scheduled jobs on the {DATA_PLATFORM} collect licensed market feeds and combine them with purchase history from the {ERP} in a {BI} dashboard. Bounded loops extract sourced signals and draft an assessment in the {DOCS}; the purchasing agent approves circulation through the {EMAIL}, while purchasing commitments follow existing approval routes.",
+   "previous_blocker": "Market sources use different units, update schedules and licensing terms. Local demand knowledge is rarely captured in a reusable form.",
+   "enabler_now": "Deterministic pipelines handle prices and exposure calculations, while bounded models can extract and summarise approved documents. Neither capability makes market predictions dependable.",
+   "still_hard": "Thin markets, futures basis differences and conflicting supplier claims weaken conclusions. Commercial timing remains uncertain.",
+   "human_edge": "Distinguish a temporary headline from a supply change that matters to the company's actual demand.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly category exposure reviews."
+   },
+   "altitude": "The purchasing agent spends more time testing demand assumptions and preparing sourcing responses. Recommendations become more frequent; commitment and hedging authority do not change.",
+   "reach": [
+    {
+     "role": "purchasing manager",
+     "task": "Choose which categories need earlier sourcing action.",
+     "learn": "Exposure scenarios, price-index limitations and supplier concentration."
+    },
+    {
+     "role": "wholesale and retail buyer",
+     "task": "Relate demand seasonality to purchasing windows.",
+     "learn": "Forecast bias, seasonality and inventory trade-offs."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "5-15",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Price-series collection, unit conversion and exposure calculations can be deterministic.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Text extraction can assist market monitoring, but market relevance and purchasing responses still require judgment.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The digest provides no direct case establishing market-monitoring savings for this job; estimates remain unvalidated.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Monitoring covers selected purchasing categories; futures are included only when relevant.",
+    "Market-data licences permit the proposed collection and internal reuse.",
+    "The gathering prior is retained, but interpreting commercial implications remains human work.",
+    "Build ranges cover an initial category set, access review and any required consultation; feed subscriptions are additional.",
+    "GDPR applies where source material contains personal data. National rules determine employee consultation requirements."
+   ],
+   "unknowns": [
+    "Categories, regions and currencies that drive meaningful exposure.",
+    "Licensed sources, reuse rights and feed costs.",
+    "Availability and reliability of demand forecasts.",
+    "Current review cadence and who may approve sourcing responses.",
+    "Whether national rules require consultation for changed work processes."
+   ],
+   "research_questions": [
+    "Which indicators have historically preceded material supplier price or availability changes?",
+    "Can price series be compared after currency, unit and contract-term adjustments?",
+    "Which alert thresholds reduce noise without concealing important changes?"
+   ],
+   "new_work": [
+    "Review source-backed signals and resolve conflicting reports.",
+    "Maintain category mappings, feed licences and alert thresholds.",
+    "Check whether alerts led to useful decisions and retire weak indicators."
+   ],
+   "time_saved_pct": 74,
+   "speedup": 3.85
+  },
+  {
+   "uid": "13-1023.00:1148",
+   "short": "Track incoming shipments and resolve late or missing deliveries.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Compare open purchase orders with promised dates and recorded receipts.",
+     "actor": "purchasing agent",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "purchase order",
+      "goods receipt"
+     ],
+     "outputs": [
+      "delivery exception list"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check shipment status in supplier and carrier portals.",
+     "actor": "purchasing agent",
+     "today_means": "system_screen",
+     "systems": [
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "delivery exception list",
+      "shipment reference"
+     ],
+     "outputs": [
+      "shipment status"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Request missing delivery dates and shipment details from suppliers.",
+     "actor": "purchasing agent",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "delivery exception list",
+      "shipment status"
+     ],
+     "outputs": [
+      "delivery status request"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Read supplier replies and identify revised dates, quantities and delay causes.",
+     "actor": "purchasing agent",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "supplier delivery reply",
+      "purchase order"
+     ],
+     "outputs": [
+      "delay summary"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Supplier delivery replies matched to an open purchase order.",
+      "output": "Proposed delivery date, quantity, delay cause and supporting passages.",
+      "check": "Validate order identity, date format and quantity bounds; preserve uncertainty and contradictions.",
+      "stop": "One extraction and one repair pass per reply; ambiguous promises go to the purchasing agent.",
+      "why_not_simpler": "Supplier replies express dates and commitments in inconsistent free text."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Agree feasible recovery options with the supplier and affected operational team.",
+     "actor": "purchasing agent",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY",
+      "CHAT"
+     ],
+     "inputs": [
+      "delay summary",
+      "stock record",
+      "production priority"
+     ],
+     "outputs": [
+      "recovery proposal"
+     ],
+     "handoff_to": "purchasing manager",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve recovery spending or order changes requiring delegated authority.",
+     "actor": "purchasing manager",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "recovery proposal",
+      "approval policy"
+     ],
+     "outputs": [
+      "approved recovery plan"
+     ],
+     "handoff_to": "purchasing agent",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "purchasing manager"
+    },
+    {
+     "id": "s7",
+     "what": "Update order dates and recovery actions in the purchasing record.",
+     "actor": "purchasing agent",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "approved recovery plan",
+      "purchase order"
+     ],
+     "outputs": [
+      "updated delivery schedule"
+     ],
+     "handoff_to": "production planner",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure overdue-order checks in the {PROCUREMENT} and integrate receipts from the {OPS_SYSTEM} with available {PARTNER_PORTAL} status feeds. The {WORKFLOW} sends approved-template status requests through the {EMAIL}, and a bounded loop extracts supplier replies for review. People negotiate recovery and approve commitments; approved changes update the {PROCUREMENT} and notify affected planners.",
+   "previous_blocker": "Shipment identifiers and status formats differ across suppliers. Missing promises and recovery decisions sit in individual mailboxes.",
+   "enabler_now": "Available feeds and deterministic reminders cover routine monitoring. A bounded extractor can structure replies without granting authority to negotiate.",
+   "still_hard": "Some suppliers provide no reliable tracking feed. Capacity shortages, substitutions and competing production priorities require people to resolve them.",
+   "human_edge": "Secure credible supplier commitments while balancing production disruption, cost and relationships.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A production-impact delivery recovery briefing."
+   },
+   "altitude": "The purchasing agent works from prioritised delivery exceptions and spends more time securing recovery commitments. Existing spending limits and technical approval rights remain in place.",
+   "reach": [
+    {
+     "role": "procurement clerk",
+     "task": "Close receipt discrepancies after delayed deliveries arrive.",
+     "learn": "Partial receipts, shipment references and order closure controls."
+    },
+    {
+     "role": "purchasing manager",
+     "task": "Compare premium freight with alternative recovery options.",
+     "learn": "Disruption costs, escalation limits and supplier recovery capacity."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "7-18",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Open-order checks and standard status reminders are established deterministic purchasing workflows.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Free-text delivery replies need interpretation; negotiating recovery remains relationship and context dependent.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The digest does not establish shipment-monitoring savings or integration coverage for this proposed solution.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Machine portal checks apply only where supported interfaces or permitted structured exports exist.",
+    "Automated external messages use approved recipients and neutral templates; they make no commercial commitments.",
+    "Recorded receipt delays are distinguished from physical delivery delays.",
+    "The coordination prior is retained. Routine monitoring can change substantially while recovery conversations stay human.",
+    "Build ranges cover an initial supplier group, access review and any applicable employee consultation.",
+    "GDPR applies to contact and message data; national rules determine consultation requirements."
+   ],
+   "unknowns": [
+    "Which suppliers provide reliable tracking interfaces and order references.",
+    "Current delays, receipt-posting lag and escalation thresholds.",
+    "Who may approve freight charges, substitutions and revised commitments.",
+    "Whether national rules require employee consultation for the workflow change."
+   ],
+   "research_questions": [
+    "Can shipment identifiers be linked reliably to individual order lines?",
+    "Which late-delivery alerts predict operational disruption?",
+    "Can approval records be checked against the exact recovery plan before updates?"
+   ],
+   "new_work": [
+    "Review ambiguous dates and conflicting supplier commitments.",
+    "Handle unavailable feeds and failed status requests.",
+    "Maintain recipient lists, escalation thresholds and message templates.",
+    "Check that approved recovery plans match recorded changes."
+   ],
+   "time_saved_pct": 72,
+   "speedup": 3.51
+  },
+  {
+   "uid": "13-1023.00:1152",
+   "short": "Find suitable goods and services through catalogues, industry sources and internal consultation.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Clarify specifications, intended use, timing and acceptable alternatives with the requesting department.",
+     "actor": "purchasing agent",
+     "today_means": "meeting_call",
+     "systems": [
+      "CALENDAR",
+      "CHAT"
+     ],
+     "inputs": [
+      "purchase request",
+      "technical specification"
+     ],
+     "outputs": [
+      "sourcing brief"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Search approved catalogues and existing supplier records for matching options.",
+     "actor": "purchasing agent",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "sourcing brief",
+      "supplier master",
+      "approved catalogue"
+     ],
+     "outputs": [
+      "existing supplier options"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Review websites, trade directories and technical publications for additional sourcing options.",
+     "actor": "purchasing agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "sourcing brief",
+      "trade directory",
+      "supplier technical document"
+     ],
+     "outputs": [
+      "sourced supplier profiles"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "A capped result set from a web-search service, trade directories and retrieved supplier documents.",
+      "output": "Supplier profiles with cited capabilities, specification matches and explicitly missing evidence.",
+      "check": "Verify supplier identity and source passages; never infer certification, compatibility, availability or price.",
+      "stop": "At most 20 retrieved documents and one repair pass per search; insufficient evidence returns to the purchasing agent.",
+      "why_not_simpler": "Supplier capabilities and technical specifications appear in varied prose and document layouts."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Compare candidates against specifications, supplier eligibility and commercial requirements.",
+     "actor": "purchasing agent",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "sourcing brief",
+      "existing supplier options",
+      "sourced supplier profiles",
+      "supplier policy"
+     ],
+     "outputs": [
+      "supplier comparison"
+     ],
+     "handoff_to": "requesting manager",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Confirm technical suitability and approve a shortlist with purchasing.",
+     "actor": "requesting manager",
+     "today_means": "meeting_call",
+     "systems": [
+      "CALENDAR",
+      "DOCS"
+     ],
+     "inputs": [
+      "supplier comparison",
+      "technical specification"
+     ],
+     "outputs": [
+      "approved supplier shortlist"
+     ],
+     "handoff_to": "purchasing agent",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "supplier-to-contract",
+     "approver": "requesting manager"
+    }
+   ],
+   "design": "Use configured search in the {PROCUREMENT} for existing suppliers, then a capped search through the {OTHER} web-search service for gaps. A bounded loop creates source-linked profiles in the {DOCS}, while a deterministic comparison in the {WORKFLOW} checks explicit requirements and flags missing evidence. The requesting manager confirms suitability before the shortlist enters supplier qualification or quotation workflows.",
+   "previous_blocker": "Requirements are often incomplete, and supplier information is scattered across catalogues, websites and technical documents.",
+   "enabler_now": "Configured catalogue search and deterministic comparison cover known options. Bounded extraction reduces reading effort for unfamiliar documents without replacing technical validation.",
+   "still_hard": "Published claims may be outdated or incomplete. Safety, interoperability, service capacity and actual availability need direct verification.",
+   "human_edge": "Discover the requester's real operating constraints and recognise when a superficially matching product is unsuitable.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A sourced substitution brief for discontinued parts."
+   },
+   "altitude": "The purchasing agent spends less time assembling supplier facts and more time exploring viable alternatives with technical colleagues. Shortlisting becomes faster; technical acceptance and purchase authority remain with existing roles.",
+   "reach": [
+    {
+     "role": "procurement clerk",
+     "task": "Maintain qualified supplier and catalogue records.",
+     "learn": "Supplier identity checks, evidence expiry and duplicate prevention."
+    },
+    {
+     "role": "purchasing manager",
+     "task": "Develop alternatives for concentrated or fragile supply categories.",
+     "learn": "Qualification requirements, switching costs and supply concentration."
+    }
+   ],
+   "build_days": {
+    "coding": "6-12",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Pactum documents requisition policy checks inside Coupa; this supports policy checking, not technical supplier qualification.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Catalogue search and explicit requirement comparisons can be deterministic; varied technical prose benefits from bounded extraction.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Build ranges and review-time estimates require validation against actual categories and source documents.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The initial scope is supplier discovery and shortlisting, rather than contract award or supplier onboarding.",
+    "The requesting manager obtains specialist technical approval where required.",
+    "Only permitted sources are retrieved, and confidential specifications are not sent to public search services.",
+    "The document-heavy prior is retained. Repeated browsing and comparison shrink more than requirement clarification.",
+    "Build ranges cover selected purchasing categories, source access and any applicable employee consultation.",
+    "GDPR applies to supplier contact data; EU AI Act obligations depend on use, and national rules govern consultation."
+   ],
+   "unknowns": [
+    "Completeness and search quality of approved catalogues.",
+    "Categories requiring engineering, safety or regulatory qualification.",
+    "Permitted external sources and handling rules for confidential specifications.",
+    "Who can approve technical suitability and supplier shortlists.",
+    "Whether national rules require consultation for the proposed workflow."
+   ],
+   "research_questions": [
+    "How often can existing catalogue options satisfy the request?",
+    "Which mandatory requirements can be checked as explicit fields?",
+    "Can reviewers trace each claimed match to current supplier evidence?"
+   ],
+   "new_work": [
+    "Verify extracted capabilities and unsupported supplier claims.",
+    "Maintain requirement templates, source permissions and evidence expiry rules.",
+    "Handle missing specifications and route technical questions to specialists.",
+    "Check whether shortlists produce qualified, available suppliers."
+   ],
+   "time_saved_pct": 56,
+   "speedup": 2.29
+  }
+ ],
+ "role": {
+  "altitude": "Purchasing work shifts toward supply exceptions, technical alternatives and commercial judgment. Better information supports more frequent recommendations; spending, contract and technical approval rights change only through explicit delegation.",
+  "reach": [
+   "Help procurement clerks resolve record and receipt exceptions with traceable evidence.",
+   "Help purchasing managers assess category exposure and recovery trade-offs.",
+   "Learn demand seasonality from wholesale and retail buyers."
+  ],
+  "skills_to_grow": [
+   "Data reconciliation and source-quality assessment.",
+   "Category exposure and inventory trade-offs.",
+   "Technical requirement clarification and supplier qualification.",
+   "Supplier recovery conversations and negotiation.",
+   "Testing matching rules and reviewing source-grounded model outputs."
+  ],
+  "ambitious_version": "Provide a recurring category resilience service combining stock exceptions, market exposure, delivery recovery and qualified alternatives, with decisions assigned to existing accountable roles."
+ },
+ "job_code": "13-1023.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 189,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:4500});text(r.output);\n"
+  ],
+  "job": {
+   "code": "13-1023.00",
+   "title": "Purchasing Agents, Except Wholesale, Retail, and Farm Products",
+   "tasks": 19,
+   "function": "Procurement"
+  }
+ }
+}

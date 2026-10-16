@@ -1,0 +1,658 @@
+{
+ "tasks": [
+  {
+   "uid": "11-3061.00:1034",
+   "short": "Report market changes and purchasing costs to support sourcing and budget decisions.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export purchase prices, volumes, open orders and supplier terms.",
+     "actor": "purchasing manager",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT",
+      "ERP"
+     ],
+     "inputs": [
+      "purchase records",
+      "supplier terms"
+     ],
+     "outputs": [
+      "purchase export"
+     ],
+     "handoff_to": "purchasing manager",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "market-insight",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read market publications and supplier notices for relevant price and availability changes.",
+     "actor": "purchasing manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "EMAIL"
+     ],
+     "inputs": [
+      "market publications",
+      "supplier notices"
+     ],
+     "outputs": [
+      "market notes"
+     ],
+     "handoff_to": "purchasing manager",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Approved market publications and supplier notices.",
+      "output": "Dated market notes with categories, units and source passages.",
+      "check": "Require source passages; validate dates, currencies and units; flag conflicting claims.",
+      "stop": "One extraction and one repair per document; unreadable or conflicting material goes to the manager.",
+      "why_not_simpler": "Relevant changes appear in varied prose and document layouts."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "market-insight",
+     "approver": "purchasing manager"
+    },
+    {
+     "id": "s3",
+     "what": "Normalize prices and calculate category cost movements against previous periods and budgets.",
+     "actor": "purchasing manager",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "purchase export",
+      "market notes",
+      "purchase budget"
+     ],
+     "outputs": [
+      "cost analysis"
+     ],
+     "handoff_to": "purchasing manager",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "market-insight",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Judge which changes matter and distinguish price effects from purchasing mix changes.",
+     "actor": "purchasing manager",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "cost analysis",
+      "market notes",
+      "sourcing plan"
+     ],
+     "outputs": [
+      "report conclusions"
+     ],
+     "handoff_to": "purchasing manager",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "market-insight",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Write the report, explain cost drivers and check recommendations before circulation.",
+     "actor": "purchasing manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "cost analysis",
+      "market notes",
+      "report conclusions"
+     ],
+     "outputs": [
+      "approved market report"
+     ],
+     "handoff_to": "purchasing manager",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Validated cost analysis, reviewed market notes and manager's report conclusions.",
+      "output": "Report draft with sourced commentary and fixed-format tables.",
+      "check": "Render figures directly from validated data; require citations and manager approval of commentary.",
+      "stop": "One draft and one revision; unsupported explanations remain blank for the manager.",
+      "why_not_simpler": "The narrative must connect changing market evidence with the manager's conclusions."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "market-insight",
+     "approver": "purchasing manager"
+    },
+    {
+     "id": "s6",
+     "what": "Circulate the approved report to buyers, finance and budget holders.",
+     "actor": "purchasing manager",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "approved market report",
+      "report recipient list"
+     ],
+     "outputs": [
+      "report notification"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "market-insight",
+     "approver": "none"
+    }
+   ],
+   "design": "A scheduled job on the {DATA_PLATFORM} joins exports from the {PROCUREMENT} and {ERP}, checks units and currencies, and produces cost tables in the {BI}. Bounded loops extract cited market notes and draft commentary in the {DOCS}; the purchasing manager selects conclusions and approves circulation through the {WORKFLOW} and {EMAIL}.",
+   "previous_blocker": "Category mappings, inconsistent units and changing document formats made recurring reports costly to maintain.",
+   "enabler_now": "AI-assisted coding reduces the effort to build mappings, checks and report templates. Bounded extraction and drafting can handle prose while calculations remain deterministic.",
+   "still_hard": "Comparable market data may require licences. Rebates, currency exposure and purchasing mix can make apparent price movements misleading.",
+   "human_edge": "The manager understands supplier credibility, substitution options and when a market signal warrants changing purchasing plans.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly purchasing-window review for volatile categories."
+   },
+   "altitude": "The manager spends less time assembling reports and more time testing buying windows with buyers and finance. They can propose weekly changes; budget and contract authority remain subject to existing delegation.",
+   "reach": [
+    {
+     "role": "purchasing agent",
+     "task": "Compare supplier quotations using landed cost.",
+     "learn": "Freight, rebates, currency treatment and comparable specifications."
+    },
+    {
+     "role": "wholesale and retail buyer",
+     "task": "Adjust category purchasing plans to demand and margin changes.",
+     "learn": "Sell-through, stock exposure and category margin drivers."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "4-10",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Structured purchase records support deterministic normalization, calculations and report generation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Bounded extraction can produce cited market notes, but commercial interpretation needs review.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Build ranges and remaining-time percentages are planning estimates, not measured outcomes.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The company uses the {PROCUREMENT} and {ERP}; a workbook currently joins their reporting outputs.",
+    "Reports recur by category and use a reasonably stable template.",
+    "Time shares describe a typical report cycle and require validation.",
+    "The design processes commercial data and does not score employees.",
+    "Access follows GDPR where supplier contacts are personal data; consultation under national rules is included if the implementation changes employee monitoring."
+   ],
+   "unknowns": [
+    "Available exports or interfaces and their access restrictions.",
+    "Market-data licences and permitted automated processing.",
+    "Category mappings, rebate treatment and currency conventions.",
+    "Report recipients, approval requirements and purchasing delegation.",
+    "Applicable national consultation requirements and internal access lead times."
+   ],
+   "research_questions": [
+    "Which licensed market sources permit scheduled retrieval and text extraction?",
+    "Can native reporting in the {PROCUREMENT} and {ERP} replace parts of the proposed integration?",
+    "Which reconciliation checks best separate price changes from volume and mix effects?"
+   ],
+   "new_work": [
+    "Review extracted market claims and unsupported report commentary.",
+    "Resolve missing units, stale prices and unmatched categories.",
+    "Maintain category mappings, report templates and source access.",
+    "Check whether weekly signals improve purchasing decisions."
+   ],
+   "time_saved_pct": 76,
+   "speedup": 4.21
+  },
+  {
+   "uid": "11-3061.00:1036",
+   "short": "Choose and coordinate approved routes for returning, reusing, selling or recycling surplus materials.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Identify surplus quantities, ownership, book values and stock locations.",
+     "actor": "purchasing manager",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "ERP"
+     ],
+     "inputs": [
+      "stock records",
+      "asset records",
+      "demand plan"
+     ],
+     "outputs": [
+      "surplus list"
+     ],
+     "handoff_to": "warehouse team",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Inspect quantities and condition, and flag handling or disposal restrictions.",
+     "actor": "warehouse team",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "surplus list",
+      "material specifications"
+     ],
+     "outputs": [
+      "condition record"
+     ],
+     "handoff_to": "purchasing manager",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Ask internal teams whether they can reuse the available materials.",
+     "actor": "purchasing manager",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "surplus list",
+      "condition record"
+     ],
+     "outputs": [
+      "reuse requests"
+     ],
+     "handoff_to": "purchasing manager",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Compare reuse, supplier return, resale and recycling routes using quotes and restrictions.",
+     "actor": "purchasing manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "reuse requests",
+      "condition record",
+      "disposal quotes",
+      "supplier terms",
+      "disposal policy"
+     ],
+     "outputs": [
+      "disposal recommendation"
+     ],
+     "handoff_to": "budget holder",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve the route, recipient, quantities, costs and any required write-off.",
+     "actor": "budget holder",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "disposal recommendation",
+      "disposal policy"
+     ],
+     "outputs": [
+      "approved disposal plan"
+     ],
+     "handoff_to": "purchasing manager",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "budget holder"
+    },
+    {
+     "id": "s6",
+     "what": "Confirm the approved arrangement and book collection or internal transfer.",
+     "actor": "purchasing manager",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CALENDAR"
+     ],
+     "inputs": [
+      "approved disposal plan",
+      "collection availability"
+     ],
+     "outputs": [
+      "collection booking"
+     ],
+     "handoff_to": "warehouse team",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "budget holder"
+    },
+    {
+     "id": "s7",
+     "what": "Verify the collector and materials before release, then obtain collection evidence.",
+     "actor": "warehouse team",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "collection booking",
+      "approved disposal plan",
+      "condition record"
+     ],
+     "outputs": [
+      "collection note"
+     ],
+     "handoff_to": "procurement clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "warehouse supervisor"
+    },
+    {
+     "id": "s8",
+     "what": "Check collection evidence and disposal certificates against the approved plan.",
+     "actor": "procurement clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "collection note",
+      "disposal certificate",
+      "approved disposal plan"
+     ],
+     "outputs": [
+      "disposal evidence pack"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Collection notes and disposal certificates in varied document formats.",
+      "output": "Evidence fields with document references and a comparison to the approved disposal plan.",
+      "check": "Match recipient, material, quantity and date; require source references and review discrepancies.",
+      "stop": "One extraction and one repair per document; missing or contradictory evidence goes to the clerk.",
+      "why_not_simpler": "External evidence arrives as scans and documents without a common schema."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "audit-and-controls",
+     "approver": "procurement clerk"
+    },
+    {
+     "id": "s9",
+     "what": "Reconcile proceeds or fees and post approved stock and financial adjustments.",
+     "actor": "finance team",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "disposal evidence pack",
+      "approved disposal plan",
+      "disposal invoice"
+     ],
+     "outputs": [
+      "disposal accounting record",
+      "updated stock records"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "finance reviewer"
+    }
+   ],
+   "design": "Configure a disposal case in the {WORKFLOW}, populated from the {OPS_SYSTEM} and {ERP}, with internal reuse requests and a deterministic comparison of route costs. The budget holder authorizes a specific plan before bookings through the {EMAIL} and {CALENDAR}; changed terms require renewed approval, and warehouse staff approve physical release. A bounded document loop prepares the evidence pack in the {DOCS}, then finance reviews configured adjustments in the {ERP} and {OPS_SYSTEM}.",
+   "previous_blocker": "Disposal is infrequent, involves physical condition checks and crosses stock, finance and external paperwork.",
+   "enabler_now": "Existing approval flows can hold a shared case. AI-assisted coding makes the small integrations and cost comparisons cheaper; bounded extraction reduces certificate paperwork.",
+   "still_hard": "Physical condition, hazardous-material restrictions, recipient eligibility and resale value need case-specific judgement. External collectors may still coordinate by phone.",
+   "human_edge": "People assess whether material is safe and useful, choose defensible recipients and stop an unsuitable release.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Internal project teams receive a searchable offer of reusable surplus materials."
+   },
+   "altitude": "The manager spends less time chasing bookings and documents and more time finding reuse routes. They can propose transfers across teams; disposal and write-off authority remain with the delegated approvers.",
+   "reach": [
+    {
+     "role": "procurement clerk",
+     "task": "Maintain disposal cases and chase missing collection evidence.",
+     "learn": "Evidence requirements, stock references and exception routing."
+    },
+    {
+     "role": "purchasing agent",
+     "task": "Assess supplier return terms and obtain disposal quotes.",
+     "learn": "Return credits, transport costs and recipient qualification."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Configured approval flows can coordinate disposal records, bookings and accounting handoffs.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Physical inspections and irreversible material releases retain human decision points.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Document extraction can support evidence matching but cannot establish recipient eligibility by itself.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Build ranges and remaining-time percentages are planning estimates, not documented disposal-case results.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The task covers arranging disposal, including approval and closure, rather than performing transport or treatment.",
+    "The company holds stock records in the {OPS_SYSTEM} and financial values in the {ERP}.",
+    "The disposal policy specifies delegated approvals and required evidence.",
+    "The booking gate reuses the approval from s5 only while recipient, quantities, route and costs remain within that plan.",
+    "The reduction in s4 comes from prepared cost comparisons; the route decision stays human.",
+    "GDPR applies to personal contact data. Consultation under national rules is included if the implementation changes employee monitoring."
+   ],
+   "unknowns": [
+    "Material types, condition and hazardous-material restrictions.",
+    "Permitted recipients, required certificates and retention periods.",
+    "Approval thresholds and authority for stock adjustments and write-offs.",
+    "Available interfaces, booking channels and identity checks at collection.",
+    "Whether internal reuse has enough demand to justify a searchable offer.",
+    "Applicable national consultation requirements and access lead times."
+   ],
+   "research_questions": [
+    "Which native features in the {PROCUREMENT} and {WORKFLOW} support disposal cases and internal transfers?",
+    "Which environmental and transport requirements apply to each material and destination?",
+    "Can frequent collectors provide structured collection and treatment evidence?"
+   ],
+   "new_work": [
+    "Maintain disposal routes, approval thresholds and recipient records.",
+    "Handle changed booking terms and obtain renewed approval.",
+    "Review extracted certificates and chase missing evidence.",
+    "Resolve stock, quantity and accounting discrepancies.",
+    "Maintain the internal surplus offer and remove unavailable materials."
+   ],
+   "time_saved_pct": 46,
+   "speedup": 1.84
+  }
+ ],
+ "role": {
+  "altitude": "The purchasing manager's week shifts from report assembly and disposal coordination toward category choices, supplier discussions and reuse decisions. New tools support more frequent recommendations; formal spending, release and write-off rights change only through explicit delegation.",
+  "reach": [
+   "Purchasing agents: quotation comparison and supplier return terms.",
+   "Wholesale and retail buyers: demand, margin and stock exposure.",
+   "Procurement clerks: evidence completeness and transaction closure."
+  ],
+  "skills_to_grow": [
+   "Validate category data and distinguish price effects from purchasing mix.",
+   "Read sourced market evidence and test purchasing scenarios.",
+   "Evaluate reuse and disposal routes using costs, condition and restrictions.",
+   "Design approval thresholds and resolve cross-system exceptions."
+  ],
+  "ambitious_version": "Run a weekly category cost review and an internal surplus reuse service, bringing specific purchasing and transfer proposals to the existing decision makers."
+ },
+ "job_code": "11-3061.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 142,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "text(await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3500}));\n"
+  ],
+  "job": {
+   "code": "11-3061.00",
+   "title": "Purchasing Managers",
+   "tasks": 18,
+   "function": "Procurement"
+  }
+ }
+}

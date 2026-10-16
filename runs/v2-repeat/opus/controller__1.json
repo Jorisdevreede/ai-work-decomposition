@@ -1,0 +1,878 @@
+{
+ "role_id": "controller",
+ "tasks": [
+  {
+   "uid": "11-3031.01:20168",
+   "short": "Check daily cash, bank balances and reserves against tax, payroll and covenant obligations; act on gaps.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pull Rabobank balances and AFAS payables and receivables positions",
+     "actor": "controller",
+     "today_means": "system_screen",
+     "systems": [
+      "Rabobank",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "bank statement",
+      "AP open items",
+      "AR open items"
+     ],
+     "outputs": [
+      "cash position data"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Build the daily cash position and 13-week cash view in Excel",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "cash position data",
+      "payment batch schedule",
+      "payroll calendar"
+     ],
+     "outputs": [
+      "cash forecast"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Check reserves against VAT, payroll tax, pension and bank covenant dates",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "cash forecast",
+      "tax and premium calendar",
+      "covenant terms"
+     ],
+     "outputs": [
+      "threshold alert"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Investigate unmatched bank lines and unusual outflows",
+     "actor": "controller",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Rabobank",
+      "Outlook"
+     ],
+     "inputs": [
+      "unmatched bank lines",
+      "AP open items"
+     ],
+     "outputs": [
+      "exception explanation"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "bank lines AFAS fixed rules left unmatched, with description text and open items",
+      "output": "proposed match or category with a one-line reason",
+      "check": "proposed match must tie to an open item amount and IBAN; otherwise marked unexplained",
+      "stop": "one pass per line, max 2 retries; if no tie, goes to the queue unexplained",
+      "why_not_simpler": "remittance text from agencies and customers is free text that fixed rules on reference and IBAN do not catch"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Decide on action and inform the finance director",
+     "actor": "controller",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams",
+      "Rabobank"
+     ],
+     "inputs": [
+      "threshold alert",
+      "exception explanation"
+     ],
+     "outputs": [
+      "cash decision"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "A nightly job on a governed data platform loads Rabobank CAMT.053 statements and AFAS open items through the AFAS connectors, computes the cash position and a 13-week forecast, and feeds a Power BI cash page. Deterministic rules check reserves against VAT, loonheffing, pension premium and covenant dates and send a Teams alert; a bounded model loop proposes explanations only for bank lines AFAS matching left open. The controller decides any fund moves or payment delays.",
+   "previous_blocker": "The cash view lived in a personal Excel file rebuilt by hand each morning, and there was no cheap way to join bank, AFAS and agency payment schedules.",
+   "enabler_now": "AI coding makes a small pipeline over AFAS connectors and CAMT.053 files a few days of work, and a model can read free-text remittance on the leftover lines.",
+   "still_hard": "Forecasting flex worker invoices in peak season and judging which payments to delay when cash is tight.",
+   "human_edge": "Knowing which supplier or agency will accept a later payment and what the bank will tolerate on a covenant.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A daily instead of weekly cash decision with a rolling 13-week view shared with the finance director."
+   },
+   "altitude": "The controller stops building the cash sheet and spends a short daily slot on alerts and exceptions; they set the reserve thresholds and alert rules.",
+   "reach": [
+    {
+     "role": "bookkeeper",
+     "task": "Bank matching in AFAS",
+     "learn": "Which unmatched patterns recur, so new fixed matching rules can be added in AFAS."
+    },
+    {
+     "role": "fpa",
+     "task": "Cash forecasting",
+     "learn": "How the 13-week view links to the monthly forecast."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "4-8",
+    "testing_rollout": "4-6",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS bank matching uses fixed rules on reference, IBAN and invoice number, so a model belongs only on the unmatched remainder.",
+     "grade": "E2",
+     "source": "[S10]"
+    },
+    {
+     "claim": "Cash allocation needs mandatory human review and approval with timestamped logs.",
+     "grade": "E3",
+     "source": "[S7]"
+    },
+    {
+     "claim": "Disbursement and cash monitoring is best served by deterministic checks with a person approving above a threshold.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Rabobank delivers CAMT.053 files or an API feed.",
+    "AFAS open items are reachable through GetConnectors.",
+    "There is a governed data platform or one can be set up in Azure."
+   ],
+   "unknowns": [
+    "Which bank covenants and reserve thresholds apply.",
+    "How often today the cash view is refreshed.",
+    "Whether agency payment terms are recorded anywhere outside the portals."
+   ],
+   "research_questions": [
+    "What share of bank lines does AFAS fixed matching leave unmatched each month?",
+    "How far off was last year's cash forecast at 4 and 13 weeks?",
+    "Does Rabobank's business API give intraday balances for all three sites' accounts?"
+   ],
+   "time_saved_pct": 84,
+   "speedup": 6.25
+  },
+  {
+   "uid": "11-3031.01:8865",
+   "short": "Run the annual budget and procurement planning across sites; collect, check, discuss and sign off inputs.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Send budget calendar and templates to site and department managers",
+     "actor": "controller",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "SharePoint",
+      "Excel"
+     ],
+     "inputs": [
+      "budget calendar",
+      "budget template"
+     ],
+     "outputs": [
+      "budget request"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Collect and consolidate budget inputs from the three sites",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "SharePoint"
+     ],
+     "inputs": [
+      "budget submission"
+     ],
+     "outputs": [
+      "consolidated budget"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Check inputs against prior year, AFAS headcount and flex worker volumes",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit",
+      "Power BI"
+     ],
+     "inputs": [
+      "consolidated budget",
+      "headcount extract",
+      "agency hours"
+     ],
+     "outputs": [
+      "budget review questions"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "variance table from deterministic checks plus manager comments",
+      "output": "draft questions per cost centre",
+      "check": "each question cites a computed variance above threshold; controller edits before sending",
+      "stop": "one draft per cost centre; no question without a variance above threshold",
+      "why_not_simpler": "manager comments are free text and the questions must read naturally to site managers"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Discuss budgets and purchase plans with site managers and finance director",
+     "actor": "controller",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "budget review questions"
+     ],
+     "outputs": [
+      "agreed budget"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Sign off and load the budget into AFAS",
+     "actor": "controller",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "agreed budget"
+     ],
+     "outputs": [
+      "AFAS budget"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Replace the mailed Excel templates with a SharePoint list or small budget entry app that managers fill in per cost centre; a scheduled job checks submissions against AFAS headcount, agency hours and prior year and shows variances in Power BI. A bounded model loop drafts review questions per cost centre for the controller to edit, and the signed-off budget is loaded into AFAS through its import connector.",
+   "previous_blocker": "Budget templates differ per site and the checks needed data from AFAS HR, agency portals and last year's actuals that nobody had joined.",
+   "enabler_now": "A small entry app and the joins are cheap to build with AI coding, and a model can turn variances and comments into readable questions.",
+   "still_hard": "Getting managers to submit on time and agreeing trade-offs between sites.",
+   "human_edge": "Negotiating with site managers and judging which asks are padding.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A quarterly budget re-forecast per site instead of a once-a-year budget."
+   },
+   "altitude": "The controller spends budget season in review conversations rather than consolidating files, and sets the variance thresholds that trigger questions.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Forecast models",
+     "learn": "How driver-based inputs (pallets, shifts, flex hours) flow into the budget."
+    },
+    {
+     "role": "hrbp",
+     "task": "Headcount planning",
+     "learn": "How planned hires and flex worker peaks are set per site."
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "3-6",
+    "testing_rollout": "5-10",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Planning and advice to management fits a copilot at low autonomy, with people deciding.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Accounting judgement, not retrieval, is the bottleneck on full close and planning-like tasks.",
+     "grade": "E3",
+     "source": "[S2]"
+    }
+   ],
+   "assumptions": [
+    "Budget is held in AFAS at cost centre level.",
+    "Agency hours can be exported from the three portals."
+   ],
+   "unknowns": [
+    "How many cost centres and budget holders there are.",
+    "Whether procurement plans are part of the same cycle.",
+    "Whether FP&A already owns a planning tool."
+   ],
+   "research_questions": [
+    "How many days does consolidation take in the current budget cycle?",
+    "What share of budget lines change after review meetings?",
+    "Can agency hours be pulled automatically from all three portals?"
+   ],
+   "time_saved_pct": 63,
+   "speedup": 2.7
+  },
+  {
+   "uid": "11-3031.01:20169",
+   "short": "Manage insurance, pension and absence-risk premiums: reconcile, track rule changes, budget and renew policies.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect premium invoices and policy data from insurers and pension fund",
+     "actor": "controller",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "premium invoice",
+      "policy schedule"
+     ],
+     "outputs": [
+      "premium data"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "integration",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "PDF premium notes and policy schedules",
+      "output": "premium amounts, periods, bases and policy numbers",
+      "check": "totals must equal invoice total and match the policy register",
+      "stop": "one pass plus one retry; mismatches go to manual entry",
+      "why_not_simpler": "insurer and pension fund documents have no shared format or e-invoice"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Reconcile premiums to AFAS payroll headcount and salary base",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "premium data",
+      "payroll journal",
+      "headcount extract"
+     ],
+     "outputs": [
+      "premium reconciliation"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Track changes in pension (Wtp), WIA, ZW and Zvw rules",
+     "actor": "controller",
+     "today_means": "document",
+     "systems": [
+      "Outlook",
+      "SharePoint"
+     ],
+     "inputs": [
+      "regulation updates",
+      "broker newsletter"
+     ],
+     "outputs": [
+      "rule change digest"
+     ],
+     "handoff_to": "cnb",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "read",
+      "input": "new publications from fixed sources (Belastingdienst, UWV, pension fund, broker)",
+      "output": "short digest with cost impact flagged",
+      "check": "each item links to its source; controller reads source for flagged items",
+      "stop": "monthly run over a fixed source list",
+      "why_not_simpler": "updates arrive as free text across several sources"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Build the insurance, pension and absence-risk budget",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "premium reconciliation",
+      "absence cost aggregate",
+      "rule change digest"
+     ],
+     "outputs": [
+      "benefits budget"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Discuss renewals with broker, insurers and HR director",
+     "actor": "controller",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "benefits budget",
+      "premium reconciliation"
+     ],
+     "outputs": [
+      "renewal decision"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "Premium notes go into AFAS accounts payable with a bounded extraction loop for PDF formats; a scheduled job reconciles premiums to AFAS payroll bases and shows breaks in a Power BI page that only uses aggregated absence data. A monthly digest of rule changes and a budget template fed from the reconciliation support the controller, who leads renewals with the broker and HR director.",
+   "previous_blocker": "Premium documents differ per insurer and absence data is special-category, so nobody built a shared, safe dataset.",
+   "enabler_now": "Cheap extraction of mixed PDFs and quick builds of aggregated, role-restricted reports.",
+   "still_hard": "Forecasting eigenrisico costs for WGA and sick pay, and the pension transition under the Wtp.",
+   "human_edge": "Negotiating renewals and weighing risk appetite with the HR director.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A quarterly absence-risk cost view per site for HR business partners, aggregated only."
+   },
+   "altitude": "The controller stops checking premium notes by hand and spends the time on renewal choices; they decide which aggregates HR may see.",
+   "reach": [
+    {
+     "role": "cnb",
+     "task": "Benefits administration",
+     "learn": "How pension and insurance terms per CAO are set up in AFAS."
+    },
+    {
+     "role": "payroll",
+     "task": "Premium deductions in payroll",
+     "learn": "Where payroll bases differ from insurer bases."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "3-6",
+    "testing_rollout": "4-6",
+    "consent_and_access": "10-25"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Insurance and benefit programmes fit model summaries at low autonomy.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Model output used for estimates must be kept where an auditor can rebuild it, not in personal accounts.",
+     "grade": "E3",
+     "source": "[S9]"
+    }
+   ],
+   "assumptions": [
+    "Noordhaven is eigenrisicodrager for WGA or ZW-flex.",
+    "Absence data stays in AFAS and only aggregates leave it."
+   ],
+   "unknowns": [
+    "Which policies run via a broker.",
+    "Whether the works council must consent under WOR article 27 for absence reporting.",
+    "Pension fund and Wtp transition date."
+   ],
+   "research_questions": [
+    "How many premium mismatches were found last year and of what value?",
+    "Does the works council view aggregated absence cost reporting as a consent matter?",
+    "How many insurer document formats arrive per year?"
+   ],
+   "time_saved_pct": 60,
+   "speedup": 2.5
+  },
+  {
+   "uid": "11-3031.01:8856",
+   "short": "Prepare monthly close pack, annual accounts, forecasts and regulatory reports from AFAS for management and filing.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Extract trial balance and subledgers from AFAS",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "general ledger"
+     ],
+     "outputs": [
+      "trial balance"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Tie out bank, AR, AP, payroll and agency costs",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit",
+      "Rabobank"
+     ],
+     "inputs": [
+      "trial balance",
+      "bank statement",
+      "payroll journal",
+      "agency invoice"
+     ],
+     "outputs": [
+      "tie-out report"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Draft accruals, reclasses and variance commentary",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "trial balance",
+      "tie-out report",
+      "accrual handbook"
+     ],
+     "outputs": [
+      "draft journal",
+      "flux commentary"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "trial balance, prior months, open POs and agency hours, accrual handbook",
+      "output": "draft accrual journals and flux commentary",
+      "check": "tie-out must be zero before posting; controller accepts, adjusts or rejects each journal",
+      "stop": "one draft per handbook category; posting blocked until tie-out passes",
+      "why_not_simpler": "commentary and accrual reasoning need reading of free text and judgement against the handbook"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Assemble management pack, annual accounts and regulatory reports",
+     "actor": "controller",
+     "today_means": "document",
+     "systems": [
+      "Excel",
+      "PowerPoint",
+      "Power BI"
+     ],
+     "inputs": [
+      "trial balance",
+      "flux commentary"
+     ],
+     "outputs": [
+      "management pack",
+      "annual accounts",
+      "CBS report"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Review with finance director and auditor; file with KVK",
+     "actor": "controller",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "management pack",
+      "annual accounts"
+     ],
+     "outputs": [
+      "approved accounts",
+      "SBR filing"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "A scheduled job pulls the AFAS trial balance and subledgers into the governed data platform, runs tie-outs against Rabobank, payroll and agency invoices, and blocks posting until they tie to zero. A bounded model loop drafts accruals and flux commentary per the controller's handbook; a template generator builds the management pack and annual account tables, and KVK filing goes through separate SBR software since AFAS cannot file for large companies.",
+   "previous_blocker": "Tie-outs and commentary were spreadsheet work, and earlier tools could not draft accruals or commentary well enough to save review time.",
+   "enabler_now": "Models now draft simple close tasks well in tests and vendors ship accrual agents with review steps; AI coding makes the AFAS tie-out pipeline cheap.",
+   "still_hard": "Dutch GAAP judgement, the audit, VAT returns and the full close; benchmarks show models still fail most full close tasks.",
+   "human_edge": "Judging estimates, materiality and how to explain results to the auditor and management.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A weekly flash result for the finance director in addition to the monthly close."
+   },
+   "altitude": "The controller moves from preparing the close to designing it: they own the accrual handbook, tie-out rules and materiality thresholds, and review drafts.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Month-end journals",
+     "learn": "Where accruals fail tie-out and why."
+    },
+    {
+     "role": "fpa",
+     "task": "Forecast",
+     "learn": "How actuals commentary feeds the forecast."
+    }
+   ],
+   "build_days": {
+    "coding": "6-10",
+    "integration": "5-10",
+    "testing_rollout": "8-15",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A model scored 100% on four simple month-end scenarios where CPAs averaged about 37%, in a vendor-run lab study.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "On 160 full close tasks the best model meets about 62% of criteria; accounting judgement is the bottleneck.",
+     "grade": "E3",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Accrual agents draft journals for people to accept, adjust or reject.",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "Trintech's accruals agent generates and rolls forward accruals with review and audit retention.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Nothing should post until bank, AR and AP tie to zero.",
+     "grade": "E3",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Accountants using AI closed 7.5 days faster across 79 small and mid-sized firms.",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "AFAS cannot file accounts with KVK via SBR for large companies.",
+     "grade": "E2",
+     "source": "[S11]"
+    }
+   ],
+   "assumptions": [
+    "Noordhaven counts as a large company for KVK filing.",
+    "An accrual handbook can be written per expense category."
+   ],
+   "unknowns": [
+    "Current days to close.",
+    "Number of audit adjustments last year.",
+    "Which SBR filing tool or auditor route is used."
+   ],
+   "research_questions": [
+    "How many audit adjustments last year came from accruals?",
+    "Can drafted accruals pass the auditor's walkthrough when logs are kept on the platform?",
+    "How many days of the close are spent on tie-outs today?"
+   ],
+   "time_saved_pct": 69,
+   "speedup": 3.23
+  }
+ ],
+ "role": {
+  "altitude": "From preparing the cash view, budgets and close to designing them: the controller owns tie-out rules, thresholds, the accrual handbook and the audit trail, and spends time on decisions and conversations.",
+  "reach": [
+   "Bookkeeper bank matching rules in AFAS",
+   "FP&A driver-based forecasting",
+   "Compensation and Benefits pension and insurance setup",
+   "Accountant month-end journals"
+  ],
+  "skills_to_grow": [
+   "Writing an accrual handbook and materiality rules that a model can follow",
+   "Specifying data checks and alerts on a data platform",
+   "Reviewing model drafts with audit-ready logs",
+   "AVG and works council rules for HR data in finance reports"
+  ],
+  "ambitious_version": "A daily cash decision, a weekly flash result and a quarterly re-forecast per site, all from one governed AFAS and bank pipeline, cutting days to close and audit adjustments."
+ },
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 93,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

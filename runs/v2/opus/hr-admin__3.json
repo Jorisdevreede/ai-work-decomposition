@@ -1,0 +1,767 @@
+{
+ "role_id": "hr-admin",
+ "role": {
+  "altitude": "The two HR Administrators stop re-keying and chasing. They own the templates, rules tables and knowledge content behind Recruitee, AFAS and the HR answer desk, and work the exceptions queue. They can approve standard mutations and publish standard vacancies without a second sign-off.",
+  "reach": [
+   "Recruiter: pre-screen applications against knock-out criteria and keep the hiring manager moving, so the recruiter spends time on interviews and offers.",
+   "Payroll Specialist: deliver benefit and allowance mutations into AFAS validated before the payroll cut-off, so month close has fewer corrections.",
+   "People Analytics and HRIS Analyst: maintain the rules tables (CAO allowances, knock-out criteria) and read the funnel and mutation-error dashboards in Power BI."
+  ],
+  "skills_to_grow": [
+   "Writing and maintaining rules tables and message templates in Recruitee and AFAS",
+   "Owning HR knowledge content for an answer desk: one source per topic, a named owner, tone rules",
+   "Reading Power BI funnel and exception dashboards and acting on them",
+   "Knowing the legal gates: GDPR Art. 22 and retention of applicant data, AI Act Art. 50 and Annex III, works council consent under WOR art. 27"
+  ],
+  "ambitious_version": "HR Administration runs as a small service desk for 1,200 employees and the hiring managers on three sites. Every vacancy is live within a day of approval. Every applicant hears back within five working days. Every benefit change lands in AFAS before the payroll cut-off. The administrators publish a monthly report on time-to-respond and errors, and use it to fix the rules."
+ },
+ "tasks": [
+  {
+   "uid": "43-4161.00:2699",
+   "short": "Read applications in Recruitee, check them against job requirements, and pass suitable candidates to hiring managers.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open new applications in Recruitee and read CV and motivation",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "Recruitee"
+     ],
+     "inputs": [
+      "application",
+      "CV"
+     ],
+     "outputs": [
+      "read application"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "CV and screening-question answers in Recruitee",
+      "output": "structured fields: certificates (forklift, VCA, food safety), driving licence, shift availability, work permit status, years in logistics, languages",
+      "check": "schema validation; each field must quote the span of CV text it came from; fields with no quote stay empty",
+      "stop": "one pass plus one retry per CV; on failure, mark the candidate 'manual read' in Recruitee",
+      "why_not_simpler": "CVs arrive as free-text PDFs in Dutch, English and Polish. Screening questions cover only part of the criteria."
+     },
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Check knock-out criteria: certificates, shifts, permit, location",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "Recruitee"
+     ],
+     "inputs": [
+      "read application",
+      "vacancy requirements"
+     ],
+     "outputs": [
+      "criteria check"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "judgement_step",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Decide on the shortlist and write a short referral note",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Recruitee",
+      "Outlook"
+     ],
+     "inputs": [
+      "criteria check"
+     ],
+     "outputs": [
+      "shortlist",
+      "referral note"
+     ],
+     "handoff_to": "recruiter",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Send candidates to the hiring manager and chase feedback",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Recruitee",
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "shortlist",
+      "referral note"
+     ],
+     "outputs": [
+      "manager feedback"
+     ],
+     "handoff_to": "recruiter",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 10,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    }
+   ],
+   "design": "A small extraction job reads new Recruitee applications and writes certificate, shift and permit fields back to the candidate profile. Deterministic rules per vacancy then mark each criterion as met, missing or unclear, and show it on the candidate card. The administrator confirms the shortlist; Recruitee automations send it to the hiring manager and send Teams reminders if there is no feedback after two days.",
+   "previous_blocker": "Free-text CVs in several languages could not be turned into reliable fields without a person reading them. Knock-out criteria lived in people's heads, not in a table.",
+   "enabler_now": "Language models extract fields from CVs with a quoted source span that can be checked. Recruitee exposes candidates and custom fields through its API. AI coding makes the rules table and job cheap to build.",
+   "still_hard": "Judging near-misses: an expired VCA certificate, transferable experience, a candidate for another site. The legal frame also limits automation: from December 2027 screening becomes high-risk, so ranking or rejecting by machine is not an option.",
+   "human_edge": "Seeing potential behind a thin CV and weighing it against what this manager and team need. The shortlist decision stays with a person, who can explain it.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Re-screen the whole Recruitee talent pool each time a new vacancy opens, so earlier applicants with a forklift or VCA certificate get referred again."
+   },
+   "altitude": "Screening time drops by about half. The administrator decides from a pre-filled criteria card instead of reading every CV, and owns the knock-out table per job family.",
+   "reach": [
+    {
+     "role": "recruiter",
+     "task": "Interview planning and candidate experience",
+     "learn": "How hiring managers weigh criteria in practice, so the knock-out table matches real decisions."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "3-5",
+    "testing_rollout": "5-8",
+    "consent_and_access": "10-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Screening and evaluating applicants becomes high-risk under the AI Act (Annex III 4(a)) from 2 December 2027.",
+     "grade": "E3",
+     "source": "[S11][S10]"
+    },
+    {
+     "claim": "A rejection cannot rest solely on automated processing under GDPR Art. 22.",
+     "grade": "E3",
+     "source": "[S13]"
+    },
+    {
+     "claim": "A tool that processes applicant and employee personal data needs works council consent under WOR art. 27(1)(k).",
+     "grade": "E3",
+     "source": "[S12]"
+    },
+    {
+     "claim": "Recruitee supports custom candidate fields, screening questions and stage-based automations through its interface and API.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Agent-style nudging of stalled approvals is a standard product feature.",
+     "grade": "E2",
+     "source": "[S5]"
+    }
+   ],
+   "assumptions": [
+    "Most warehouse and driver vacancies have clear knock-out criteria such as certificates, shifts and licence.",
+    "Recruitee is the single intake channel; agency candidates do not go through this flow.",
+    "The extraction uses a model hosted in the EU under an AVG-compliant processing agreement."
+   ],
+   "unknowns": [
+    "How many applications per month, split between warehouse, transport and office.",
+    "Whether the Recruitee plan includes API access and custom fields.",
+    "Whether the works council sees CV field extraction as a new system needing consent, or as part of Recruitee."
+   ],
+   "research_questions": [
+    "On 100 past applications, how often do the extracted certificate and shift fields agree with what the administrator recorded?",
+    "How much of screening time is reading CVs and how much is deciding? Measure one week by timing it.",
+    "Do hiring managers act faster on a criteria card than on a forwarded CV? Measure time to feedback before and after.",
+    "Would the works council and the DPO accept field extraction without ranking, framed as preparation for a human decision?"
+   ],
+   "time_saved_pct": 78,
+   "speedup": 4.65
+  },
+  {
+   "uid": "43-4161.00:2698",
+   "short": "Tell applicants by mail or phone that they are hired or rejected, and record it in Recruitee.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect the hiring decision from manager or recruiter by mail",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Recruitee"
+     ],
+     "inputs": [
+      "manager feedback"
+     ],
+     "outputs": [
+      "hiring decision"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 25,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Choose a template and personalise the acceptance or rejection message",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "Recruitee",
+      "Word"
+     ],
+     "inputs": [
+      "hiring decision",
+      "message template"
+     ],
+     "outputs": [
+      "applicant message"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 10,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Send the message; call interviewed candidates who are rejected",
+     "actor": "hr-admin",
+     "today_means": "paper_phone",
+     "systems": [
+      "Recruitee",
+      "Outlook"
+     ],
+     "inputs": [
+      "applicant message"
+     ],
+     "outputs": [
+      "applicant notified"
+     ],
+     "handoff_to": "external",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Log the outcome and set the data-retention date",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "Recruitee"
+     ],
+     "inputs": [
+      "applicant notified"
+     ],
+     "outputs": [
+      "closed application"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    }
+   ],
+   "design": "Configure Recruitee so the hiring manager or recruiter records the decision as a stage move with a reason code. That move triggers the matching Dutch or English template with a short delay so it can be undone, and sets the retention date for deletion. Interviewed candidates who are rejected get a phone call from the recruiter or administrator, prompted by a task. No custom code is needed.",
+   "previous_blocker": "Decisions arrived by mail and phone, not as a stage in the system, so nothing could trigger a message. Templates sat in Word on SharePoint.",
+   "enabler_now": "Recruitee stage automations, templates and retention settings already exist; the work is configuration and getting managers to record the decision in Recruitee. A model is not needed at run time.",
+   "still_hard": "Getting hiring managers on three sites to record decisions in Recruitee instead of calling HR. Delicate cases, such as internal candidates or people who were close, still need a human message.",
+   "human_edge": "The call to a rejected internal candidate or a strong finalist, and handling questions about why. That conversation keeps people willing to apply again.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Applicants who are never interviewed get a clear answer within five working days, plus an offer to stay in the talent pool for 12 months with consent."
+   },
+   "altitude": "The administrator no longer writes letters. They own the template set and reason codes, check the weekly list of applicants without an answer, and keep the calls that matter.",
+   "reach": [
+    {
+     "role": "recruiter",
+     "task": "Making offers and handling offer negotiation",
+     "learn": "Which offer details drive acceptance, so the acceptance template answers them up front."
+    }
+   ],
+   "build_days": {
+    "coding": "0-1",
+    "integration": "1-2",
+    "testing_rollout": "3-5",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "none",
+   "evidence": [
+    {
+     "claim": "The acceptance or rejection letter can be automated; the decision itself cannot rest solely on automated processing.",
+     "grade": "E3",
+     "source": "[S13]"
+    },
+    {
+     "claim": "Recruitee can send templated emails on stage changes and supports automatic deletion of candidate data after a set period.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The decision is always made by a person and recorded as a stage move before any message goes out.",
+    "The Dutch privacy authority's guideline of four weeks retention, or one year with consent, is applied."
+   ],
+   "unknowns": [
+    "How many hiring managers have Recruitee seats today.",
+    "Whether rejected applicants currently get any message at all, and how fast.",
+    "Whether acceptance messages must wait for the AFAS contract to be ready."
+   ],
+   "research_questions": [
+    "What share of applicants in the last six months never received an answer, and how long did the rest wait?",
+    "Will hiring managers record decisions in Recruitee if the alternative is chasing by HR? Pilot on one site.",
+    "Does offer acceptance or candidate feedback change once answers are faster? Compare a quarter before and after."
+   ],
+   "time_saved_pct": 86,
+   "speedup": 7.41
+  },
+  {
+   "uid": "43-4161.00:2702",
+   "short": "Handle employee requests for pension, allowances, bike plan and sickness-insurance matters; check eligibility and process changes in AFAS.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive and answer employee benefit questions and requests by mail or phone",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "benefit request"
+     ],
+     "outputs": [
+      "benefit case"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 15,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "read",
+      "input": "employee question in Teams or AFAS InSite, plus owned policy pages on SharePoint and the employee's contract group from AFAS",
+      "output": "answer quoting the policy page; personal entitlements come from a deterministic AFAS lookup, never generated",
+      "check": "the answer must cite a policy page; no answer if there is no citation; health terms are filtered out before the prompt",
+      "stop": "one answer attempt; if there is no citation, or the case is about sickness or a personal situation, open a ticket in the HR queue with the profile attached",
+      "why_not_simpler": "Questions come in free text and the matching CAO and policy pages vary by contract group. A FAQ page alone was not used."
+     },
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Check eligibility against CAO, contract group and policy",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "AFAS Profit",
+      "SharePoint"
+     ],
+     "inputs": [
+      "benefit case",
+      "CAO rules"
+     ],
+     "outputs": [
+      "eligibility check"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "judgement_step",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Enter the mutation in AFAS: pension, allowance, bike plan, deduction",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "eligibility check"
+     ],
+     "outputs": [
+      "AFAS mutation"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 10,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Report to pension fund, sickness insurer or UWV and file the paperwork",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "external portals"
+     ],
+     "inputs": [
+      "AFAS mutation",
+      "absence case"
+     ],
+     "outputs": [
+      "external notification"
+     ],
+     "handoff_to": "external",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "Employees request bike plan, allowance and pension changes through AFAS InSite or Pocket workflow forms. Deterministic rules on contract group and CAO check eligibility, and after the administrator approves, the workflow writes the mutation to AFAS before the payroll cut-off. A Teams answer desk on owned SharePoint policy pages answers general questions, quotes personal entitlements from an AFAS lookup, and opens a ticket for anything about sickness or personal circumstances. Pension fund and insurer reports are generated from AFAS for the administrator to check and send.",
+   "previous_blocker": "Requests came by mail and phone, and the CAO and policy rules were in PDFs, not in a table, so every case was read and re-keyed by hand. Health and absence data made people wary of automation.",
+   "enabler_now": "AFAS workflows and InSite forms are already licensed and only need configuring. Answer desks grounded in owned content, with ticket escalation, are proven in HR. AI coding makes the rules table and report exports cheap to build.",
+   "still_hard": "Exceptions such as part-time changes mid-month, retroactive corrections, and staff covered by both CAOs. Sickness insurer and UWV cases involve special-category health data, which must stay out of model prompts. The works council must agree, and the policy content must be kept current.",
+   "human_edge": "Explaining a pension or sickness-pay consequence to a worried employee, and spotting when a benefit question is really about illness or money trouble.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Warehouse and transport shift workers without a desk get Dutch and Polish answers on their phone through Teams or AFAS Pocket, outside office hours."
+   },
+   "altitude": "The administrator approves mutations from a queue instead of typing them, owns the policy pages and rules table, and handles the tickets that need a person.",
+   "reach": [
+    {
+     "role": "payroll",
+     "task": "Monthly payroll close and correction runs",
+     "learn": "Which benefit mutations cause corrections, so the rules and cut-off checks catch them earlier."
+    },
+    {
+     "role": "cnb",
+     "task": "Designing and changing benefit schemes",
+     "learn": "How a scheme change turns into rule rows and policy pages before it goes live."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "5-8",
+    "testing_rollout": "8-12",
+    "consent_and_access": "15-30"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "An HR answer desk gives per-person answers synced from the HR system and turns unresolved questions into tickets with the profile attached; 1,200 of 3,600 employees use it monthly.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Content structure and a named content owner mattered more than the model; tone needs configuring before launch.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "A chatbot alone saves about 3% of hours; the gain comes from redesigned workflows.",
+     "grade": "E3",
+     "source": "[S3]"
+    },
+    {
+     "claim": "An employee-facing bot must say it is AI; a bot that answers from the personnel file needs works council consent.",
+     "grade": "E3",
+     "source": "[S9][S12]"
+    },
+    {
+     "claim": "AFAS Profit has Pocket and InSite flows where employees submit data themselves.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Health data is special-category under GDPR Art. 9 and should stay out of model prompts.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "In the Dutch context 'worker's compensation' means sickness pay, the sickness insurer (verzuimverzekering) and UWV reporting, not a US-style scheme.",
+    "Benefits include sector pension, travel allowance, bike plan and CAO allowances administered in AFAS.",
+    "The AFAS licence includes InSite or Pocket workflows."
+   ],
+   "unknowns": [
+    "Which benefit types generate the most requests, and how many per month.",
+    "Which pension fund and sickness insurer are used, and whether they accept file uploads or only portals.",
+    "Whether policy content on SharePoint is current and has an owner."
+   ],
+   "research_questions": [
+    "Classify one month of benefit mails: what share is a general question, a personal entitlement, a mutation, or a sickness matter?",
+    "How many payroll corrections per month come from late or wrong benefit mutations?",
+    "Can the CAO and policy rules for the top five benefits fit in a table without many exceptions?",
+    "Will the works council consent to an answer desk that reads contract group from AFAS but logs no questions per employee?"
+   ],
+   "time_saved_pct": 78,
+   "speedup": 4.55
+  },
+  {
+   "uid": "43-4161.00:2701",
+   "short": "Turn approved vacancy requests into ads, publish them externally and internally, and close them when filled.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive the vacancy request from the manager and check approval",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "vacancy request",
+      "formation plan"
+     ],
+     "outputs": [
+      "approved vacancy"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 5,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Write or adapt the vacancy text, salary scale and requirements",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "SharePoint"
+     ],
+     "inputs": [
+      "approved vacancy",
+      "function profile",
+      "CAO salary scale"
+     ],
+     "outputs": [
+      "vacancy text"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "function profile, CAO scale from a table, site, shift pattern, previous ad for this job family",
+      "output": "Dutch and English vacancy text in the house template",
+      "check": "salary range, scale and hours are copied from the table, not generated; a checklist checks required fields and excluding language (age, gender, nationality)",
+      "stop": "one draft and one revision; otherwise fall back to the last approved ad for the job family",
+      "why_not_simpler": "Ads must read well for different jobs and sites; fixed templates gave flat, identical texts."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Publish on the career site, job boards and agency portals",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "Recruitee",
+      "staffing agency portals"
+     ],
+     "inputs": [
+      "vacancy text"
+     ],
+     "outputs": [
+      "published vacancy"
+     ],
+     "handoff_to": "external",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 5,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Notify employees and flex workers of internal openings",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Teams",
+      "SharePoint",
+      "Outlook"
+     ],
+     "inputs": [
+      "published vacancy"
+     ],
+     "outputs": [
+      "internal notice"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 5,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Withdraw ads when the role is filled or cancelled",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "Recruitee"
+     ],
+     "inputs": [
+      "hiring decision"
+     ],
+     "outputs": [
+      "closed vacancy"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    }
+   ],
+   "design": "Managers submit vacancies through a Recruitee requisition or a Microsoft Forms and Power Automate flow, which checks approval against the AFAS formation. A drafting step fills the house template from the function profile and the CAO scale table; the administrator edits and approves. Recruitee multiposting then publishes it, a small job posts it to Teams, the SharePoint vacancy page and the warehouse screens, and the ads close when the stage changes to hired.",
+   "previous_blocker": "Requests came by mail without a fixed format. Ad texts were rewritten by hand each time. Internal notices depended on someone remembering to post them on each site.",
+   "enabler_now": "Recruitee requisitions and multiposting are configuration. Models draft acceptable ad text when facts come from tables. Teams and SharePoint posting can be scripted cheaply.",
+   "still_hard": "Keeping function profiles and the CAO scale table current. Deciding where to advertise for scarce roles such as truck drivers. Reaching shift workers who rarely open Teams.",
+   "human_edge": "Knowing what makes a job at the Venlo or Tilburg site attractive and which channel works for scarce roles, and pushing back on managers whose requirements are unrealistic.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Flex workers from the three agencies see every internal vacancy at the same time as employees, so good flex workers move into permanent roles."
+   },
+   "altitude": "The administrator edits and approves instead of writing and posting. They own the ad templates and the channel list, and a vacancy is live within a day of approval.",
+   "reach": [
+    {
+     "role": "recruiter",
+     "task": "Choosing sourcing channels and measuring their yield",
+     "learn": "Read the Recruitee source report to see which channels bring hires who stay 90 days."
+    },
+    {
+     "role": "hrbp",
+     "task": "Formation planning with managers",
+     "learn": "How approved headcount links to vacancies, so requests that are not in the formation are caught early."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-5",
+    "testing_rollout": "4-6",
+    "consent_and_access": "3-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Recruitee supports requisition approval, job board multiposting and closing jobs by stage.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Models draft acceptable HR documents when they work from a rules base that experts maintain.",
+     "grade": "E2",
+     "source": "[S6]"
+    }
+   ],
+   "assumptions": [
+    "The CAOs or company policy require internal posting, and the Waadi requires that flex workers are informed of vacancies.",
+    "Function profiles exist for most job families.",
+    "The Recruitee plan includes the multiposting channels in use."
+   ],
+   "unknowns": [
+    "How many vacancies per month, and what share are repeats of the same job family.",
+    "Whether hiring approval is recorded anywhere today, in AFAS or by mail.",
+    "Which job boards and agency channels are used, and their costs."
+   ],
+   "research_questions": [
+    "How long is it today from manager request to live ad? Sample 20 vacancies.",
+    "How many past ads per job family could serve as reusable templates?",
+    "Do flex workers learn about internal vacancies today, and how many have moved to permanent roles in the past year?"
+   ],
+   "time_saved_pct": 88,
+   "speedup": 8.33
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 105,
+  "attempts": 1,
+  "warnings": [
+   "43-4161.00:2699 s2: judgement step marked deterministic",
+   "43-4161.00:2702 s2: judgement step marked deterministic"
+  ],
+  "web": "off",
+  "tool_calls": []
+ }
+}

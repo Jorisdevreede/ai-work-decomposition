@@ -1,0 +1,987 @@
+{
+ "tasks": [
+  {
+   "uid": "43-3011.00:2472",
+   "short": "Receive customer payments, allocate them to invoices and reconcile account balances.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Review incoming bank transactions against the customer ledger.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK",
+      "ERP"
+     ],
+     "inputs": [
+      "bank transactions",
+      "customer ledger"
+     ],
+     "outputs": [
+      "payment worklist"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Match payments to open invoices using references, amounts and customer details.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "payment worklist",
+      "open invoices"
+     ],
+     "outputs": [
+      "matched payments",
+      "unmatched payments"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Clarify unidentified payments, deductions and allocation instructions with customers.",
+     "actor": "collector",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "unmatched payments",
+      "remittance advice",
+      "open invoices"
+     ],
+     "outputs": [
+      "approved allocations",
+      "payment disputes"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "collector"
+    },
+    {
+     "id": "s4",
+     "what": "Post matched payments and approved allocations to customer accounts.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "matched payments",
+      "approved allocations"
+     ],
+     "outputs": [
+      "payment postings",
+      "customer ledger"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Reconcile posted receipts to bank totals and investigate differences.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "BANK"
+     ],
+     "inputs": [
+      "payment postings",
+      "bank transactions"
+     ],
+     "outputs": [
+      "receipt reconciliation",
+      "reconciliation exceptions"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "Connect the {BANK} feed to the {ERP}, configure exact matching and post unambiguous receipts with duplicate checks and an audit trail. An exception queue holds deductions and unclear allocations for the collector; a reconciliation view checks bank totals against postings.",
+   "previous_blocker": "Bank imports, references and matching rules were incomplete or poorly configured. Exceptions made teams retain manual checking.",
+   "enabler_now": "Existing matching functions cover standard receipts. AI-assisted coding makes feed adapters and exception views cheaper to build; no model loop is needed.",
+   "still_hard": "Combined payments, fees, foreign currency and disputed deductions can remain ambiguous. Incorrect postings need controlled reversals.",
+   "human_edge": "The collector distinguishes a payment error from a commercial dispute and obtains reliable allocation instructions.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily allocation of unresolved receipts before the next collection contact."
+   },
+   "altitude": "The week shifts toward unresolved cash and deduction disputes. The collector can gain authority to resolve small allocation differences within an agreed threshold.",
+   "reach": [
+    {
+     "role": "bookkeeping clerk",
+     "task": "Reconcile cash receipts to the control account.",
+     "learn": "Control totals, suspense accounts and reversal procedures."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "3-8",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS supports matching bank lines by reference, IBAN or invoice number, with exceptions handled by people.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Exact matching, duplicate prevention and control totals can support receipt posting without a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Electronic bank receipts dominate; physical cash handling is outside this design.",
+    "The time split and remaining percentages are planning estimates, not measured savings.",
+    "Automatic posting is limited to approved matching rules and approved exception allocations.",
+    "Access work includes GDPR controls; employee consultation under national rules is included if the change introduces staff monitoring."
+   ],
+   "unknowns": [
+    "Available bank feeds and posting interfaces.",
+    "Existing matching configuration and exception volumes.",
+    "Delegated allocation thresholds and segregation of duties.",
+    "Whether physical cash or card receipts are material."
+   ],
+   "research_questions": [
+    "Which matching capabilities can be configured before building an adapter?",
+    "Which historical unmatched receipts can be resolved by exact rules?"
+   ],
+   "new_work": [
+    "Review ambiguous allocations and reconciliation exceptions.",
+    "Maintain matching rules and customer payment references.",
+    "Monitor failed imports, duplicates and posting reversals."
+   ],
+   "time_saved_pct": 78,
+   "speedup": 4.6
+  },
+  {
+   "uid": "43-3011.00:2483",
+   "short": "Find a reliable current contact address for customers whose collection notices fail.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Review returned notices and failed delivery messages.",
+     "actor": "collector",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "returned notices",
+      "delivery failures",
+      "customer record"
+     ],
+     "outputs": [
+      "address exception"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Search existing customer records and correspondence for updated contact details.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "CRM",
+      "EMAIL"
+     ],
+     "inputs": [
+      "address exception",
+      "customer record",
+      "customer correspondence"
+     ],
+     "outputs": [
+      "address candidates",
+      "address evidence"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Request permitted address verification from an approved external provider.",
+     "actor": "collector",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "address exception",
+      "address evidence",
+      "verification policy"
+     ],
+     "outputs": [
+      "verification request",
+      "verification response"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "collector"
+    },
+    {
+     "id": "s4",
+     "what": "Assess identity, source reliability and conflicting addresses before choosing a contact address.",
+     "actor": "collector",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "ERP"
+     ],
+     "inputs": [
+      "address candidates",
+      "address evidence",
+      "verification response"
+     ],
+     "outputs": [
+      "address decision",
+      "unresolved trace"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "collector"
+    },
+    {
+     "id": "s5",
+     "what": "Update the customer address and record its source and verification date.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "CRM"
+     ],
+     "inputs": [
+      "address decision",
+      "customer record"
+     ],
+     "outputs": [
+      "verified contact record",
+      "trace history"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "A trace queue in the {WORKFLOW} links failed notices to customer details in the {ERP}, {CRM} and permitted correspondence in the {EMAIL}. It presents source-linked address candidates and prepares approved verification requests; only the collector's address decision updates the records.",
+   "previous_blocker": "Contact details were scattered across teams, and external sources had separate access restrictions. Missing identity evidence prevented reliable automatic updates.",
+   "enabler_now": "Small integrations can assemble existing evidence and preserve its origin at lower build cost. Identity assessment still needs a person; no autonomous search is required.",
+   "still_hard": "An address match may identify the wrong person. External data access, lawful purpose and source reliability vary by jurisdiction.",
+   "human_edge": "The collector assesses conflicting evidence and avoids exposing a debt to an unrelated person.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The collector spends less time searching and more time resolving uncertain identities. Decision rights do not change.",
+   "reach": [
+    {
+     "role": "compliance officer",
+     "task": "Assess a proposed source of customer contact data.",
+     "learn": "Purpose limitation, data minimisation, source provenance and national tracing rules."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-10",
+    "testing_rollout": "4-8",
+    "consent_and_access": "5-25"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "A typical internal collection team starts with its own records and uses approved external verification when permitted.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Record retrieval and address normalisation can be deterministic; uncertain identity matches need human assessment.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The typical process uses internal records and approved verification, rather than routine questioning of neighbours.",
+    "Existing search permissions restrict which correspondence can be retrieved.",
+    "The time split and remaining percentages are planning estimates.",
+    "GDPR applies; national rules determine permitted tracing sources and disclosures.",
+    "Access estimates include employee consultation if newly searchable staff correspondence triggers national requirements."
+   ],
+   "unknowns": [
+    "Whether customers are businesses, natural persons or both.",
+    "Countries involved and approved tracing sources.",
+    "Available verification contracts and lawful access.",
+    "Frequency of identity collisions and conflicting records."
+   ],
+   "research_questions": [
+    "Which sources provide verifiable provenance and permitted reuse?",
+    "Can existing customer identifiers resolve most address conflicts without external requests?"
+   ],
+   "new_work": [
+    "Review candidate addresses and identity conflicts.",
+    "Maintain source permissions and retention settings.",
+    "Correct propagated addresses when new evidence contradicts a decision.",
+    "Monitor verification fees and unsuccessful requests."
+   ],
+   "time_saved_pct": 57,
+   "speedup": 2.33
+  },
+  {
+   "uid": "43-3011.00:2484",
+   "short": "Prepare and route overdue accounts for credit review, enforcement decisions or legal referral.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check overdue balances, contact attempts, disputes and payment promises.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "CRM"
+     ],
+     "inputs": [
+      "customer ledger",
+      "collection history",
+      "payment disputes",
+      "payment promises"
+     ],
+     "outputs": [
+      "escalation candidates"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compile account records, notices and correspondence into an escalation packet.",
+     "actor": "collector",
+     "today_means": "document",
+     "systems": [
+      "ERP",
+      "DOCS",
+      "EMAIL"
+     ],
+     "inputs": [
+      "escalation candidates",
+      "customer ledger",
+      "collection history",
+      "customer correspondence",
+      "contract"
+     ],
+     "outputs": [
+      "escalation packet"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Selected account records and source-linked correspondence.",
+      "output": "A factual chronology within an indexed escalation packet.",
+      "check": "Compute balances in code; require source references for chronology claims and collector review.",
+      "stop": "One draft and one correction pass per packet; missing evidence or failed checks return to the collector.",
+      "why_not_simpler": "Templates assemble records, but varied correspondence needs a bounded reading and summarising step."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "collector"
+    },
+    {
+     "id": "s3",
+     "what": "Refer the account and supporting packet to the credit manager.",
+     "actor": "collector",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "escalation packet"
+     ],
+     "outputs": [
+      "escalation referral"
+     ],
+     "handoff_to": "credit manager",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Decide whether to defer, refer legally, repossess goods or disconnect an eligible service.",
+     "actor": "credit manager",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "escalation referral",
+      "escalation packet",
+      "escalation policy"
+     ],
+     "outputs": [
+      "escalation decision",
+      "approved instruction"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "credit manager"
+    },
+    {
+     "id": "s5",
+     "what": "Send approved instructions and necessary records to the authorised recipient.",
+     "actor": "collector",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "approved instruction",
+      "escalation packet",
+      "customer ledger"
+     ],
+     "outputs": [
+      "dispatched instruction",
+      "referral receipt"
+     ],
+     "handoff_to": "authorised recipient",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "credit manager"
+    },
+    {
+     "id": "s6",
+     "what": "Record acknowledgement, follow up missing responses and update collection status.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "EMAIL"
+     ],
+     "inputs": [
+      "dispatched instruction",
+      "referral receipt",
+      "recipient response"
+     ],
+     "outputs": [
+      "collection history",
+      "follow-up worklist"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure escalation queues in the {ERP} and approvals in the {WORKFLOW}; generate indexed packets from the {ERP}, {DOCS} and {EMAIL}, with a bounded loop drafting the chronology. The credit manager approves the specific action, recipient and record snapshot; dispatch rechecks balances, disputes and holds, invalidates stale approvals and records receipt.",
+   "previous_blocker": "Evidence assembly crossed systems, while consequential decisions could not safely be reduced to ageing thresholds alone.",
+   "enabler_now": "Workflow configuration and inexpensive integration can separate packet preparation from action approval. Bounded summarisation helps with correspondence without delegating enforcement decisions.",
+   "still_hard": "Service restrictions, disputed debts, vulnerability and contractual rights need case assessment. Repossession and disconnection apply only to eligible goods or services under national rules.",
+   "human_edge": "People judge proportionality, commercial consequences and whether legal or operational escalation is justified.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Twice-weekly review of eligible escalation cases with complete evidence."
+   },
+   "altitude": "The collector spends more time resolving blockers before referral and less time assembling files. Enforcement authority remains with the designated approver; the collector can gain authority to return incomplete referrals.",
+   "reach": [
+    {
+     "role": "credit analyst",
+     "task": "Assess whether an overdue account needs revised credit terms.",
+     "learn": "Exposure, disputed balances, payment behaviour and the limits of collection evidence."
+    },
+    {
+     "role": "compliance officer",
+     "task": "Review the evidence supporting a consequential collection action.",
+     "learn": "Notice requirements, disclosure limits and national enforcement rules."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "5-12",
+    "testing_rollout": "6-12",
+    "consent_and_access": "5-25"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Onguard CreditManager supports dunning workflows, reminders and call campaigns.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Syncasso reports reduced legal handling time with summons drafting and legal professional review; this does not establish savings for this design.",
+     "grade": "E3",
+     "source": "[S7]"
+    },
+    {
+     "claim": "The Dutch registration rule described in the digest affects collection costs and further interest for unregistered third-party collectors.",
+     "grade": "E2",
+     "source": "[S13]"
+    }
+   ],
+   "assumptions": [
+    "Enforcement actions are conditional branches, not routine steps for every overdue account.",
+    "Dispatch consumes the approval from s4; it does not require a second approval when the approved facts remain current.",
+    "Actual legal proceedings, repossession and disconnection execution sit outside this preparation task.",
+    "GDPR and applicable national enforcement rules govern disclosure and action.",
+    "The design does not score natural-person creditworthiness; adding that use requires a separate EU AI Act assessment.",
+    "Time shares and build ranges are estimates; access work includes consultation under national rules if staff monitoring changes."
+   ],
+   "unknowns": [
+    "Which enforcement actions the organisation can legally initiate.",
+    "Approval roles, delegated limits and mandatory legal review.",
+    "Applicable countries, notice periods and protected services.",
+    "External recipient interfaces and registration requirements.",
+    "Whether disputes and last-minute payments reliably create holds."
+   ],
+   "research_questions": [
+    "Which existing workflow functions can enforce approvals tied to current case facts?",
+    "Can all chronology claims be linked to retained source records?",
+    "Which changes must invalidate an approved instruction?"
+   ],
+   "new_work": [
+    "Review generated chronologies and missing evidence.",
+    "Maintain escalation eligibility, holds and approval permissions.",
+    "Handle rejected dispatches and missing acknowledgements.",
+    "Update national rule configurations with qualified reviewers."
+   ],
+   "time_saved_pct": 70,
+   "speedup": 3.28
+  },
+  {
+   "uid": "43-3011.00:2479",
+   "short": "Sort collection correspondence, maintain account files, answer routine enquiries and prepare reports.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read incoming correspondence, identify the account and classify the required response.",
+     "actor": "collector",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "customer correspondence",
+      "customer record"
+     ],
+     "outputs": [
+      "classified correspondence",
+      "unidentified correspondence"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Incoming correspondence and permitted account identifiers.",
+      "output": "A proposed account link, correspondence category and exception flag.",
+      "check": "Validate identifiers against the ledger; require human review for ambiguous links, disputes and complaints.",
+      "stop": "One classification attempt per item; conflicting identifiers or unsupported categories go to a person.",
+      "why_not_simpler": "Exact references route structured messages, but varied free text needs bounded classification."
+     },
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "File correspondence and attachments against the customer account.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "classified correspondence",
+      "customer attachments"
+     ],
+     "outputs": [
+      "account correspondence file"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Draft replies using account records, previous correspondence and approved wording.",
+     "actor": "collector",
+     "today_means": "document",
+     "systems": [
+      "ERP",
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "classified correspondence",
+      "account correspondence file",
+      "customer ledger",
+      "response templates"
+     ],
+     "outputs": [
+      "reply draft",
+      "response exceptions"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "The customer message, current account facts and approved response templates.",
+      "output": "A source-linked reply draft or a response exception.",
+      "check": "Insert amounts and dates from records; check factual references and prohibit unsupported commitments.",
+      "stop": "One draft and one correction pass; missing facts, complaints or proposed concessions go to the collector.",
+      "why_not_simpler": "Templates cover standard acknowledgements; varied questions need bounded reading and drafting."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Check recipient, figures and wording, then send the reply.",
+     "actor": "collector",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "reply draft",
+      "customer ledger",
+      "verified contact record"
+     ],
+     "outputs": [
+      "sent reply",
+      "collection history"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "collector"
+    },
+    {
+     "id": "s5",
+     "what": "Compile collection activity, overdue balances and exception counts into a periodic report.",
+     "actor": "collector",
+     "today_means": "spreadsheet",
+     "systems": [
+      "ERP",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "customer ledger",
+      "collection history",
+      "response exceptions"
+     ],
+     "outputs": [
+      "collection report"
+     ],
+     "handoff_to": "credit manager",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "Connect the shared {EMAIL} to account records in the {ERP} and files in the {DOCS}, using exact identifiers first and bounded classification for free text. Generate grounded reply drafts for collector approval at send time, and replace periodic workbook compilation with a configured report in the {ERP}.",
+   "previous_blocker": "Messages lacked consistent account references, attachments were filed manually and reports combined ledger data with collection notes.",
+   "enabler_now": "Existing filing and reporting functions cover structured work. Small bounded loops can classify messages and draft replies while preserving factual checks.",
+   "still_hard": "Wrong account links can disclose debt information. Complaints, disputes and sensitive circumstances require careful reading and personal responses.",
+   "human_edge": "The collector recognises when a routine-looking message needs empathy, investigation or a different collection approach.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A weekly billing-friction brief identifying recurring causes of customer payment enquiries."
+   },
+   "altitude": "The week shifts from filing and report assembly toward correspondence exceptions and recurring billing problems. The collector can gain authority to propose corrective work to the billing team.",
+   "reach": [
+    {
+     "role": "billing clerk",
+     "task": "Correct recurring invoice errors that generate collection enquiries.",
+     "learn": "Invoice correction controls and the evidence needed to distinguish billing errors from payment delays."
+    },
+    {
+     "role": "business intelligence analyst",
+     "task": "Define a report on recurring collection enquiry causes.",
+     "learn": "Category definitions, denominators, sampling and classification quality."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Identifier-based filing and ledger reporting can use existing configuration; free-text classification and drafting need additional validation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Onguard CreditManager provides collection workflow capabilities, supporting the existing-software-first approach.",
+     "grade": "E2",
+     "source": "[S6]"
+    }
+   ],
+   "assumptions": [
+    "A shared mailbox handles much of the correspondence; the supplied low mail share is treated as a weak prior.",
+    "Periodic reporting currently uses an export from the {ERP} in the {SPREADSHEET}.",
+    "Only confirmed account links proceed to automatic filing; ambiguous items remain in a review queue.",
+    "Substantive complaint resolution sits outside routine reply drafting.",
+    "Time shares and remaining percentages are estimates.",
+    "GDPR controls cover correspondence access and retention; consultation under national rules is included if reporting introduces staff monitoring."
+   ],
+   "unknowns": [
+    "Actual correspondence channels and paper volumes.",
+    "Reliability of account references and contact verification.",
+    "Existing filing, reporting and template capabilities.",
+    "Approved response categories and complaint routing rules.",
+    "Required retention periods and employee consultation."
+   ],
+   "research_questions": [
+    "What proportion of messages can be routed by exact identifiers alone?",
+    "Which reply categories can use fixed templates without a model?",
+    "Which enquiry categories reveal actionable billing defects?"
+   ],
+   "new_work": [
+    "Review ambiguous account links and reply drafts.",
+    "Maintain response templates and correspondence categories.",
+    "Sample filing accuracy and correct misclassified records.",
+    "Maintain report definitions and investigate recurring enquiry causes."
+   ],
+   "time_saved_pct": 77,
+   "speedup": 4.4
+  }
+ ],
+ "role": {
+  "altitude": "Collectors spend less time moving records and assembling evidence, and more time resolving disputed cash, uncertain identities and difficult customer situations. Delegated allocation limits and authority to return incomplete referrals can expand; consequential enforcement decisions remain with designated approvers.",
+  "reach": [
+   "Bookkeeping clerks: cash reconciliation and suspense-account resolution.",
+   "Billing clerks: correction of recurring invoice defects.",
+   "Credit analysts: account exposure and revised credit terms.",
+   "Compliance officers: tracing sources and evidence for consequential actions.",
+   "Business intelligence analysts: enquiry causes and collection report definitions."
+  ],
+  "skills_to_grow": [
+   "Receipt matching and reconciliation controls.",
+   "Customer negotiation and dispute diagnosis.",
+   "Source verification and privacy-aware record handling.",
+   "Review of source-linked model drafts.",
+   "Workflow configuration and exception analysis."
+  ],
+  "ambitious_version": "A collection specialist who resolves cash exceptions early, prepares defensible referrals and turns recurring payment enquiries into specific billing improvements."
+ },
+ "job_code": "43-3011.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 156,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3000});text(r.output)\n"
+  ],
+  "job": {
+   "code": "43-3011.00",
+   "title": "Bill and Account Collectors",
+   "tasks": 15,
+   "function": "Finance"
+  }
+ }
+}

@@ -1,0 +1,614 @@
+{
+ "tasks": [
+  {
+   "uid": "41-4012.00:8126",
+   "short": "Forward accepted orders to manufacturers and resolve confirmation differences.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve the accepted order and manufacturer routing details.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "accepted order",
+      "manufacturer record"
+     ],
+     "outputs": [
+      "order routing details"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check product codes, quantities, addresses, agreed prices and requested dates.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "accepted order",
+      "order routing details",
+      "manufacturer terms"
+     ],
+     "outputs": [
+      "checked order",
+      "order exception"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Prepare the manufacturer's order form from the checked order.",
+     "actor": "sales representative",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "ERP"
+     ],
+     "inputs": [
+      "checked order",
+      "manufacturer template"
+     ],
+     "outputs": [
+      "manufacturer order"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Check the manufacturer order and send it to the manufacturer.",
+     "actor": "sales representative",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "manufacturer order",
+      "order exception"
+     ],
+     "outputs": [
+      "sent manufacturer order"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "sales representative"
+    },
+    {
+     "id": "s5",
+     "what": "Compare the manufacturer's acknowledgement with the sent order.",
+     "actor": "sales representative",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "manufacturer acknowledgement",
+      "sent manufacturer order"
+     ],
+     "outputs": [
+      "confirmation comparison",
+      "order exception"
+     ],
+     "handoff_to": "sales representative",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Manufacturer acknowledgement received as free text or an attachment.",
+      "output": "Order reference, product codes, quantities, prices and confirmed dates with source locations.",
+      "check": "Match the order reference and lines against the sent order. Validate dates and flag every difference.",
+      "stop": "At most two extraction attempts per acknowledgement. Missing or conflicting fields go to the sales representative.",
+      "why_not_simpler": "Some manufacturers return unstructured acknowledgements. Structured responses bypass the model."
+     },
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Resolve discrepancies with the manufacturer and record agreed changes.",
+     "actor": "sales representative",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY",
+      "ERP"
+     ],
+     "inputs": [
+      "confirmation comparison",
+      "order exception",
+      "accepted order"
+     ],
+     "outputs": [
+      "confirmed manufacturer order",
+      "agreed order change"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure the {ERP} to produce manufacturer order forms, with a deterministic check for routing, terms and duplicate transmission. A flow in the {WORKFLOW} sends approved orders through the {EMAIL} or {PARTNER_PORTAL}, then matches acknowledgements; a bounded extraction loop handles unstructured replies. Differences enter an exception queue without changing customer promises.",
+   "previous_blocker": "Manufacturer formats and product codes differ. Mail attachments bridge the accepted order and the manufacturer's records.",
+   "enabler_now": "Existing templates and workflow configuration cover standard orders. AI-assisted coding reduces the effort of building mappings and checks; bounded extraction handles variable replies.",
+   "still_hard": "Substitutions, partial acceptance and changed dates need commercial judgement. Duplicate prevention and recovery after uncertain transmission need careful testing.",
+   "human_edge": "The representative negotiates workable alternatives and knows when a small order difference threatens a customer relationship.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Manufacturer confirmation risk alerts for customer delivery promises."
+   },
+   "altitude": "The week shifts from copying orders to resolving supplier constraints and warning account owners earlier. No new authority over prices or customer commitments is assumed.",
+   "reach": [
+    {
+     "role": "order clerk",
+     "task": "Resolve order holds before manufacturer release.",
+     "learn": "Product-code mapping, hold reasons and recovery from duplicate or failed transmissions."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-10",
+    "testing_rollout": "4-8",
+    "consent_and_access": "5-30"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Workist extracts forwarded order details into an ERP with staff checks. This supports the extraction pattern, not a complete manufacturer-forwarding solution.",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "Templates, routing rules, duplicate checks and structured acknowledgements can cover most standard forwarding without an autonomous agent.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "New seller-monitoring features can require employee consultation under national rules; ordinary order processing does not establish that requirement by itself.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline is a mid-size European wholesaler routing accepted customer orders to manufacturers.",
+    "The ERP holds accepted orders and manufacturer records; documents and email bridge manufacturer-specific formats.",
+    "Step shares are estimates, not measured observations. Routine forwarding uses less meeting time than the supplied prior suggests.",
+    "Existing software supports configurable templates and approval flows.",
+    "The representative can release standard orders within existing delegated limits.",
+    "Build ranges are working-day estimates for a limited manufacturer pilot. Access and consultation can overlap other phases.",
+    "GDPR applies to customer and contact data. Employee consultation under national rules is included where applicable."
+   ],
+   "unknowns": [
+    "Which manufacturers accept structured orders and acknowledgements.",
+    "Whether the ERP exposes supported interfaces and stable order identifiers.",
+    "Actual order volumes, exception rates and time spent on each step.",
+    "Which order changes require customer or sales manager approval.",
+    "Existing employee consultation agreements and permitted logging practices."
+   ],
+   "research_questions": [
+    "Can existing ERP configuration perform the cross-manufacturer checks before custom code is built?",
+    "Which acknowledgement formats need extraction, and which already offer structured data?",
+    "What national consultation requirements apply to any proposed seller activity logging?"
+   ],
+   "new_work": [
+    "Review outgoing orders and resolve failed validation checks.",
+    "Handle ambiguous acknowledgements and disputed changes.",
+    "Maintain manufacturer mappings, templates and routing rules.",
+    "Reconcile uncertain transmissions and test duplicate prevention.",
+    "Maintain access permissions, retention settings and extraction quality samples."
+   ],
+   "time_saved_pct": 85,
+   "speedup": 6.67
+  },
+  {
+   "uid": "41-4012.00:8121",
+   "short": "Coordinate product delivery and installation with customers, logistics staff and installation providers.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Review the confirmed order, delivery deadline and installation scope.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "confirmed manufacturer order",
+      "accepted order",
+      "installation scope"
+     ],
+     "outputs": [
+      "delivery requirements"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Clarify site access, readiness and acceptable delivery windows with the customer.",
+     "actor": "sales representative",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "delivery requirements",
+      "site checklist"
+     ],
+     "outputs": [
+      "site readiness record",
+      "customer delivery windows"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Request carrier and installer availability against customer requirements.",
+     "actor": "sales representative",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "delivery requirements",
+      "site readiness record",
+      "customer delivery windows"
+     ],
+     "outputs": [
+      "provider availability"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Agree a feasible sequence and resolve timing conflicts with the parties.",
+     "actor": "sales representative",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY",
+      "CALENDAR"
+     ],
+     "inputs": [
+      "provider availability",
+      "site readiness record",
+      "customer delivery windows"
+     ],
+     "outputs": [
+      "proposed delivery plan"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Check the plan, book delivery and installation, and issue instructions.",
+     "actor": "sales representative",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CALENDAR",
+      "ERP"
+     ],
+     "inputs": [
+      "proposed delivery plan",
+      "installation scope"
+     ],
+     "outputs": [
+      "delivery plan",
+      "booking confirmation",
+      "installation instructions"
+     ],
+     "handoff_to": "logistics coordinator",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "sales representative"
+    },
+    {
+     "id": "s6",
+     "what": "Check delivery progress and flag missed milestones.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "ERP"
+     ],
+     "inputs": [
+      "delivery plan",
+      "delivery status"
+     ],
+     "outputs": [
+      "delivery exception"
+     ],
+     "handoff_to": "sales representative",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Resolve delivery problems and obtain customer confirmation of completion.",
+     "actor": "sales representative",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "delivery exception",
+      "delivery plan",
+      "installation instructions"
+     ],
+     "outputs": [
+      "agreed delivery change",
+      "completion confirmation",
+      "open installation issue"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s8",
+     "what": "Record completion and route unresolved installation issues.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "completion confirmation",
+      "open installation issue",
+      "agreed delivery change"
+     ],
+     "outputs": [
+      "delivery completion record",
+      "installation follow-up"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "A case in the {WORKFLOW} combines order requirements from the {ERP}, structured readiness forms and provider availability. Deterministic checks propose feasible windows, issue approved bookings and compare status from the {OPS_SYSTEM} against the delivery plan. The representative handles readiness conversations and disputed changes; structured completion confirmation updates the {ERP} and routes open issues.",
+   "previous_blocker": "Customer readiness, carrier capacity and installer schedules sit with different parties. Email and calls carry details that never reach a shared schedule.",
+   "enabler_now": "Forms, calendar links and status integrations can collect the minimum scheduling data. AI-assisted coding makes the small connectors and constraint checks cheaper to build; no model is required for the proposed pilot.",
+   "still_hard": "Site conditions change and provider status can be late. People must negotiate disruption, extra charges and customer acceptance; installation providers retain technical and safety responsibilities.",
+   "human_edge": "The representative reads customer readiness, balances competing commitments and restores trust when delivery or installation goes wrong.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Pre-delivery readiness review for customers receiving their first installed product."
+   },
+   "altitude": "The week contains fewer availability chases and status checks, leaving more time for readiness reviews and difficult rescheduling. Booking and compensation authority stays within existing limits.",
+   "reach": [
+    {
+     "role": "first-line supervisor of non-retail sales workers",
+     "task": "Resolve delivery escalations across several customer accounts.",
+     "learn": "Capacity constraints, escalation thresholds and the commercial cost of competing delivery promises."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-30"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Structured availability, scheduling constraints, milestone comparisons and reminders are deterministic workflow functions.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Site readiness discussions and disputed delivery changes need contextual human coordination, while preparation and completion records can be automated.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The digest provides no documented end-to-end case for delivery and installation coordination in this occupation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline is a mid-size European seller coordinating delivery and straightforward installation through internal logistics or external providers.",
+    "The representative coordinates installation rather than performing or certifying technical work.",
+    "Step shares represent active staff time, not waiting time, and require customer validation.",
+    "Human coordination remains the largest activity, consistent with the supplied prior; email chasing is a separate removable component.",
+    "Providers can use structured availability and completion forms. Non-response enters the human exception queue.",
+    "Booking checks include order version, capacity, installation sequence and duplicate booking prevention.",
+    "Build ranges cover a limited provider pilot in working days. Access or consultation delays may exceed the estimate.",
+    "GDPR applies to contact and site data. Access work includes employee consultation under national rules where applicable."
+   ],
+   "unknowns": [
+    "Which products require installation and who accepts installation completion.",
+    "Whether provider availability and delivery status are accessible through supported interfaces.",
+    "Actual scheduling effort, disruption frequency and provider response times.",
+    "Who can approve extra charges, changed dates and compensation.",
+    "Whether employee consultation agreements cover the proposed status logging."
+   ],
+   "research_questions": [
+    "Can current workflow and calendar configuration cover structured availability collection without custom code?",
+    "Which readiness checks predict failed visits for the selected product category?",
+    "Which national rules and internal agreements apply if delivery tracking also observes employee activity?"
+   ],
+   "new_work": [
+    "Review proposed bookings before external commitments.",
+    "Chase providers who do not return structured availability or completion records.",
+    "Resolve readiness conflicts, stale status and disputed completion.",
+    "Maintain scheduling constraints, provider contacts and escalation thresholds.",
+    "Check integration failures, access permissions and retention settings."
+   ],
+   "time_saved_pct": 58,
+   "speedup": 2.37
+  }
+ ],
+ "role": {
+  "altitude": "The representative spends less time moving order details and chasing routine updates. More time goes to supplier exceptions, customer readiness and delivery recovery, with commercial decision rights unchanged unless explicitly delegated.",
+  "reach": [
+   "Order clerk: resolve order holds and understand fulfilment dependencies.",
+   "First-line supervisor of non-retail sales workers: coordinate delivery escalations across accounts."
+  ],
+  "skills_to_grow": [
+   "Product and manufacturer data quality",
+   "Order exception diagnosis",
+   "Delivery constraint planning",
+   "Customer readiness conversations",
+   "Commercial negotiation during disruption"
+  ],
+  "ambitious_version": "Offer a coordinated order-to-installation service with early manufacturer confirmation alerts and readiness reviews for first-time installation customers."
+ },
+ "job_code": "41-4012.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 118,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3000});text(r.output);\n"
+  ],
+  "job": {
+   "code": "41-4012.00",
+   "title": "Sales Representatives, Wholesale and Manufacturing, Except Technical and Scientific Products",
+   "tasks": 18,
+   "function": "Sales and account management"
+  }
+ }
+}

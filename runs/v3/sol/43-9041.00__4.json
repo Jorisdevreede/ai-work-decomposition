@@ -1,0 +1,924 @@
+{
+ "tasks": [
+  {
+   "uid": "43-9041.00:23325",
+   "short": "Examine policyholder correspondence and policy documents to identify needed changes and their effects.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve correspondence and policy history from the {OTHER} policy administration system.",
+     "actor": "policy processing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS",
+      "EMAIL"
+     ],
+     "inputs": [
+      "change request",
+      "policy record",
+      "original application"
+     ],
+     "outputs": [
+      "review bundle"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "contract-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read documents and compare requested changes with recorded policy details.",
+     "actor": "policy processing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "review bundle"
+     ],
+     "outputs": [
+      "change comparison"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Correspondence, original application and current policy fields.",
+      "output": "Requested changes, conflicting facts and source references.",
+      "check": "Validate field types, policy identity and source references; flag ambiguity and missing evidence.",
+      "stop": "One extraction and one correction pass per document; unresolved items enter the review queue.",
+      "why_not_simpler": "Forms handle structured requests; remaining letters express changes in varied free text."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "contract-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Check coverage, premium and effective-date effects in the {OTHER} policy administration system.",
+     "actor": "policy processing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "change comparison",
+      "policy wording",
+      "rating rules"
+     ],
+     "outputs": [
+      "change impact assessment"
+     ],
+     "handoff_to": "policy handler",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "contract-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Resolve ambiguous effects and approve assessments within delegated authority.",
+     "actor": "policy handler",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "change impact assessment",
+      "change comparison"
+     ],
+     "outputs": [
+      "approved change assessment",
+      "referral record"
+     ],
+     "handoff_to": "policy processing clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "contract-to-renewal",
+     "approver": "policy handler"
+    },
+    {
+     "id": "s5",
+     "what": "Record the assessment and route any required policy amendment.",
+     "actor": "policy processing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "approved change assessment",
+      "referral record"
+     ],
+     "outputs": [
+      "assessment record",
+      "amendment work item"
+     ],
+     "handoff_to": "policy processing team",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "contract-to-renewal",
+     "approver": "none"
+    }
+   ],
+   "design": "An integration assembles correspondence and policy history from {EMAIL}, {DOCS} and the {OTHER} policy administration system. A bounded extraction loop drafts a sourced comparison; deterministic rules calculate supported effects and identify unresolved questions. The policy handler approves the assessment before {WORKFLOW} creates amendment work.",
+   "previous_blocker": "Letters varied, policy versions were scattered, and change effects depended on local interpretation and delegated authority.",
+   "enabler_now": "Document extraction can produce structured drafts, while AI-assisted coding reduces the effort of building comparisons and rule checks.",
+   "still_hard": "Historic wording, retrospective changes and underwriting discretion require expert interpretation. Encoding rating rules can exceed the initial build.",
+   "human_edge": "Recognise when a seemingly simple request changes the insured risk or requires a specialist decision.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A pre-amendment impact preview for policyholders considering a change."
+   },
+   "altitude": "The clerk spends more time resolving contradictory evidence and explaining amendment effects. Delegated decision rights remain unchanged unless the insurer explicitly expands them.",
+   "reach": [
+    {
+     "role": "management analyst",
+     "task": "Identify recurring causes of amendment rework.",
+     "learn": "Process sampling, exception classification and comparison of policy versions."
+    }
+   ],
+   "build_days": {
+    "coding": "6-12",
+    "integration": "8-18",
+    "testing_rollout": "8-15",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Paperbox organises insurance emails and attachments into case files; this supports intake, not reliable assessment of policy effects.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Versioned policy rules and sourced comparisons can support amendment assessment; the proposed implementation is an estimate.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The employer is a mid-size insurer or insurance administrator with a dedicated policy administration system.",
+    "Step shares describe a representative mixed queue; they are estimates rather than measured observations.",
+    "Remaining time assumes readable documents and a limited set of supported policy products.",
+    "Build ranges cover one product family and reuse available identity, logging and work-queue facilities.",
+    "Consent and access include employee consultation where national rules apply; elapsed approval delays may be longer."
+   ],
+   "unknowns": [
+    "Which policy versions and rating rules are available in machine-readable form?",
+    "Which assessments require underwriting referral?",
+    "Can the policy administration system expose history and accept work items?",
+    "What proportion of requests contain contradictory or incomplete facts?"
+   ],
+   "research_questions": [
+    "Can reviewers verify each extracted change faster than they can reconstruct it?",
+    "Which effects can be calculated reliably without interpreting bespoke policy wording?"
+   ],
+   "new_work": [
+    "Review ambiguous extractions and conflicting policy versions.",
+    "Maintain effective-dated rating and referral rules.",
+    "Sample comparisons for omissions and monitor integration failures."
+   ],
+   "time_saved_pct": 68,
+   "speedup": 3.15
+  },
+  {
+   "uid": "43-9041.00:23326",
+   "short": "Transcribe policy and claim information into worksheets and records used for documents and account adjustments.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read source documents and identify fields required for processing.",
+     "actor": "policy processing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "policy application",
+      "claim form",
+      "change request"
+     ],
+     "outputs": [
+      "source field set"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Residual scanned forms and documents; structured submissions bypass the loop.",
+      "output": "Typed fields with source references and missing-field flags.",
+      "check": "Validate identifiers, dates, amounts and document references; block unsupported or conflicting values.",
+      "stop": "One extraction and one correction pass per document; unreadable or unresolved fields go to a clerk.",
+      "why_not_simpler": "Direct field mapping handles structured submissions, but varied scans still need document reading."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Copy source fields into a processing worksheet.",
+     "actor": "policy processing clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "source field set"
+     ],
+     "outputs": [
+      "processing worksheet"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Enter worksheet fields into the {OTHER} insurance administration system.",
+     "actor": "policy processing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "processing worksheet"
+     ],
+     "outputs": [
+      "updated processing record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Compare saved entries with sources and correct discrepancies before downstream use.",
+     "actor": "policy processing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "updated processing record",
+      "source field set"
+     ],
+     "outputs": [
+      "validated processing record",
+      "correction record"
+     ],
+     "handoff_to": "policy processing team",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "policy processing clerk"
+    }
+   ],
+   "design": "Structured forms and imports feed validated fields directly into the {OTHER} insurance administration system, eliminating the intermediate {SPREADSHEET}. A bounded extraction loop reads residual documents from {DOCS}; configured validation releases matching records and holds discrepancies for clerk approval. Record entry remains separate from authorising account adjustments or payments.",
+   "previous_blocker": "Documents and record screens used different formats, so a worksheet became the transfer mechanism.",
+   "enabler_now": "Reusable import mappings, schema validation and cheaper connector development make direct transfer practical; document extraction covers residual scans.",
+   "still_hard": "Poor scans, duplicate people, legacy interfaces and inconsistent identifiers can still require manual correction.",
+   "human_edge": "Resolve conflicting evidence without silently changing the meaning of an application or claim.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The clerk handles field conflicts and source corrections instead of copying data. Decision rights over cover, account adjustments and payments do not change.",
+   "reach": [
+    {
+     "role": "computer systems analyst",
+     "task": "Specify field mappings and acceptance checks for an insurance intake form.",
+     "learn": "Data schemas, identifier matching, validation rules and safe import retries."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "6-15",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "PostNL offers scanning and conversion of forms into data.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Doxis reads documents into structured fields; insurance-specific field accuracy still needs validation.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Removing duplicate entry through validated imports is a deterministic integration pattern.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Worksheets are used for some transfers; direct entry already exists for others.",
+    "Step shares and remaining time are estimates for the worksheet-mediated path.",
+    "The destination supports staging or holds so unvalidated records cannot trigger financial actions.",
+    "Build ranges cover one document family and one destination interface.",
+    "Consent and access include GDPR access controls and employee consultation where national rules apply."
+   ],
+   "unknowns": [
+    "How much work already arrives as structured data?",
+    "Are worksheets required records or merely temporary transfer aids?",
+    "Does the destination support imports, staging and duplicate prevention?",
+    "Which documents contain special-category personal data?"
+   ],
+   "research_questions": [
+    "Which source fields cause the most consequential transcription errors?",
+    "Can structured intake remove enough scans to avoid a model loop for the first release?"
+   ],
+   "new_work": [
+    "Resolve held records and identity conflicts.",
+    "Maintain mappings when forms or destination fields change.",
+    "Reconcile import counts and investigate failed or duplicate transfers."
+   ],
+   "time_saved_pct": 92,
+   "speedup": 12.5
+  },
+  {
+   "uid": "43-9041.00:23327",
+   "short": "Notify the insurance agent and finance team when a policy cancellation has been authorised.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Verify cancellation status and effective date in the {OTHER} policy administration system.",
+     "actor": "policy processing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "authorised cancellation",
+      "policy record"
+     ],
+     "outputs": [
+      "verified cancellation details"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "contract-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Prepare the agent notice using cancellation details and the approved template.",
+     "actor": "policy processing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "verified cancellation details",
+      "notice template"
+     ],
+     "outputs": [
+      "cancellation notice"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "contract-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Send the cancellation notice to the insurance agent.",
+     "actor": "policy processing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "cancellation notice",
+      "agent contact record"
+     ],
+     "outputs": [
+      "sent cancellation notice"
+     ],
+     "handoff_to": "insurance agent",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "contract-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Notify the finance team of the cancellation and relevant account details.",
+     "actor": "policy processing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "verified cancellation details"
+     ],
+     "outputs": [
+      "finance cancellation work item"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Record notification dates in the {OTHER} policy administration system.",
+     "actor": "policy processing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "sent cancellation notice",
+      "finance cancellation work item"
+     ],
+     "outputs": [
+      "notification record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "contract-to-renewal",
+     "approver": "none"
+    }
+   ],
+   "design": "A verified cancellation event in the {OTHER} policy administration system triggers a configured notice through {EMAIL} and records its delivery status. A small integration creates a finance work item in {ERP}, with duplicate prevention and linked audit records. Missing contacts, disputed status and failed deliveries enter a {WORKFLOW} exception queue.",
+   "previous_blocker": "Cancellation status, agent contacts and finance queues were disconnected; staff supplied the link.",
+   "enabler_now": "Existing notification configuration may cover most of the task, with a small event integration for finance.",
+   "still_hard": "A notification must use the correct effective date and recipient. Low volumes or existing automation may leave little additional benefit.",
+   "human_edge": "Resolve disputed cancellations and decide how to contact an agent when the recorded route fails.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Routine notices leave the clerk's queue; the clerk handles failed delivery and disputed records. Cancellation and refund decision rights remain unchanged.",
+   "reach": [
+    {
+     "role": "administrative services manager",
+     "task": "Set escalation routes for undelivered cancellation notices.",
+     "learn": "Delivery evidence, queue ownership and service deadlines."
+    }
+   ],
+   "build_days": {
+    "coding": "1-4",
+    "integration": "3-8",
+    "testing_rollout": "3-6",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Approved events, templates and recipient rules can automate cancellation notifications without a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Insurance correspondence can be organised and routed automatically; this does not establish cancellation-notice correctness.",
+     "grade": "E2",
+     "source": "[S4]"
+    }
+   ],
+   "assumptions": [
+    "Cancellation has already been authorised before this task begins.",
+    "Standard notices may be sent automatically under an approved communication policy.",
+    "Finance receives a work item; refunds and ledger adjustments require their own controls.",
+    "Step shares and remaining time are estimates; absolute savings may be small.",
+    "Build ranges assume usable cancellation events and include access approval and any consultation required by national rules."
+   ],
+   "unknowns": [
+    "Are cancellation notices already configured?",
+    "Which notice deadlines, delivery methods and recipient checks apply?",
+    "Can cancellation events be reversed or corrected after notification?",
+    "What are the actual task volume and handling time?"
+   ],
+   "research_questions": [
+    "Can existing configuration cover both recipients before adding an integration?",
+    "How should correction events update notices and finance work items without duplicate action?"
+   ],
+   "new_work": [
+    "Resolve failed deliveries and missing agent contacts.",
+    "Maintain notice templates and recipient rules.",
+    "Reconcile cancellation events against notification and finance records."
+   ],
+   "time_saved_pct": 96,
+   "speedup": 26.67
+  },
+  {
+   "uid": "43-9041.00:23328",
+   "short": "Check, authorise and arrange payment of small insurance claims within delegated limits.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the claim form, supporting evidence and policy documents.",
+     "actor": "claims clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "claim form",
+      "claim evidence",
+      "policy wording"
+     ],
+     "outputs": [
+      "claim fact set"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Unstructured claim forms and evidence; structured submissions bypass the loop.",
+      "output": "Claim facts, requested amount and source references with uncertainty flags.",
+      "check": "Validate identity, dates, currencies, amounts and evidence references; never infer missing coverage facts.",
+      "stop": "One extraction and one correction pass per document; conflicting or unsupported facts go to a claims handler.",
+      "why_not_simpler": "Rules consume structured facts, but residual evidence arrives in varied documents and narratives."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check cover and calculate the payable amount in the {OTHER} claims administration system.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "claim fact set",
+      "policy record",
+      "settlement rules"
+     ],
+     "outputs": [
+      "settlement calculation",
+      "claim exception flags"
+     ],
+     "handoff_to": "claims approver",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Decide whether to approve the settlement or refer the claim.",
+     "actor": "claims approver",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "settlement calculation",
+      "claim exception flags",
+      "claim evidence"
+     ],
+     "outputs": [
+      "settlement authorisation",
+      "claim referral"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "ticket-to-resolution",
+     "approver": "claims approver"
+    },
+    {
+     "id": "s4",
+     "what": "Create the authorised payment instruction in the {ERP}.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "settlement authorisation",
+      "verified payee record"
+     ],
+     "outputs": [
+      "payment instruction"
+     ],
+     "handoff_to": "payment approver",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Check and release the payment through the {BANK}.",
+     "actor": "payment approver",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK",
+      "ERP"
+     ],
+     "inputs": [
+      "payment instruction",
+      "settlement authorisation"
+     ],
+     "outputs": [
+      "payment confirmation"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "payment approver"
+    },
+    {
+     "id": "s6",
+     "what": "Match payment confirmation and update the {OTHER} claims administration system.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "ERP"
+     ],
+     "inputs": [
+      "payment confirmation",
+      "payment instruction"
+     ],
+     "outputs": [
+      "paid claim record",
+      "payment exception"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    }
+   ],
+   "design": "A bounded loop extracts residual evidence from {DOCS}, while versioned rules in the {OTHER} claims administration system check cover and calculate a proposed settlement. A claims approver authorises settlement, an integration prepares the {ERP} instruction, and the payment approver releases funds through {BANK}. Reconciliation updates claim status and routes failed or unmatched payments to an exception queue.",
+   "previous_blocker": "Evidence was unstructured, settlement rules varied, and claim records were disconnected from payment controls.",
+   "enabler_now": "Document extraction and cheaper integration development reduce preparation work; existing rules and bank approval facilities handle calculation and release.",
+   "still_hard": "Ambiguous cover, fraud concerns, changed payee details and payment recovery remain consequential. Eligibility for automatic settlement must be established locally.",
+   "human_edge": "Assess disputed evidence, explain settlement decisions and recognise when a small payment masks a more complex claim.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A same-day missing-evidence checklist for small-claim applicants."
+   },
+   "altitude": "The clerk spends less time assembling payments and more time resolving evidence gaps and explaining settlements. Settlement limits and payment authority remain unchanged.",
+   "reach": [
+    {
+     "role": "management analyst",
+     "task": "Analyse why otherwise simple claims require referral.",
+     "learn": "Claim cohort analysis, rule versioning and outcome sampling."
+    }
+   ],
+   "build_days": {
+    "coding": "8-15",
+    "integration": "10-25",
+    "testing_rollout": "10-20",
+    "consent_and_access": "5-25"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Shift Claims supports claim triage and automation of claim-processing stages.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Nationale-Nederlanden reportedly settles some simple home and windscreen claims in about six minutes; the eligible share is unknown.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "A vendor case reports 91% automation among eligible motor claims with restricted coverage, party and value conditions.",
+     "grade": "E3",
+     "source": "[S10]"
+    },
+    {
+     "claim": "GDPR Article 22 restricts solely automated decisions with legal or similarly significant effects; exceptions and safeguards require assessment.",
+     "grade": "E1",
+     "source": "[S17]"
+    },
+    {
+     "claim": "EU AI Act Annex III 5(c) concerns life and health insurance risk assessment and pricing; claims processing is not automatically covered by that category.",
+     "grade": "E1",
+     "source": "[S18]"
+    }
+   ],
+   "assumptions": [
+    "The initial scope is simple non-life claims within existing delegated settlement limits.",
+    "Today's payment path uses separate settlement and payment approvals; local arrangements may differ.",
+    "Step shares and remaining time are design estimates, not results from the cited cases.",
+    "Build ranges cover one claim type with accessible policy, claim, finance and payment interfaces.",
+    "GDPR applies throughout; lawful access, minimisation and retention controls are required.",
+    "Consent and access include employee consultation under applicable national rules.",
+    "Individual staff monitoring is outside the proposed scope."
+   ],
+   "unknowns": [
+    "Which claim types, values and evidence patterns qualify as simple?",
+    "Which settlement rules are approved and available in structured form?",
+    "What settlement and payment authority does the clerk hold?",
+    "How are payee changes independently verified?",
+    "Which national insurance, employment and consultation rules apply?"
+   ],
+   "research_questions": [
+    "Can historical approved claims validate calculations across policy versions and boundary cases?",
+    "What evidence is sufficient to distinguish an incomplete claim from an adverse coverage decision?",
+    "Can bank retries and reconciliation prevent duplicate payment after a partial failure?"
+   ],
+   "new_work": [
+    "Review extracted evidence and approve settlements and payment releases.",
+    "Maintain settlement rules, eligibility criteria and delegated limits.",
+    "Handle failed payments, changed payee details and unmatched confirmations.",
+    "Sample outcomes for incorrect calculations and inaccessible review routes."
+   ],
+   "time_saved_pct": 79,
+   "speedup": 4.71
+  }
+ ],
+ "role": {
+  "altitude": "The week shifts from reading, copying and chasing records toward resolving conflicting evidence and preparing clear decisions. Existing policy, settlement and payment authority remains in place.",
+  "reach": [
+   "Help a computer systems analyst define insurance field mappings and validation checks.",
+   "Help a management analyst identify recurring causes of claim referral and amendment rework.",
+   "Help an administrative services manager establish escalation routes for failed notices."
+  ],
+  "skills_to_grow": [
+   "Read policy versions and explain rule-based calculations.",
+   "Verify extracted facts against source evidence.",
+   "Specify validation checks and safe exception handling.",
+   "Analyse process outcomes without relying on individual speed rankings.",
+   "Explain decisions and review routes in plain language."
+  ],
+  "ambitious_version": "Create an evidence-readiness service that gives policyholders a clear checklist before an amendment or small claim reaches a decision-maker."
+ },
+ "job_code": "43-9041.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 147,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "text(await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3000}));\n"
+  ],
+  "job": {
+   "code": "43-9041.00",
+   "title": "Insurance Claims and Policy Processing Clerks",
+   "tasks": 25,
+   "function": "Office and operations"
+  }
+ }
+}

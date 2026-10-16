@@ -1,0 +1,869 @@
+{
+ "role_id": "hr-admin",
+ "role": {
+  "altitude": "The two HR Administrators stop re-keying data and answering the same mail. They spend their time on the answer content and the exceptions queue, and they decide unclear dossier and hiring cases. They own the answer content and the dossier-completeness checklist for all three sites, and they decide when an exception goes to an HRBP or Payroll.",
+  "reach": [
+   "Payroll Specialist: month-close input checks, so new hires and contract changes land correctly in the payroll run",
+   "People Analytics and HRIS Analyst: AFAS connectors and the Power BI extract, so the administrator can maintain completeness checks and dashboards",
+   "HR Business Partner: absence case files under Wet verbetering poortwachter, so the administrator can prepare paperwork without putting health data in model prompts",
+   "Learning and Development Specialist: Studytube mandatory certificates, so a missing forklift or VCA certificate is caught before a shift starts"
+  ],
+  "skills_to_grow": [
+   "Writing and structuring CAO and policy answer content, with a named owner per topic",
+   "Reading and adjusting AFAS workflows, UpdateConnectors and Pocket onboarding settings",
+   "Exception handling: deciding when a case leaves the standard route and who takes it",
+   "AVG/GDPR and EU AI Act basics for HR data: special-category data, Art. 22, Art. 50 transparency",
+   "Reading a Power BI completeness dashboard and turning gaps into actions"
+  ],
+  "ambitious_version": "Run one HR front door for all 1,200 employees and the 150 to 300 flex workers. Personal entitlements are quoted from AFAS, CAO and policy answers come from owned content, and every hire has a complete dossier on day one. The administrator reports weekly on questions resolved without a ticket, days per personnel action and dossier completeness per site."
+ },
+ "tasks": [
+  {
+   "uid": "43-4161.00:2691",
+   "short": "Answer employee questions on leave, salary scales, benefits, eligibility and CAO rules by mail, Teams and phone.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive and sort questions from mail, Teams, phone and walk-ins",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "employee question"
+     ],
+     "outputs": [
+      "sorted question"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "employee question text in Dutch, English or Polish",
+      "output": "topic label: personal entitlement, CAO/policy, or escalate",
+      "check": "label must be in the fixed topic list; health or complaint words route to escalate",
+      "stop": "one classification call; low confidence or no label goes to the HR queue",
+      "why_not_simpler": "questions arrive as free text in several languages; keyword rules miss too many"
+     },
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Look up the employee's own data in AFAS: leave balance, scale, contract",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "sorted question",
+      "employee record"
+     ],
+     "outputs": [
+      "personal entitlement figure"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Find the matching CAO article or policy on SharePoint",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "SharePoint"
+     ],
+     "inputs": [
+      "sorted question",
+      "CAO text",
+      "policy document"
+     ],
+     "outputs": [
+      "policy passage"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "read",
+      "input": "question plus approved HR content pages tagged by owner",
+      "output": "top passages with page and article reference",
+      "check": "answer may only cite retrieved approved passages; no passage means no answer",
+      "stop": "one retrieval and one answer draft; no match goes to the HR queue",
+      "why_not_simpler": "employees phrase questions in their own words; a fixed FAQ menu covers too little of the CAO"
+     },
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Write and send the answer to the employee",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "personal entitlement figure",
+      "policy passage"
+     ],
+     "outputs": [
+      "answer to employee"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "policy passage and the AFAS figure",
+      "output": "short answer with the figure quoted verbatim and the source linked, marked as AI",
+      "check": "figures are inserted by code, not generated; tone rules in configuration; weekly sample reviewed by the administrator",
+      "stop": "one draft; if the check fails the question becomes a ticket",
+      "why_not_simpler": "policy answers need plain wording fitted to the question; templates alone cover only the top questions"
+     },
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Handle escalated questions: disputes, exceptions, sensitive situations",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "HR ticket"
+     ],
+     "outputs": [
+      "answer to employee",
+      "content gap note"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "Put a Teams bot in front of the HR mailbox. It quotes personal entitlements through a deterministic AFAS lookup and answers CAO and policy questions from SharePoint content with named owners, in a bounded retrieve-and-draft loop. Anything it cannot answer becomes a ticket in the existing HR queue with the employee profile attached, and a monthly report shows content gaps.",
+   "previous_blocker": "Answers depend on contract type, site, CAO and tenure. Old chatbots could not combine personal data with free-text policy, so wrong answers about pay were a real risk.",
+   "enabler_now": "Models can read free-text questions and cite approved content, and AFAS exposes personal data through GetConnectors. A comparable HR bot runs at scale on a daily HR data sync [S1].",
+   "still_hard": "Keeping the CAO and policy content current, per site and per CAO, takes owner time every month. Shop-floor workers without a work account need another way in, such as WhatsApp or a kiosk.",
+   "human_edge": "Disputes, hardship cases and questions where the honest answer is 'it depends on your manager' need a person who knows the sites and the people.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Flex workers from the three agencies get answers on site rules, shift allowances and certificates. Today they mostly ask their agency or their team lead."
+   },
+   "altitude": "The administrator stops typing answers and becomes the content owner for HR answers. They decide which topics the bot may answer and they handle the escalations.",
+   "reach": [
+    {
+     "role": "payroll",
+     "task": "Explain payslips and allowances",
+     "learn": "How shift and overtime allowances are calculated, so payslip questions can be answered without a ticket"
+    },
+    {
+     "role": "hrbp",
+     "task": "Advise managers on CAO application",
+     "learn": "Where the CAO leaves room for judgement, so the bot routes those questions instead of answering"
+    }
+   ],
+   "build_days": {
+    "coding": "8-12",
+    "integration": "5-8",
+    "testing_rollout": "8-12",
+    "consent_and_access": "15-30"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "An HR bot answering per region, contract and tenure from a daily SAP sync, with ticket escalation, is used by a third of 3,600 employees with CSAT 4.1",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "A chatbot beside the old workflow saves about 3% of hours; time comes from redesigning the workflow",
+     "grade": "E3",
+     "source": "[S3]"
+    },
+    {
+     "claim": "Employee-facing bots must disclose they are AI since 2 August 2026",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "A bot answering from the personnel file needs works council consent under WOR art. 27(1)(k)",
+     "grade": "E3",
+     "source": "[S12]"
+    },
+    {
+     "claim": "Content structure and a named owner per topic mattered more than the model; tone needed global configuration",
+     "grade": "E3",
+     "source": "[S1]"
+    }
+   ],
+   "assumptions": [
+    "About 170 hours a year across both administrators go to this task",
+    "AFAS GetConnectors expose leave balance, scale and contract type",
+    "Most office staff use Teams; many warehouse staff have no work mailbox"
+   ],
+   "unknowns": [
+    "How many questions arrive per week, by channel and by site",
+    "Whether shop-floor and flex workers have Microsoft 365 accounts",
+    "Whether the policies and both CAOs are on SharePoint in current, structured form",
+    "The works council's position on logging questions per employee"
+   ],
+   "research_questions": [
+    "What share of last quarter's HR mailbox questions could be answered from AFAS data plus written policy alone?",
+    "Can AFAS GetConnectors return per-employee leave and contract data to a bot under a service account, with access limited to the asking employee?",
+    "Will the works council consent if question logs are pseudonymised and not used to assess employees?",
+    "Do warehouse staff use Teams on their phones, or is a WhatsApp or kiosk channel needed to reach them?"
+   ],
+   "time_saved_pct": 86,
+   "speedup": 6.9
+  },
+  {
+   "uid": "13-1071.00:18859",
+   "short": "Process new-hire paperwork: collect data, enter employee and contract in AFAS, issue contract, notify others.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect new-hire personal data, bank details, tax form, ID copy",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Recruitee"
+     ],
+     "inputs": [
+      "accepted offer",
+      "new-hire documents"
+     ],
+     "outputs": [
+      "new-hire data set"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Re-key offer and personal data into AFAS employee and contract",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "Recruitee",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "accepted offer",
+      "new-hire data set"
+     ],
+     "outputs": [
+      "employee record",
+      "contract record"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Draft the employment contract from the Word template per CAO",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "SharePoint",
+      "Word"
+     ],
+     "inputs": [
+      "contract record",
+      "contract template"
+     ],
+     "outputs": [
+      "employment contract"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Send the contract for signature and chase it",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook"
+     ],
+     "inputs": [
+      "employment contract"
+     ],
+     "outputs": [
+      "signed contract"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Check the original ID document in person on day one",
+     "actor": "hr-admin",
+     "today_means": "in_person",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "ID document"
+     ],
+     "outputs": [
+      "ID check record"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s6",
+     "what": "Notify payroll, IT, manager; enrol in Studytube mandatory courses",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Studytube",
+      "Teams"
+     ],
+     "inputs": [
+      "employee record"
+     ],
+     "outputs": [
+      "onboarding notifications",
+      "course enrolments"
+     ],
+     "handoff_to": "ld",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    }
+   ],
+   "design": "A hire in Recruitee triggers a scheduled integration that creates a draft employee and contract in AFAS for the administrator to approve. AFAS Pocket onboarding collects the new hire's own data and documents, with Jonas reading the documents into fields. After approval, AFAS generates the CAO contract from a template and sends it for signature, and the same job notifies payroll, IT and the manager and enrols the hire in Studytube by role.",
+   "previous_blocker": "Recruitee and AFAS were never linked. Contract variants per CAO and site lived in Word templates, and nobody owned building the connector.",
+   "enabler_now": "AFAS Profit 8 has Pocket pre-boarding and Jonas document reading [S4]. Connector code between documented APIs is now cheap to write and test.",
+   "still_hard": "Contract variants for two CAOs, three sites and fixed-term rules need careful templating. The employer must still check original ID documents in person.",
+   "human_edge": "Approving the contract terms, handling unusual offers, and checking the ID face to face stay with the administrator.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Check every new hire's dossier for completeness before day one, not after the first payroll run."
+   },
+   "altitude": "The administrator approves drafts and handles exceptions instead of typing. They decide whether a dossier is ready for the payroll cut-off.",
+   "reach": [
+    {
+     "role": "recruiter",
+     "task": "Make offers in Recruitee",
+     "learn": "Which offer fields AFAS needs, so offers arrive complete and the integration does not stop"
+    },
+    {
+     "role": "payroll",
+     "task": "Add new hires to the month-close payroll run",
+     "learn": "Payroll cut-off dates and loonheffing rules, so drafts are approved in time"
+    }
+   ],
+   "build_days": {
+    "coding": "10-15",
+    "integration": "8-12",
+    "testing_rollout": "8-12",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS Profit 8 Jonas reads documents into dossier fields and Pocket lets new hires submit data before day one",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "SixFifty drafts contracts and sends them for signature within strict workflows on a maintained law base (US only)",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Recruitee and AFAS both expose APIs for candidate and employee records",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Roughly 300 to 500 hires a year including warehouse staff, not counting agency flex workers",
+    "AFAS Profit is or can be upgraded to version 8",
+    "Contract templates are stable enough to move into AFAS"
+   ],
+   "unknowns": [
+    "Number of hires per year per site and per CAO",
+    "Whether the AFAS licence includes Pocket onboarding and Jonas",
+    "How many contract template variants exist",
+    "Which e-signature method is already used"
+   ],
+   "research_questions": [
+    "How many contract variants are really in use, and can they be built as AFAS templates with conditional clauses?",
+    "What is Jonas's field error rate on Dutch ID copies and loonheffing forms in a two-week test?",
+    "How often do Recruitee offers lack fields AFAS requires, and who should fix them?",
+    "Does a direct Recruitee-to-AFAS draft cut the days from offer accepted to complete dossier?"
+   ],
+   "time_saved_pct": 78,
+   "speedup": 4.6
+  },
+  {
+   "uid": "43-4161.00:2692",
+   "short": "Search employee files in AFAS and old documents to answer requests and prepare personnel actions.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive request from manager, HRBP, payroll or employee",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "file request"
+     ],
+     "outputs": [
+      "sorted request"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Look up contract history, dates, scale and absence in AFAS",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "sorted request",
+      "employee record"
+     ],
+     "outputs": [
+      "contract history"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Read scanned contracts and letters in the digital dossier",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "AFAS Profit",
+      "SharePoint"
+     ],
+     "inputs": [
+      "dossier document"
+     ],
+     "outputs": [
+      "extracted dossier facts"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "scanned contract or letter, excluding documents tagged medical",
+      "output": "dates, contract type, agreed terms, with page reference",
+      "check": "extracted dates checked against AFAS contract records; mismatches flagged",
+      "stop": "one extraction per document; unreadable or mismatched goes to the administrator",
+      "why_not_simpler": "older dossier documents are scans and letters without structured fields"
+     },
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Compile the answer or statement, such as a werkgeversverklaring",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "contract history",
+      "extracted dossier facts"
+     ],
+     "outputs": [
+      "employer statement",
+      "file summary"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Check chain rule and CAO limits before contract extension",
+     "actor": "hr-admin",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "contract history"
+     ],
+     "outputs": [
+      "personnel action check"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": true
+    }
+   ],
+   "design": "Requests come in through an AFAS workflow form instead of mail. A deterministic job pulls contract history from AFAS, computes chain-rule and CAO checks, and fills standard statements from templates. A bounded extraction loop reads only non-medical scanned documents and flags mismatches. The administrator approves anything that leaves the company.",
+   "previous_blocker": "Old dossiers are scans, and chain-rule checks lived in personal Excel sheets. Nobody coded the CAO exceptions.",
+   "enabler_now": "Extraction from scanned documents is reliable enough with a check against structured AFAS dates. Rule code for the ketenregeling is quick to write and test.",
+   "still_hard": "Special-category data (health, union membership) sits in the same dossiers and must be kept out of model prompts. CAO deviations on the chain rule need careful encoding.",
+   "human_edge": "Deciding what a request is really for, and whether sharing a fact is allowed under AVG, stays with the administrator.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A monthly list of contracts nearing the chain-rule limit for every manager, 3 months before the deadline."
+   },
+   "altitude": "The administrator stops searching and starts signing off statements and flagging risks. They decide which facts may be shared and with whom.",
+   "reach": [
+    {
+     "role": "hrbp",
+     "task": "Decide contract extensions and permanent contracts",
+     "learn": "How managers weigh extension against the chain rule, so the monthly list shows what they need"
+    },
+    {
+     "role": "people-analyst",
+     "task": "Maintain the Power BI HR extract",
+     "learn": "How contract fields are modelled, so the checks run on the nightly extract"
+    }
+   ],
+   "build_days": {
+    "coding": "6-10",
+    "integration": "4-6",
+    "testing_rollout": "5-8",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS Profit 8 Jonas reads documents into dossier fields",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Health data is special-category under GDPR Art. 9 and should stay out of model prompts",
+     "grade": "E1",
+     "source": "[digest, model knowledge]"
+    },
+    {
+     "claim": "Chain rule: more than three fixed-term contracts or over three years leads to a permanent contract unless the CAO deviates",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Most requests concern contract history, dates and employer statements",
+    "Dossier documents in AFAS carry a type tag that can mark medical documents"
+   ],
+   "unknowns": [
+    "Share of dossiers that exist only as scans",
+    "Whether the warehouse CAO deviates from the chain rule",
+    "Volume of requests per month by type"
+   ],
+   "research_questions": [
+    "What share of last month's file requests could be answered from AFAS fields alone, without opening documents?",
+    "Are medical and other special-category documents tagged reliably enough to exclude them automatically?",
+    "Does the chain-rule check agree with the HRBP's manual list for all current fixed-term contracts?"
+   ],
+   "time_saved_pct": 88,
+   "speedup": 8.33
+  },
+  {
+   "uid": "43-4161.00:2693",
+   "short": "Chase and collect missing personnel documents and certificates from employees, managers and staffing agencies.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Find which dossiers miss documents or certificates",
+     "actor": "hr-admin",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit",
+      "Studytube"
+     ],
+     "inputs": [
+      "employee record",
+      "certificate list"
+     ],
+     "outputs": [
+      "missing-items list"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Chase employees, managers and agencies by mail and phone",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams",
+      "staffing agency portals"
+     ],
+     "inputs": [
+      "missing-items list"
+     ],
+     "outputs": [
+      "document request"
+     ],
+     "handoff_to": "external",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Receive documents and file them in the AFAS dossier",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Outlook"
+     ],
+     "inputs": [
+      "received document"
+     ],
+     "outputs": [
+      "dossier document",
+      "updated employee record"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "uploaded or mailed document",
+      "output": "document type, employee, validity date",
+      "check": "employee matched on number and name in AFAS; date must parse and be plausible",
+      "stop": "one pass; no match or low confidence goes to the exceptions queue",
+      "why_not_simpler": "documents arrive as photos and PDFs of many types and layouts"
+     },
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Pull certificates from Studytube and agency portals into one list",
+     "actor": "hr-admin",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Studytube",
+      "staffing agency portals",
+      "Excel"
+     ],
+     "inputs": [
+      "certificate list",
+      "agency worker list"
+     ],
+     "outputs": [
+      "certificate status"
+     ],
+     "handoff_to": "ld",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    }
+   ],
+   "design": "Replace the Excel tracking sheet with a nightly job that compares AFAS dossiers, Studytube certificates and agency worker lists against a checklist per role and site. It sends reminders by Teams or mail and shows gaps in a Power BI dashboard. Uploads go through AFAS Pocket, a bounded classification loop files them, and the administrator handles only unmatched items and staff who must be approached in person.",
+   "previous_blocker": "The data sat in three systems and three agency portals with no shared key. The checklist per role lived in someone's head and an Excel sheet.",
+   "enabler_now": "Connector and matching code is now cheap to build, and AFAS Pocket gives employees an upload channel [S4]. Document classification with a match check is good enough for filing.",
+   "still_hard": "Agency portals may have no API, so exports or scraping are needed. Warehouse staff without email still need a face-to-face reminder from a team lead.",
+   "human_edge": "Getting a reluctant employee or a busy shift lead to hand over a document is a people job.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Track forklift, VCA and food-safety certificates for agency flex workers, not only for own staff."
+   },
+   "altitude": "The administrator stops chasing and works from an exceptions list. They decide when a missing certificate is escalated to the site manager.",
+   "reach": [
+    {
+     "role": "ld",
+     "task": "Plan mandatory certificate renewals in Studytube",
+     "learn": "Renewal cycles per certificate, so reminders go out before expiry"
+    },
+    {
+     "role": "bookkeeper",
+     "task": "Check agency invoices",
+     "learn": "Which agency worker list matches the invoice, so both use the same worker key"
+    }
+   ],
+   "build_days": {
+    "coding": "8-12",
+    "integration": "8-15",
+    "testing_rollout": "5-10",
+    "consent_and_access": "10-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS Pocket lets employees submit data and Jonas reads documents into dossier fields",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Studytube exposes course and certificate data by API",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Re-keying and corrections are the main wastes in HR records work",
+     "grade": "E1",
+     "source": "[digest, model knowledge]"
+    }
+   ],
+   "assumptions": [
+    "Each site has a known list of mandatory certificates per role",
+    "Agencies can deliver worker and certificate lists in a fixed format"
+   ],
+   "unknowns": [
+    "Whether the three agency portals offer an API or only exports",
+    "Current dossier completeness rate per site",
+    "Whether the works council sees certificate tracking as performance monitoring"
+   ],
+   "research_questions": [
+    "What is the dossier completeness rate today per site, and how much does it rise in the first month of automated reminders?",
+    "Can all three agencies deliver certificate data for their flex workers through an API or a weekly file?",
+    "Does the works council treat certificate and document tracking as monitoring under WOR art. 27(1)(l)?"
+   ],
+   "time_saved_pct": 87,
+   "speedup": 7.55
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 123,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

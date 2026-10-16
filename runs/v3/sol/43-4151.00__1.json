@@ -1,0 +1,941 @@
+{
+ "tasks": [
+  {
+   "uid": "43-4151.00:2675",
+   "short": "Check order completeness and route missing information for follow-up.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather the order draft and its supporting customer documents.",
+     "actor": "order clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "order draft",
+      "order request"
+     ],
+     "outputs": [
+      "order review pack"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compare customer documents with the draft's customer details, items, quantities and delivery instructions.",
+     "actor": "order clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "ERP"
+     ],
+     "inputs": [
+      "order review pack",
+      "customer record",
+      "product catalogue"
+     ],
+     "outputs": [
+      "order comparison"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "reconcile",
+      "input": "Order review pack, customer record and product catalogue.",
+      "output": "Field differences with source references and unresolved item matches.",
+      "check": "Validate identifiers, units and quantities; require source references and flag ambiguous matches.",
+      "stop": "One comparison and one repair attempt; unresolved differences go to the order clerk.",
+      "why_not_simpler": "Customer documents contain varied wording and layouts; structured orders bypass the model."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "order clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Check required fields and record missing or inconsistent information.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "order comparison",
+      "order rules"
+     ],
+     "outputs": [
+      "order check"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Ask the customer or account representative to clarify incomplete order details.",
+     "actor": "order clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CRM"
+     ],
+     "inputs": [
+      "order check",
+      "customer record"
+     ],
+     "outputs": [
+      "clarification request"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "order clerk"
+    },
+    {
+     "id": "s5",
+     "what": "Assign the order to the appropriate processing or clarification queue.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "order draft",
+      "order check",
+      "clarification request"
+     ],
+     "outputs": [
+      "order queue entry"
+     ],
+     "handoff_to": "order processing team",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "An integration assembles each order review pack from the {EMAIL}, {DOCS} and {ERP}. A bounded comparison loop flags document differences; configured rules in the {ERP} check completeness and route orders. The {WORKFLOW} prepares field-specific clarification requests for the order clerk to approve before sending through the {EMAIL}.",
+   "previous_blocker": "Required fields were often enforceable, but customer attachments, inconsistent item descriptions and disconnected queues still required manual comparison.",
+   "enabler_now": "Existing validation features cover structured checks. AI-assisted coding reduces the effort of connecting records, while bounded document comparison handles variable wording.",
+   "still_hard": "Conflicting specifications, poor customer records and unclear responsibility for answering queries still need people.",
+   "human_edge": "Recognising when an apparently complete order still expresses an unclear or impractical customer requirement.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Review recurring missing-field causes weekly with the sales supervisor."
+   },
+   "altitude": "The week shifts from checking every field to resolving conflicting instructions and recurring intake problems. The clerk can propose intake changes; approval of commercial exceptions stays with the authorised role.",
+   "reach": [
+    {
+     "role": "sales supervisor",
+     "task": "Reduce order delays caused by incomplete customer instructions.",
+     "learn": "Group clarification reasons and distinguish intake defects from product or commercial questions."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Document order capture can check customer, stock and price rules, route exceptions and post orders.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "A vendor case reports 70% touchless orders; this does not establish this task's local saving.",
+     "grade": "E3",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Required-field checks and queue routing usually need rules rather than autonomous agents.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The company uses the {ERP} for order drafts and receives some customer documents through the {EMAIL}.",
+    "Existing {ERP} configuration supports required fields and order statuses.",
+    "Step shares are estimates of today's task time, not measured savings.",
+    "GDPR controls cover customer documents, access, retention and any model processing."
+   ],
+   "unknowns": [
+    "Required fields by order type and which rules already exist in the {ERP}.",
+    "Share of structured orders versus document orders.",
+    "Frequency of ambiguous item references and conflicting instructions.",
+    "Available interfaces and permissions.",
+    "Whether national rules require employee consultation for the proposed workflow changes."
+   ],
+   "research_questions": [
+    "Which missing fields account for most clarification cycles?",
+    "Can native {ERP} configuration cover validation and routing before custom code is considered?",
+    "How accurately does document comparison detect consequential differences on representative historical orders?"
+   ],
+   "new_work": [
+    "Review ambiguous document comparisons and outbound clarification requests.",
+    "Maintain field requirements, queue rules and customer reference mappings.",
+    "Monitor integration failures and repeated clarification loops.",
+    "Arrange applicable employee consultation under national rules before rollout."
+   ],
+   "time_saved_pct": 88,
+   "speedup": 8.33
+  },
+  {
+   "uid": "43-4151.00:2668",
+   "short": "Collect customer and item details and create an order draft.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive the customer's order request and supporting information.",
+     "actor": "order clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "order request"
+     ],
+     "outputs": [
+      "order intake record"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Find the customer account and check stored addresses and billing details.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "order intake record",
+      "customer record"
+     ],
+     "outputs": [
+      "customer match"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Contact the customer for missing addresses, billing references or item specifications.",
+     "actor": "order clerk",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "order intake record",
+      "customer match"
+     ],
+     "outputs": [
+      "customer details"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Enter customer details, product numbers, quantities and specifications into the order form.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "order intake record",
+      "customer match",
+      "customer details",
+      "product catalogue"
+     ],
+     "outputs": [
+      "order draft"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "crud_app",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Customer order text or attachment, confirmed customer details and product catalogue.",
+      "output": "Order draft with field provenance and unresolved values.",
+      "check": "Validate schema, exact customer and item identifiers, units and quantities; never invent missing values.",
+      "stop": "One extraction and one repair attempt; unresolved fields go to the order clerk.",
+      "why_not_simpler": "Unstructured requests need interpretation; structured form submissions use direct field mapping."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "order clerk"
+    },
+    {
+     "id": "s5",
+     "what": "Save the order draft and submit it for completeness review.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "order draft"
+     ],
+     "outputs": [
+      "order queue entry"
+     ],
+     "handoff_to": "order processing team",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "A configured intake form in the {WORKFLOW} collects missing factual details and reuses verified customer data from the {ERP}. An integration captures requests from the {EMAIL}; a bounded extraction loop prepares document orders for review, while structured submissions map directly into order drafts. The {ERP} queues saved drafts for completeness checking without releasing them for fulfilment.",
+   "previous_blocker": "Customers used different channels and formats, so clerks joined account records to free-text requests by hand.",
+   "enabler_now": "Forms and native imports already handle structured data. AI-assisted coding makes channel connections cheaper, and bounded extraction covers remaining document inputs.",
+   "still_hard": "New customer identities, disputed billing changes and bespoke specifications require verification and conversation.",
+   "human_edge": "Spotting a mistaken identity or specification before it becomes a confidently recorded order.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Provide a reusable repeat-order form for customers without electronic ordering connections."
+   },
+   "altitude": "The clerk spends less time transcribing details and more time resolving account and specification exceptions. They gain no automatic right to change billing master data or accept unusual commercial terms.",
+   "reach": [
+    {
+     "role": "new accounts clerk",
+     "task": "Create accurate customer accounts without duplicate records.",
+     "learn": "Customer matching, address validation and the evidence required for billing-detail changes."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "5-12",
+    "testing_rollout": "5-12",
+    "consent_and_access": "4-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Order document capture can validate extracted information and post to the finance system.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Existing order software imports webshop orders and synchronises stock.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Validated forms and exact account matching can remove routine requests for missing factual details.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The described intake route is email-led; phone requests remain an assisted alternative.",
+    "Standard factual questions can move to a customer form; inaccessible or ambiguous cases return to a person.",
+    "Billing information means invoice details and references; payment credentials use an approved payment channel.",
+    "An unmatched customer never triggers automatic account creation or a billing master-data change.",
+    "GDPR data minimisation, access control and retention apply to contact and billing details."
+   ],
+   "unknowns": [
+    "Actual order-channel mix and customers' ability to use forms.",
+    "Customer identifiers available for reliable matching.",
+    "Verification policy for new accounts and billing-address changes.",
+    "Whether the {ERP} exposes draft-order interfaces and configurable forms.",
+    "Access approvals and employee consultation required under national rules."
+   ],
+   "research_questions": [
+    "Which repeated order details could be prefilled from verified records?",
+    "Which requests require a conversation even after structured intake?",
+    "Does native import support preserve customer specifications and source references?"
+   ],
+   "new_work": [
+    "Handle customers who cannot complete the form.",
+    "Review extracted fields and unresolved account matches.",
+    "Maintain form fields, catalogue mappings and duplicate-detection rules.",
+    "Resolve failed imports and reconcile duplicate submissions.",
+    "Complete access reviews and applicable employee consultation."
+   ],
+   "time_saved_pct": 93,
+   "speedup": 14.29
+  },
+  {
+   "uid": "43-4151.00:2680",
+   "short": "Recommend suitable merchandise or services after understanding the customer's needs.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Discuss the customer's intended use, constraints, preferences and budget.",
+     "actor": "order clerk",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "customer enquiry"
+     ],
+     "outputs": [
+      "customer needs"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Look up product specifications, service terms, prices and availability.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "customer needs",
+      "product catalogue",
+      "price list",
+      "availability record",
+      "service terms"
+     ],
+     "outputs": [
+      "candidate options"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Compare suitable options and select a recommendation with relevant trade-offs.",
+     "actor": "order clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "customer needs",
+      "candidate options"
+     ],
+     "outputs": [
+      "recommendation brief"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Customer needs and options already filtered against explicit constraints.",
+      "output": "Short recommendation brief with trade-offs, source references and unanswered questions.",
+      "check": "Recheck hard constraints and current prices; the clerk verifies suitability and unsupported claims.",
+      "stop": "One draft and one revision; uncertain suitability goes to a sales specialist.",
+      "why_not_simpler": "Needs and trade-offs are expressed in free text; fixed filters alone cannot explain their fit."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "order clerk"
+    },
+    {
+     "id": "s4",
+     "what": "Explain the recommendation, answer concerns and agree the customer's next step.",
+     "actor": "order clerk",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "recommendation brief"
+     ],
+     "outputs": [
+      "customer response",
+      "agreed next step"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "order clerk"
+    },
+    {
+     "id": "s5",
+     "what": "Record the recommended option and agreed next step.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "recommendation brief",
+      "customer response",
+      "agreed next step"
+     ],
+     "outputs": [
+      "recommendation record"
+     ],
+     "handoff_to": "account representative",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "order clerk"
+    }
+   ],
+   "design": "A deterministic lookup combines catalogue, price and availability data from the {ERP} with approved guidance in the {DOCS}. A bounded drafting loop prepares a sourced comparison for the clerk, who conducts the customer conversation. A configured template in the {CRM} records the selected option and next step after the clerk confirms them.",
+   "previous_blocker": "Information retrieval and recommendation judgement were mixed together, making the whole conversation appear resistant to automation.",
+   "enabler_now": "Connected catalogue searches remove much of the lookup work. A bounded drafting loop can explain options using retrieved facts without taking over the customer discussion.",
+   "still_hard": "Unspoken needs, technical compatibility, unreliable availability and consequential recommendations still require experience or specialist advice.",
+   "human_edge": "Discovering what the customer actually needs and knowing when to challenge their initial request.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Offer structured option comparisons to occasional customers without a dedicated account representative."
+   },
+   "altitude": "The clerk spends more of the week discussing needs and trade-offs, with less catalogue searching. With training and explicit delegation, they can handle standard option comparisons while escalating technical and commercial exceptions.",
+   "reach": [
+    {
+     "role": "sales engineer",
+     "task": "Assess compatibility for technically demanding customer requirements.",
+     "learn": "Recognise compatibility limits, capture intended use and identify when specialist validation is necessary."
+    },
+    {
+     "role": "account representative",
+     "task": "Follow up a recommendation with a suitable commercial offer.",
+     "learn": "Capture buying constraints and a useful next step without treating interest as a commitment."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "4-10",
+    "testing_rollout": "6-12",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A shopping assistant for product advice exists; this does not prove suitability for technical recommendations.",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "An assistant study found higher support productivity, with larger gains for novices; recommendation quality needs separate testing.",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "Hard product constraints can be filtered deterministically before drafting an explanation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Current product facts and approved service terms are available from governed sources.",
+    "The clerk confirms outcome fields after the conversation; automatic call recording is unnecessary.",
+    "Recommendations stay within the clerk's existing competence and commercial authority.",
+    "GDPR applies to customer notes; employee consultation follows applicable national rules."
+   ],
+   "unknowns": [
+    "How much of the catalogue has reliable compatibility attributes.",
+    "Which recommendations require specialist approval.",
+    "Freshness and reliability of price and availability data.",
+    "Whether the clerk has authority and training to serve occasional customers directly.",
+    "Applicable employee consultation and access requirements."
+   ],
+   "research_questions": [
+    "Which explicit constraints eliminate unsuitable options without a model?",
+    "Can experienced clerks verify recommendation briefs quickly against approved sources?",
+    "Which recommendation errors require escalation rather than a revised draft?"
+   ],
+   "new_work": [
+    "Review recommendation briefs and confirm conversation outcomes.",
+    "Maintain suitability filters, source documents and escalation boundaries.",
+    "Check samples for unsupported claims and outdated product facts.",
+    "Train clerks to recognise technical limits and record unresolved needs."
+   ],
+   "time_saved_pct": 36,
+   "speedup": 1.55
+  },
+  {
+   "uid": "43-4151.00:2683",
+   "short": "Inspect outgoing work against customer specifications and resolve discrepancies before release.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve the approved customer specification and outgoing work documents.",
+     "actor": "order clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "ERP"
+     ],
+     "inputs": [
+      "customer specification",
+      "order record",
+      "dispatch record"
+     ],
+     "outputs": [
+      "inspection pack"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compare outgoing item codes, quantities and recorded attributes with the approved order.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "inspection pack"
+     ],
+     "outputs": [
+      "dispatch comparison"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Inspect outgoing goods for condition, finish, labels and customer-specific requirements.",
+     "actor": "order clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "outgoing work",
+      "customer specification",
+      "dispatch comparison"
+     ],
+     "outputs": [
+      "inspection findings"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 40,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Record discrepancies and recommend correction, acceptance or a dispatch hold.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "inspection findings",
+      "dispatch comparison",
+      "customer specification"
+     ],
+     "outputs": [
+      "inspection record",
+      "disposition recommendation"
+     ],
+     "handoff_to": "dispatch supervisor",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve release or hold the outgoing work for correction.",
+     "actor": "dispatch supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "inspection record",
+      "disposition recommendation"
+     ],
+     "outputs": [
+      "release decision"
+     ],
+     "handoff_to": "dispatch team",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "dispatch supervisor"
+    }
+   ],
+   "design": "An integration assembles the current specification and dispatch records from the {DOCS}, {ERP} and {OPS_SYSTEM}. Deterministic checks compare recorded attributes and prefill an inspection checklist in the {OPS_SYSTEM}; people inspect physical work and judge discrepancies. The dispatch supervisor approves release, with findings and corrections retained against the order.",
+   "previous_blocker": "Specifications, dispatch records and inspection evidence were separate, while physical inspection could not be replaced by document checks.",
+   "enabler_now": "Small integrations and checklist generators can now be built more cheaply. Existing structured attributes support deterministic comparison without requiring automated visual inspection.",
+   "still_hard": "Surface defects, bespoke finishes, ambiguous tolerances and unrecorded changes still require physical assessment and specialist judgement.",
+   "human_edge": "Seeing a defect or mismatch that passes the recorded checks and deciding its practical significance.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Review recurring specification mismatches weekly with the sales supervisor."
+   },
+   "altitude": "The clerk spends less time assembling paperwork and more time inspecting work and documenting consequential discrepancies. Dispatch approval rights do not change.",
+   "reach": [
+    {
+     "role": "sales supervisor",
+     "task": "Prevent repeat order errors caused by unclear customer promises.",
+     "learn": "Translate inspection findings into precise order-entry requirements and customer acceptance criteria."
+    },
+    {
+     "role": "sales engineer",
+     "task": "Clarify technical acceptance criteria before an order is fulfilled.",
+     "learn": "Distinguish measurable tolerances from subjective preferences and identify authoritative specification versions."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-12",
+    "testing_rollout": "6-12",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Order software can synchronise order and stock records; this does not establish physical inspection automation.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Recorded item codes, quantities and explicit tolerances can be compared deterministically.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Physical condition and ambiguous customer acceptance criteria commonly require human inspection.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This version describes a merchandise business where the order clerk inspects outgoing goods.",
+    "Physical inspection takes more time than the supplied document-heavy prior suggests.",
+    "A dispatch supervisor currently approves release; local authority arrangements may differ.",
+    "Only approved structured criteria generate automatic checks; novel free-text requirements receive human interpretation.",
+    "GDPR applies to identifiable customer and employee records; consultation follows national rules."
+   ],
+   "unknowns": [
+    "Whether outgoing work consists of goods, service deliverables or advertising proofs.",
+    "Who performs physical inspection and who has release authority.",
+    "Which specification attributes and tolerances are structured.",
+    "How specification revisions and customer-approved deviations are recorded.",
+    "Whether suitable checklists already exist in the {OPS_SYSTEM}.",
+    "Access lead times and applicable employee consultation requirements."
+   ],
+   "research_questions": [
+    "Which checks compare records, and which require observing the actual outgoing work?",
+    "Can the authoritative specification version be linked reliably to each dispatch?",
+    "Which discrepancy types recur and could be prevented during order intake?"
+   ],
+   "new_work": [
+    "Maintain checklist templates and approved tolerance rules.",
+    "Translate new customer-specific conditions into inspection criteria.",
+    "Resolve missing or conflicting specification versions.",
+    "Review comparison failures and maintain integration mappings.",
+    "Complete employee consultation where national rules require it."
+   ],
+   "time_saved_pct": 40,
+   "speedup": 1.65
+  }
+ ],
+ "role": {
+  "altitude": "The order clerk moves from transcription and document chasing toward resolving order exceptions, explaining options and verifying customer requirements. Commercial commitments, customer master-data changes and dispatch approval remain subject to explicit delegated authority.",
+  "reach": [
+   "New accounts clerk: resolve customer identity and billing-data exceptions.",
+   "Account representative: turn documented customer needs into useful commercial follow-up.",
+   "Sales engineer: recognise technical limits and define acceptance criteria.",
+   "Sales supervisor: use recurring intake and inspection findings to prevent repeat errors."
+  ],
+  "skills_to_grow": [
+   "Customer and product master-data validation.",
+   "Writing clear requirements and acceptance criteria.",
+   "Checking extracted fields against source documents.",
+   "Explaining product trade-offs and recognising escalation needs.",
+   "Analysing recurring order exceptions.",
+   "Maintaining workflow rules and handling integration failures."
+  ],
+  "ambitious_version": "An order operations specialist who combines reliable intake, informed customer guidance and feedback from outgoing inspections, with explicitly delegated authority over standard order exceptions."
+ },
+ "job_code": "43-4151.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 152,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r=await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":2200});text(r.output)\n"
+  ],
+  "job": {
+   "code": "43-4151.00",
+   "title": "Order Clerks",
+   "tasks": 19,
+   "function": "Sales and account management"
+  }
+ }
+}

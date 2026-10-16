@@ -1,0 +1,804 @@
+{
+ "role_id": "bookkeeper",
+ "tasks": [
+  {
+   "uid": "43-3031.00:2490",
+   "short": "Register, code and post supplier invoices and other entries in AFAS, and summarise the ledger.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect invoices from the AP mailbox and register them in AFAS",
+     "actor": "bookkeeper",
+     "today_means": "email_chat",
+     "systems": [
+      "Microsoft 365",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "supplier invoice"
+     ],
+     "outputs": [
+      "registered invoice"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Read invoice, key header and lines, find the supplier",
+     "actor": "bookkeeper",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "registered invoice",
+      "supplier master data"
+     ],
+     "outputs": [
+      "invoice record"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Code ledger account, cost centre, site and VAT code",
+     "actor": "bookkeeper",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "invoice record",
+      "coding history",
+      "chart of accounts"
+     ],
+     "outputs": [
+      "coded invoice"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Invoice lines with no supplier-history coding rule",
+      "output": "Proposed ledger account, cost centre and VAT code with a one-line reason",
+      "check": "Codes must exist in AFAS for the administration; VAT code must fit supplier country and reverse-charge flag; low-confidence proposals go to the queue",
+      "stop": "One proposal per line, no retries; a failed check leaves the line uncoded for the bookkeeper",
+      "why_not_simpler": "History rules cover recurring suppliers; free-text lines from new or irregular suppliers need reading."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Match to order or receipt and route for approval",
+     "actor": "bookkeeper",
+     "today_means": "email_chat",
+     "systems": [
+      "AFAS Profit",
+      "Microsoft 365"
+     ],
+     "inputs": [
+      "coded invoice",
+      "purchase order",
+      "goods receipt"
+     ],
+     "outputs": [
+      "approved invoice"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Post entries and summarise AP ledger in Excel for the controller",
+     "actor": "bookkeeper",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "approved invoice",
+      "journal entry"
+     ],
+     "outputs": [
+      "posted entry",
+      "AP ledger summary"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 5,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    }
+   ],
+   "design": "Turn on AFAS Profit's UBL inbox and Scan & herken so invoices arrive as e-invoices, and let AFAS post and approve one-to-one matches with order or receipt. Coding rules come from supplier history; a bounded model step proposes coding only for unknown lines, and approval runs as an AFAS workflow instead of mail. The Excel AP summary becomes a Power BI page on the nightly AFAS extract with touchless share and queue age.",
+   "previous_blocker": "Most invoices came as PDFs by mail, approval ran by mail, and coding per administration and VAT exceptions were too varied for fixed rules.",
+   "enabler_now": "AFAS Profit 8 reads UBL and PDF to line level and posts one-to-one matches; models can suggest coding for free-text lines at low cost.",
+   "still_hard": "Touchless shares often disappoint: own ledger accounts, VAT exceptions and PDFs keep exceptions alive, and orders and receipts must be in AFAS for matching to work.",
+   "human_edge": "Deciding odd coding, VAT treatment and cost allocations, and answering for the books at audit.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A daily touchless-rate and exception review instead of a monthly clean-up before close."
+   },
+   "altitude": "The bookkeeper works an exception queue and owns coding rules, match tolerances and supplier data instead of keying invoices; they may change coding rules within limits set by the controller.",
+   "reach": [
+    {
+     "role": "controller",
+     "task": "Month-end accruals and cut-off",
+     "learn": "How unposted and unapproved invoices drive accruals, so the queue is cleared before day one of close."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-8",
+    "testing_rollout": "5-10",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS Profit 8 reads UBL and PDF invoices to line level and posts and approves one-to-one matches",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "AFAS Scan & herken turns a PDF into an e-invoice and finds supplier by KvK, VAT number and IBAN",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Capture time fell from 2.5 minutes to 45 seconds per invoice with history-based coding suggestions",
+     "grade": "E3",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Booking proposals alone do not give high touchless shares because of own accounts and VAT exceptions",
+     "grade": "E3",
+     "source": "[S6]"
+    }
+   ],
+   "assumptions": [
+    "Noordhaven runs AFAS Profit 8 or can upgrade",
+    "Purchase orders and receipts for most spend are in AFAS",
+    "Most invoice volume is from recurring suppliers"
+   ],
+   "unknowns": [
+    "Monthly invoice volume and share arriving as UBL",
+    "Share of spend with a purchase order",
+    "Number of administrations and VAT setups across the three sites"
+   ],
+   "research_questions": [
+    "What share of last quarter's invoices would have been a one-to-one match in AFAS?",
+    "How many suppliers can send UBL or Peppol today?",
+    "How often does the bookkeeper change a coding that history would have proposed?"
+   ],
+   "time_saved_pct": 83,
+   "speedup": 5.8
+  },
+  {
+   "uid": "43-3031.00:2496",
+   "short": "Match bank, agency and ledger records, find differences, and report them to controller or supplier.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Import Rabobank statements and run AFAS bank matching",
+     "actor": "bookkeeper",
+     "today_means": "system_screen",
+     "systems": [
+      "Rabobank",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "bank statement"
+     ],
+     "outputs": [
+      "matched bank lines"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Work unmatched bank lines by searching invoices and mail",
+     "actor": "bookkeeper",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Microsoft 365"
+     ],
+     "inputs": [
+      "unmatched bank line",
+      "open items"
+     ],
+     "outputs": [
+      "matched bank lines",
+      "open question"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "reconcile",
+      "input": "Unmatched bank line with description, IBAN and amount, plus candidate open items",
+      "output": "Proposed match or split with reason, or 'no match'",
+      "check": "Amounts must sum exactly or within set tolerance; IBAN must belong to the relation; a person confirms before posting",
+      "stop": "Top three candidates, one pass; otherwise the line stays in the queue",
+      "why_not_simpler": "AFAS rules already handle reference, IBAN and amount; what is left has free-text descriptions and partial or combined payments."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Check agency invoices against hours and split the g-rekening share",
+     "actor": "bookkeeper",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Staffing agency portals",
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "agency invoice",
+      "agency hours export",
+      "time records"
+     ],
+     "outputs": [
+      "agency invoice check",
+      "g-rekening split"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Reconcile AP and AR subledgers to the general ledger and supplier statements",
+     "actor": "bookkeeper",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "AP ledger summary",
+      "supplier statement",
+      "trial balance"
+     ],
+     "outputs": [
+      "reconciliation"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 15,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Write up differences and mail controller or supplier",
+     "actor": "bookkeeper",
+     "today_means": "email_chat",
+     "systems": [
+      "Microsoft 365"
+     ],
+     "inputs": [
+      "reconciliation",
+      "agency invoice check"
+     ],
+     "outputs": [
+      "discrepancy report",
+      "supplier query"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Difference record with amounts, documents and history",
+      "output": "Draft supplier mail or note to controller",
+      "check": "All amounts and references are copied from the record, not generated; bookkeeper sends",
+      "stop": "One draft per difference; bookkeeper edits or writes it",
+      "why_not_simpler": "A template covers the fixed parts; the explanation of each difference varies."
+     },
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "Configure AFAS automatic bank matching on CAMT.053 with set tolerances, and add a bounded model step that proposes matches for the leftover lines. Replace the Excel sheet that ties agency portals to time records with a scheduled Python job on a governed data platform: it matches agency invoice lines to approved hours, computes the g-rekening share and sends only differences to the bookkeeper. Subledger-to-ledger checks run nightly into a Power BI reconciliation page.",
+   "previous_blocker": "Three agency portals with different exports, and free-text bank descriptions, kept the work in Excel and by hand.",
+   "enabler_now": "AI coding makes small portal integrations and matching jobs cheap to build; AFAS rule matching already covers most bank lines.",
+   "still_hard": "Agency portal exports change without notice, and hours approved in the portal may not match internal time records; that dispute needs people.",
+   "human_edge": "Judging whether a difference is an error, a timing issue or a dispute, and talking it through with agencies and the controller.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Check every agency invoice against hours weekly before payment, instead of sampling."
+   },
+   "altitude": "The bookkeeper spends the week on real differences and agency disputes, and decides on tolerances and when to hold an agency payment within limits set by the controller.",
+   "reach": [
+    {
+     "role": "payroll",
+     "task": "Flex worker hours and wage tax questions",
+     "learn": "How agency hours and CAO rates are built, to judge agency invoice differences."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "8-15",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS matches CAMT.053 lines on reference, IBAN, invoice number and oldest-first sums; misses go to a person",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "Noordhaven can be held liable for agencies' unpaid wage tax and VAT and limits this by paying part into the g-rekening",
+     "grade": "E3",
+     "source": "[S10]"
+    },
+    {
+     "claim": "AP should run with people on exceptions and every decision logged with its data",
+     "grade": "E3",
+     "source": "[S7]"
+    }
+   ],
+   "assumptions": [
+    "Agency portals offer hour exports or an API",
+    "Approved hours exist in a system Noordhaven controls",
+    "A governed data platform is available or can be set up"
+   ],
+   "unknowns": [
+    "Which time registration system holds flex worker hours",
+    "The g-rekening percentage agreed with each agency",
+    "Current share of bank lines AFAS matches automatically"
+   ],
+   "research_questions": [
+    "How many agency invoice lines last quarter differed from approved hours, and by how much?",
+    "Can all three agencies give a stable hours export?",
+    "What share of bank lines is left unmatched after AFAS rules with a small tolerance?"
+   ],
+   "time_saved_pct": 76,
+   "speedup": 4.17
+  },
+  {
+   "uid": "43-3031.00:2491",
+   "short": "Calculate and send customer invoices and account statements from contract rates and volumes.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect billable volumes and contract rates from operations and contracts",
+     "actor": "bookkeeper",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "SharePoint",
+      "Microsoft 365"
+     ],
+     "inputs": [
+      "operations volume export",
+      "customer contract"
+     ],
+     "outputs": [
+      "billing input"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 15,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Calculate invoice lines in Excel against rate cards",
+     "actor": "bookkeeper",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "billing input",
+      "rate card"
+     ],
+     "outputs": [
+      "invoice lines"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 10,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Create and check sales invoices in AFAS",
+     "actor": "bookkeeper",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "invoice lines"
+     ],
+     "outputs": [
+      "sales invoice"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Send invoices by mail or e-invoice",
+     "actor": "bookkeeper",
+     "today_means": "email_chat",
+     "systems": [
+      "AFAS Profit",
+      "Microsoft 365"
+     ],
+     "inputs": [
+      "sales invoice"
+     ],
+     "outputs": [
+      "sent invoice"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Prepare account statements and reminders",
+     "actor": "bookkeeper",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "open items"
+     ],
+     "outputs": [
+      "account statement",
+      "payment reminder"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 5,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    }
+   ],
+   "design": "Move rate cards out of Excel into a small governed rate table and pull billable volumes from operations exports with a scheduled job that computes invoice lines and loads them into AFAS as invoice proposals. The bookkeeper approves a batch per customer, AFAS sends PDF or UBL, and AFAS dunning produces statements and reminders that hand over to collections.",
+   "previous_blocker": "Volumes came from operations as ad hoc Excel files and customer-specific rates lived in contracts, so calculation stayed manual.",
+   "enabler_now": "AI coding makes a rate table and volume import cheap to build and test; AFAS already handles invoice runs, e-invoicing and dunning.",
+   "still_hard": "Customer contracts with special clauses, surcharges and disputed volumes; the source of operations data is not in the listed systems.",
+   "human_edge": "Spotting a bill that looks wrong for that customer, and handling credit notes and disputes.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Bill weekly instead of monthly for large warehousing customers, to lower days sales outstanding."
+   },
+   "altitude": "The bookkeeper approves invoice batches and keeps rate cards correct, and may hold or release a customer batch.",
+   "reach": [
+    {
+     "role": "collections",
+     "task": "Dunning and disputed invoices",
+     "learn": "Which billing errors cause late payment, to fix them at the source."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Billing and account status work fits deterministic software with high autonomy",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Dutch B2B e-invoicing planned from 1 July 2030, not law yet",
+     "grade": "E3",
+     "source": "[S9]"
+    }
+   ],
+   "assumptions": [
+    "Billable volumes can be exported from a warehouse or transport system",
+    "Rate cards per customer can be written as rules"
+   ],
+   "unknowns": [
+    "Which system holds billable volumes (WMS, TMS)",
+    "Number of customers with non-standard rates",
+    "How many credit notes follow billing errors today"
+   ],
+   "research_questions": [
+    "What share of last quarter's invoices was corrected or credited, and why?",
+    "Can operations deliver a daily volume export per customer?",
+    "Which customers can receive UBL or Peppol invoices?"
+   ],
+   "time_saved_pct": 87,
+   "speedup": 7.84
+  },
+  {
+   "uid": "43-3031.00:2508",
+   "short": "Work out costs of materials, services and overhead from quotes and price lists for checks and allocation.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather quotes and price lists from mail and SharePoint",
+     "actor": "bookkeeper",
+     "today_means": "document",
+     "systems": [
+      "Microsoft 365",
+      "SharePoint"
+     ],
+     "inputs": [
+      "supplier quote",
+      "price list"
+     ],
+     "outputs": [
+      "price data"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "integration",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Supplier quote or price list PDF",
+      "output": "Structured price lines: item, unit, price, validity, supplier",
+      "check": "Totals recompute from lines; supplier must exist in AFAS; bookkeeper confirms new prices before use",
+      "stop": "One extraction per document; failed checks go to manual entry",
+      "why_not_simpler": "Quotes come as varied PDFs and mail text without a fixed layout."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Enter prices in Excel cost model and compare to orders and invoices",
+     "actor": "bookkeeper",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "price data",
+      "purchase order",
+      "supplier invoice"
+     ],
+     "outputs": [
+      "cost calculation",
+      "price variance"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 15,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Allocate overhead to sites and cost centres",
+     "actor": "bookkeeper",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "cost calculation",
+      "allocation keys"
+     ],
+     "outputs": [
+      "allocation entry"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 10,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Review odd costs and report to controller and FP&A",
+     "actor": "bookkeeper",
+     "today_means": "email_chat",
+     "systems": [
+      "Microsoft 365",
+      "Excel"
+     ],
+     "inputs": [
+      "price variance",
+      "cost calculation"
+     ],
+     "outputs": [
+      "cost note"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    }
+   ],
+   "design": "Build a small price-list app on the governed data platform that stores agreed prices per supplier, filled by a bounded extraction step from quotes with bookkeeper confirmation. A nightly job compares AFAS invoice lines to agreed prices and flags variances, and overhead allocation runs as fixed AFAS allocation keys instead of Excel.",
+   "previous_blocker": "Quotes and price lists arrive as unstructured PDFs and mails, so prices never reached a system to compare against.",
+   "enabler_now": "Models extract price lines from varied documents reliably enough for a checked loop; a price table and variance job are cheap to build.",
+   "still_hard": "Quotes with conditions, volume tiers and indexation; overhead keys are a policy choice of the controller.",
+   "human_edge": "Judging whether a price variance is acceptable and what it means for the cost picture.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A price variance report per supplier for purchasing and site managers each month."
+   },
+   "altitude": "The bookkeeper checks variances rather than typing prices, and flags suppliers above agreed prices for follow-up.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Cost forecast per site",
+     "learn": "Which cost lines drive forecast misses, so variances are reported in that shape."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "3-6",
+    "testing_rollout": "3-6",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Receipts and cost inputs fit a bounded model step with human checks",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Large companies may not agree more than 30 days payment term with small suppliers, relevant when recording quote terms",
+     "grade": "E3",
+     "source": "[S12]"
+    }
+   ],
+   "assumptions": [
+    "Agreed prices are not already held in AFAS purchase data",
+    "Overhead allocation keys are stable per year"
+   ],
+   "unknowns": [
+    "How many active price agreements and quotes per year",
+    "Whether purchasing keeps prices elsewhere",
+    "Who sets overhead allocation keys today"
+   ],
+   "research_questions": [
+    "What share of invoices last quarter deviated from agreed prices?",
+    "Are quotes stored in one SharePoint place or spread across mailboxes?",
+    "Does the controller want variances per supplier or per site?"
+   ],
+   "time_saved_pct": 71,
+   "speedup": 3.48
+  }
+ ],
+ "role": {
+  "altitude": "The three bookkeepers move from keying and matching to running exception queues and owning match rules, tolerances, coding rules and supplier data, within limits set by the controller.",
+  "reach": [
+   "controller: month-end accruals and cut-off",
+   "collections: disputed invoices and dunning",
+   "payroll: flex worker hours and agency wage tax liability",
+   "fpa: cost forecast inputs per site"
+  ],
+  "skills_to_grow": [
+   "Writing and testing matching and coding rules in AFAS",
+   "Reading data-quality dashboards in Power BI",
+   "Agency invoice and g-rekening checks",
+   "Supplier data management including IBAN-name checks",
+   "Reviewing model proposals and logging decisions"
+  ],
+  "ambitious_version": "Most supplier and agency invoices post without touch, every agency invoice is checked against hours before payment, and the team closes the month days faster with a daily exception review instead of a month-end clean-up."
+ },
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 159,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

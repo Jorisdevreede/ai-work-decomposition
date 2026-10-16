@@ -1,0 +1,655 @@
+{
+ "role_id": "accountant",
+ "tasks": [
+  {
+   "uid": "13-2011.00:21531",
+   "short": "Each month, compare budget to actual costs per site and cost centre, explain the gaps and send a report.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export general ledger actuals per cost centre from AFAS",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "general ledger"
+     ],
+     "outputs": [
+      "GL actuals export"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Map actuals to budget lines and sites in an Excel workbook",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "GL actuals export",
+      "budget file",
+      "cost centre mapping"
+     ],
+     "outputs": [
+      "budget vs actual table"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Find causes of large variances; ask budget holders by mail",
+     "actor": "accountant",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "AFAS Profit",
+      "Staffing agency portals"
+     ],
+     "inputs": [
+      "budget vs actual table",
+      "agency invoice",
+      "purchase invoice"
+     ],
+     "outputs": [
+      "variance explanations"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Variance lines above threshold with the underlying GL postings, invoice lines and agency hours",
+      "output": "Proposed driver per variance (volume, price, timing, one-off, misposting) with the postings that support it",
+      "check": "Every driver must cite posting numbers whose amounts add up to at least 80% of the variance; otherwise marked 'unexplained'",
+      "stop": "One pass per variance line, max 50 lines a month; unexplained lines go to the accountant as open questions",
+      "why_not_simpler": "Posting descriptions and invoice texts are free text; rules alone cannot tell a one-off repair from a price rise"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Write commentary and build the report pack",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "Excel",
+      "PowerPoint"
+     ],
+     "inputs": [
+      "budget vs actual table",
+      "variance explanations"
+     ],
+     "outputs": [
+      "budget vs actual report"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Approved variance explanations and the figures table",
+      "output": "Short commentary per site and cost category",
+      "check": "Every number in the text is matched against the figures table by code; a mismatch blocks the draft",
+      "stop": "Two redraft attempts, then the accountant writes that section",
+      "why_not_simpler": "Plain-language commentary from mixed drivers needs writing, which templates do badly"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Send the pack to controller and budget holders",
+     "actor": "accountant",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "SharePoint"
+     ],
+     "inputs": [
+      "budget vs actual report"
+     ],
+     "outputs": [
+      "published report"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Add the budget and a cost-centre mapping table to the existing nightly AFAS extract and build a budget-vs-actual page in Power BI, replacing the Excel workbook that ties AFAS to the budget file. A scheduled Python job on the governed data platform flags variances above threshold, runs a bounded model step that proposes drivers from postings and invoice lines and drafts commentary; the accountant approves, and the controller releases the report, which Power BI then publishes to budget holders.",
+   "previous_blocker": "The mapping of cost centres to budget lines lived in one person's Excel file, and explaining variances meant reading postings and invoices one by one.",
+   "enabler_now": "Power BI already sits on a nightly AFAS extract, AI coding makes the mapping job and tests cheap to build, and a model can read posting and invoice text to propose drivers with citations.",
+   "still_hard": "Budget holders' context (a planned repair, a delayed project) is not in any system, and a wrong driver in a report shapes management decisions.",
+   "human_edge": "Knowing which gaps matter to the business and asking a site manager the right follow-up question.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A weekly budget-vs-actual view for each site manager, including flex labour cost against budget, instead of a monthly pack."
+   },
+   "altitude": "The accountant stops building the workbook and spends the time on the five or so variances that matter. They own the mapping table and variance thresholds.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Rolling forecast updates",
+     "learn": "How confirmed variance drivers feed the forecast, so a timing gap is not counted as a saving."
+    },
+    {
+     "role": "bookkeeper",
+     "task": "Coding purchase invoices to cost centres",
+     "learn": "Which coding errors cause false variances, so they can be fixed when the invoice is booked."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "3-5",
+    "testing_rollout": "4-6",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Accountants using AI closed the books 7.5 days faster in a field study of 79 firms.",
+     "grade": "E3",
+     "source": "[S3]"
+    },
+    {
+     "claim": "Models still make multi-step reasoning errors across files, so drafted explanations need a tie-out gate.",
+     "grade": "E3",
+     "source": "[S2]"
+    },
+    {
+     "claim": "An unnoticed model assumption can make a workpaper impossible to rebuild.",
+     "grade": "E1",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Power BI can show budget against actual from an AFAS extract with a mapping table.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The budget is held in an Excel file from FP&A, not in AFAS budget tables.",
+    "Cost centres in AFAS match sites and departments closely enough for one mapping table."
+   ],
+   "unknowns": [
+    "Where the approved budget is stored and in what level of detail.",
+    "Whether the nightly Power BI extract already includes GL postings per cost centre.",
+    "Whether budget holders may see each other's figures."
+   ],
+   "research_questions": [
+    "How much of the monthly variance commentary is about the same recurring drivers (flex labour, fuel, repairs)?",
+    "Do the proposed drivers from the model match the accountant's own explanations on three past months?",
+    "Can the AFAS extract give posting-level detail with invoice text, or only balances?"
+   ],
+   "time_saved_pct": 82,
+   "speedup": 5.63
+  },
+  {
+   "uid": "13-2011.00:21527",
+   "short": "Advise HR and management on cost of pay and benefit changes, accounting setup in AFAS, and tax planning.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Take the question and agree scope with the requester",
+     "actor": "accountant",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams",
+      "Outlook"
+     ],
+     "inputs": [
+      "advice request"
+     ],
+     "outputs": [
+      "advice scope"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Gather payroll costs, CAO tables, contracts and ledger data",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "SharePoint"
+     ],
+     "inputs": [
+      "payroll cost export",
+      "CAO wage tables",
+      "general ledger"
+     ],
+     "outputs": [
+      "advice data set"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Model the options and their cost and tax effects in Excel",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "advice data set",
+      "advice scope"
+     ],
+     "outputs": [
+      "option cost model"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Write the advice memo with options and a recommendation",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "Word"
+     ],
+     "inputs": [
+      "option cost model",
+      "policy documents"
+     ],
+     "outputs": [
+      "advice memo"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Approved option cost model, advice scope and relevant SharePoint policies",
+      "output": "Draft memo: question, options, cost per year, risks, open points",
+      "check": "All figures are pulled from the model by reference; the accountant signs off every tax statement",
+      "stop": "One draft plus one revision; tax or legal points the model is unsure of are listed as open, not answered",
+      "why_not_simpler": "Each question differs, so a fixed template cannot write the reasoning around the options"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Discuss the advice with requester and finance director",
+     "actor": "accountant",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "advice memo"
+     ],
+     "outputs": [
+      "decision"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    }
+   ],
+   "design": "A small library of reusable cost models (CAO pay rise, extra shift allowance, pension or lease scheme change, AFAS ledger redesign) runs as Python on the governed data platform against aggregated AFAS payroll and ledger data. A bounded model step drafts the memo from the approved model and policy texts; the accountant reviews, and for tax effects AFAS Jonas and the external tax adviser are the check.",
+   "previous_blocker": "Each question is one-off, and the data sits in payroll and ledger screens that only the accountant knows how to combine.",
+   "enabler_now": "AI coding makes reusable cost models cheap to build, and a model can draft a clear memo once the numbers are fixed.",
+   "still_hard": "The judgement on tax and long-range effects, and the CAO and works council context, which no model checks reliably.",
+   "human_edge": "Understanding what the requester really needs to decide and saying plainly what the company should not do.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Site managers get a costed answer on shift and allowance changes before they negotiate with teams, not only HR and the board."
+   },
+   "altitude": "Less time pulling data, more time in the conversation. The accountant decides which cost models become standard.",
+   "reach": [
+    {
+     "role": "cnb",
+     "task": "Costing pay and benefit changes",
+     "learn": "How the CAO wage tables and allowance rules drive the cost model, so both use one set of numbers."
+    },
+    {
+     "role": "payroll",
+     "task": "Running payroll in AFAS",
+     "learn": "Which payroll components behave unexpectedly in a cost projection, such as pension franchise and overtime."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "3-5",
+    "testing_rollout": "3-5",
+    "consent_and_access": "3-6"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS Jonas assists in corporate tax returns and leaves the check with the user.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Tax estimates belong on the mandatory human review list for AI in accounting.",
+     "grade": "E1",
+     "source": "[S7]"
+    },
+    {
+     "claim": "Benchmarks leave out client communication and asking the right questions.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "No benchmark covers Dutch GAAP or Dutch tax.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "At Noordhaven 'clients' are internal: HR, the board and site managers.",
+    "Cost models use aggregated payroll data, not named salaries."
+   ],
+   "unknowns": [
+    "How many advice requests come in per year and on which topics.",
+    "Whether the works council must be consulted on using payroll data in new analysis tools.",
+    "Which questions go to an external tax adviser today."
+   ],
+   "research_questions": [
+    "Do four or five recurring question types cover most advice requests?",
+    "Can aggregated AFAS payroll data answer the cost questions without exposing individual salaries under the AVG?",
+    "Do HR and the finance director find a model-drafted memo usable after one review on two past cases?"
+   ],
+   "time_saved_pct": 51,
+   "speedup": 2.03
+  },
+  {
+   "uid": "13-2011.00:21506",
+   "short": "Report to management on how assets are used and on audit findings, and recommend changes.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect fixed asset register, depreciation and audit findings",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "SharePoint"
+     ],
+     "inputs": [
+      "fixed asset register",
+      "auditor management letter"
+     ],
+     "outputs": [
+      "asset and findings data"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Analyse use, idle assets, costs and open audit points in Excel",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "asset and findings data",
+      "asset usage data"
+     ],
+     "outputs": [
+      "asset utilisation analysis",
+      "audit findings status"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Write report with recommendations for management",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "PowerPoint"
+     ],
+     "inputs": [
+      "asset utilisation analysis",
+      "audit findings status"
+     ],
+     "outputs": [
+      "management report"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Dashboard figures, list of idle or underused assets, open audit findings with owners",
+      "output": "Draft report sections with candidate recommendations",
+      "check": "Figures are referenced from the dashboard data; each recommendation must cite an asset or finding id",
+      "stop": "One draft and one revision; recommendations without a cited basis are dropped",
+      "why_not_simpler": "Turning findings and figures into readable recommendations needs writing, not just tables"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Present to management and agree actions",
+     "actor": "accountant",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "management report"
+     ],
+     "outputs": [
+      "agreed actions"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Chase owners on audit and asset actions by mail",
+     "actor": "accountant",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Excel"
+     ],
+     "inputs": [
+      "agreed actions"
+     ],
+     "outputs": [
+      "action status"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    }
+   ],
+   "design": "A Power BI page on the nightly AFAS extract shows the fixed asset register, depreciation, and use where usage data exists, plus the status of audit findings. Findings and agreed actions live in a SharePoint list with reminders to owners, replacing the Excel tracker and mail chasing. A bounded model step drafts the report from the dashboard data; the accountant edits the recommendations and presents them.",
+   "previous_blocker": "Asset use data sits outside AFAS (fleet and warehouse systems, if any), and audit findings were tracked in loose documents and mail.",
+   "enabler_now": "Power BI is already in place on AFAS data, a SharePoint list replaces the tracker at no extra cost, and a model can draft report text from fixed figures.",
+   "still_hard": "Getting reliable use data for trucks, forklifts and racking, and choosing recommendations that operations will accept.",
+   "human_edge": "Judging which idle assets can really go and making the case to site management.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A quarterly review of idle or underused trucks and forklifts per site, instead of once a year at the audit."
+   },
+   "altitude": "From compiling a yearly report to tracking actions each quarter. The accountant proposes disposals and owns the audit action list.",
+   "reach": [
+    {
+     "role": "controller",
+     "task": "Managing the year-end audit with the external auditor",
+     "learn": "Which recurring audit findings can be prevented by tests that run every month."
+    },
+    {
+     "role": "fpa",
+     "task": "Capital expenditure planning",
+     "learn": "How utilisation figures should change the replacement plan for vehicles and equipment."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "4-8",
+    "testing_rollout": "3-5",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Leading models meet about 62% of criteria on accounting tasks; judgement is the bottleneck.",
+     "grade": "E3",
+     "source": "[S2]"
+    },
+    {
+     "claim": "A model-added assumption can go unnoticed, so draft recommendations must cite their basis.",
+     "grade": "E1",
+     "source": "[S6]"
+    },
+    {
+     "claim": "SharePoint lists with Power Automate reminders can track actions and owners.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The fixed asset register is kept in AFAS.",
+    "Audit findings arrive as a management letter from the external auditor once a year."
+   ],
+   "unknowns": [
+    "Which system holds use data for trucks and forklifts (telematics, fleet system, none).",
+    "How many open audit findings there are and who owns them.",
+    "Whether telematics data on drivers needs works council consent before use."
+   ],
+   "research_questions": [
+    "Is there usable telematics or warehouse data that shows asset use per site?",
+    "How many audit findings repeat year on year, and could a monthly test catch them?",
+    "Did past recommendations lead to disposals or changes, and what blocked them?"
+   ],
+   "time_saved_pct": 74,
+   "speedup": 3.81
+  }
+ ],
+ "role": {
+  "altitude": "The accountant moves from building workbooks and chasing data to owning the mappings, thresholds and tie-outs that produce reports, and spends the freed time on the few variances, advice questions and assets that matter.",
+  "reach": [
+   "FP&A Analyst: feed confirmed variance drivers into the rolling forecast",
+   "Controller: turn recurring audit findings into monthly automated tests",
+   "Compensation and Benefits Specialist: share one cost model for CAO and benefit changes",
+   "Bookkeeper: fix cost-centre coding errors at invoice entry"
+  ],
+  "skills_to_grow": [
+   "Specifying data mappings and tests for the governed data platform",
+   "Reviewing model-drafted text against source figures",
+   "Power BI modelling on the AFAS extract",
+   "Explaining financial trade-offs to site managers"
+  ],
+  "ambitious_version": "Every site manager gets a weekly budget-vs-actual view with explained variances, costed answers to pay and shift questions, and a quarterly asset review. The accountant team writes the rules and checks behind them, which helps the Finance North Star of a faster close with a forecast the business trusts."
+ },
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 78,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

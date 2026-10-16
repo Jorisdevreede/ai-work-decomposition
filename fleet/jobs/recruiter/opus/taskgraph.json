@@ -1,0 +1,1522 @@
+{
+ "role_id": "recruiter",
+ "tasks": [
+  {
+   "uid": "13-1071.00:18868",
+   "short": "Read incoming applications and agency CVs, check them against the vacancy's must-haves, and move each one on.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather applications from Recruitee, the recruitment mailbox and agency emails",
+     "actor": "recruiter",
+     "today_means": "email_chat",
+     "systems": ["Recruitee", "Outlook"],
+     "inputs": ["application", "agency CV email"],
+     "outputs": ["candidate record"],
+     "handoff_to": "recruiter",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 5,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Check must-haves: certificate, licence, shifts, travel distance, right to work",
+     "actor": "recruiter",
+     "today_means": "system_screen",
+     "systems": ["Recruitee"],
+     "inputs": ["candidate record", "vacancy profile"],
+     "outputs": ["must-have check"],
+     "handoff_to": "recruiter",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Read CV and motivation against the job requirements",
+     "actor": "recruiter",
+     "today_means": "document",
+     "systems": ["Recruitee"],
+     "inputs": ["CV", "vacancy profile", "must-have check"],
+     "outputs": ["evidence table"],
+     "handoff_to": "recruiter",
+     "share_pct": 40,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "CV text and motivation, plus the vacancy's numbered criteria",
+      "output": "per criterion: found, not found or unclear, with the quoted CV line; no score and no ranking",
+      "check": "every 'found' carries a quote that exists verbatim in the CV; dates parse; criteria list matches the vacancy; protected attributes are stripped before the call",
+      "stop": "one call per application plus one retry; a failed check shows the plain CV with no table",
+      "why_not_simpler": "CVs have no fixed layout and arrive in Dutch, English and Polish; knock-out questions only cover what the candidate typed in the form"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Decide next stage and record it in Recruitee",
+     "actor": "recruiter",
+     "today_means": "system_screen",
+     "systems": ["Recruitee"],
+     "inputs": ["evidence table"],
+     "outputs": ["stage decision"],
+     "handoff_to": "recruiter",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Write down why a candidate was turned down",
+     "actor": "recruiter",
+     "today_means": "system_screen",
+     "systems": ["Recruitee"],
+     "inputs": ["stage decision"],
+     "outputs": ["rejection reason"],
+     "handoff_to": "recruiter",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "A mailbox job on Microsoft Graph files agency and referral CVs into Recruitee, and Recruitee's application questions capture the must-haves as structured answers. A bounded extraction loop builds an evidence table per criterion with quotes, never a score; the recruiter decides the stage and picks a reason code, and every decision is logged on the governed data platform.",
+   "previous_blocker": "Must-haves lived in the recruiter's head, agency CVs came by email outside Recruitee, and reading free-text CVs could not be coded.",
+   "enabler_now": "Models read mixed-language CVs well enough when every claim must carry a quote; AFAS Profit 8 and Recruitee hold the vacancy data; AI coding makes the mailbox job and logging a few days of work.",
+   "still_hard": "Works council consent and a bias test on Noordhaven's own data before go-live; rising application volume written by AI that all looks alike; keeping the review real rather than a click-through.",
+   "human_edge": "Seeing the warehouse worker with a gap year who will stay, or the polished CV that will not; knowing which site manager needs whom.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Read every flex worker who applies for a permanent warehouse role the same day, instead of after external applicants."
+   },
+   "altitude": "The recruiter spends screening time on unclear cases only and owns the vacancy criteria with the hiring manager; they decide which criteria are true must-haves.",
+   "reach": [
+    {"role": "hr-admin", "task": "Create the employee record and contract from the hire", "learn": "Which application fields AFAS needs, so data is captured once."}
+   ],
+   "build_days": {"coding": "4-7", "integration": "4-8", "testing_rollout": "8-15", "consent_and_access": "20-60"},
+   "run_cost": "low",
+   "evidence": [
+    {"claim": "AFAS Profit 8 builds a candidate profile and a match score against open vacancies; no accuracy figure", "grade": "E2", "source": "[S4]"},
+    {"claim": "67% of surveyed US hiring leaders use AI for CV screening; 26% fear they no longer see some candidates", "grade": "E3", "source": "[S2]"},
+    {"claim": "71% believe most applications they screen are AI-written", "grade": "E3", "source": "[S2]"},
+    {"claim": "No rejection based solely on a score; review must be meaningful", "grade": "E3", "source": "[S12]"},
+    {"claim": "Filtering applications is high-risk under Annex III from 2 December 2027", "grade": "E3", "source": "[S10][S11]"},
+    {"claim": "CV screening almost always needs prior works council consent", "grade": "E3", "source": "[S14]"}
+   ],
+   "assumptions": [
+    "Most applications already arrive through Recruitee; agency CVs by email",
+    "Vacancy criteria can be written as five to ten numbered must-haves and nice-to-haves",
+    "Noordhaven chooses an evidence table over the AFAS match score to keep the decision explainable"
+   ],
+   "unknowns": [
+    "Applications per year, split by warehouse, transport and office",
+    "Share of applications that arrive outside Recruitee",
+    "Whether the works council has an agreement on recruitment data already"
+   ],
+   "research_questions": [
+    "On 200 past applications, how often does the evidence table disagree with the recruiter's stage decision, and who was right?",
+    "Do pass rates at screening differ by gender or age band before and after the table?",
+    "How long does a recruiter spend per application with and without the table?"
+   ]
+  },
+  {
+   "uid": "13-1071.00:18860",
+   "short": "Explain pay, shifts, CAO terms, site and duties to candidates by vacancy text, mail and phone.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Write vacancy text with pay scale, shifts and conditions",
+     "actor": "recruiter",
+     "today_means": "document",
+     "systems": ["Recruitee", "SharePoint", "Word"],
+     "inputs": ["vacancy profile", "CAO pay scale"],
+     "outputs": ["job ad", "candidate fact sheet"],
+     "handoff_to": "hiring-manager",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "approved vacancy profile, CAO scale row, shift pattern and site facts",
+      "output": "job ad and fact sheet in Dutch and English",
+      "check": "every number in the draft (pay, hours, allowances) matches the source table exactly; banned-word list for criteria not tied to the job",
+      "stop": "two drafts at most; a failed number check blocks publishing",
+      "why_not_simpler": "a fixed template reads stiffly across 40 job types; the numbers still come from tables, only the prose is drafted"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Answer written candidate questions about pay, shifts and travel",
+     "actor": "recruiter",
+     "today_means": "email_chat",
+     "systems": ["Outlook", "Recruitee"],
+     "inputs": ["candidate question", "candidate fact sheet"],
+     "outputs": ["candidate answer"],
+     "handoff_to": "external",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "candidate's message and the vacancy's approved fact sheet",
+      "output": "draft reply quoting the fact sheet, or 'not in fact sheet' for the recruiter",
+      "check": "every figure and rule in the reply is found in the fact sheet; questions about salary negotiation, health or personal situations are routed to the recruiter without a draft",
+      "stop": "one draft per message; no auto-send",
+      "why_not_simpler": "questions arrive as free text in mixed languages; matching them to FAQ entries by keyword misses most of them"
+     },
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Phone candidates to explain the job, shifts and conditions",
+     "actor": "recruiter",
+     "today_means": "paper_phone",
+     "systems": ["Teams"],
+     "inputs": ["candidate fact sheet"],
+     "outputs": ["call note"],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Send info packs: CAO summary, shift pattern, site route",
+     "actor": "recruiter",
+     "today_means": "email_chat",
+     "systems": ["Outlook", "SharePoint"],
+     "inputs": ["candidate fact sheet"],
+     "outputs": ["info pack"],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Keep pay, allowance and benefit facts up to date",
+     "actor": "recruiter",
+     "today_means": "document",
+     "systems": ["SharePoint", "AFAS Profit"],
+     "inputs": ["CAO pay scale"],
+     "outputs": ["candidate fact sheet"],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "One records app holds the approved fact sheet per job type (pay scale, allowances, shift pattern, site, benefits), fed from the CAO tables and checked by the C&B specialist. Job ads and info packs are generated from it; a bounded loop drafts replies to written questions in Outlook for the recruiter to send. Phone calls stay with the recruiter, now with one sheet open.",
+   "previous_blocker": "Facts lived in old vacancy texts, the CAO PDF and people's memory, so every answer was written from scratch and sometimes wrong.",
+   "enabler_now": "Models draft fluent Dutch and English replies that can be checked figure by figure against a table; Recruitee and Outlook take drafts by API.",
+   "still_hard": "Keeping the fact sheet current at each CAO change; candidates who want to negotiate or explain a personal situation.",
+   "human_edge": "Hearing on the phone that the question about night shifts is really about childcare, and finding the shift that works.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Answer Polish- and English-speaking warehouse candidates in their language within one working day."
+   },
+   "altitude": "The recruiter maintains one fact sheet per job type with C&B instead of rewriting answers, and owns what Noordhaven promises candidates.",
+   "reach": [
+    {"role": "cnb", "task": "Explain pay scales and allowances", "learn": "How the warehouse CAO scales and shift allowances are calculated."}
+   ],
+   "build_days": {"coding": "3-5", "integration": "2-4", "testing_rollout": "4-6", "consent_and_access": "3-6"},
+   "run_cost": "low",
+   "evidence": [
+    {"claim": "57% of surveyed hiring leaders use AI to write job descriptions", "grade": "E3", "source": "[S2]"},
+    {"claim": "A job ad or email that a recruiter has substantively reviewed needs no AI label; a candidate-facing chatbot must say it is AI at the first turn", "grade": "E3", "source": "[S9]"},
+    {"claim": "Recruitee supports email templates and messaging per candidate", "grade": "E1", "source": "model knowledge"}
+   ],
+   "assumptions": [
+    "There are about 30 to 50 distinct job types across three sites",
+    "The C&B specialist will sign off the fact sheet once per CAO change"
+   ],
+   "unknowns": [
+    "How many candidate questions arrive per week and by which channel",
+    "Whether WhatsApp is used with warehouse candidates today"
+   ],
+   "research_questions": [
+    "What share of last month's candidate questions could the fact sheet answer fully?",
+    "How often did a vacancy text state a wrong allowance or scale last year?"
+   ]
+  },
+  {
+   "uid": "13-1071.00:18871",
+   "short": "Choose the strongest candidates, present them to the hiring manager and recommend whom to hire.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Compare screened candidates and choose the shortlist",
+     "actor": "recruiter",
+     "today_means": "system_screen",
+     "systems": ["Recruitee", "Excel"],
+     "inputs": ["evidence table", "stage decision"],
+     "outputs": ["shortlist"],
+     "handoff_to": "recruiter",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Write candidate summaries for the hiring manager",
+     "actor": "recruiter",
+     "today_means": "document",
+     "systems": ["Word", "Outlook"],
+     "inputs": ["evidence table", "scorecard"],
+     "outputs": ["candidate summary"],
+     "handoff_to": "hiring-manager",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "evidence table and the recruiter's own scorecard notes, no recordings or transcripts",
+      "output": "half-page summary per candidate with criteria met, open questions and the recruiter's view",
+      "check": "each statement traces to a table quote or scorecard line; no adjectives about personality unless the recruiter wrote them",
+      "stop": "one draft; recruiter edits and signs",
+      "why_not_simpler": "the summary is prose for a manager; the table alone is too dense for a site manager on the floor"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Send shortlist to the manager and chase feedback",
+     "actor": "recruiter",
+     "today_means": "email_chat",
+     "systems": ["Outlook", "Recruitee"],
+     "inputs": ["shortlist", "candidate summary"],
+     "outputs": ["manager feedback"],
+     "handoff_to": "hiring-manager",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 10,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Discuss candidates with the manager and give a hiring recommendation",
+     "actor": "recruiter",
+     "today_means": "meeting_call",
+     "systems": ["Teams"],
+     "inputs": ["manager feedback", "candidate summary"],
+     "outputs": ["hiring recommendation"],
+     "handoff_to": "hiring-manager",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    }
+   ],
+   "design": "The shortlist is a Recruitee view over the evidence tables; a bounded loop drafts the manager summary from the table and the recruiter's own scorecard. Recruitee's hiring-manager review with reminders and an escalation after three working days replaces the email chase.",
+   "previous_blocker": "Summaries were written by hand per candidate and feedback chased by mail, because managers on the warehouse floor do not log into Recruitee.",
+   "enabler_now": "Drafting from structured notes is reliable when each line must trace to a source; reminders and mobile review links are configuration.",
+   "still_hard": "Managers who still do not respond; the summary becoming the record that replaces the manager's own reading of the candidate.",
+   "human_edge": "Telling a manager that their favourite will not last on night shift, and being believed.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Give the hiring manager a shortlist within five working days of the vacancy opening, every time."
+   },
+   "altitude": "The recruiter spends the time on the conversation with the manager and gains the right to escalate a stalled shortlist to the site director.",
+   "reach": [
+    {"role": "hrbp", "task": "Advise managers on team composition and succession", "learn": "Each site's turnover patterns, so recommendations weigh who stays past 90 days."}
+   ],
+   "build_days": {"coding": "2-4", "integration": "2-4", "testing_rollout": "4-6", "consent_and_access": "10-40"},
+   "run_cost": "low",
+   "evidence": [
+    {"claim": "Uniper's hiring agent flagged overdue recruiter and manager tasks; screening phase fell 13 days (vendor-partnership figure, no baseline)", "grade": "E3", "source": "[S1]"},
+    {"claim": "Interview summaries become the record and drop context", "grade": "E3", "source": "[S6]"},
+    {"claim": "Liability for discriminatory selection stays with the employer, also for in-house tools", "grade": "E3", "source": "[S7]"}
+   ],
+   "assumptions": [
+    "Hiring managers will accept a review link on their phone",
+    "Scorecards exist as structured fields (see the interview task)"
+   ],
+   "unknowns": [
+    "Days from shortlist sent to manager feedback today",
+    "How many hiring managers there are across the three sites"
+   ],
+   "research_questions": [
+    "Which managers or sites hold candidates longest at shortlist stage?",
+    "Do hires recommended by the recruiter against the manager's first choice stay longer?"
+   ]
+  },
+  {
+   "uid": "13-1071.00:18869",
+   "short": "Plan and run practical and skills tests: book slots, invite, arrange assessors, record results.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Agree test times with candidate, site assessor and location",
+     "actor": "recruiter",
+     "today_means": "email_chat",
+     "systems": ["Outlook", "Teams"],
+     "inputs": ["stage decision", "assessor calendar"],
+     "outputs": ["test booking"],
+     "handoff_to": "external",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 10,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Send invitation, route, safety shoes and ID instructions",
+     "actor": "recruiter",
+     "today_means": "email_chat",
+     "systems": ["Outlook"],
+     "inputs": ["test booking", "candidate fact sheet"],
+     "outputs": ["test invitation"],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Book online tests or the assessment bureau and chase results",
+     "actor": "recruiter",
+     "today_means": "email_chat",
+     "systems": ["Outlook"],
+     "inputs": ["test booking"],
+     "outputs": ["test result"],
+     "handoff_to": "recruiter",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Run or attend the practical test on site",
+     "actor": "recruiter",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": ["test booking"],
+     "outputs": ["test observation"],
+     "handoff_to": "recruiter",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Record results and decide the next stage",
+     "actor": "recruiter",
+     "today_means": "paper_phone",
+     "systems": ["Recruitee"],
+     "inputs": ["test observation", "test result"],
+     "outputs": ["test result", "stage decision"],
+     "handoff_to": "recruiter",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "A scheduling workflow reads assessor and test-location calendars through Microsoft Graph, sends the candidate a self-booking link with fixed slots, and sends invitations and reminders from templates. A tablet form for the practical test writes results into Recruitee; bureau results are chased by a reminder rule. No drug or medical tests are scheduled.",
+   "previous_blocker": "Assessors on shifts kept no shared calendar, and booking ran on mail and phone between three sites.",
+   "enabler_now": "Graph exposes calendars and room bookings; a self-booking flow and a results form are small builds with AI coding.",
+   "still_hard": "Shift assessors who do not keep their calendar current; reschedules and no-shows; external bureaus without an API.",
+   "human_edge": "Watching a candidate drive a reach truck and judging if they are safe, and putting a nervous candidate at ease.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Offer test slots every working day on each site instead of fixed test days twice a month."
+   },
+   "altitude": "The recruiter stops booking and starts managing assessor capacity per site, and can add test days when the pipeline grows.",
+   "reach": [
+    {"role": "ld", "task": "Schedule forklift and VCA training", "learn": "How Studytube certificates and practical sessions are planned, to share assessor slots."}
+   ],
+   "build_days": {"coding": "3-5", "integration": "3-6", "testing_rollout": "4-8", "consent_and_access": "3-8"},
+   "run_cost": "none",
+   "evidence": [
+    {"claim": "59% of surveyed hiring leaders use AI or automation for interview scheduling", "grade": "E3", "source": "[S2]"},
+    {"claim": "Medical and drug tests on applicants are tightly limited in the Netherlands (Wet op de medische keuringen)", "grade": "E1", "source": "model knowledge"},
+    {"claim": "Inferring emotion in hiring is banned, so video-based test scoring is out", "grade": "E3", "source": "[S10]"}
+   ],
+   "assumptions": [
+    "Practical tests exist for forklift, reach truck and order-picking roles",
+    "Office roles use an online test or an external assessment bureau"
+   ],
+   "unknowns": [
+    "Number of tests per month per site",
+    "Who the assessors are and whether they have Outlook calendars",
+    "Which assessment bureau is used and whether it has an export"
+   ],
+   "research_questions": [
+    "How many days pass between invitation and test today, per site?",
+    "What is the no-show rate for practical tests, and does a reminder the day before change it?"
+   ]
+  },
+  {
+   "uid": "13-1071.00:18857",
+   "short": "Tell applicants where their application stands: received, invited, on hold, rejected or offered.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Track which candidates are waiting for news",
+     "actor": "recruiter",
+     "today_means": "spreadsheet",
+     "systems": ["Recruitee", "Excel"],
+     "inputs": ["candidate record"],
+     "outputs": ["waiting list"],
+     "handoff_to": "recruiter",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Send acknowledgements and stage updates",
+     "actor": "recruiter",
+     "today_means": "email_chat",
+     "systems": ["Recruitee", "Outlook"],
+     "inputs": ["stage decision"],
+     "outputs": ["status message"],
+     "handoff_to": "external",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Write rejection messages with a short reason",
+     "actor": "recruiter",
+     "today_means": "email_chat",
+     "systems": ["Recruitee", "Outlook"],
+     "inputs": ["rejection reason", "scorecard"],
+     "outputs": ["rejection message"],
+     "handoff_to": "external",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "reason code, the recruiter's scorecard notes and open vacancies at other sites",
+      "output": "personal rejection for candidates who were interviewed, with one concrete point and any other open vacancy",
+      "check": "reason matches the code the recruiter chose; no statement about age, health, origin or family; other vacancies come from the live Recruitee list",
+      "stop": "one draft; screening-stage rejections use the fixed template without a model",
+      "why_not_simpler": "after an interview a template reads as cold; the reason and the alternative differ per person"
+     },
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Call candidates after interviews and offers",
+     "actor": "recruiter",
+     "today_means": "paper_phone",
+     "systems": ["Teams"],
+     "inputs": ["stage decision"],
+     "outputs": ["call note"],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    }
+   ],
+   "design": "Recruitee stage automations send acknowledgements and stage updates from approved templates; a nightly job on Recruitee data lists every candidate without news for five working days and posts it to the recruiters in Teams. Rejections after an interview are drafted by a bounded loop and sent by the recruiter; calls stay human.",
+   "previous_blocker": "Stages in Recruitee were not kept current, so automatic messages risked being wrong; nobody owned the templates.",
+   "enabler_now": "Stage triggers are configuration; the waiting-list job is a small script; models write a warm rejection that can be checked against a reason code.",
+   "still_hard": "Stage discipline by recruiters and managers; a wrong rejection sent is irreversible.",
+   "human_edge": "Telling an internal candidate or a flex worker they did not get the job, and keeping them.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Every candidate hears within five working days at every stage, measured weekly."
+   },
+   "altitude": "The recruiter owns the template set and the five-day promise, and spends the saved time on calls that matter: offers and internal rejections.",
+   "reach": [
+    {"role": "hr-admin", "task": "Send onboarding letters and pre-start information", "learn": "The AFAS onboarding steps, so candidate messages flow into new-hire messages."}
+   ],
+   "build_days": {"coding": "2-4", "integration": "2-3", "testing_rollout": "3-5", "consent_and_access": "2-5"},
+   "run_cost": "low",
+   "evidence": [
+    {"claim": "Uniper's agent coordinated HR emails to candidates and flagged stuck candidates, '27 candidates on the shortlist for more than 14 days'", "grade": "E3", "source": "[S1]"},
+    {"claim": "Recruiter-reviewed emails need no AI label", "grade": "E3", "source": "[S9]"},
+    {"claim": "Recruitee can send emails when a candidate moves stage", "grade": "E1", "source": "model knowledge"}
+   ],
+   "assumptions": [
+    "Recruitee stages map cleanly to messages candidates can receive",
+    "Recruiters will move candidates in Recruitee the same day they decide"
+   ],
+   "unknowns": [
+    "How many candidates today never hear back",
+    "Whether rejection reasons are given today, and how"
+   ],
+   "research_questions": [
+    "What share of candidates last quarter waited more than five working days for news at any stage?",
+    "Does offer acceptance differ for candidates who were updated within five days?"
+   ]
+  },
+  {
+   "uid": "13-1071.00:18865",
+   "short": "Find candidates through job boards, CV databases, LinkedIn, past applicants, referrals, schools and fairs.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Post vacancies on job boards, careers site and social media",
+     "actor": "recruiter",
+     "today_means": "system_screen",
+     "systems": ["Recruitee"],
+     "inputs": ["job ad"],
+     "outputs": ["vacancy posting"],
+     "handoff_to": "external",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 5,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Search CV databases and LinkedIn for matching profiles",
+     "actor": "recruiter",
+     "today_means": "system_screen",
+     "systems": ["LinkedIn", "job board CV databases"],
+     "inputs": ["vacancy profile"],
+     "outputs": ["prospect list"],
+     "handoff_to": "recruiter",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Search own talent pool and past applicants who consented",
+     "actor": "recruiter",
+     "today_means": "system_screen",
+     "systems": ["Recruitee"],
+     "inputs": ["vacancy profile", "talent pool"],
+     "outputs": ["prospect list"],
+     "handoff_to": "recruiter",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Write and send outreach messages",
+     "actor": "recruiter",
+     "today_means": "email_chat",
+     "systems": ["LinkedIn", "Outlook"],
+     "inputs": ["prospect list", "candidate fact sheet"],
+     "outputs": ["outreach message"],
+     "handoff_to": "external",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "prospect's public profile text pasted or selected by the recruiter, plus the fact sheet",
+      "output": "short outreach message naming the role, site, shift and pay band",
+      "check": "pay and shift figures match the fact sheet; length under 600 characters; no claim about the prospect beyond the profile text",
+      "stop": "one draft per prospect; the recruiter sends each one",
+      "why_not_simpler": "a template with name merge gets low replies; the hook differs per profile"
+     },
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Run referrals, school contacts and job fairs",
+     "actor": "recruiter",
+     "today_means": "in_person",
+     "systems": ["Recruitee", "Teams"],
+     "inputs": ["vacancy posting"],
+     "outputs": ["referral", "fair lead"],
+     "handoff_to": "recruiter",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    }
+   ],
+   "design": "Multiposting from Recruitee from the approved job ad; a deterministic query over Recruitee's talent pool lists past applicants whose consent is still valid and whose stored skills fit. A bounded loop drafts outreach the recruiter sends one by one; LinkedIn search stays manual. A referral form in Recruitee replaces mails to the recruiter.",
+   "previous_blocker": "Past applicants were rarely searched because consent dates were not tracked; outreach was too slow to personalise.",
+   "enabler_now": "Recruitee holds the talent pool with consent fields; drafting short messages under a figure check is reliable.",
+   "still_hard": "LinkedIn and CV databases are screen-only for most employers; a sourcing agent that sends alone would need an AI notice and would hurt the employer brand.",
+   "human_edge": "Knowing the ROC teachers and the people at the local job fair, and spotting the reach-truck driver on a competitor's night shift.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Offer every current flex worker with three months' service a route to a permanent role when one opens."
+   },
+   "altitude": "The recruiter sources by relationship (schools, referrals, flex pool) instead of by posting, and decides the channel mix per job type.",
+   "reach": [
+    {"role": "people-analyst", "task": "Report source of hire and cost per hire", "learn": "How source tags are recorded, so channel spend can be judged."}
+   ],
+   "build_days": {"coding": "2-4", "integration": "2-4", "testing_rollout": "3-5", "consent_and_access": "5-10"},
+   "run_cost": "low",
+   "evidence": [
+    {"claim": "Workday's TA agent drafts outreach but outreach still needs recruiter approval; GA early 2027", "grade": "E2", "source": "[S5]"},
+    {"claim": "An outbound sourcing agent must say it is AI and for whom", "grade": "E3", "source": "[S9]"},
+    {"claim": "Past applicants may be kept in a talent pool only with consent and for a limited period", "grade": "E1", "source": "model knowledge"}
+   ],
+   "assumptions": [
+    "Recruitee holds consent dates for the talent pool",
+    "Flex workers' details are available to HR through the agencies"
+   ],
+   "unknowns": [
+    "Source of hire split today",
+    "Budget per channel and which job boards are paid",
+    "Whether agency contracts allow taking over flex workers and at what fee"
+   ],
+   "research_questions": [
+    "Which source produced hires still here after 90 days last year?",
+    "How many flex workers with over three months' service would apply for a permanent role if asked?"
+   ]
+  },
+  {
+   "uid": "13-1071.00:18855",
+   "short": "Collect and verify ID, right to work, certificates and VOG, and call references before an offer.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect ID, diplomas, certificates and licences from the candidate",
+     "actor": "recruiter",
+     "today_means": "email_chat",
+     "systems": ["Outlook", "AFAS Profit"],
+     "inputs": ["stage decision"],
+     "outputs": ["candidate documents"],
+     "handoff_to": "recruiter",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 10,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Check documents for validity, expiry and match with the role",
+     "actor": "recruiter",
+     "today_means": "document",
+     "systems": ["AFAS Profit", "Studytube"],
+     "inputs": ["candidate documents", "vacancy profile"],
+     "outputs": ["check file"],
+     "handoff_to": "recruiter",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "scanned certificate, licence or diploma",
+      "output": "document type, holder name, number, issue and expiry date, category (for example code 95, forklift)",
+      "check": "name matches the candidate record; dates parse and expiry is after start date; required documents for the role are all present",
+      "stop": "one pass; any mismatch or unreadable scan goes to the recruiter; ID and right to work are always checked by a person against the original",
+      "why_not_simpler": "certificates come from many training providers and countries with no fixed layout"
+     },
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Request the VOG through Justis and track it",
+     "actor": "recruiter",
+     "today_means": "system_screen",
+     "systems": ["Justis portal"],
+     "inputs": ["candidate record"],
+     "outputs": ["VOG request"],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 10,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Call references and write notes",
+     "actor": "recruiter",
+     "today_means": "paper_phone",
+     "systems": ["Teams", "Recruitee"],
+     "inputs": ["reference consent"],
+     "outputs": ["reference notes"],
+     "handoff_to": "recruiter",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "crud_app",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "File results and clear the candidate for an offer",
+     "actor": "recruiter",
+     "today_means": "system_screen",
+     "systems": ["Recruitee", "AFAS Profit"],
+     "inputs": ["check file", "reference notes"],
+     "outputs": ["check clearance"],
+     "handoff_to": "hr-admin",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 10,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "A pre-employment checklist per job type (which documents, VOG profile, references) drives an upload request through the AFAS Pocket app or a secure link. A bounded loop reads certificates and licences against the checklist; a person always checks ID and right to work. A structured reference form replaces free notes, and the checklist status in Recruitee clears the offer.",
+   "previous_blocker": "Required documents differed per role and were tracked by mail and memory; certificates came in many formats.",
+   "enabler_now": "AFAS Profit 8 lets new hires submit data before day one and Jonas fills dossier fields from documents; document reading with a date and name check is reliable enough with a person on misses.",
+   "still_hard": "ID checks against the original, references who do not call back, foreign certificates, and keeping criminal-record data out of the general file.",
+   "human_edge": "Hearing hesitation in a reference's voice and asking the next question.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Check every certificate's expiry for every hire before day one, not only for drivers."
+   },
+   "altitude": "The recruiter owns the checklist per job type and decides when a missing document blocks a start date.",
+   "reach": [
+    {"role": "hr-admin", "task": "Build the personnel file and contract in AFAS", "learn": "Which checked documents must sit in the personnel file and for how long."}
+   ],
+   "build_days": {"coding": "3-6", "integration": "4-8", "testing_rollout": "4-8", "consent_and_access": "5-15"},
+   "run_cost": "low",
+   "evidence": [
+    {"claim": "AFAS Profit 8: Jonas fills dossier fields from documents; new hires can submit data in the Pocket app before day one", "grade": "E2", "source": "[S4]"},
+    {"claim": "Dutch employers must check and copy the original ID of a new employee", "grade": "E1", "source": "model knowledge"},
+    {"claim": "A VOG is requested by the employer and issued by Justis", "grade": "E1", "source": "model knowledge"}
+   ],
+   "assumptions": [
+    "Noordhaven runs or can move to AFAS Profit 8",
+    "Drivers need a driving licence and code 95; warehouse staff forklift or VCA certificates"
+   ],
+   "unknowns": [
+    "Which roles require a VOG",
+    "Whether references are called for warehouse roles at all",
+    "Where checked documents are stored today"
+   ],
+   "research_questions": [
+    "How many hires last year started with a missing or expired certificate?",
+    "How many days pass between offer and cleared checks per role?"
+   ]
+  },
+  {
+   "uid": "13-1071.00:18862",
+   "short": "Interview candidates about work history, skills and availability, and record what was learned.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Prepare: read the file and choose questions",
+     "actor": "recruiter",
+     "today_means": "document",
+     "systems": ["Recruitee"],
+     "inputs": ["evidence table", "vacancy profile"],
+     "outputs": ["interview kit"],
+     "handoff_to": "recruiter",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "vacancy criteria and the candidate's 'unclear' items from the evidence table",
+      "output": "interview kit: two behavioural questions per criterion plus follow-ups on the unclear items",
+      "check": "questions come from an approved bank per criterion or are marked new; banned topics list (health, pregnancy, religion, origin, family plans)",
+      "stop": "one kit per interview; new questions need recruiter approval before reuse",
+      "why_not_simpler": "the follow-ups depend on each CV's gaps"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Conduct the interview on site or by Teams",
+     "actor": "recruiter",
+     "today_means": "in_person",
+     "systems": ["Teams"],
+     "inputs": ["interview kit"],
+     "outputs": ["interview"],
+     "handoff_to": "recruiter",
+     "share_pct": 55,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Write notes and score each criterion",
+     "actor": "recruiter",
+     "today_means": "document",
+     "systems": ["Word", "Recruitee"],
+     "inputs": ["interview"],
+     "outputs": ["scorecard"],
+     "handoff_to": "hiring-manager",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Enter the outcome in Recruitee",
+     "actor": "recruiter",
+     "today_means": "system_screen",
+     "systems": ["Recruitee"],
+     "inputs": ["scorecard"],
+     "outputs": ["stage decision"],
+     "handoff_to": "recruiter",
+     "share_pct": 5,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    }
+   ],
+   "design": "An interview kit per vacancy from an approved question bank, with follow-ups drafted on the CV's unclear points. A structured scorecard per criterion on a tablet replaces Word notes and sets the stage in Recruitee in the same action. No recording, transcript or AI notetaker in interviews.",
+   "previous_blocker": "Questions were improvised and notes kept in Word, so interviews were hard to compare between recruiters and managers.",
+   "enabler_now": "Drafting questions per skill is a proven narrow use; Recruitee scorecards are configuration.",
+   "still_hard": "The interview itself; getting hiring managers to fill the same scorecard.",
+   "human_edge": "Reading whether someone wants this job on this shift at this site, and making them want it.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Nothing changes in the interview; the recruiter owns the question bank and trains hiring managers to use it.",
+   "reach": [
+    {"role": "ld", "task": "Train managers in interviewing", "learn": "How to teach structured interviews to site managers."}
+   ],
+   "build_days": {"coding": "1-3", "integration": "1-2", "testing_rollout": "3-5", "consent_and_access": "2-5"},
+   "run_cost": "low",
+   "evidence": [
+    {"claim": "Workday's TA team generated two behavioural questions per skill for 800+ skills; no evidence of better hires", "grade": "E3", "source": "[S3]"},
+    {"claim": "AI interview summaries become the record, err and store unlawful questions", "grade": "E3", "source": "[S6]"},
+    {"claim": "Emotion inference in hiring is banned under Art. 5(1)(f)", "grade": "E3", "source": "[S10]"}
+   ],
+   "assumptions": [
+    "Most interviews are held on site with the hiring manager present"
+   ],
+   "unknowns": [
+    "Interviews per month and their split between recruiter and manager"
+   ],
+   "research_questions": [
+    "Do scorecard ratings at interview predict 90-day retention at Noordhaven?"
+   ]
+  },
+  {
+   "uid": "13-1071.00:18874",
+   "short": "Check that selection criteria and tests are fair, job-related and lawful, and propose changes.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pull funnel data per vacancy and stage",
+     "actor": "recruiter",
+     "today_means": "spreadsheet",
+     "systems": ["Recruitee", "Excel"],
+     "inputs": ["candidate record"],
+     "outputs": ["funnel report"],
+     "handoff_to": "recruiter",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Compare pass rates by stage, group and test",
+     "actor": "recruiter",
+     "today_means": "spreadsheet",
+     "systems": ["Excel", "Power BI"],
+     "inputs": ["funnel report", "test result"],
+     "outputs": ["pass-rate analysis"],
+     "handoff_to": "recruiter",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Review criteria and job ads for requirements not tied to the job",
+     "actor": "recruiter",
+     "today_means": "document",
+     "systems": ["Recruitee", "SharePoint"],
+     "inputs": ["vacancy profile", "job ad"],
+     "outputs": ["criteria findings"],
+     "handoff_to": "recruiter",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "judge",
+      "input": "all live vacancy profiles and job ads",
+      "output": "list of criteria that may exclude groups without a job reason (for example 'native Dutch', age words, fixed years of experience), with the line quoted",
+      "check": "every flag quotes the exact text; a fixed word list runs first and the loop only adds",
+      "stop": "one pass per quarter; flags go to the recruiter, nothing is changed automatically",
+      "why_not_simpler": "the word list misses indirect wording such as 'young team' or 'fluent Dutch' for a picking job"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Write recommendations and discuss with the HR director",
+     "actor": "recruiter",
+     "today_means": "meeting_call",
+     "systems": ["Word", "Teams"],
+     "inputs": ["pass-rate analysis", "criteria findings"],
+     "outputs": ["criteria review"],
+     "handoff_to": "hr-director",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    }
+   ],
+   "design": "A Power BI page on the recruitment data shows pass rates per stage, test and vacancy by gender and age band, and screening disagreement and override rates for the evidence table. A quarterly loop flags criteria and ad wording that need a job reason. The recruiter writes the quarterly criteria review that doubles as the deployer record the AI Act will ask for.",
+   "previous_blocker": "Funnel data had to be exported by hand per vacancy, and nobody was asked to review criteria on a schedule.",
+   "enabler_now": "Recruitee's API and the governed data platform make the funnel a nightly table; the coming Annex III duties give the review a reason to exist.",
+   "still_hard": "Small numbers per vacancy make group comparisons noisy; ethnicity cannot be recorded, so some bias stays invisible.",
+   "human_edge": "Deciding with the HR director and the works council which criteria are worth defending.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Review criteria and pass rates every quarter instead of when a complaint arrives."
+   },
+   "altitude": "The recruiter becomes the named overseer of the screening tools, with the right to switch a tool off when pass rates drift.",
+   "reach": [
+    {"role": "people-analyst", "task": "Maintain HR dashboards in Power BI", "learn": "Basic statistics for small samples and how the recruitment dataset is built."}
+   ],
+   "build_days": {"coding": "3-5", "integration": "3-5", "testing_rollout": "3-5", "consent_and_access": "5-15"},
+   "run_cost": "low",
+   "evidence": [
+    {"claim": "From 2 December 2027 deployers need a competent overseer and logs kept six months", "grade": "E3", "source": "[S10][S11]"},
+    {"claim": "A dismissed US claim shows the plaintiff could not prove the mechanism, not that the tool was fair", "grade": "E3", "source": "[S8]"},
+    {"claim": "The AP finds recruitment AI weak on explainability", "grade": "E3", "source": "[S13]"}
+   ],
+   "assumptions": [
+    "Gender and birth year are available for applicants or can be asked voluntarily",
+    "The HR director will make the quarterly review a standing item"
+   ],
+   "unknowns": [
+    "Whether Noordhaven has diversity goals or a works council request on this"
+   ],
+   "research_questions": [
+    "Which stage has the largest gap in pass rates by gender or age band over the last two years?"
+   ]
+  },
+  {
+   "uid": "13-1071.00:18858",
+   "short": "Plan where and how to hire for coming staffing needs per site and season.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather staffing needs from managers and contract end dates",
+     "actor": "recruiter",
+     "today_means": "email_chat",
+     "systems": ["AFAS Profit", "Outlook", "Excel"],
+     "inputs": ["contract end dates", "headcount plan"],
+     "outputs": ["hiring forecast"],
+     "handoff_to": "recruiter",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Analyse sources, time to hire and cost per channel",
+     "actor": "recruiter",
+     "today_means": "spreadsheet",
+     "systems": ["Recruitee", "Excel"],
+     "inputs": ["funnel report"],
+     "outputs": ["channel analysis"],
+     "handoff_to": "recruiter",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 10,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Draft the hiring plan per site and season",
+     "actor": "recruiter",
+     "today_means": "document",
+     "systems": ["Word", "PowerPoint"],
+     "inputs": ["hiring forecast", "channel analysis"],
+     "outputs": ["hiring plan"],
+     "handoff_to": "hr-director",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Agree the plan with site managers and the HR director",
+     "actor": "recruiter",
+     "today_means": "meeting_call",
+     "systems": ["Teams"],
+     "inputs": ["hiring plan"],
+     "outputs": ["agreed hiring plan"],
+     "handoff_to": "hr-director",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    }
+   ],
+   "design": "A Power BI page joins AFAS contract end dates, leavers and flex hours with Recruitee funnel data per site and season, and turns them into a 13-week hiring forecast. The plan template fills itself with the numbers; the recruiter writes the choices and agrees them with site managers.",
+   "previous_blocker": "Needs came by mail from managers and contract ends sat in AFAS, joined by hand once a year.",
+   "enabler_now": "The nightly AFAS extract already feeds Power BI; Recruitee data can join it with a small integration.",
+   "still_hard": "Seasonal peaks driven by customers' volumes that HR does not see; managers who decide late.",
+   "human_edge": "Persuading a site director to start hiring for the peak in August, not October.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A rolling 13-week hiring forecast per site, updated weekly instead of a yearly plan."
+   },
+   "altitude": "The recruiter plans ahead of demand and gains a seat in the site's weekly capacity meeting.",
+   "reach": [
+    {"role": "fpa", "task": "Forecast personnel cost per site", "learn": "How flex and permanent headcount enter the cost forecast."}
+   ],
+   "build_days": {"coding": "3-5", "integration": "3-6", "testing_rollout": "3-5", "consent_and_access": "2-5"},
+   "run_cost": "low",
+   "evidence": [
+    {"claim": "Workday's TA agent flags roles at risk of missing their fill date", "grade": "E2", "source": "[S5]"},
+    {"claim": "On raw HR data a hiring agent gave generalities; with process context it named a specific pile-up", "grade": "E3", "source": "[S1]"}
+   ],
+   "assumptions": [
+    "Contract end dates and leavers are reliable in AFAS"
+   ],
+   "unknowns": [
+    "Whether sites share volume forecasts with HR"
+   ],
+   "research_questions": [
+    "How many weeks before each of last year's peaks did hiring start, and how many vacancies were still open at the peak?"
+   ]
+  },
+  {
+   "uid": "13-1071.00:18873",
+   "short": "Order flex workers from three agencies for site needs, track fill, and solve no-shows.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Take flex requests from site managers by phone, mail and Teams",
+     "actor": "recruiter",
+     "today_means": "email_chat",
+     "systems": ["Outlook", "Teams", "Excel"],
+     "inputs": ["flex request"],
+     "outputs": ["flex request"],
+     "handoff_to": "recruiter",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 10,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Send orders to the three agencies",
+     "actor": "recruiter",
+     "today_means": "email_chat",
+     "systems": ["Outlook", "Staffing agency portals"],
+     "inputs": ["flex request"],
+     "outputs": ["agency order"],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 5,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Read agency confirmations and track which shifts are filled",
+     "actor": "recruiter",
+     "today_means": "spreadsheet",
+     "systems": ["Outlook", "Excel", "Staffing agency portals"],
+     "inputs": ["agency confirmation"],
+     "outputs": ["fill status"],
+     "handoff_to": "site-manager",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "integration",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "agency confirmation email or CSV",
+      "output": "order reference, worker name, site, shift dates, function",
+      "check": "order reference exists and is open; dates and site match the order; worker count not above the order",
+      "stop": "one pass; CSV rows parse without a model; failed checks go to the recruiter",
+      "why_not_simpler": "two of three agencies confirm by free-text email; CSV exports are parsed deterministically"
+     },
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Chase unfilled shifts and handle no-shows and complaints",
+     "actor": "recruiter",
+     "today_means": "paper_phone",
+     "systems": ["Outlook"],
+     "inputs": ["fill status"],
+     "outputs": ["agency escalation"],
+     "handoff_to": "external",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "notification",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Review fill rate and quality with each agency monthly",
+     "actor": "recruiter",
+     "today_means": "meeting_call",
+     "systems": ["Excel", "Power BI"],
+     "inputs": ["fill status", "timesheet export"],
+     "outputs": ["agency scorecard"],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    }
+   ],
+   "design": "A flex order app (Teams form plus records table) where site managers request and approve shifts within their budget; orders go to the agencies in one standard format, and confirmations are parsed (CSV by code, email by a bounded loop) into a fill board. The same records feed the bookkeeper's hours-to-invoice match and a monthly agency scorecard.",
+   "previous_blocker": "Each agency had its own channel and format, and requests came by phone, so the Excel tracker was always behind.",
+   "enabler_now": "A records app and parsers are days of AI-assisted coding; the bookkeeper's agency invoice matching needs the same order records.",
+   "still_hard": "Same-day no-shows at 06:00; agencies that will not change their confirmation format.",
+   "human_edge": "Getting the agency account manager to send three good order pickers for Monday when everyone is short.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A live fill board for site managers showing which tomorrow's shifts are covered, per agency."
+   },
+   "altitude": "The recruiter manages agencies on numbers (fill rate, no-shows, conversion to permanent) instead of passing orders, and decides how volume is split between them.",
+   "reach": [
+    {"role": "bookkeeper", "task": "Match agency invoices to hours", "learn": "How agency rates and hours are invoiced, to settle disputes at the source."}
+   ],
+   "build_days": {"coding": "4-7", "integration": "4-8", "testing_rollout": "4-8", "consent_and_access": "3-6"},
+   "run_cost": "low",
+   "evidence": [
+    {"claim": "Agency portals give e-mail and CSV exports only", "grade": "E1", "source": "model knowledge"}
+   ],
+   "assumptions": [
+    "The recruiters, not site planners, handle agency orders today",
+    "Site managers have a flex budget they can approve against"
+   ],
+   "unknowns": [
+    "Orders per week in peak and low season",
+    "Which agencies confirm by CSV and which by email",
+    "Whether the agency contracts set a fill-rate target"
+   ],
+   "research_questions": [
+    "What was each agency's fill rate and no-show rate last peak season?",
+    "How many flex workers moved to permanent contracts last year, and via which agency?"
+   ]
+  },
+  {
+   "uid": "11-3121.00:1002",
+   "short": "Build and update applicant tests, run them, score them, and check whether they predict good hires.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Design or adapt tests and practical checklists per role",
+     "actor": "recruiter",
+     "today_means": "document",
+     "systems": ["Word", "SharePoint"],
+     "inputs": ["vacancy profile"],
+     "outputs": ["test design"],
+     "handoff_to": "recruiter",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "role criteria and existing test items",
+      "output": "draft knowledge items and a practical checklist per criterion",
+      "check": "each item maps to one criterion; reading level check for Dutch B1; site trainer signs off",
+      "stop": "one draft per role revision",
+      "why_not_simpler": "new items per role are writing work; scoring rules stay deterministic"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Administer online and practical tests",
+     "actor": "recruiter",
+     "today_means": "in_person",
+     "systems": ["Excel"],
+     "inputs": ["test design", "test booking"],
+     "outputs": ["test answers"],
+     "handoff_to": "recruiter",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Score tests and record results",
+     "actor": "recruiter",
+     "today_means": "paper_phone",
+     "systems": ["Excel", "Recruitee"],
+     "inputs": ["test answers"],
+     "outputs": ["test result"],
+     "handoff_to": "recruiter",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Check whether test scores predict 90-day outcomes",
+     "actor": "recruiter",
+     "today_means": "spreadsheet",
+     "systems": ["Excel", "AFAS Profit"],
+     "inputs": ["test result", "90-day outcome"],
+     "outputs": ["test validity check"],
+     "handoff_to": "hr-director",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    }
+   ],
+   "design": "Closed test items run in a simple online form with deterministic scoring; practical tests use the tablet checklist from the scheduling workflow. A Power BI page joins test results to AFAS 90-day retention and absence. A bounded loop drafts new items for review by the recruiter and the site trainer.",
+   "previous_blocker": "Tests lived on paper and in Excel, so nobody could link a score to whether the hire stayed.",
+   "enabler_now": "Recruitee and AFAS both expose the data to join; scoring forms are configuration or a small app.",
+   "still_hard": "Psychometric quality of self-made tests; small samples per role.",
+   "human_edge": "Knowing which part of the job really fails new hires, which a test must catch.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Check each test against 90-day retention every quarter and drop items that predict nothing."
+   },
+   "altitude": "The recruiter owns the test catalogue and decides which tests stay, based on retention data.",
+   "reach": [
+    {"role": "ld", "task": "Design forklift and order-picking training", "learn": "How the practical skills are taught, so tests match the training."}
+   ],
+   "build_days": {"coding": "2-4", "integration": "2-4", "testing_rollout": "3-6", "consent_and_access": "3-8"},
+   "run_cost": "none",
+   "evidence": [
+    {"claim": "Interview and test material generated per skill at scale, with no evidence of better hires", "grade": "E3", "source": "[S3]"}
+   ],
+   "assumptions": [
+    "Tests are built in-house rather than bought from a test publisher"
+   ],
+   "unknowns": [
+    "Which tests exist today and who maintains them"
+   ],
+   "research_questions": [
+    "Does any current test score differ between hires who left before day 90 and those who stayed?"
+   ]
+  }
+ ],
+ "role": {
+  "altitude": "The two recruiters move from booking, chasing and re-reading to running the hiring flow on numbers: days per stage, candidates waiting, fill rates. They own the vacancy criteria, the fact sheets, the test catalogue and the screening tools as named overseer, and gain the right to escalate stalled vacancies and to switch a tool off when pass rates drift.",
+  "reach": [
+   "HR Administrator: pre-start documents and the personnel file",
+   "Compensation and Benefits Specialist: explaining pay scales and allowances to candidates",
+   "People Analytics and HRIS Analyst: recruitment dashboards and pass-rate analysis",
+   "Bookkeeper: agency orders as the basis for invoice matching",
+   "Learning and Development Specialist: practical tests aligned with forklift and VCA training"
+  ],
+  "skills_to_grow": [
+   "Writing job criteria as testable must-haves",
+   "Reading funnel and pass-rate dashboards, with small-sample caution",
+   "Acting as AI Act overseer: logs, overrides, bias checks",
+   "Template and fact-sheet ownership with C&B",
+   "Agency management on fill rate and conversion data"
+  ],
+  "ambitious_version": "Every vacancy gets a shortlist within five working days, every candidate hears within five working days at each stage, and every flex worker with three months' service is offered a route to a permanent job, with the recruiters checking at day 90 whether each hire is still there and why."
+ }
+}

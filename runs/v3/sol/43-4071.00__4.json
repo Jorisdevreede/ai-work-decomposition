@@ -1,0 +1,1020 @@
+{
+ "tasks": [
+  {
+   "uid": "43-4071.00:20627",
+   "short": "Enter and update file identifiers and document metadata so records can be retrieved.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open incoming records and locate their source identifiers.",
+     "actor": "file clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "incoming record"
+     ],
+     "outputs": [
+      "source record"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read the record and select its file number and document codes.",
+     "actor": "file clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "source record",
+      "filing rules",
+      "file register"
+     ],
+     "outputs": [
+      "index draft"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "crud_app",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Source record, allowed document codes and file register.",
+      "output": "Proposed metadata with source locations and unresolved fields.",
+      "check": "Validate schema, allowed codes, identifier existence and source evidence; clerk approves the draft.",
+      "stop": "One extraction and one validation retry per record; unresolved fields go to the clerk.",
+      "why_not_simpler": "Map structured fields directly; a bounded extraction loop handles metadata buried in free text."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "file clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Enter or amend metadata in the document register.",
+     "actor": "file clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "index draft"
+     ],
+     "outputs": [
+      "index record"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 40,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Test retrieval and correct rejected or conflicting entries.",
+     "actor": "file clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "index record",
+      "filing rules"
+     ],
+     "outputs": [
+      "verified index record",
+      "index exception"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "file clerk"
+    }
+   ],
+   "design": "An intake integration maps structured metadata directly into the {DOCS} index draft and uses bounded extraction for free-text fields. The clerk approves the draft, then configured forms save it and deterministic checks test identifiers, duplicates and retrieval. A small exception queue in the {WORKFLOW} holds conflicting entries with their source evidence.",
+   "previous_blocker": "Source identifiers and filing codes were inconsistent, and connecting intake to the index required bespoke work.",
+   "enabler_now": "Existing metadata features, reusable connectors and faster implementation of mapping and validation code reduce setup effort. Bounded extraction can handle the minority of unstructured inputs.",
+   "still_hard": "Ambiguous ownership, duplicate identifiers and inherited filing conventions require local knowledge. Access filters must apply before extraction and retrieval.",
+   "human_edge": "Recognising when two similar records represent different matters and resolving ambiguous filing intent.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly decisions on recurring indexing errors and their source corrections."
+   },
+   "altitude": "The week shifts toward resolving index exceptions and improving source quality. Proposed delegation lets the clerk correct approved metadata mappings; record access and retention decisions stay with record owners.",
+   "reach": [
+    {
+     "role": "data entry keyer",
+     "task": "Find recurring identifier errors across intake sources.",
+     "learn": "Field validation, master-data matching and safe correction procedures."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-9",
+    "testing_rollout": "4-8",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Structured metadata mapping, code validation and retrieval checks can use deterministic rules.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Rossum documents extraction from email and PDF, rule checks and exception routing for orders; this is adjacent evidence.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "The proposed time reductions and build ranges are planning estimates, not measured filing outcomes.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Most incoming metadata is structured, consistent with the supplied prior.",
+    "Routine intake and indexing involve little meeting time; the steps therefore depart from the means prior.",
+    "The pilot covers one filing scheme and an accessible interface to the {DOCS}.",
+    "GDPR requirements apply to personal records; applicable EU AI Act duties need assessment for model use.",
+    "Consent and access estimates include applicable employee consultation under national rules."
+   ],
+   "unknowns": [
+    "Available interfaces, metadata features and permissions in the {DOCS}.",
+    "Actual volumes, document languages and frequency of ambiguous identifiers.",
+    "Who can approve metadata mapping changes.",
+    "Applicable national consultation requirements and access lead times."
+   ],
+   "research_questions": [
+    "Can structured intake populate metadata without a separate extraction stage?",
+    "Which identifier conflicts can be detected reliably before saving?",
+    "Does retrieval testing preserve document-level access restrictions?"
+   ],
+   "new_work": [
+    "Review metadata drafts and unresolved fields.",
+    "Resolve duplicate identifiers and failed writes.",
+    "Maintain code lists, mappings and extraction checks.",
+    "Monitor retrieval failures after filing-rule changes."
+   ],
+   "time_saved_pct": 89,
+   "speedup": 8.89
+  },
+  {
+   "uid": "43-4071.00:20631",
+   "short": "Support invoice processing, resolve discrepancies, accept cash payments and issue receipts.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive supplier invoices and place them in the processing queue.",
+     "actor": "file clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "supplier invoice"
+     ],
+     "outputs": [
+      "invoice intake"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read invoice details and enter a draft invoice record.",
+     "actor": "file clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "invoice intake",
+      "supplier register"
+     ],
+     "outputs": [
+      "invoice record"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Supplier invoice and supplier register.",
+      "output": "Draft invoice fields and line items with source references.",
+      "check": "Check totals, currency, required fields, supplier match and duplicates; clerk confirms capture.",
+      "stop": "One extraction and one repair attempt per invoice; unreadable or conflicting fields go to the clerk.",
+      "why_not_simpler": "Structured invoices import directly; varying document layouts and free-text lines need bounded extraction."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "file clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Compare invoice lines with purchase orders and goods receipts.",
+     "actor": "file clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "invoice record",
+      "purchase order",
+      "goods receipt",
+      "matching rules"
+     ],
+     "outputs": [
+      "invoice match result"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Discuss missing receipts, price differences and disputed charges with the responsible people.",
+     "actor": "file clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "invoice match result",
+      "supplier invoice"
+     ],
+     "outputs": [
+      "discrepancy resolution"
+     ],
+     "handoff_to": "budget holder",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve the charge against the departmental budget.",
+     "actor": "budget holder",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "invoice record",
+      "invoice match result",
+      "discrepancy resolution"
+     ],
+     "outputs": [
+      "invoice approval"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "budget holder"
+    },
+    {
+     "id": "s6",
+     "what": "Post the approved invoice and pass it to finance for payment.",
+     "actor": "file clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "invoice record",
+      "invoice approval"
+     ],
+     "outputs": [
+      "posted invoice"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "For cash payments, count tender and confirm the amount due.",
+     "actor": "file clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "cash tender",
+      "amount due"
+     ],
+     "outputs": [
+      "confirmed cash payment"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s8",
+     "what": "Record the cash payment and issue its receipt.",
+     "actor": "file clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "confirmed cash payment"
+     ],
+     "outputs": [
+      "payment record",
+      "payment receipt"
+     ],
+     "handoff_to": "external",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configured intake in the {WORKFLOW} imports structured invoices and uses bounded document extraction for other invoices before capture review. Matching and posting use the {ERP} and {PROCUREMENT}, with evidence packs for discrepancy conversations and budget-holder approval. A confirmed cash entry in the {ERP} creates the payment record and receipt; finance retains payment release.",
+   "previous_blocker": "Document variation, missing purchase evidence and approval handoffs prevented reliable straight-through processing.",
+   "enabler_now": "Existing matching and approval features can be configured, while bounded extraction reduces document rekeying. Faster connector development makes the remaining gaps cheaper to address.",
+   "still_hard": "Non-purchase-order invoices, disputed delivery and supplier identity changes require investigation. Physical cash custody and payment authorisation remain separate responsibilities.",
+   "human_edge": "Resolving commercial discrepancies and noticing when apparently valid paperwork describes a questionable charge.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily prioritisation of invoice discrepancies approaching payment deadlines."
+   },
+   "altitude": "The week shifts from capture and matching toward discrepancy resolution and cash handling. Proposed delegation allows the clerk to return incomplete invoice packs and prioritise follow-up; spending approval and payment release remain with authorised roles.",
+   "reach": [
+    {
+     "role": "management analyst",
+     "task": "Identify recurring causes of invoice mismatch and late approval.",
+     "learn": "Purchase-to-payment controls, exception categories and process measurement."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "6-12",
+    "testing_rollout": "6-10",
+    "consent_and_access": "5-25"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Existing financial workflows can perform deterministic matching, approval routing, posting and receipt generation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Rossum documents document capture, rule checking and exception routing for orders, supporting the extraction pattern.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "The proposed invoice controls, time reductions and build ranges require local validation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This supporting role prepares payables; the finance team releases payments.",
+    "Invoice processing and cash collection are separate branches, not successive stages of one transaction.",
+    "The time split represents a mixed workload and includes other actors' handling time, excluding waiting.",
+    "Cash collection is a smaller branch; many employers will have none.",
+    "The {ERP} supports matching, approvals and receipt generation.",
+    "GDPR applies to personal financial data; model use requires assessment under the EU AI Act.",
+    "Consent and access estimates include financial permissions and applicable consultation under national rules."
+   ],
+   "unknowns": [
+    "Actual invoice-to-cash workload mix and approval thresholds.",
+    "Purchase-order coverage and availability of goods receipts.",
+    "Available capture and matching features in the {ERP}.",
+    "Who can post invoices, change supplier details and release payments.",
+    "Applicable consultation requirements and financial access lead times."
+   ],
+   "research_questions": [
+    "Can existing invoice capture remove the need for a new extraction component?",
+    "Which matching tolerances are already approved?",
+    "Can duplicate submissions and repeated integration writes be blocked reliably?",
+    "Can receipts be generated from a single confirmed payment entry?"
+   ],
+   "new_work": [
+    "Review extracted invoice fields.",
+    "Handle unmatched invoices and failed postings.",
+    "Maintain matching tolerances and approval routing.",
+    "Reconcile payment records and generated receipts.",
+    "Review access and changes to financial workflow configuration."
+   ],
+   "time_saved_pct": 68,
+   "speedup": 3.08
+  },
+  {
+   "uid": "43-4071.00:2595",
+   "short": "Record borrowed physical files, follow up overdue loans and confirm their return.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Record the file identifier, borrower and due date at physical handover.",
+     "actor": "file clerk",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "file request",
+      "physical file",
+      "borrower details"
+     ],
+     "outputs": [
+      "loan entry"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compare open loan entries with their due dates.",
+     "actor": "file clerk",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "loan entry",
+      "return rules"
+     ],
+     "outputs": [
+      "overdue loan list"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Send reminders to borrowers with overdue files.",
+     "actor": "file clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "overdue loan list"
+     ],
+     "outputs": [
+      "return reminder"
+     ],
+     "handoff_to": "borrower",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Ask borrowers about missing files, disputed loans or requested extensions.",
+     "actor": "file clerk",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "loan entry",
+      "return reminder"
+     ],
+     "outputs": [
+      "custody explanation",
+      "return agreement"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Check that the returned physical file matches the borrowed file.",
+     "actor": "file clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "returned file",
+      "loan entry"
+     ],
+     "outputs": [
+      "return confirmation"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 12,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Mark the loan as returned in the register.",
+     "actor": "file clerk",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "return confirmation",
+      "loan entry"
+     ],
+     "outputs": [
+      "closed loan entry"
+     ],
+     "handoff_to": "none",
+     "share_pct": 8,
+     "fate": "person_does",
+     "remaining_pct": 25,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure a loan register in the {WORKFLOW}, linked to file identifiers in the {DOCS}, with simple checkout and return forms. Due-date views and internal {EMAIL} reminders run from the register, while the clerk confirms physical handovers and handles custody disputes. Authorised staff can check availability without seeing protected file contents.",
+   "previous_blocker": "Paper movement records did not generate reminders, and a separate loan application seemed disproportionate to the workload.",
+   "enabler_now": "Configured forms, date rules and notifications can provide the register without model use or substantial custom development.",
+   "still_hard": "An accurate register depends on staff recording actual handovers. Unlogged transfers, missing originals and disputed possession still require investigation.",
+   "human_edge": "Establishing who really holds an original and negotiating its return when operational needs conflict.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Self-service file availability checks for remote project teams."
+   },
+   "altitude": "Routine chasing falls away, leaving custody disputes and physical verification. Proposed delegation lets the clerk escalate overdue originals directly to record owners; access approval remains with those owners.",
+   "reach": [
+    {
+     "role": "business continuity planner",
+     "task": "Locate essential originals during a recovery exercise.",
+     "learn": "Recovery priorities, custody evidence and fallback storage arrangements."
+    }
+   ],
+   "build_days": {
+    "coding": "0-2",
+    "integration": "2-5",
+    "testing_rollout": "3-6",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Loan registers, due-date calculations and reminders are deterministic configuration tasks.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Digital status cannot establish physical custody without a reliable handover or return confirmation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Build ranges and remaining-time estimates describe a proposed pilot, not a documented case.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Physical originals still need to circulate; replacing all loans with digital access is outside this pilot.",
+    "The baseline uses a paper loan register; some employers instead use the {DOCS} or a {SPREADSHEET}.",
+    "The human-task prior understates the removable due-date checking and reminder work in this baseline.",
+    "Borrowers are internal staff and reminders reveal only authorised file references.",
+    "The {WORKFLOW} can configure forms, date rules and role-based views.",
+    "GDPR applies to borrower records; consultation under national rules may apply to identifiable activity logging."
+   ],
+   "unknowns": [
+    "Current register format and proportion of unlogged transfers.",
+    "Whether file identifiers and borrower directories are reliable.",
+    "Which files may be borrowed and who can grant extensions.",
+    "Whether the proposed availability service can expose safe metadata.",
+    "Applicable consultation requirements and access lead times."
+   ],
+   "research_questions": [
+    "Can restricted digital copies remove some physical loans entirely?",
+    "Can existing labels support quick identifier capture?",
+    "Will borrowers consistently record onward transfers?",
+    "Which overdue cases need escalation rather than another reminder?"
+   ],
+   "new_work": [
+    "Correct missing or mistaken custody entries.",
+    "Handle bounced reminders and disputed loans.",
+    "Maintain due-date rules and borrower access.",
+    "Periodically compare a physical sample with the loan register."
+   ],
+   "time_saved_pct": 60,
+   "speedup": 2.5
+  },
+  {
+   "uid": "43-4071.00:2604",
+   "short": "Inspect physical and digital files for correct placement, readability and condition, then record defects.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Select files for inspection and prepare the location checklist.",
+     "actor": "file clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "file register",
+      "inspection schedule",
+      "inspection rules"
+     ],
+     "outputs": [
+      "inspection checklist"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compare physical file labels and shelf positions with the checklist.",
+     "actor": "file clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "physical file",
+      "inspection checklist"
+     ],
+     "outputs": [
+      "placement findings"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Inspect physical pages and folders for legibility, damage and deterioration.",
+     "actor": "file clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "physical file",
+      "inspection rules"
+     ],
+     "outputs": [
+      "condition findings"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Open digital files and check their placement and readability.",
+     "actor": "file clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "digital file",
+      "inspection checklist",
+      "inspection rules"
+     ],
+     "outputs": [
+      "digital inspection findings"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "file clerk"
+    },
+    {
+     "id": "s5",
+     "what": "Copy inspection findings into the central defect log.",
+     "actor": "file clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "placement findings",
+      "condition findings",
+      "digital inspection findings"
+     ],
+     "outputs": [
+      "defect log"
+     ],
+     "handoff_to": "records owner",
+     "share_pct": 10,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve relocation, rescanning or conservation work for defective files.",
+     "actor": "records owner",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "defect log"
+     ],
+     "outputs": [
+      "approved correction request"
+     ],
+     "handoff_to": "file clerk",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "records owner"
+    }
+   ],
+   "design": "The {WORKFLOW} prepares inspection checklists from the {DOCS} and captures physical findings directly into a defect register, removing separate transcription into the {SPREADSHEET}. Deterministic checks on the {DATA_PLATFORM} flag unreadable digital containers, missing files and placement mismatches, with human review for meaningful readability. Physical inspection remains with the clerk, and record owners approve corrective work.",
+   "previous_blocker": "Physical condition could not be inferred from the index, while separate checklists and defect logs made even simple inspection support cumbersome.",
+   "enabler_now": "Configured inspection forms and small file-validation routines can reduce preparation and paperwork. They require no breakthrough in interpreting physical damage.",
+   "still_hard": "Fragile originals, faint annotations and deterioration require direct inspection and sometimes specialist conservation advice. A technically readable digital file may still be incomplete or unusable.",
+   "human_edge": "Judging whether a record remains usable and recognising damage that threatens evidential value.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly reprioritisation of inspections for fragile originals."
+   },
+   "altitude": "Physical inspection still occupies most of the work; preparation and transcription shrink. Proposed delegation lets the clerk reorder inspections within an approved risk policy, while corrective expenditure remains with record owners.",
+   "reach": [
+    {
+     "role": "quality control systems manager",
+     "task": "Develop a defensible sampling plan for record inspections.",
+     "learn": "Defect classification, sample bias and evidence needed to close corrective actions."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "3-7",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "File existence, container readability and metadata placement can be checked deterministically.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Technical checks cannot establish physical condition or complete semantic readability.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Configured inspection forms can remove separate transcription; proposed savings and build ranges remain estimates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The workload includes physical originals and a smaller digital inspection branch.",
+    "The baseline uses a {SPREADSHEET} to consolidate findings, exceeding that means prior.",
+    "Physical inspection volume is unchanged; savings come from preparation, supported placement checks and logging.",
+    "Findings are captured during inspection, allowing the later copying step to disappear.",
+    "The {WORKFLOW} supports inspection forms and restricted defect records.",
+    "GDPR applies where inspected records contain personal data; consultation under national rules may apply to identifiable activity logging."
+   ],
+   "unknowns": [
+    "Physical-to-digital file mix and required inspection coverage.",
+    "Existing defect log, file labels and location accuracy.",
+    "Which records require specialist conservation or stricter handling.",
+    "Who may approve relocation, rescanning and conservation spending.",
+    "Applicable consultation requirements and permissions for digital validation."
+   ],
+   "research_questions": [
+    "Which digital defects can be detected without exposing document content?",
+    "Can existing labels speed placement checks without new equipment?",
+    "Which findings require full inspection rather than sampling?",
+    "Can direct capture preserve enough evidence to remove the separate defect log?"
+   ],
+   "new_work": [
+    "Review digital check failures and false alarms.",
+    "Maintain inspection criteria and defect categories.",
+    "Check that direct capture remains complete.",
+    "Track approved corrective work to closure.",
+    "Revisit inspection priorities when new defect patterns appear."
+   ],
+   "time_saved_pct": 35,
+   "speedup": 1.54
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts toward record quality, custody exceptions and risk-based inspection. Proposed decision rights cover routine metadata corrections, overdue-file escalation and inspection sequencing within approved policies; financial approvals and sensitive access remain with authorised owners.",
+  "reach": [
+   "Support management analysts with recurring intake and invoice defect patterns.",
+   "Support business continuity planners with reliable locations for essential originals.",
+   "Support quality control systems managers with inspection evidence and defect trends."
+  ],
+  "skills_to_grow": [
+   "Metadata validation and identifier matching.",
+   "Configuring forms, reminders and exception queues.",
+   "Reviewing extracted fields against source evidence.",
+   "Financial matching controls and separation of duties.",
+   "Physical custody records and inspection sampling.",
+   "GDPR-aware access, retention and change logging."
+  ],
+  "ambitious_version": "A records-quality coordinator who helps departments prevent filing defects, locate essential originals and target inspections, with delegated authority over routine corrections and escalation."
+ },
+ "job_code": "43-4071.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 227,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "text(await tools.exec_command({cmd:\"sed -n '1,180p' /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3500}));\n"
+  ],
+  "job": {
+   "code": "43-4071.00",
+   "title": "File Clerks",
+   "tasks": 19,
+   "function": "Office and operations"
+  }
+ }
+}

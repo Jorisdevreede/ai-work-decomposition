@@ -1,0 +1,836 @@
+{
+ "tasks": [
+  {
+   "uid": "43-9051.00:13286",
+   "short": "Sell mailing supplies and collect postage payments.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Ask the requester which mailing supplies and delivery service they need.",
+     "actor": "mail clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "mailing request"
+     ],
+     "outputs": [
+      "service selection"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Weigh the item and calculate charges using postal equipment and the rate table.",
+     "actor": "mail clerk",
+     "today_means": "in_person",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "service selection",
+      "mail item",
+      "rate table"
+     ],
+     "outputs": [
+      "postage quote"
+     ],
+     "handoff_to": "requester",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Collect payment through a payment terminal and issue a receipt.",
+     "actor": "mail clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "postage quote"
+     ],
+     "outputs": [
+      "payment receipt",
+      "payment record"
+     ],
+     "handoff_to": "requester",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "requester"
+    },
+    {
+     "id": "s4",
+     "what": "Hand over purchased supplies or accept the paid item for dispatch.",
+     "actor": "mail clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "payment receipt",
+      "mail item",
+      "mailing supplies"
+     ],
+     "outputs": [
+      "fulfilled sale"
+     ],
+     "handoff_to": "requester",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Match daily receipts to payment totals and send discrepancies to finance.",
+     "actor": "mail clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "ERP"
+     ],
+     "inputs": [
+      "payment record",
+      "payment receipt"
+     ],
+     "outputs": [
+      "sales reconciliation",
+      "payment exception"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "mail clerk"
+    }
+   ],
+   "design": "Configure postal equipment in {OTHER} to calculate quotes and pass approved amounts to a payment terminal in {OTHER}. A deterministic integration matches payment records to sales in the {ERP}, replacing the reconciliation workbook in the {SPREADSHEET}; the clerk handles physical items and service questions.",
+   "previous_blocker": "Postal equipment, payment terminals and finance records often have separate identifiers and exports. Small transaction volumes weaken the case for custom integration.",
+   "enabler_now": "Existing rate engines and payment terminals handle the transaction. AI-assisted coding reduces the effort of building export adapters and reconciliation rules.",
+   "still_hard": "Weighing, handing over supplies, unusual items, refunds and cash handling still require attention. Payment equipment may expose only limited interfaces.",
+   "human_edge": "Explain service trade-offs and recognise packaging or delivery needs that the requester has described poorly.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The clerk spends less time calculating charges and balancing receipts. Service advice and physical handling remain, and decision rights do not change.",
+   "reach": [
+    {
+     "role": "administrative services manager",
+     "task": "Review mailing service costs and supply replenishment.",
+     "learn": "Read reconciliation exceptions, distinguish consumption from waste, and compare service costs."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "3-8",
+    "testing_rollout": "3-5",
+    "consent_and_access": "2-6"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Rate calculation, terminal payments and receipt matching are established deterministic functions; this implementation is an estimate.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This supplemental task applies to a company mailroom that actually sells supplies or accepts postage payments.",
+    "Most transactions use an existing payment terminal; a cash drawer would retain manual counting.",
+    "The reconciliation workbook represents a common bridge to the {ERP}, rather than a universal practice.",
+    "Build ranges cover one location using existing equipment and exclude payment fees and hardware purchases."
+   ],
+   "unknowns": [
+    "Whether sales occur, or all mailing costs are allocated internally.",
+    "Payment methods, refund permissions and available equipment interfaces.",
+    "Transaction volume and current reconciliation process."
+   ],
+   "research_questions": [
+    "Can existing postal equipment pass an amount and transaction identifier to the payment terminal?",
+    "Can the {ERP} import matched sales without creating duplicate postings?"
+   ],
+   "new_work": [
+    "Check unmatched payments and duplicate transaction identifiers.",
+    "Maintain rate tables and product prices.",
+    "Test refunds and reconciliation after interface changes."
+   ],
+   "time_saved_pct": 52,
+   "speedup": 2.07
+  },
+  {
+   "uid": "43-9051.00:13287",
+   "short": "Correct legacy address plates used for outgoing mail.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read an address correction request received through the {EMAIL}.",
+     "actor": "mail clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "address correction"
+     ],
+     "outputs": [
+      "correction work item"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check the requested correction against the recipient record in the {CRM}.",
+     "actor": "mail clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "correction work item",
+      "recipient record"
+     ],
+     "outputs": [
+      "verified address",
+      "address exception"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "mail clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Use a typewriter or embossing machine to produce the corrected address plate.",
+     "actor": "mail clerk",
+     "today_means": "in_person",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "verified address",
+      "address plate"
+     ],
+     "outputs": [
+      "corrected address plate"
+     ],
+     "handoff_to": "none",
+     "share_pct": 45,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Inspect the corrected plate, replace the old plate, and discard it securely.",
+     "actor": "mail clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "corrected address plate",
+      "address plate"
+     ],
+     "outputs": [
+      "released address plate"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    }
+   ],
+   "design": "Replace address plates with labels generated directly from verified recipient records in the {CRM}. Configure an address correction form in the {WORKFLOW}, validate record identifiers deterministically, and require approval before corrected addresses feed the label template in {OTHER}.",
+   "previous_blocker": "A physical plate library was tied to legacy machinery, while recipient records lived elsewhere. Replacing the addressing method required a small operational migration.",
+   "enabler_now": "Ordinary digital label printing removes plate maintenance. A small integration can reuse verified records without retyping addresses.",
+   "still_hard": "Conflicting address requests need an authorised source. Layout, envelope compatibility and secure disposal of the old plate library need checking.",
+   "human_edge": "Resolve conflicting recipient identities and recognise corrections that could send confidential mail to the wrong person.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Plate production disappears; the clerk reviews address conflicts and occasional print proofs. Authority to decide disputed recipient data stays with the record owner.",
+   "reach": [
+    {
+     "role": "data entry clerk",
+     "task": "Resolve duplicate recipient records.",
+     "learn": "Use stable identifiers, source precedence and a traceable correction history."
+    }
+   ],
+   "build_days": {
+    "coding": "1-3",
+    "integration": "2-5",
+    "testing_rollout": "3-6",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Direct digital label printing can remove the need to maintain physical address plates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Recipient matching and label generation can use deterministic validation and templates without a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Physical address plates are a legacy exception in a contemporary mid-size company; these steps describe sites retaining them.",
+    "The {CRM} holds the customer recipient record; employee addressing would instead use the {HCM}.",
+    "An existing printer can produce suitable labels, so no specialised hardware purchase is included.",
+    "The future form replaces email transcription and requires the requester to enter structured fields.",
+    "New label printing and proof checks remain part of outgoing-mail preparation."
+   ],
+   "unknowns": [
+    "Whether any address plates or typewriters remain in use.",
+    "Which system owns recipient addresses and who may approve corrections.",
+    "Whether current envelopes and machines accept digitally printed labels."
+   ],
+   "research_questions": [
+    "Can a representative set of envelopes use direct labels without disrupting downstream handling?",
+    "Which deterministic checks distinguish a valid address correction from a change of recipient?"
+   ],
+   "new_work": [
+    "Review address conflicts and rejected corrections.",
+    "Maintain label templates and printer settings.",
+    "Retire obsolete plates and cached address files securely.",
+    "Check printed labels after template or equipment changes."
+   ],
+   "time_saved_pct": 94,
+   "speedup": 16.67
+  },
+  {
+   "uid": "43-9051.00:13274",
+   "short": "Send requested samples or promotional literature.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the request in the {EMAIL} and identify the recipient and requested material.",
+     "actor": "mail clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "sample request",
+      "material catalogue"
+     ],
+     "outputs": [
+      "fulfilment request",
+      "request exception"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "One request message and the approved material catalogue.",
+      "output": "Recipient, address, catalogue item, quantity and supporting text spans.",
+      "check": "Validate required fields, catalogue identifiers, quantity limits and exact supporting spans; flag ambiguity.",
+      "stop": "One extraction and one repair attempt per request; unresolved fields go to the clerk without release.",
+      "why_not_simpler": "A structured request form is preferred, but remaining email requests describe materials and quantities in varied free text."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "start",
+     "workflow": "campaign-to-lead",
+     "approver": "mail clerk"
+    },
+    {
+     "id": "s2",
+     "what": "Check availability and mailing eligibility in the {CRM} and the stock workbook.",
+     "actor": "mail clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "fulfilment request",
+      "stock record",
+      "dispatch rules"
+     ],
+     "outputs": [
+      "released fulfilment request",
+      "fulfilment exception"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "campaign-to-lead",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Print the address label and packing list using printing equipment.",
+     "actor": "mail clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "released fulfilment request"
+     ],
+     "outputs": [
+      "address label",
+      "packing list"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "campaign-to-lead",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Pick, pack, label and hand the requested materials to the carrier.",
+     "actor": "mail clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "packing list",
+      "address label",
+      "sample stock",
+      "literature stock"
+     ],
+     "outputs": [
+      "dispatched package"
+     ],
+     "handoff_to": "external",
+     "share_pct": 40,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "campaign-to-lead",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Record dispatch in the {CRM} and send confirmation through the {EMAIL}.",
+     "actor": "mail clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM",
+      "EMAIL"
+     ],
+     "inputs": [
+      "dispatched package",
+      "fulfilment request"
+     ],
+     "outputs": [
+      "dispatch record",
+      "dispatch confirmation"
+     ],
+     "handoff_to": "requester",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "campaign-to-lead",
+     "approver": "none"
+    }
+   ],
+   "design": "Use a structured form in the {WORKFLOW}, with a bounded extraction loop for remaining requests in the {EMAIL}. Deterministic rules check catalogue items, stock and eligibility, generate labels through printing equipment in {OTHER}, and queue physical packing. A dispatch scan updates the {CRM} and triggers a factual confirmation through the {EMAIL}.",
+   "previous_blocker": "Requests arrive in varied wording, while stock, recipient records and dispatch updates are separate. Low volumes rarely justified a dedicated fulfilment integration.",
+   "enabler_now": "Forms remove most interpretation, templates generate paperwork, and a small bounded loop can extract leftover email requests for review.",
+   "still_hard": "Physical picking and packing remain. Material substitutions, restricted samples, international requirements and an unclear legal basis for further marketing require human handling; GDPR and applicable EU AI Act duties still apply.",
+   "human_edge": "Spot an unsuitable sample, damaged stock or a request that needs advice from the sales team.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A sample request status service showing dispatch and stock-related delays."
+   },
+   "altitude": "The clerk works from a fulfilment queue and handles stock or request exceptions. They can provide reliable dispatch status; decisions about substitutions or exceptional spend stay with the authorised role.",
+   "reach": [
+    {
+     "role": "shipping clerk",
+     "task": "Track sample stock and investigate failed deliveries.",
+     "learn": "Use stock reservations, dispatch identifiers and carrier exception codes."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "4-9",
+    "testing_rollout": "4-7",
+    "consent_and_access": "3-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Structured forms, catalogue rules, label templates and dispatch events can automate fulfilment administration.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Paperbox processes emails and attachments into organised case files; this supports intake feasibility, not physical sample fulfilment.",
+     "grade": "E2",
+     "source": "[S4]"
+    }
+   ],
+   "assumptions": [
+    "Requests arrive through both email and structured channels; email handling is material despite the weak mail-share prior.",
+    "Samples and literature come from an approved catalogue with explicit quantity and destination rules.",
+    "Physical preparation dominates effort; no robotic picking or packing is assumed.",
+    "Build ranges cover one catalogue, one dispatch process and existing printing equipment.",
+    "A dispatch event is captured before any confirmation is sent."
+   ],
+   "unknowns": [
+    "Request volumes, channel mix and catalogue quality.",
+    "Stock accuracy, destination restrictions and approval limits.",
+    "Whether the {CRM} already provides suitable fulfilment and status functions.",
+    "Applicable retention periods and lawful bases for recipient data."
+   ],
+   "research_questions": [
+    "Can existing {CRM} configuration cover the queue and status service?",
+    "Which email fields remain ambiguous after introducing a structured form?",
+    "What event reliably proves that a package reached carrier handover?"
+   ],
+   "new_work": [
+    "Review extracted email requests and resolve missing fields.",
+    "Maintain catalogue, stock and dispatch rules.",
+    "Investigate failed confirmations and unmatched dispatch events.",
+    "Review access and retention settings for recipient addresses."
+   ],
+   "time_saved_pct": 59,
+   "speedup": 2.44
+  },
+  {
+   "uid": "43-9051.00:13278",
+   "short": "Load materials and set up printing or addressing machines.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the paper job ticket and identify materials, layout and machine settings.",
+     "actor": "mail clerk",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "print job",
+      "machine instructions"
+     ],
+     "outputs": [
+      "setup specification"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Select type, die size or equivalent settings on printing equipment controls.",
+     "actor": "mail clerk",
+     "today_means": "in_person",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "setup specification"
+     ],
+     "outputs": [
+      "configured machine"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Load paper, envelopes or other material into the machine racks.",
+     "actor": "mail clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "setup specification",
+      "print stock"
+     ],
+     "outputs": [
+      "loaded machine"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Position plates, stencils or tapes in the machine magazine.",
+     "actor": "mail clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "released address plate",
+      "setup specification",
+      "loaded machine"
+     ],
+     "outputs": [
+      "positioned addressing media"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Produce a test impression and approve alignment before the full run.",
+     "actor": "mail clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "configured machine",
+      "loaded machine",
+      "positioned addressing media",
+      "setup specification"
+     ],
+     "outputs": [
+      "approved print proof"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "mail clerk"
+    }
+   ],
+   "design": "Generate a setup specification from validated job fields and approved templates in the {DOCS}, using a small deterministic service in the {DATA_PLATFORM}. Configure saved presets on printing equipment in {OTHER}, and replace plate-based addressing with direct digital printing where existing equipment permits. The clerk loads stock and approves the first physical impression before the run.",
+   "previous_blocker": "Physical loading cannot be removed by software, and older machines have limited controls. Job tickets and machine settings are often maintained separately.",
+   "enabler_now": "Template validation and generated setup sheets are inexpensive to build. Existing digital printing and saved presets can remove plate positioning without introducing an agent.",
+   "still_hard": "Stock handling, mechanical adjustments, jams and visual proof checks remain physical work. Equipment compatibility and capital cost can dominate any software saving.",
+   "human_edge": "Recognise feed problems, poor impressions and unsafe or unsuitable material before a batch is wasted.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The clerk spends less time interpreting tickets and positioning obsolete media, but still loads and checks machines. No additional decision rights are assumed.",
+   "reach": [
+    {
+     "role": "production planning clerk",
+     "task": "Group print jobs by stock and setup requirements.",
+     "learn": "Compare changeover effort, due dates and material availability."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "2-6",
+    "testing_rollout": "4-7",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Validated templates and saved machine presets reduce setup administration, while manual loading remains.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Digital addressing can eliminate plate positioning when compatible printing equipment is available.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "These steps describe a retained legacy or mixed machine setup; many contemporary mailrooms already use digital addressing.",
+    "An existing digital printer can replace the plate-based work, as assumed in the address-plate task.",
+    "If direct digital printing is unavailable, plate positioning remains manual and the estimated saving falls.",
+    "Setup specifications use structured job fields and approved templates, so no model loop is needed.",
+    "Build ranges cover software and configuration only; shared printer migration is counted once across the two tasks.",
+    "Access and consultation ranges allow an initial review under national rules; formal consultation or equipment procurement can extend elapsed time.",
+    "No individual employee productivity monitoring is introduced."
+   ],
+   "unknowns": [
+    "Machine types, available presets and digital printing compatibility.",
+    "How often jobs change stock, layout or addressing media.",
+    "Whether current job tickets contain structured fields.",
+    "Applicable national consultation requirements and local equipment procedures."
+   ],
+   "research_questions": [
+    "Which setup parameters can existing machines save and recall?",
+    "Can representative jobs migrate to direct printing with acceptable feed reliability and alignment?",
+    "How much setup time is physical handling versus interpreting job instructions?"
+   ],
+   "new_work": [
+    "Maintain approved setup recipes and template versions.",
+    "Repeat physical proof checks after stock or equipment changes.",
+    "Record recurring feed and alignment exceptions.",
+    "Keep access to job files and recipient addresses limited to authorised roles."
+   ],
+   "time_saved_pct": 44,
+   "speedup": 1.79
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts towards physical fulfilment, service advice and resolving address or dispatch exceptions. Software removes some preparation and recordkeeping; substantial machine handling remains, and wider decision rights require explicit delegation.",
+  "reach": [
+   "Help the administrative services manager review mailing costs and reconciliation exceptions.",
+   "Support the shipping clerk with sample stock accuracy and delivery exceptions.",
+   "Help the production planning clerk group compatible print jobs."
+  ],
+  "skills_to_grow": [
+   "Validate recipient records and handle personal data under GDPR.",
+   "Maintain catalogue rules, print templates and machine presets.",
+   "Investigate payment, stock and dispatch exceptions.",
+   "Use stable identifiers and reliable physical handover records."
+  ],
+  "ambitious_version": "Run a shared mailing and sample fulfilment service with request status, consistent address checks and reliable dispatch records. Keep physical handling and exceptional service decisions with trained people."
+ },
+ "job_code": "43-9051.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 144,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":2500});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-9051.00",
+   "title": "Mail Clerks and Mail Machine Operators, Except Postal Service",
+   "tasks": 29,
+   "function": "Office and operations"
+  }
+ }
+}

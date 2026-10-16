@@ -1,0 +1,1093 @@
+{
+ "tasks": [
+  {
+   "uid": "13-1199.06:15714",
+   "short": "Cancel customer orders and coordinate stock release, refunds and customer notices.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read cancellation requests and stock or delivery alerts; identify the affected order.",
+     "actor": "online merchant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "HELPDESK",
+      "ECOMMERCE"
+     ],
+     "inputs": [
+      "customer request",
+      "delivery alert",
+      "stock alert"
+     ],
+     "outputs": [
+      "cancellation request"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Free-text requests and alerts; structured requests bypass the model.",
+      "output": "Order reference, requested items and cancellation reason.",
+      "check": "Match the authenticated requester and order; reject ambiguous items or references.",
+      "stop": "One extraction and one repair attempt; unresolved cases enter the merchant queue.",
+      "why_not_simpler": "Structured forms need only rules, but mailbox requests contain varied wording and partial cancellations."
+     },
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check payment, fulfilment, stock allocation and carrier handover status.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "OPS_SYSTEM",
+      "ERP"
+     ],
+     "inputs": [
+      "cancellation request",
+      "order record",
+      "shipment record",
+      "payment record"
+     ],
+     "outputs": [
+      "cancellation status snapshot"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Decide cancellation eligibility and resolve partial shipments, disputed requests or delivery exceptions.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "HELPDESK",
+      "DOCS"
+     ],
+     "inputs": [
+      "cancellation status snapshot",
+      "cancellation policy",
+      "customer request"
+     ],
+     "outputs": [
+      "cancellation decision"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "judgement_step",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Cancel approved items and stop fulfilment or release allocated stock.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "cancellation decision",
+      "cancellation status snapshot"
+     ],
+     "outputs": [
+      "cancelled order",
+      "stock release",
+      "fulfilment stop result"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "online merchant"
+    },
+    {
+     "id": "s5",
+     "what": "Issue the permitted refund and record the corresponding credit.",
+     "actor": "finance team",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "ERP"
+     ],
+     "inputs": [
+      "cancelled order",
+      "payment record",
+      "refund policy"
+     ],
+     "outputs": [
+      "refund record",
+      "credit record"
+     ],
+     "handoff_to": "online merchant",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Send the customer cancellation confirmation and refund status.",
+     "actor": "online merchant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "cancelled order",
+      "refund record",
+      "fulfilment stop result"
+     ],
+     "outputs": [
+      "cancellation confirmation"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "A flow in the {WORKFLOW} joins requests from the {HELPDESK} to live order, payment and shipment records in the {ECOMMERCE}, {ERP} and {OPS_SYSTEM}; a bounded extractor handles free text. The merchant approves the cancellation action, which rechecks fulfilment status before execution; configured rules then release stock, issue eligible original-payment refunds and send accurate confirmations.",
+   "previous_blocker": "Cancellation controls existed, but requests, warehouse status and financial updates were split across systems.",
+   "enabler_now": "Existing cancellation and refund functions can be connected with deterministic checks; AI-assisted coding reduces the effort of building adapters.",
+   "still_hard": "Carrier handover races, partial shipments and payment failures require recovery paths. Consumer rights and national rules affect eligibility; GDPR requires limited access and retention, and EU AI Act duties depend on the actual use.",
+   "human_edge": "Resolve disputed intent, choose fair remedies and take responsibility when shipment status is uncertain.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A pre-dispatch rescue queue offering customers an alternative before stock-related cancellation."
+   },
+   "altitude": "The week shifts from copying status between systems to resolving disputed or time-sensitive cases. The merchant could gain authority to offer defined replacement or delivery remedies within an agreed limit.",
+   "reach": [
+    {
+     "role": "market research analyst",
+     "task": "Analyse cancellation reasons by product and delivery promise.",
+     "learn": "Reason coding, cohort comparisons and distinguishing stock failures from customer preference."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "7-14",
+    "testing_rollout": "6-10",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Order-state rules, refund limits and templated notices support deterministic cancellation workflows.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Cross-system cancellation needs duplicate protection and a fresh fulfilment check before execution.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline represents a merchant coordinating with a separate finance team.",
+    "Original-payment refunds within approved limits can run automatically after cancellation approval; exceptions stop.",
+    "Time shares, remaining effort and build ranges are planning estimates, not measured results.",
+    "The bounded model reads requests but cannot authorise cancellation or change refund destinations."
+   ],
+   "unknowns": [
+    "Which systems expose cancellation, fulfilment-stop and refund interfaces?",
+    "Who currently issues refunds and what limits apply?",
+    "How often are orders partially shipped or already handed to carriers?",
+    "What access approvals and employee consultation are required under national rules?"
+   ],
+   "research_questions": [
+    "Can fulfilment be locked or conditionally stopped while cancellation executes?",
+    "Can refund callbacks distinguish pending, successful and failed refunds reliably?"
+   ],
+   "new_work": [
+    "Review ambiguous requests and failed fulfilment stops.",
+    "Reconcile incomplete cancellations and refund failures.",
+    "Maintain eligibility rules, message templates and interface mappings.",
+    "Sample extraction accuracy and minimise retained customer text."
+   ],
+   "time_saved_pct": 85,
+   "speedup": 6.67
+  },
+  {
+   "uid": "13-1199.06:15732",
+   "short": "Prepare product descriptions, search metadata and campaign subject lines for the online storefront.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect approved product facts, images, claims and brand guidance.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "DOCS"
+     ],
+     "inputs": [
+      "product record",
+      "product assets",
+      "brand guide",
+      "approved claims"
+     ],
+     "outputs": [
+      "product source pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "content-to-publish",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Choose search intent, target terms and the customer benefit to emphasise.",
+     "actor": "online merchant",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "BI"
+     ],
+     "inputs": [
+      "product source pack",
+      "search performance",
+      "campaign brief"
+     ],
+     "outputs": [
+      "content brief"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 65,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "content-to-publish",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Write descriptions, titles, metadata and subject-line variants.",
+     "actor": "online merchant",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "content brief",
+      "product source pack"
+     ],
+     "outputs": [
+      "content draft"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Approved product facts, permitted claims, brand guidance and content brief.",
+      "output": "Structured descriptions, titles, metadata and subject-line variants with source references.",
+      "check": "Validate field lengths, required facts and prohibited claims; link factual assertions to approved sources.",
+      "stop": "One draft and one constrained revision; missing evidence or unresolved checks go to the editor.",
+      "why_not_simpler": "Templates cover repeated specifications, but varied products need natural language tailored to intent and tone."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "content-to-publish",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Edit for accuracy, distinctiveness, clarity and acceptable claims.",
+     "actor": "online merchant",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "content draft",
+      "product source pack",
+      "content brief"
+     ],
+     "outputs": [
+      "reviewed content"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "content-to-publish",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Enter reviewed copy into product pages and campaign fields; inspect previews.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "CMS",
+      "MARKETING_AUTOMATION"
+     ],
+     "inputs": [
+      "reviewed content",
+      "product assets"
+     ],
+     "outputs": [
+      "content preview"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "content-to-publish",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve and publish storefront copy or release subject lines to the campaign owner.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "CMS",
+      "MARKETING_AUTOMATION"
+     ],
+     "inputs": [
+      "content preview"
+     ],
+     "outputs": [
+      "published content",
+      "approved subject lines"
+     ],
+     "handoff_to": "marketing specialist",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "content-to-publish",
+     "approver": "online merchant"
+    }
+   ],
+   "design": "A generator combines approved facts from the {ECOMMERCE} and {DOCS} with a human content brief, using templates for specifications and a bounded model loop for prose. Deterministic checks stage the results in the {ECOMMERCE}, {CMS} and {MARKETING_AUTOMATION}; the merchant reviews the preview before publication or campaign handoff.",
+   "previous_blocker": "Templates handled specifications but not varied prose; source gathering and copying into publishing fields remained manual.",
+   "enabler_now": "Bounded text generation is available today, while AI-assisted coding makes source mapping, field validation and publishing adapters cheaper to build.",
+   "still_hard": "Source quality, distinctive positioning, localisation and regulated claims still need judgement. Search performance is uncertain; fluent copy does not establish factual accuracy.",
+   "human_edge": "Choose the promise customers should remember and judge whether the copy is credible and worth reading.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Useful buying guides for first-time customers unfamiliar with the product category."
+   },
+   "altitude": "The week shifts toward briefs, editorial decisions and testing customer understanding. The merchant could gain authority to commission guide topics and choose content experiments within the publishing policy.",
+   "reach": [
+    {
+     "role": "search marketing strategist",
+     "task": "Map product pages to search intent and assess content experiments.",
+     "learn": "Query grouping, page intent, internal linking and measurement limits."
+    },
+    {
+     "role": "technical writer",
+     "task": "Turn product specifications into clear buying guidance.",
+     "learn": "Source traceability, terminology control and explaining limitations."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "4-9",
+    "testing_rollout": "4-7",
+    "consent_and_access": "2-6"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Shopify Sidekick supports generating product descriptions.",
+     "grade": "E2",
+     "source": "[S13]"
+    },
+    {
+     "claim": "Structured field checks and source-linked editorial review can surround generated copy.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Approved product facts and claims are available; the generator does not invent missing attributes.",
+    "Native draft and publishing controls are configured before building custom replacements.",
+    "Campaign sending remains a separate action with its existing approval.",
+    "Time shares, remaining effort and build ranges are planning estimates.",
+    "Only necessary product material enters the model; GDPR and applicable EU AI Act duties are assessed for the actual deployment."
+   ],
+   "unknowns": [
+    "Which locales, product categories and claim restrictions apply?",
+    "Who owns final publication approval?",
+    "Are product facts versioned and linked to individual items?",
+    "What access and consultation requirements apply under national rules?"
+   ],
+   "research_questions": [
+    "Which existing generation and draft-management features satisfy the required controls?",
+    "Can all target fields be staged and previewed without publication?",
+    "Which factual and formatting checks can run deterministically?"
+   ],
+   "new_work": [
+    "Review unsupported claims, weak phrasing and localisation errors.",
+    "Maintain approved terminology, source mappings and generation instructions.",
+    "Check preview rendering and accessibility of supplied content.",
+    "Measure customer response without treating search ranking as guaranteed."
+   ],
+   "time_saved_pct": 70,
+   "speedup": 3.36
+  },
+  {
+   "uid": "13-1199.06:15704",
+   "short": "Replenish merchandise using stock, demand, supplier constraints and available cash.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect stock, sales, open orders, supplier lead times and purchase prices.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "OPS_SYSTEM",
+      "PROCUREMENT",
+      "ERP"
+     ],
+     "inputs": [
+      "stock record",
+      "sales history",
+      "open purchase orders",
+      "supplier terms"
+     ],
+     "outputs": [
+      "replenishment dataset"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Calculate reorder quantities, stock cover and expected purchase cost.",
+     "actor": "online merchant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "replenishment dataset",
+      "replenishment rules",
+      "campaign calendar"
+     ],
+     "outputs": [
+      "replenishment proposal"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Adjust quantities for promotions, seasonality, ageing stock and uncertain demand.",
+     "actor": "online merchant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "BI"
+     ],
+     "inputs": [
+      "replenishment proposal",
+      "campaign calendar",
+      "stock ageing report"
+     ],
+     "outputs": [
+      "purchase proposal"
+     ],
+     "handoff_to": "supplier",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Confirm availability and negotiate delivery dates, pack sizes or substitutions with suppliers.",
+     "actor": "online merchant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "purchase proposal",
+      "supplier terms"
+     ],
+     "outputs": [
+      "confirmed supplier terms"
+     ],
+     "handoff_to": "purchasing manager",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve the purchase commitment against budget and purchasing limits.",
+     "actor": "purchasing manager",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT",
+      "ERP"
+     ],
+     "inputs": [
+      "purchase proposal",
+      "confirmed supplier terms",
+      "purchase budget"
+     ],
+     "outputs": [
+      "approved purchase order"
+     ],
+     "handoff_to": "online merchant",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "purchasing manager"
+    },
+    {
+     "id": "s6",
+     "what": "Submit the approved purchase order to the supplier.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT",
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "approved purchase order"
+     ],
+     "outputs": [
+      "submitted purchase order"
+     ],
+     "handoff_to": "supplier",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Record supplier acknowledgement and chase missing or changed delivery commitments.",
+     "actor": "online merchant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "submitted purchase order",
+      "supplier acknowledgement"
+     ],
+     "outputs": [
+      "purchase order status",
+      "delivery exception"
+     ],
+     "handoff_to": "warehouse team",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    }
+   ],
+   "design": "Connect stock and sales from the {OPS_SYSTEM} and {ECOMMERCE} to configured replenishment rules in the {PROCUREMENT}, with budget checks from the {ERP}. The merchant adjusts commercial assumptions and negotiates exceptions; approval releases an immutable purchase order for deterministic submission, acknowledgement matching and delivery alerts.",
+   "previous_blocker": "Replenishment functions often existed, but inconsistent item identifiers, stale lead times and spreadsheet adjustments prevented dependable use.",
+   "enabler_now": "Existing planning rules can be configured and connected more cheaply with AI-assisted coding. This does not require a new forecasting breakthrough or an autonomous buyer.",
+   "still_hard": "New-product demand, promotions, supplier reliability and cash constraints remain uncertain. Portal-only suppliers and unstructured acknowledgements add integration cost.",
+   "human_edge": "Balance cash, availability and assortment risk, and negotiate when suppliers cannot meet the plan.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A weekly campaign stock-risk decision before promotion spend is committed."
+   },
+   "altitude": "The week shifts from compiling reorder sheets to reviewing demand assumptions and supplier risks. The merchant could gain authority to recommend campaign timing changes and move replenishment within agreed category limits.",
+   "reach": [
+    {
+     "role": "marketing manager",
+     "task": "Align promotion timing and spend with available stock.",
+     "learn": "Campaign demand assumptions, contribution margin and the cost of promoting constrained products."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "8-16",
+    "testing_rollout": "7-12",
+    "consent_and_access": "3-9"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Reorder points, lead-time demand, pack-size rules and budget checks can use deterministic planning functions.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Structured acknowledgements can be matched automatically; changed commercial terms require exception handling.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline includes a spreadsheet joining operational and purchasing data.",
+    "The purchasing system supports basic replenishment rules; custom calculations are needed only for gaps.",
+    "Submission accepts only an approved order version; changes invalidate its approval.",
+    "Structured supplier acknowledgements are processed automatically; free-text exceptions remain human.",
+    "Time shares, remaining effort and build ranges are planning estimates."
+   ],
+   "unknowns": [
+    "Which replenishment features are licensed and configured?",
+    "How accurate are stock, lead times and supplier item mappings?",
+    "Which suppliers support structured orders and acknowledgements?",
+    "What purchasing limits, cash restrictions and approval roles apply?",
+    "What access or employee consultation is required under national rules?"
+   ],
+   "research_questions": [
+    "Can existing planning functions represent pack sizes, minimum orders and promotional demand?",
+    "Can duplicate purchase submissions be prevented across supplier interfaces?",
+    "How should reorder rules be evaluated against historical stockouts and excess stock?"
+   ],
+   "new_work": [
+    "Maintain supplier mappings, lead times and replenishment parameters.",
+    "Review unusually large recommendations and stale input data.",
+    "Resolve acknowledgement mismatches and changed delivery commitments.",
+    "Monitor stockout, excess-stock and cash outcomes.",
+    "Maintain access controls; assess GDPR and EU AI Act applicability if personal data or AI components are added."
+   ],
+   "time_saved_pct": 67,
+   "speedup": 3.03
+  },
+  {
+   "uid": "13-1199.06:15726",
+   "short": "Choose storefront positions for product listings and evaluate their traffic and commercial results.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Review traffic, impressions, clicks and sales for current product placements.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "BI"
+     ],
+     "inputs": [
+      "placement record",
+      "traffic report",
+      "sales history"
+     ],
+     "outputs": [
+      "placement performance"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "campaign-to-lead",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compare candidate products against stock, margin, relevance and campaign priorities.",
+     "actor": "online merchant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "OPS_SYSTEM",
+      "ERP"
+     ],
+     "inputs": [
+      "placement performance",
+      "stock record",
+      "product margin",
+      "campaign brief"
+     ],
+     "outputs": [
+      "placement comparison"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "campaign-to-lead",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Choose category, homepage or onsite-search positions and define the test hypothesis.",
+     "actor": "online merchant",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "BI"
+     ],
+     "inputs": [
+      "placement comparison",
+      "campaign brief",
+      "merchandising policy"
+     ],
+     "outputs": [
+      "placement decision",
+      "test hypothesis"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "campaign-to-lead",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Prepare product identifiers, positions, dates and comparison groups for implementation.",
+     "actor": "online merchant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "placement decision",
+      "test hypothesis",
+      "product record"
+     ],
+     "outputs": [
+      "placement plan"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "campaign-to-lead",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Apply listing positions, inspect the preview and publish the placement change.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "CMS"
+     ],
+     "inputs": [
+      "placement plan"
+     ],
+     "outputs": [
+      "published placement",
+      "placement record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "campaign-to-lead",
+     "approver": "online merchant"
+    },
+    {
+     "id": "s6",
+     "what": "Evaluate placement results and record whether to retain, revise or reverse the change.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "BI",
+      "ECOMMERCE"
+     ],
+     "inputs": [
+      "published placement",
+      "placement performance",
+      "test hypothesis"
+     ],
+     "outputs": [
+      "placement evaluation",
+      "placement recommendation"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "campaign-to-lead",
+     "approver": "none"
+    }
+   ],
+   "design": "A scheduled job on the {DATA_PLATFORM} joins placement and traffic data from the {ECOMMERCE} with stock and margin data from the {OPS_SYSTEM} and {ERP}, feeding a comparison view in the {BI}. The merchant chooses the hypothesis; deterministic code prepares a placement plan, native controls in the {ECOMMERCE} and {CMS} require publication approval, and the {BI} reports results against the agreed comparison.",
+   "previous_blocker": "Traffic, stock and margin were reported separately, while placement changes lacked consistent experiment records.",
+   "enabler_now": "Existing publishing controls, event data and deterministic experiment calculations can be connected at lower development cost. Better data preparation helps judgement without claiming to predict the winning placement.",
+   "still_hard": "Low traffic, seasonality, overlapping promotions and position bias make causal conclusions difficult. GDPR requirements matter when collecting behavioural data; EU AI Act applicability depends on whether AI is introduced.",
+   "human_edge": "Judge relevance, assortment balance and the trade-off between immediate sales and customer discovery.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A weekly evidence-based decision on category placement experiments."
+   },
+   "altitude": "The week shifts from assembling comparisons and moving listings to designing experiments and interpreting uncertain results. The merchant could gain authority to allocate a defined share of category positions to approved tests.",
+   "reach": [
+    {
+     "role": "search marketing strategist",
+     "task": "Improve product discovery through onsite search and category structure.",
+     "learn": "Search intent, query-to-product relevance and position bias."
+    },
+    {
+     "role": "web and digital interface designer",
+     "task": "Evaluate whether placement changes help shoppers find suitable products.",
+     "learn": "Navigation testing, accessible presentation and behavioural experiment design."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "5-11",
+    "testing_rollout": "6-10",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Joining placement, stock and margin data supports deterministic comparisons and experiment reporting.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Placement performance needs a comparison design because observed clicks alone do not establish incremental benefit.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline covers owned-storefront category, homepage and onsite-search positions.",
+    "Paid advertising and entry into new sales channels require separate budget or commercial decisions.",
+    "Aggregated measurements are sufficient for the initial design.",
+    "Existing scheduling, preview and publishing functions are used where available.",
+    "Time shares, remaining effort and build ranges are planning estimates."
+   ],
+   "unknowns": [
+    "Which placement controls and experiment features already exist?",
+    "Are placement impressions and product clicks measured consistently?",
+    "Is traffic sufficient for meaningful comparison groups?",
+    "Which placement decisions are commercially constrained?",
+    "What tracking permissions, access approvals and national consultation rules apply?"
+   ],
+   "research_questions": [
+    "Can stable comparison groups be created without cross-contamination?",
+    "Can placements be linked to contribution margin as well as traffic?",
+    "How should stockouts and concurrent campaigns be represented in results?"
+   ],
+   "new_work": [
+    "Maintain product, placement and event mappings.",
+    "Check data freshness and experiment contamination.",
+    "Review inconclusive results and conflicting commercial signals.",
+    "Maintain preview, approval and rollback settings."
+   ],
+   "time_saved_pct": 70,
+   "speedup": 3.33
+  }
+ ],
+ "role": {
+  "altitude": "The online merchant spends more time on customer remedies, product positioning, replenishment risk and placement experiments. Additional decision rights should be explicit: remedy limits, category purchasing flexibility, editorial scope and experiment allocation.",
+  "reach": [
+   "Work with market research analysts to turn cancellation patterns into changes to product information and delivery promises.",
+   "Work with marketing managers to connect campaign commitments to stock and cash constraints.",
+   "Work with search marketing strategists and interface designers to improve product discovery.",
+   "Work with technical writers to make product claims clear and traceable."
+  ],
+  "skills_to_grow": [
+   "Contribution margin and inventory economics",
+   "Experiment design and interpretation",
+   "Editorial judgement and claim verification",
+   "Supplier negotiation and exception resolution",
+   "Data quality, workflow controls and access management"
+  ],
+  "ambitious_version": "Run a weekly commercial review connecting customer friction, product information, stock risk and discovery experiments, with delegated limits for remedies, replenishment adjustments and storefront tests."
+ },
+ "job_code": "13-1199.06",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 193,
+  "attempts": 1,
+  "checks": [
+   "13-1199.06:15714 s3: judgement step marked deterministic"
+  ],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3500});text(r.output)\n"
+  ],
+  "job": {
+   "code": "13-1199.06",
+   "title": "Online Merchants",
+   "tasks": 34,
+   "function": "Marketing"
+  }
+ }
+}

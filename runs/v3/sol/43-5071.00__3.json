@@ -1,0 +1,617 @@
+{
+ "tasks": [
+  {
+   "uid": "43-5071.00:20279",
+   "short": "Choose shipping methods, routes and rates that meet delivery and handling requirements.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check shipment dimensions, destination, delivery deadline and handling requirements.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "shipment order",
+      "item master"
+     ],
+     "outputs": [
+      "shipment requirements"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Retrieve carrier rates, service schedules, restrictions and available capacity.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PARTNER_PORTAL",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "shipment requirements",
+      "carrier agreement"
+     ],
+     "outputs": [
+      "carrier options"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Compare feasible options by total cost, arrival time and handling constraints.",
+     "actor": "shipping clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "shipment requirements",
+      "carrier options"
+     ],
+     "outputs": [
+      "route comparison"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Select the shipping option and record the routing instruction.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "route comparison",
+      "routing policy"
+     ],
+     "outputs": [
+      "routing instruction"
+     ],
+     "handoff_to": "dispatcher",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "judgement_step",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "shipping clerk"
+    }
+   ],
+   "design": "Connect shipment requirements in the {OPS_SYSTEM} to rates and service schedules from the {PARTNER_PORTAL}. Configure eligibility filters and ranked comparisons in the {OPS_SYSTEM}; the shipping clerk approves the routing instruction before dispatch receives it.",
+   "previous_blocker": "Carrier information, shipment requirements and local routing rules were maintained separately. Keeping the comparison current required repeated checking.",
+   "enabler_now": "Structured exports and interfaces support reliable joins. AI-assisted coding can shorten connector development, while existing routing configuration handles routine comparisons.",
+   "still_hard": "Published capacity may differ from bookable capacity. Special cargo, uncertain delivery promises and unavailable interfaces still require intervention.",
+   "human_edge": "Recognise when a cheap route threatens a customer commitment and resolve unusual handling requirements with the dispatcher.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Reassess unbooked shipments when a carrier cutoff changes."
+   },
+   "altitude": "The clerk spends less time collecting quotes and more time resolving delivery risks. Within an approved cost and service envelope, they can approve alternatives; carrier booking authority stays with the authorised role.",
+   "reach": [
+    {
+     "role": "logistics analyst",
+     "task": "Investigate recurring carrier delays on a shipping lane.",
+     "learn": "Compare promised and actual transit times, distinguish sample noise and explain service tradeoffs."
+    },
+    {
+     "role": "dispatcher",
+     "task": "Check whether a proposed route fits loading and collection constraints.",
+     "learn": "Understand collection cutoffs, loading capacity and the point after which changes incur charges."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Integrated warehouse and transport software can hold the shipment records needed for routing.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Eligibility filters and rate comparisons can use deterministic rules; this does not establish automatic capacity confirmation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Time shares, remaining effort and build ranges are planning estimates, not measured customer results.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline is an established shipping operation with shipment records in the {OPS_SYSTEM} and some cross-carrier comparison in the {SPREADSHEET}.",
+    "The {OPS_SYSTEM} supports configurable option comparison. If it does not, deterministic ranking code is needed.",
+    "The design recommends routes and records approval; it does not book transport.",
+    "GDPR applies to personal shipment data. Employee monitoring or staff allocation would require separate assessment under the EU AI Act and national rules.",
+    "Access estimates include privacy review and applicable employee consultation; formal national consultation can extend elapsed time."
+   ],
+   "unknowns": [
+    "Which carrier interfaces or structured exports are available and licensed?",
+    "Does the {OPS_SYSTEM} support configurable route comparison?",
+    "Who may approve cost increases or service changes?",
+    "How often are capacity, special handling or delivery requirements missing?",
+    "Would the change introduce employee monitoring requiring consultation under national rules?"
+   ],
+   "research_questions": [
+    "Which carrier services distinguish quoted capacity from confirmed capacity?",
+    "Which existing routing configuration covers the required constraints without custom optimisation?"
+   ],
+   "new_work": [
+    "Maintain carrier services, cutoffs and routing thresholds.",
+    "Handle missing requirements and stale carrier responses.",
+    "Review alternatives and record reasons for overrides.",
+    "Monitor connector failures and compare quoted with realised service."
+   ],
+   "time_saved_pct": 86,
+   "speedup": 7.41
+  },
+  {
+   "uid": "43-5071.00:4744",
+   "short": "Calculate available space and shipping, storage or demurrage charges.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve shipment measurements, storage dates and occupied or available capacity.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "shipment order",
+      "inventory record",
+      "movement events"
+     ],
+     "outputs": [
+      "calculation facts"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Find applicable tariffs, minimum charges, free periods and unit conventions.",
+     "actor": "shipping clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "calculation facts",
+      "tariff schedule",
+      "carrier agreement"
+     ],
+     "outputs": [
+      "applicable rates"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Calculate capacity or charges, including rounding, elapsed periods and surcharges.",
+     "actor": "shipping clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "calculation facts",
+      "applicable rates"
+     ],
+     "outputs": [
+      "calculation result"
+     ],
+     "handoff_to": "none",
+     "share_pct": 40,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Check unusual results and save the calculation against the shipment.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "calculation result",
+      "calculation facts",
+      "applicable rates"
+     ],
+     "outputs": [
+      "validated calculation"
+     ],
+     "handoff_to": "operations team",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "shipping clerk"
+    }
+   ],
+   "design": "Load approved, versioned tariffs into the {OPS_SYSTEM} and connect shipment measurements and movement events to its calculation rules. Calculate capacity and charges automatically, save routine results, and hold flagged results for clerk approval before saving the validated calculation.",
+   "previous_blocker": "Prices lived in documents while measurements and dates lived in shipment records. Minimum charges, units and free-period rules were repeatedly translated into workbook formulas.",
+   "enabler_now": "Existing tariff engines can apply explicit rules. AI-assisted coding makes the remaining mappings and validation checks cheaper to implement; the arithmetic needs no model.",
+   "still_hard": "Incorrect timestamps, inconsistent measurements and ambiguous contract clauses still produce wrong charges. Available volume alone does not establish whether cargo can safely fit.",
+   "human_edge": "Resolve disputed start dates and tariff interpretations, and recognise when a capacity calculation needs a physical loading check.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A pre-dispatch cost preview for customer service."
+   },
+   "altitude": "The clerk works from an exception queue instead of repeating arithmetic. They can resolve documented data errors within existing authority; tariff approval and billing rights do not change.",
+   "reach": [
+    {
+     "role": "logistics analyst",
+     "task": "Explain why actual transport costs exceed estimates.",
+     "learn": "Trace tariff versions, surcharge triggers and movement timestamps."
+    },
+    {
+     "role": "production planning clerk",
+     "task": "Check whether planned shipments fit available loading capacity.",
+     "learn": "Distinguish volume, weight, stackability and operational loading limits."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "4-9",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Integrated warehouse and transport records provide a practical foundation for shipment calculations.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Versioned rate tables and deterministic arithmetic can calculate charges when dates, measurements and contractual rules are explicit.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The proposed remaining effort and build ranges require validation against actual tariffs and exception volumes.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline combines the {OPS_SYSTEM}, document price lists and a calculation workbook; some companies already perform all three steps in the {OPS_SYSTEM}.",
+    "The {OPS_SYSTEM} has a configurable tariff engine. Unsupported formulas would require deterministic code.",
+    "A person approves tariff changes before they become active; this maintenance work is separate from each calculation.",
+    "The gate in the final step applies to flagged results. Routine results pass automatic validation.",
+    "Outputs are internal calculations. Invoice release, supplier payment and charge disputes remain separate actions.",
+    "GDPR applies where records contain personal data. National consultation requirements depend on whether working practices or employee monitoring change; formal consultation may exceed the access estimate."
+   ],
+   "unknowns": [
+    "Which charge types and capacity formulas are already configured?",
+    "Are event timestamps complete enough to calculate free periods and demurrage?",
+    "Who owns tariff approval and effective dates?",
+    "Which calculations trigger billing or payment automatically today?",
+    "What consultation and access approvals are required locally?"
+   ],
+   "research_questions": [
+    "Which tariff clauses cannot be expressed in the existing calculation engine?",
+    "Which historical disputes reveal missing validation rules?",
+    "Which capacity calculations require a loading or packing check?"
+   ],
+   "new_work": [
+    "Enter and approve tariff changes with effective dates.",
+    "Review missing events, conflicting units and unusual charges.",
+    "Maintain reference calculations for tariff boundaries and rounding.",
+    "Monitor failed imports and downstream calculation transfers."
+   ],
+   "time_saved_pct": 96,
+   "speedup": 26.67
+  },
+  {
+   "uid": "43-5071.00:19834",
+   "short": "Compare feasible shipping options and recommend those with lower estimated environmental impact.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather shipment requirements and feasible transport legs for each option.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "shipment requirements",
+      "carrier options"
+     ],
+     "outputs": [
+      "transport scenarios"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Enter transport legs into an emissions calculator and collect comparable estimates.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "transport scenarios",
+      "shipment requirements",
+      "emissions assumptions"
+     ],
+     "outputs": [
+      "emissions estimates"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Compare emissions, cost and delivery time and prepare a routing recommendation.",
+     "actor": "shipping clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "emissions estimates",
+      "route comparison",
+      "environmental routing policy"
+     ],
+     "outputs": [
+      "environmental routing recommendation"
+     ],
+     "handoff_to": "logistics planner",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Review service tradeoffs and approve the environmental routing recommendation.",
+     "actor": "logistics planner",
+     "today_means": "meeting_call",
+     "systems": [],
+     "inputs": [
+      "environmental routing recommendation",
+      "shipment requirements"
+     ],
+     "outputs": [
+      "approved environmental routing recommendation"
+     ],
+     "handoff_to": "shipping clerk",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "logistics planner"
+    }
+   ],
+   "design": "Connect feasible transport scenarios from the {OPS_SYSTEM} to an emissions calculation service in {OTHER}. A deterministic comparison in {BI} shows estimated emissions, costs, delivery times and missing assumptions; the clerk prepares a recommendation and the logistics planner approves service tradeoffs.",
+   "previous_blocker": "Transport legs, emissions assumptions and service constraints were assembled separately. An emissions result alone did not explain whether a lower-impact option was operationally acceptable.",
+   "enabler_now": "An existing emissions API can calculate transport-chain estimates. Deterministic integration and comparison code can present the tradeoffs without a model making the routing decision.",
+   "still_hard": "Carrier-specific loading, empty running and actual routing may be unknown. Estimates depend on boundaries and assumptions, while delivery commitments can rule out the lowest-emission option.",
+   "human_edge": "Judge whether a service concession is acceptable and challenge an attractive estimate built on weak transport assumptions.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Reconsider transport mode before the daily consolidation cutoff."
+   },
+   "altitude": "The clerk brings comparable options to the planner instead of spending most preparation time assembling estimates. They gain responsibility for scenario quality; authority to relax customer commitments requires explicit delegation.",
+   "reach": [
+    {
+     "role": "logistics analyst",
+     "task": "Evaluate a recurring lane for a lower-emission transport mode.",
+     "learn": "Use consistent emissions boundaries, test assumptions and compare cost with service reliability."
+    },
+    {
+     "role": "supply chain manager",
+     "task": "Set an acceptable cost and delivery envelope for lower-emission routing.",
+     "learn": "Translate customer commitments and operational constraints into measurable decision thresholds."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "EcoTransIT World offers ISO 14083 transport-chain emissions calculations across five modes through an API.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Comparable emissions estimates still require consistent shipment boundaries, assumptions and service constraints.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Preparation can be automated without automating approval of delivery and cost tradeoffs; effort estimates remain unmeasured.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline uses a separate emissions calculator and a comparison workbook.",
+    "Environmental impact is initially assessed through transport greenhouse-gas emissions. Broader impacts require additional measures.",
+    "Feasible carrier options and route costs are shared with the shipping-method task rather than rebuilt.",
+    "The comparison highlights incomplete assumptions and avoids presenting estimates as measured shipment emissions.",
+    "GDPR applies to any personal data transferred. Cargo routing alone does not establish an employment-related high-risk use under the EU AI Act.",
+    "Access estimates include applicable employee consultation under national rules; formal consultation can extend elapsed time."
+   ],
+   "unknowns": [
+    "Which emissions calculation service is licensed and accessible?",
+    "Are transport legs, weights and modes available at the required quality?",
+    "Which environmental impacts and calculation boundaries does the company require?",
+    "Who may approve additional cost or a later delivery?",
+    "Does the current process require planner approval, or can the clerk decide within an existing policy?",
+    "What access and national consultation requirements apply?"
+   ],
+   "research_questions": [
+    "Which defaults materially change the ranking of transport options?",
+    "Can the calculation service return assumptions and methodology versions with each result?",
+    "Which shipment types need environmental measures beyond greenhouse-gas emissions?"
+   ],
+   "new_work": [
+    "Maintain emissions assumptions and methodology versions.",
+    "Review scenarios with incomplete transport legs or weak carrier data.",
+    "Check that compared options meet the same shipment requirements.",
+    "Record approved tradeoffs and revisit them when service conditions change."
+   ],
+   "time_saved_pct": 72,
+   "speedup": 3.57
+  }
+ ],
+ "role": {
+  "altitude": "The clerk moves from collecting rates and repeating calculations toward checking shipment data, resolving exceptions and presenting transport choices. Decision rights expand only within explicitly approved cost, service and handling limits.",
+  "reach": [
+   "Logistics analyst: investigate lane costs, carrier reliability and emissions assumptions.",
+   "Dispatcher: connect route choices to collection cutoffs and loading constraints.",
+   "Production planning clerk: test shipment capacity against operational loading limits."
+  ],
+  "skills_to_grow": [
+   "Tariff interpretation, units and calculation validation.",
+   "Shipment data quality and movement-event reconciliation.",
+   "Cost, delivery and emissions scenario comparison.",
+   "Exception handling and clear explanations of routing tradeoffs."
+  ],
+  "ambitious_version": "Run a daily transport-options review that catches avoidable charges and identifies feasible lower-emission routes before booking, with authority to approve changes inside agreed limits."
+ },
+ "job_code": "43-5071.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 127,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":4000});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-5071.00",
+   "title": "Shipping, Receiving, and Inventory Clerks",
+   "tasks": 11,
+   "function": "Office and operations"
+  }
+ }
+}

@@ -1,0 +1,1130 @@
+{
+ "tasks": [
+  {
+   "uid": "43-4051.00:2587",
+   "short": "Review policy terms and loss evidence to assess insurance coverage.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve the policy version and loss record from the insurance administration system {OTHER}.",
+     "actor": "customer service representative",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "customer record",
+      "loss notification"
+     ],
+     "outputs": [
+      "policy record",
+      "loss record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read policy documents and endorsements to identify relevant terms.",
+     "actor": "customer service representative",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "policy record",
+      "policy wording",
+      "policy endorsements",
+      "loss record"
+     ],
+     "outputs": [
+      "clause references"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "The applicable policy wording, endorsements and loss record.",
+      "output": "Relevant clauses with quotations, page references and unresolved terms.",
+      "check": "Verify quotations against the source and document version; a representative checks clause relevance.",
+      "stop": "One extraction and one repair attempt; missing or conflicting wording goes to manual reading.",
+      "why_not_simpler": "Clause relevance depends on varied wording and endorsements; fixed keyword rules miss material context."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "customer service representative"
+    },
+    {
+     "id": "s3",
+     "what": "Request missing loss details through {EMAIL}.",
+     "actor": "customer service representative",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "loss record",
+      "clause references",
+      "evidence checklist"
+     ],
+     "outputs": [
+      "evidence request",
+      "loss evidence"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "customer service representative"
+    },
+    {
+     "id": "s4",
+     "what": "Compare loss evidence with coverage, exclusions and conditions; write a provisional assessment.",
+     "actor": "customer service representative",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "loss evidence",
+      "loss record",
+      "clause references"
+     ],
+     "outputs": [
+      "coverage assessment"
+     ],
+     "handoff_to": "claims handler",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Reviewed clauses, loss facts, evidence and approved interpretation guidance.",
+      "output": "A provisional coverage assessment separating facts, interpretations and unresolved questions.",
+      "check": "Every material statement links to evidence or a clause; a representative checks omissions and reasoning.",
+      "stop": "One draft and one revision; ambiguity or unsupported conclusions require manual assessment.",
+      "why_not_simpler": "Applying narrative exclusions to disputed facts requires contextual interpretation beyond fixed coverage rules."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "customer service representative"
+    },
+    {
+     "id": "s5",
+     "what": "Approve the coverage determination within delegated authority or escalate disputed interpretation.",
+     "actor": "claims handler",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "coverage assessment",
+      "loss evidence",
+      "policy record"
+     ],
+     "outputs": [
+      "approved coverage determination"
+     ],
+     "handoff_to": "customer service representative",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "claims handler"
+    },
+    {
+     "id": "s6",
+     "what": "Record and send the approved coverage explanation through {HELPDESK}.",
+     "actor": "customer service representative",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK",
+      "EMAIL"
+     ],
+     "inputs": [
+      "approved coverage determination",
+      "customer record"
+     ],
+     "outputs": [
+      "coverage notice",
+      "case record"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    }
+   ],
+   "design": "An integration retrieves the applicable policy and loss records from {OTHER}; a bounded reading loop produces cited clauses and a provisional assessment in {HELPDESK}. A claims handler approves the determination, after which templates record and send the approved explanation through {HELPDESK} and {EMAIL}. Evidence requests have their own approval before sending.",
+   "previous_blocker": "Policy versions, endorsements and loss evidence were scattered, while interpretation could not safely be reduced to lookup rules.",
+   "enabler_now": "Faster integration development and bounded document reading reduce retrieval and drafting effort. Policy interpretation still needs accountable review.",
+   "still_hard": "Conflicting endorsements, disputed facts and consequential coverage decisions remain expensive to assess.",
+   "human_edge": "Recognise when literal wording misses the material facts, explain uncertainty and take responsibility for the determination.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A pre-submission evidence check for customers with incomplete loss notifications."
+   },
+   "altitude": "The representative spends more time resolving missing evidence and explaining difficult cases. They can prioritise evidence collection; binding coverage rights remain with the delegated claims role.",
+   "reach": [
+    {
+     "role": "correspondence clerk",
+     "task": "Prepare clear coverage notices from approved determinations.",
+     "learn": "Cited drafting, accessible explanations and the distinction between an assessment and an approved decision."
+    }
+   ],
+   "build_days": {
+    "coding": "7-12",
+    "integration": "8-20",
+    "testing_rollout": "8-15",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Knowledge-based question answering with handover is available; this does not establish reliable insurance coverage interpretation.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Retrieval, cited drafting and human coverage approval are a proposed design, without an insurance-specific case in the digest.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "GDPR Article 22 constrains solely automated decisions with legal or similarly significant effects, subject to its exceptions.",
+     "grade": "E2",
+     "source": "[S11]"
+    }
+   ],
+   "assumptions": [
+    "This supplemental task applies to an insurance service team, rather than every customer service department.",
+    "Today's steps and time shares are estimates for a mid-size European company.",
+    "Representatives assess routine cases; a delegated claims role approves consequential determinations.",
+    "The high automation prior overstates substitution here because policy interpretation and approval retain substantial human time.",
+    "Build ranges cover one policy family and one connected insurance administration system.",
+    "GDPR and the EU AI Act apply; national rules determine any employee consultation requirements."
+   ],
+   "unknowns": [
+    "Which policy versions and endorsements are accessible in machine-readable form?",
+    "Which coverage decisions can representatives legally and operationally approve?",
+    "Are medical or other special-category data present?",
+    "Which access approvals and employee consultation processes apply?"
+   ],
+   "research_questions": [
+    "How often do reviewed clause suggestions omit a material exclusion or endorsement?",
+    "Which evidence checks can be expressed as reliable fixed rules?",
+    "Does assisted assessment improve explanation quality without increasing incorrect coverage conclusions?"
+   ],
+   "new_work": [
+    "Review clause selection and provisional assessments.",
+    "Maintain policy versions, evidence checklists and approved interpretations.",
+    "Investigate conflicting documents and unsupported citations.",
+    "Check access controls, retention and integration failures."
+   ],
+   "time_saved_pct": 52,
+   "speedup": 2.09
+  },
+  {
+   "uid": "43-4051.00:2586",
+   "short": "Offer relevant additional products or services during customer interactions.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Review the customer's current services and contact preferences in {CRM}.",
+     "actor": "customer service representative",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "customer record",
+      "service catalogue",
+      "contact preferences"
+     ],
+     "outputs": [
+      "account brief"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Decide whether an additional offer fits the customer and current interaction.",
+     "actor": "customer service representative",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "account brief",
+      "service catalogue",
+      "case record"
+     ],
+     "outputs": [
+      "offer choice"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Ask about needs and listen during a customer call.",
+     "actor": "customer service representative",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "offer choice",
+      "case record"
+     ],
+     "outputs": [
+      "customer needs"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Explain a suitable offer, its price and limitations; address customer questions.",
+     "actor": "customer service representative",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY",
+      "CRM"
+     ],
+     "inputs": [
+      "customer needs",
+      "offer choice",
+      "service catalogue"
+     ],
+     "outputs": [
+      "customer response"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Record needs, interest and agreed follow-up in {CRM}.",
+     "actor": "customer service representative",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "customer needs",
+      "customer response",
+      "representative notes"
+     ],
+     "outputs": [
+      "interest record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Brief representative notes and the selected offer.",
+      "output": "Structured needs, expressed interest and agreed follow-up, with unknown fields left blank.",
+      "check": "Validate catalogue identifiers; the representative confirms interest and follow-up before saving.",
+      "stop": "One extraction and one correction; incomplete notes use a structured form.",
+      "why_not_simpler": "Brief narrative notes vary; a bounded extraction avoids retyping them into several fields."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "customer service representative"
+    },
+    {
+     "id": "s6",
+     "what": "Create a follow-up lead and assign it to a sales representative in {CRM}.",
+     "actor": "customer service representative",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "interest record",
+      "routing rules"
+     ],
+     "outputs": [
+      "sales lead"
+     ],
+     "handoff_to": "sales representative",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure {CRM} to show current services, contact preferences and rule-eligible offers beside the customer record. The representative chooses whether to raise an offer and conducts the conversation; a bounded loop converts their notes into a reviewed interest record. Existing {CRM} routing then assigns the agreed follow-up.",
+   "previous_blocker": "Service history and offer conditions took time to assemble, while conversational judgement offered little scope for fixed automation.",
+   "enabler_now": "Existing configuration can assemble account context, and small extraction loops can reduce repeated note entry.",
+   "still_hard": "Timing, trust, suitability and responding to hesitation remain human work. Catalogue and eligibility data must stay current.",
+   "human_edge": "Notice when the customer needs help rather than an offer, and explain trade-offs without pressure.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Customers whose existing service duplicates or exceeds their stated needs."
+   },
+   "altitude": "The representative spends less time searching and logging, with most conversation time retained. They gain a clearer basis for choosing a helpful offer; pricing and contract authority do not expand.",
+   "reach": [
+    {
+     "role": "first-line supervisor of office and administrative support workers",
+     "task": "Coach representatives on offer timing and customer outcomes.",
+     "learn": "Review conversation examples, distinguish expressed interest from consent, and assess suitability beyond conversion."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "3-8",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A customer-facing shopping assistant exists, but this does not demonstrate equivalent performance in human service conversations.",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "A documented support-assistant study found productivity gains, especially for novices; it did not establish sales conversion gains.",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "Account briefs, eligibility filters and lead routing can use deterministic configuration.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This is occasional additional-service solicitation during support work, not a primary sales role.",
+    "Today's steps and time shares are estimates; live conversation dominates this task.",
+    "The baseline uses representative notes and does not introduce call recording or employee scoring.",
+    "Known eligibility, contact preferences and duplicate-service checks can be expressed as rules.",
+    "GDPR and the EU AI Act apply; national rules govern any consultation required by later recording or monitoring changes."
+   ],
+   "unknowns": [
+    "Are service holdings, prices and eligibility rules available together?",
+    "Which contact preferences and marketing permissions must be enforced?",
+    "Can representatives suggest lower-cost alternatives as well as additional services?",
+    "Which access and consultation approvals apply?"
+   ],
+   "research_questions": [
+    "Does the account brief reduce preparation time without increasing unsuitable offers?",
+    "Would a structured form be faster than note extraction for the team's actual notes?",
+    "Which customer outcome measures reveal pressure or poor suitability?"
+   ],
+   "new_work": [
+    "Confirm extracted interest and follow-up details.",
+    "Maintain catalogue eligibility, pricing and routing rules.",
+    "Resolve duplicate leads and stale account data.",
+    "Review examples of unsuitable offers for coaching."
+   ],
+   "time_saved_pct": 30,
+   "speedup": 1.43
+  },
+  {
+   "uid": "43-4051.00:2589",
+   "short": "Match disputed goods to order records and prepare the appropriate return credit document.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the merchandise dispute and attachments in {HELPDESK}.",
+     "actor": "customer service representative",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK"
+     ],
+     "inputs": [
+      "customer complaint",
+      "customer attachments"
+     ],
+     "outputs": [
+      "return case"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Customer complaint and attachments.",
+      "output": "Claimed order references, disputed items, quantities and reasons, each linked to its source.",
+      "check": "Match references to account records; a representative confirms ambiguous items and quantities.",
+      "stop": "One extraction and one repair; unresolved identifiers go to manual intake.",
+      "why_not_simpler": "Customers describe goods and disputes in varied prose and attachment layouts."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "start",
+     "workflow": "complaint-to-resolution",
+     "approver": "customer service representative"
+    },
+    {
+     "id": "s2",
+     "what": "Retrieve the customer order, original invoice and shipment record from {ERP}.",
+     "actor": "customer service representative",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "return case"
+     ],
+     "outputs": [
+      "customer order",
+      "original invoice",
+      "shipment record"
+     ],
+     "handoff_to": "warehouse operative",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Inspect disputed goods against the shipment record and record their condition.",
+     "actor": "warehouse operative",
+     "today_means": "in_person",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "disputed goods",
+      "shipment record",
+      "return case"
+     ],
+     "outputs": [
+      "goods inspection"
+     ],
+     "handoff_to": "customer service representative",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Reconcile disputed items, quantities and prices in a return worksheet.",
+     "actor": "customer service representative",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "return case",
+      "customer order",
+      "original invoice",
+      "goods inspection"
+     ],
+     "outputs": [
+      "return reconciliation"
+     ],
+     "handoff_to": "customer service supervisor",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "complaint-to-resolution",
+     "approver": "customer service representative"
+    },
+    {
+     "id": "s5",
+     "what": "Approve the return value and any policy exception.",
+     "actor": "customer service supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK"
+     ],
+     "inputs": [
+      "return reconciliation",
+      "return policy",
+      "approval limits"
+     ],
+     "outputs": [
+      "return authorisation"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "complaint-to-resolution",
+     "approver": "customer service supervisor"
+    },
+    {
+     "id": "s6",
+     "what": "Prepare and post the credit note linked to the original invoice in {ERP}.",
+     "actor": "finance team",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "return authorisation",
+      "original invoice",
+      "return reconciliation"
+     ],
+     "outputs": [
+      "credit note"
+     ],
+     "handoff_to": "customer service representative",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Send the credit note and update the customer case through {EMAIL}.",
+     "actor": "customer service representative",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "credit note",
+      "return authorisation",
+      "return case"
+     ],
+     "outputs": [
+      "return notice",
+      "case record"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    }
+   ],
+   "design": "A bounded intake loop in {HELPDESK} identifies disputed lines, while deterministic integration matches them to orders and invoices in {ERP} and inspections in {OPS_SYSTEM}. Fixed checks calculate the proposed credit and detect duplicate or excessive returns; people inspect goods and approve return exceptions and value. After approval, {ERP} generates the credit note and {HELPDESK} sends the matching notice.",
+   "previous_blocker": "Customer descriptions, warehouse findings and financial records lacked shared identifiers, so staff reconciled them manually.",
+   "enabler_now": "Existing return functions can handle posting and document generation; inexpensive integration and bounded extraction connect the remaining gaps.",
+   "still_hard": "Physical condition, disputed quantities, partial returns and responsibility for damage still require evidence and judgement.",
+   "human_edge": "Resolve contested condition or responsibility fairly, and recognise when the standard return policy produces an unreasonable outcome.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A customer-visible return status covering inspection, authorisation and credit issuance."
+   },
+   "altitude": "The representative handles disputed evidence and customer explanations instead of copying financial lines. They can resolve reconciliation exceptions within existing limits; credit approval rights stay delegated.",
+   "reach": [
+    {
+     "role": "credit clerk",
+     "task": "Reconcile return credits against outstanding customer balances.",
+     "learn": "Credit-note allocation, duplicate-credit controls and the difference between a credit and a cash refund."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "7-15",
+    "testing_rollout": "6-12",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Document-based order capture can validate customer, stock and price data and route exceptions before posting.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Order import and stock synchronisation already exist, supporting deterministic record exchange.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Return reconciliation and approved credit-note generation are proposed extensions; the digest provides no direct returns case.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This task applies to a company handling physical goods.",
+    "A credit note is the usual return document here; the required document depends on the transaction and national rules.",
+    "The worksheet represents manual reconciliation between departments, not a replacement for financial records in {ERP}.",
+    "Time shares describe the full handoff chain, including warehouse and finance work.",
+    "Build ranges cover one order flow, one warehouse connection and established return rules.",
+    "GDPR and the EU AI Act apply; national employee consultation requirements must be checked where working practices change."
+   ],
+   "unknowns": [
+    "Does {ERP} support linked partial credits and prevent cumulative over-crediting?",
+    "Who approves routine returns and which exceptions need supervisor approval?",
+    "Are inspection results linked to individual order lines?",
+    "Which tax treatments, document formats and access approvals apply?"
+   ],
+   "research_questions": [
+    "What share of disputes can match directly to an original invoice line?",
+    "Which exceptions arise from missing identifiers rather than genuine judgement?",
+    "Can existing {ERP} return configuration remove the need for custom posting code?"
+   ],
+   "new_work": [
+    "Review uncertain item extraction and unmatched lines.",
+    "Maintain return rules and approval limits.",
+    "Investigate duplicate credits, failed postings and reconciliation differences.",
+    "Keep warehouse inspection identifiers aligned with financial order lines."
+   ],
+   "time_saved_pct": 66,
+   "speedup": 2.99
+  },
+  {
+   "uid": "43-4051.00:2585",
+   "short": "Gather complaint evidence, examine possible causes and assess whether the complaint is valid.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Hear the customer's complaint and clarify the disputed outcome during a call.",
+     "actor": "customer service representative",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "customer complaint",
+      "customer record"
+     ],
+     "outputs": [
+      "complaint account"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Retrieve billing, service events and previous contacts across {ERP}, {OPS_SYSTEM} and {HELPDESK}.",
+     "actor": "customer service representative",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "OPS_SYSTEM",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "complaint account",
+      "customer record"
+     ],
+     "outputs": [
+      "complaint evidence"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Request missing readings, dates or supporting documents through {EMAIL}.",
+     "actor": "customer service representative",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "complaint account",
+      "complaint evidence",
+      "evidence checklist"
+     ],
+     "outputs": [
+      "evidence request",
+      "supplementary evidence"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "complaint-to-resolution",
+     "approver": "customer service representative"
+    },
+    {
+     "id": "s4",
+     "what": "Compare charges, dates and usage in a worksheet; flag unexplained differences.",
+     "actor": "customer service representative",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "complaint evidence",
+      "supplementary evidence",
+      "tariff rules"
+     ],
+     "outputs": [
+      "complaint reconciliation"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "complaint-to-resolution",
+     "approver": "customer service representative"
+    },
+    {
+     "id": "s5",
+     "what": "Read contextual evidence and service policies to identify plausible causes.",
+     "actor": "customer service representative",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "complaint reconciliation",
+      "complaint account",
+      "service policy",
+      "context evidence"
+     ],
+     "outputs": [
+      "cause assessment"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 55,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Reconciled records, complaint narrative, service policies and relevant context evidence.",
+      "output": "An evidence-linked list of plausible causes, contradictions and unanswered questions.",
+      "check": "Require sources for factual claims; the representative checks alternatives and rejects unsupported causal conclusions.",
+      "stop": "One draft and one revision; insufficient or contradictory evidence returns to manual investigation.",
+      "why_not_simpler": "Narrative complaints and context vary; fixed checks cannot explain every service event or competing account."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "complaint-to-resolution",
+     "approver": "customer service representative"
+    },
+    {
+     "id": "s6",
+     "what": "Assess complaint validity and decide whether specialist investigation is needed.",
+     "actor": "customer service representative",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK"
+     ],
+     "inputs": [
+      "cause assessment",
+      "complaint reconciliation",
+      "service policy"
+     ],
+     "outputs": [
+      "approved complaint assessment"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "complaint-to-resolution",
+     "approver": "customer service representative"
+    },
+    {
+     "id": "s7",
+     "what": "Record findings and route unresolved causes to the responsible service team.",
+     "actor": "customer service representative",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK"
+     ],
+     "inputs": [
+      "approved complaint assessment",
+      "routing rules"
+     ],
+     "outputs": [
+      "case record",
+      "investigation referral"
+     ],
+     "handoff_to": "service operations team",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    }
+   ],
+   "design": "Deterministic integrations assemble a dated evidence pack from {ERP}, {OPS_SYSTEM} and {HELPDESK}, then calculate billing and usage differences. A bounded reading loop compares the pack with policies in {DOCS} and drafts possible explanations with sources and uncertainties. The representative assesses validity, while {HELPDESK} records the approved findings and routes unresolved questions.",
+   "previous_blocker": "Evidence was split across teams and records, and contextual explanations required manual reading after basic reconciliation.",
+   "enabler_now": "Faster integration development makes evidence assembly cheaper, while bounded drafting can organise varied narratives without deciding validity.",
+   "still_hard": "Missing readings, conflicting accounts and separating correlation from cause remain difficult. Weather alone cannot establish why an individual bill changed.",
+   "human_edge": "Weigh conflicting evidence, hear what the customer disputes and recognise when a plausible explanation is insufficient.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly selection of recurring billing causes for service operations investigation."
+   },
+   "altitude": "The representative spends more time testing explanations and resolving disputed facts. They can prioritise investigation referrals within agreed limits; refund and policy-exception authority require separate delegation.",
+   "reach": [
+    {
+     "role": "computer user support specialist",
+     "task": "Reproduce a suspected billing or account-display defect from a complaint.",
+     "learn": "Write reproducible steps, preserve event timelines and distinguish a data defect from a policy disagreement."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "8-18",
+    "testing_rollout": "6-12",
+    "consent_and_access": "4-15"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Customer-service tools can answer questions and access order information through integrations.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "A documented support-assistant study found higher issues resolved per hour; this does not establish accurate complaint-validity decisions.",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "Deterministic reconciliation plus reviewed explanation drafting is a proposed design; causal validity still needs human assessment.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The illustrated company has billing and service-event records; weather evidence is relevant only for some complaints.",
+    "Today's steps and time shares are estimates, with substantial retrieval effort but persistent judgement work.",
+    "The worksheet ties records together where existing screens lack a cross-record comparison.",
+    "The design supports assessment and referral; it does not automatically reject complaints or issue refunds.",
+    "No new call recording, emotion recognition or employee performance scoring is introduced.",
+    "GDPR and the EU AI Act apply; access and any employee consultation follow applicable national rules."
+   ],
+   "unknowns": [
+    "Which records share reliable customer, account and event identifiers?",
+    "Are tariffs, readings and service events complete and historically versioned?",
+    "Which contextual evidence is available and licensed for use?",
+    "What assessment, escalation and remedy authority does each role hold?",
+    "Which data access and employee consultation processes apply?"
+   ],
+   "research_questions": [
+    "Which recurring complaint causes can be tested with deterministic checks?",
+    "Does the evidence pack reduce investigation time while preserving contradictory evidence?",
+    "How often do drafted explanations suggest a cause unsupported by the record?"
+   ],
+   "new_work": [
+    "Review proposed causes and evidence gaps.",
+    "Maintain tariff rules, evidence checklists and routing.",
+    "Resolve missing identifiers and failed evidence retrieval.",
+    "Sample assessments for unsupported explanations and missed alternatives."
+   ],
+   "time_saved_pct": 55,
+   "speedup": 2.21
+  }
+ ],
+ "role": {
+  "altitude": "The week shifts toward difficult conversations, evidence disputes and explanation quality. Better preparation supports broader investigation work, while financial and coverage decision rights remain explicitly delegated.",
+  "reach": [
+   "Prepare clear, approved correspondence with a correspondence clerk.",
+   "Reconcile return credits with a credit clerk.",
+   "Turn recurring complaints into reproducible investigations with a computer user support specialist.",
+   "Support customer-outcome coaching with a first-line supervisor of office and administrative support workers."
+  ],
+  "skills_to_grow": [
+   "Read source-linked evidence and challenge unsupported conclusions.",
+   "Understand billing, return and coverage rules within delegated authority.",
+   "Conduct needs-led conversations and explain uncertainty clearly.",
+   "Write reproducible referrals and recognise recurring service failures.",
+   "Review structured records and identify integration exceptions."
+  ],
+  "ambitious_version": "A service resolution specialist who combines customer conversations with evidence analysis, runs a recurring complaint-cause review and proposes targeted service improvements."
+ },
+ "job_code": "43-4051.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 179,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"sed -n '1,160p' /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3500});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-4051.00",
+   "title": "Customer Service Representatives",
+   "tasks": 13,
+   "function": "Customer support"
+  }
+ }
+}

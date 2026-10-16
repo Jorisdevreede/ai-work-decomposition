@@ -1,0 +1,1192 @@
+{
+ "tasks": [
+  {
+   "uid": "15-1211.00:20950",
+   "short": "Diagnose application and system faults, restore service, and verify recovery.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Review the incident packet and establish impact and urgency in the {HELPDESK}.",
+     "actor": "systems analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK"
+     ],
+     "inputs": [
+      "incident packet",
+      "service alert"
+     ],
+     "outputs": [
+      "incident record"
+     ],
+     "handoff_to": "systems analyst",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Incident packet and service alert.",
+      "output": "Affected service, symptoms, impact evidence, and missing fields.",
+      "check": "Validate service identifiers; cite source text; analyst confirms impact and urgency.",
+      "stop": "One extraction pass per update; missing or conflicting evidence goes to the analyst.",
+      "why_not_simpler": "Structured alerts need only rules, but user descriptions contain variable free text."
+     },
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Collect logs, configuration, and recent changes from monitoring and administration tools.",
+     "actor": "systems analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "HELPDESK",
+      "PROJECT"
+     ],
+     "inputs": [
+      "incident record",
+      "change record"
+     ],
+     "outputs": [
+      "diagnostic evidence"
+     ],
+     "handoff_to": "systems analyst",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Reproduce the fault and distinguish likely causes using diagnostic evidence.",
+     "actor": "systems analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "diagnostic evidence",
+      "approved runbook"
+     ],
+     "outputs": [
+      "fault diagnosis"
+     ],
+     "handoff_to": "systems analyst",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Prepare a repair package with tests and rollback instructions in the {DOCS}.",
+     "actor": "systems analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "fault diagnosis",
+      "approved runbook",
+      "configuration snapshot"
+     ],
+     "outputs": [
+      "repair package"
+     ],
+     "handoff_to": "service owner",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Confirmed diagnosis, relevant configuration, approved runbooks, and repair template.",
+      "output": "Draft repair instructions or patch, tests, and rollback instructions.",
+      "check": "Analyst checks assumptions; syntax, security, and sandbox tests must pass.",
+      "stop": "One draft and two revisions; failed checks return preparation to the analyst.",
+      "why_not_simpler": "Known repairs use templates; unfamiliar faults require adapting instructions or code."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve and apply the repair through administration tools under change controls.",
+     "actor": "systems analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "repair package",
+      "incident record"
+     ],
+     "outputs": [
+      "change record",
+      "repair result"
+     ],
+     "handoff_to": "systems analyst",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "ticket-to-resolution",
+     "approver": "service owner"
+    },
+    {
+     "id": "s6",
+     "what": "Check service recovery and record the resolution in the {HELPDESK}.",
+     "actor": "systems analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "repair result",
+      "repair package",
+      "incident record"
+     ],
+     "outputs": [
+      "recovery evidence",
+      "resolution record"
+     ],
+     "handoff_to": "service desk analyst",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "ticket-to-resolution",
+     "approver": "systems analyst"
+    }
+   ],
+   "design": "Read-only connectors collect incident evidence from the {HELPDESK} and monitoring tools through the {DATA_PLATFORM}; a bounded loop extracts symptoms and drafts repair packages. Tested scripts apply approved repairs, attach recovery evidence to the {HELPDESK}, and leave uncertain diagnoses with the analyst.",
+   "previous_blocker": "Logs, changes, and service ownership were scattered. Repair automation required service-specific tests and rollback handling.",
+   "enabler_now": "Existing interfaces and scheduled scripts can collect evidence. Coding assistance can reduce connector and test preparation effort, but gains require local measurement.",
+   "still_hard": "Intermittent failures, undocumented dependencies, and safe recovery remain difficult. GDPR requires proportionate log collection; national rules may require consultation when monitoring observes employees.",
+   "human_edge": "The analyst distinguishes correlation from cause and balances recovery speed against the risk of further disruption.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly selection of recurring incident causes for preventive fixes."
+   },
+   "altitude": "Less time goes into collecting logs and assembling repair paperwork. With delegated authority, the analyst can select low-risk preventive fixes within an agreed change budget; service owners retain production risk acceptance.",
+   "reach": [
+    {
+     "role": "Business Continuity Planner",
+     "task": "Define recovery tests for a critical business service.",
+     "learn": "Business impact analysis, recovery objectives, and evidence from restore exercises."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "5-15",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "TOPdesk supports ticket categorisation and summaries; this supports intake assistance, not autonomous diagnosis.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "GitHub Copilot supports coding and review assistance with oversight.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Security logging must be necessary and proportionate.",
+     "grade": "E1",
+     "source": "[S22]"
+    },
+    {
+     "claim": "The step shares, remaining time, and build ranges are planning estimates for a limited pilot.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The initial scope covers one application service with an accountable service owner.",
+    "Monitoring and administration tools occupy {OTHER}; their category is explicit in the steps.",
+    "Evidence collection is more screen-based than the supplied means prior suggests; diagnostic judgement remains substantial.",
+    "Access and consultation ranges cover implementation effort; national consultation procedures can extend elapsed time."
+   ],
+   "unknowns": [
+    "Available log interfaces, retention settings, and permissions.",
+    "Existing emergency-change authority and rollback coverage.",
+    "Whether logs contain employee or customer personal data.",
+    "Applicable national consultation requirements and existing agreements."
+   ],
+   "research_questions": [
+    "Which evidence collectors can use existing configured connectors?",
+    "Which repair actions can be made idempotent and verified by service-level tests?"
+   ],
+   "new_work": [
+    "Review extracted impact and draft repair packages.",
+    "Handle missing logs, failed tests, and unsuccessful rollbacks.",
+    "Maintain service mappings, redaction rules, connectors, and recovery tests."
+   ],
+   "time_saved_pct": 54,
+   "speedup": 2.16
+  },
+  {
+   "uid": "15-1211.00:3464",
+   "short": "Help staff resolve computer problems and escalate cases needing specialist diagnosis.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Record requests received through the {EMAIL}, {CHAT}, or phone in the {HELPDESK}.",
+     "actor": "service desk analyst",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CHAT",
+      "TELEPHONY",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "support request"
+     ],
+     "outputs": [
+      "support ticket"
+     ],
+     "handoff_to": "service desk analyst",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Find relevant guidance and previous resolutions in the {HELPDESK} and {DOCS}.",
+     "actor": "service desk analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK",
+      "DOCS"
+     ],
+     "inputs": [
+      "support ticket",
+      "approved guidance",
+      "resolution record"
+     ],
+     "outputs": [
+      "guidance shortlist"
+     ],
+     "handoff_to": "service desk analyst",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Discuss symptoms and guide the employee through suitable checks.",
+     "actor": "service desk analyst",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "support ticket",
+      "guidance shortlist"
+     ],
+     "outputs": [
+      "confirmed symptoms",
+      "check results"
+     ],
+     "handoff_to": "service desk analyst",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Apply a standard remedy using administration tools and confirm it helped.",
+     "actor": "service desk analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "confirmed symptoms",
+      "check results",
+      "approved runbook"
+     ],
+     "outputs": [
+      "remedy result"
+     ],
+     "handoff_to": "service desk analyst",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "service desk analyst"
+    },
+    {
+     "id": "s5",
+     "what": "Prepare an incident packet for unresolved cases in the {HELPDESK}.",
+     "actor": "service desk analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK"
+     ],
+     "inputs": [
+      "support ticket",
+      "confirmed symptoms",
+      "check results",
+      "remedy result"
+     ],
+     "outputs": [
+      "incident packet"
+     ],
+     "handoff_to": "systems analyst",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Ticket conversation, recorded checks, and remedy results.",
+      "output": "Structured incident packet with symptoms, attempted remedies, and unresolved questions.",
+      "check": "Link statements to ticket entries; analyst checks omissions and sensitive content.",
+      "stop": "One draft and one revision; incomplete packets return to the analyst.",
+      "why_not_simpler": "Templates populate fixed fields, but variable conversation text needs summarising."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Send the outcome and update ticket status in the {HELPDESK}.",
+     "actor": "service desk analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK",
+      "EMAIL"
+     ],
+     "inputs": [
+      "remedy result",
+      "incident packet",
+      "support ticket"
+     ],
+     "outputs": [
+      "outcome notice",
+      "resolution record"
+     ],
+     "handoff_to": "employee",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure channel intake, approved-guidance search, standard remedies, and outcome notifications in the {HELPDESK}. A bounded drafting loop prepares unresolved incident packets, while analysts retain difficult conversations and approve remedies that change an employee's environment.",
+   "previous_blocker": "Guidance was inconsistent, channel intake required retyping, and standard remedies lacked reliable eligibility checks.",
+   "enabler_now": "Configured service workflows already handle much of the structured work. A small text loop can prepare escalation summaries without automating the conversation.",
+   "still_hard": "Vague symptoms, accessibility needs, and frustrated employees require patient interaction. Identity checks and permission boundaries must remain reliable.",
+   "human_edge": "The analyst recognises confusion, adapts explanations, and helps employees recover confidence as well as functionality.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Mobile self-service guidance for field staff without regular access to a staffed desk."
+   },
+   "altitude": "The week contains fewer ticket-entry and status-update chores and more difficult support conversations. Routine remedy authority remains within existing permissions; broader decision rights do not follow automatically.",
+   "reach": [
+    {
+     "role": "Administrative Services Manager",
+     "task": "Improve support access for staff working away from desks.",
+     "learn": "Workplace service design, accessible instructions, and channel adoption."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "3-8",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "TOPdesk supports ticket summaries and drafts knowledge items for review.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Microsoft reports fewer internal IT tickets after introducing self-service assistance; its scale and missing baseline limit transferability.",
+     "grade": "E3",
+     "source": "[S15]"
+    },
+    {
+     "claim": "Configured intake, guidance search, remedies, and notifications are established service-management patterns.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The time shares and pilot build ranges are estimates, not documented customer results.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "A {HELPDESK} exists and contains reusable guidance.",
+    "Administration tools occupy {OTHER}; the pilot covers approved standard remedies only.",
+    "Conversation remains the largest step, consistent with the communication prior.",
+    "Outcome notices go to the requesting employee within the organisation.",
+    "GDPR applies to support records; national consultation rules apply if the change introduces employee monitoring."
+   ],
+   "unknowns": [
+    "Supported intake channels and existing channel connectors.",
+    "Quality, ownership, languages, and accessibility of approved guidance.",
+    "Which remedies are already authorised for service desk staff.",
+    "Whether field staff can authenticate from mobile devices.",
+    "Required access approvals and national consultation procedures."
+   ],
+   "research_questions": [
+    "Can existing configuration provide useful guidance search without generated answers?",
+    "Which standard remedies expose eligibility checks, execution logs, and safe failure responses?"
+   ],
+   "new_work": [
+    "Review escalation summaries and correct missing context.",
+    "Maintain guidance, remedy eligibility rules, and channel mappings.",
+    "Handle failed self-service attempts and inaccessible instructions."
+   ],
+   "time_saved_pct": 59,
+   "speedup": 2.44
+  },
+  {
+   "uid": "15-1211.00:3465",
+   "short": "Monitor systems, test changes, coordinate maintenance, and verify installations.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Inspect health, capacity, and update status in monitoring and administration tools.",
+     "actor": "systems analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "health metrics",
+      "update inventory",
+      "service alert"
+     ],
+     "outputs": [
+      "maintenance findings"
+     ],
+     "handoff_to": "systems analyst",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Agree maintenance scope and acceptable disruption with the service owner.",
+     "actor": "systems analyst",
+     "today_means": "meeting_call",
+     "systems": [
+      "PROJECT",
+      "CALENDAR"
+     ],
+     "inputs": [
+      "maintenance findings",
+      "service calendar",
+      "dependency map"
+     ],
+     "outputs": [
+      "maintenance plan"
+     ],
+     "handoff_to": "systems analyst",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Write test cases and installation checks in the {DOCS}.",
+     "actor": "systems analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "maintenance plan",
+      "system specification",
+      "approved test cases"
+     ],
+     "outputs": [
+      "test package"
+     ],
+     "handoff_to": "systems analyst",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Changed specification, existing tests, and maintenance plan.",
+      "output": "Draft additional tests and installation checks.",
+      "check": "Analyst checks coverage; tests run in isolation and include known failing examples.",
+      "stop": "One draft and two repair attempts; unresolved failures return to manual test authoring.",
+      "why_not_simpler": "Existing tests are reused directly; changed behaviour needs new scenario interpretation."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Run regression, performance, and installation tests using test automation tools.",
+     "actor": "systems analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "PROJECT"
+     ],
+     "inputs": [
+      "test package",
+      "release package",
+      "test data"
+     ],
+     "outputs": [
+      "test results"
+     ],
+     "handoff_to": "systems analyst",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Coordinate the agreed installation window and send internal notices through the {EMAIL}.",
+     "actor": "systems analyst",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CALENDAR",
+      "PROJECT"
+     ],
+     "inputs": [
+      "maintenance plan",
+      "test results",
+      "service calendar"
+     ],
+     "outputs": [
+      "installation schedule",
+      "maintenance notice"
+     ],
+     "handoff_to": "system administrator",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "meetings-and-calendar",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve readiness and install the release through deployment and administration tools.",
+     "actor": "system administrator",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "PROJECT"
+     ],
+     "inputs": [
+      "release package",
+      "test results",
+      "installation schedule",
+      "rollback plan"
+     ],
+     "outputs": [
+      "deployment result",
+      "change record"
+     ],
+     "handoff_to": "systems analyst",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "project-intake-to-delivery",
+     "approver": "service owner"
+    },
+    {
+     "id": "s7",
+     "what": "Check post-installation health and update maintenance records in the {HELPDESK}.",
+     "actor": "systems analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "HELPDESK",
+      "DOCS"
+     ],
+     "inputs": [
+      "deployment result",
+      "health metrics",
+      "change record"
+     ],
+     "outputs": [
+      "recovery evidence",
+      "maintenance record"
+     ],
+     "handoff_to": "service owner",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure health checks and maintenance findings in the {HELPDESK}, with test and deployment jobs orchestrated through the {DATA_PLATFORM}. A bounded loop drafts additional tests; the {PROJECT} holds readiness evidence and approval before deployment, while the {CALENDAR} and {EMAIL} handle agreed windows and notices.",
+   "previous_blocker": "Tests, schedules, deployment steps, and monitoring were managed separately. Environment differences and incomplete rollback procedures made unattended execution unreliable.",
+   "enabler_now": "Configuration and deterministic jobs can connect existing monitoring, tests, and deployment tools. Coding assistance helps create missing tests and connectors without replacing release approval.",
+   "still_hard": "Representative test data, hidden dependencies, realistic performance tests, and rollback after data changes remain costly. Employee-related monitoring requires GDPR controls and assessment under national rules.",
+   "human_edge": "The analyst judges whether test evidence reflects real business use and negotiates disruption across dependent teams.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly maintenance prioritisation using measured failure risk and business impact."
+   },
+   "altitude": "The week shifts from checking screens and arranging routine installations toward test coverage and dependency risk. The analyst can recommend smaller maintenance batches more often; production approval remains with the service owner.",
+   "reach": [
+    {
+     "role": "Information Technology Project Manager",
+     "task": "Coordinate dependencies across a maintenance release.",
+     "learn": "Release planning, critical paths, readiness criteria, and stakeholder commitments."
+    }
+   ],
+   "build_days": {
+    "coding": "5-12",
+    "integration": "7-15",
+    "testing_rollout": "7-15",
+    "consent_and_access": "3-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Playwright Test Agents can generate test plans and tests and attempt repairs; generated tests still need coverage review.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Aikido Security provides code, dependency, and cloud scanning that can support release checks.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "The Netherlands has works-council consent rules relevant to employee-monitoring systems; national requirements elsewhere vary.",
+     "grade": "E1",
+     "source": "[S23]"
+    },
+    {
+     "claim": "Deterministic orchestration, time savings, and build ranges here are design estimates for one service.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The pilot covers one service with a usable test environment and deployment interface.",
+    "Monitoring, test automation, and deployment tools occupy {OTHER}; each category is named in its step.",
+    "Health checks and test execution are more structured than the overall judgement prior; release risk remains human.",
+    "Scheduling automation uses agreed windows and routes conflicts back to the analyst.",
+    "Post-installation failures create exceptions rather than successful maintenance records.",
+    "Consultation effort is included; applicable national procedures may increase elapsed time."
+   ],
+   "unknowns": [
+    "Current test coverage, deployment tooling, and environment similarity.",
+    "Whether deployment and rollback can run without interactive access.",
+    "Service dependencies, maintenance commitments, and approval thresholds.",
+    "Whether proposed metrics identify or evaluate individual employees.",
+    "Applicable national consultation rules and access lead times."
+   ],
+   "research_questions": [
+    "Which existing tools already support scheduling, health checks, and gated deployment?",
+    "Can rollback and post-installation checks be demonstrated in a representative environment?"
+   ],
+   "new_work": [
+    "Review generated test coverage and maintain realistic test data.",
+    "Investigate failed checks, scheduling conflicts, and deployment exceptions.",
+    "Maintain thresholds, dependency maps, credentials, and rollback procedures."
+   ],
+   "time_saved_pct": 77,
+   "speedup": 4.3
+  },
+  {
+   "uid": "15-1211.00:3482",
+   "short": "Design and implement integrated systems that solve production, inventory, and cost-analysis problems.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Agree the business problem, decisions, and success measures with process owners.",
+     "actor": "systems analyst",
+     "today_means": "meeting_call",
+     "systems": [
+      "DOCS",
+      "PROJECT"
+     ],
+     "inputs": [
+      "problem brief",
+      "process map"
+     ],
+     "outputs": [
+      "agreed requirements"
+     ],
+     "handoff_to": "systems analyst",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Extract operational and cost data from the {OPS_SYSTEM} and {ERP}.",
+     "actor": "systems analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "ERP"
+     ],
+     "inputs": [
+      "agreed requirements",
+      "production records",
+      "inventory records",
+      "cost records"
+     ],
+     "outputs": [
+      "source dataset"
+     ],
+     "handoff_to": "systems analyst",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Reconcile identifiers, units, and costing definitions using a {SPREADSHEET}.",
+     "actor": "systems analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "DOCS"
+     ],
+     "inputs": [
+      "source dataset",
+      "agreed requirements",
+      "data dictionary"
+     ],
+     "outputs": [
+      "mapping specification",
+      "data exceptions"
+     ],
+     "handoff_to": "systems analyst",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Build the integration and analysis view using development tools and the {BI}.",
+     "actor": "systems analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DATA_PLATFORM",
+      "BI"
+     ],
+     "inputs": [
+      "agreed requirements",
+      "mapping specification",
+      "source dataset"
+     ],
+     "outputs": [
+      "solution package"
+     ],
+     "handoff_to": "systems analyst",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "integration",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Approved mapping specification, interface schemas, requirements, and code templates.",
+      "output": "Draft transformations, interface code, analysis view, and tests.",
+      "check": "Static and security checks, sandbox execution, reconciliation totals, and analyst review.",
+      "stop": "One draft and two repair cycles per component; unresolved failures return to manual implementation.",
+      "why_not_simpler": "Configure existing capabilities first; remaining custom transformations require interpreting written requirements."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Reconcile outputs and demonstrate representative scenarios to process owners.",
+     "actor": "systems analyst",
+     "today_means": "meeting_call",
+     "systems": [
+      "BI",
+      "ERP",
+      "OPS_SYSTEM",
+      "PROJECT"
+     ],
+     "inputs": [
+      "solution package",
+      "test data",
+      "agreed requirements",
+      "mapping specification"
+     ],
+     "outputs": [
+      "acceptance evidence",
+      "solution exceptions"
+     ],
+     "handoff_to": "process owner",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 65,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve acceptance and deploy the integration through deployment tools.",
+     "actor": "systems analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "PROJECT",
+      "OTHER",
+      "DATA_PLATFORM",
+      "BI"
+     ],
+     "inputs": [
+      "solution package",
+      "acceptance evidence",
+      "rollback plan"
+     ],
+     "outputs": [
+      "change record",
+      "deployment result"
+     ],
+     "handoff_to": "systems analyst",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "project-intake-to-delivery",
+     "approver": "process owner"
+    },
+    {
+     "id": "s7",
+     "what": "Check scheduled runs and record data-quality failures in the {HELPDESK}.",
+     "actor": "systems analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "DATA_PLATFORM",
+      "BI",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "deployment result",
+      "mapping specification",
+      "source dataset"
+     ],
+     "outputs": [
+      "integration health report",
+      "data exceptions"
+     ],
+     "handoff_to": "systems analyst",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "data-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "Scheduled connectors on the {DATA_PLATFORM} join {OPS_SYSTEM} and {ERP} data using agreed mappings, deterministic reconciliations, and an exception queue in the {HELPDESK}. A bounded coding loop helps build missing transformations and {BI} views; acceptance evidence in the {PROJECT} gates deployment.",
+   "previous_blocker": "Custom integration required costly implementation and repeated reconciliation. Different definitions of stock, production completion, and cost were unresolved.",
+   "enabler_now": "Coding assistance can shorten implementation of ordinary connectors, transformations, and tests. It does not settle business definitions, and published coding studies show mixed gains rather than a dependable multiplier.",
+   "still_hard": "Source-data quality, historical changes, costing semantics, and operational adoption dominate difficult cases. Integrations that later write production or financial records need additional controls and testing.",
+   "human_edge": "The analyst turns competing business interpretations into explicit definitions and checks whether a technically correct result supports the intended decision.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily review of production batches at risk of material cost overruns."
+   },
+   "altitude": "Less time goes into rebuilding extracts and writing repetitive integration code. The analyst can bring cost and inventory exceptions to daily planning, while process owners retain production and accounting decisions.",
+   "reach": [
+    {
+     "role": "Production, Planning, and Expediting Clerk",
+     "task": "Prioritise production exceptions using material availability and cost exposure.",
+     "learn": "Production constraints, inventory movements, and the consequences of rescheduling."
+    },
+    {
+     "role": "Management Analyst",
+     "task": "Evaluate whether the changed process improves business outcomes.",
+     "learn": "Baseline measurement, process economics, and separating system effects from other changes."
+    }
+   ],
+   "build_days": {
+    "coding": "10-20",
+    "integration": "10-25",
+    "testing_rollout": "10-20",
+    "consent_and_access": "5-25"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "GitHub Copilot supports coding assistance and review, which can help implement custom integrations.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Field experiments found more completed developer tasks with coding assistance; this does not establish equivalent gains for systems-analysis work.",
+     "grade": "E3",
+     "source": "[S11]"
+    },
+    {
+     "claim": "An early experiment found experienced developers slower with AI assistance; its later rerun was inconclusive.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "The experiment authors describe limitations and changes to their productivity experiment.",
+     "grade": "E3",
+     "source": "[S10]"
+    },
+    {
+     "claim": "Scheduled integrations, reconciliation controls, and the proposed pilot estimates reflect established engineering practice.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The pilot covers one production or inventory process and a small set of cost measures.",
+    "Existing configuration is checked before custom code is built.",
+    "The deployed integration initially reads source records and writes derived datasets and reports.",
+    "Development and deployment tools occupy {OTHER}; their categories are named in the steps.",
+    "The spreadsheet is a temporary reconciliation bridge, not the operational system of record.",
+    "GDPR applies wherever source data identifies people. National consultation rules and EU AI Act implications require reassessment if the scope changes to employee evaluation.",
+    "Access and consultation ranges represent effort; elapsed approval time may be longer."
+   ],
+   "unknowns": [
+    "Available interfaces, export rights, refresh limits, and data volumes.",
+    "Authoritative identifiers, costing definitions, and historical data quality.",
+    "Existing integration and reporting capabilities that could be configured.",
+    "Acceptance authority and production deployment responsibilities.",
+    "Whether records or proposed views identify individual employees.",
+    "Applicable national consultation requirements and access lead times."
+   ],
+   "research_questions": [
+    "Can supported interfaces provide consistent snapshots and incremental updates?",
+    "Which existing configuration can replace custom transformations?",
+    "Which reconciliation invariants detect missing movements, duplicate records, and incorrect units?"
+   ],
+   "new_work": [
+    "Review generated transformations, tests, and analysis views.",
+    "Resolve source-data exceptions with operational and finance owners.",
+    "Maintain mappings when products, units, accounts, or interfaces change.",
+    "Monitor whether the new analysis changes decisions and improves the agreed measures."
+   ],
+   "time_saved_pct": 48,
+   "speedup": 1.91
+  }
+ ],
+ "role": {
+  "altitude": "The role spends less time gathering evidence, repeating checks, and assembling technical paperwork. More time goes to diagnosis, business definitions, test quality, and cross-team tradeoffs; additional decision rights require explicit delegation.",
+  "reach": [
+   "Business Continuity Planner: turn service incidents into tested recovery scenarios.",
+   "Information Technology Project Manager: coordinate release dependencies and readiness.",
+   "Management Analyst: connect systems changes to measured business outcomes.",
+   "Production, Planning, and Expediting Clerk: connect technical exceptions to operational priorities."
+  ],
+  "skills_to_grow": [
+   "Interface design, deterministic workflow orchestration, and idempotent execution.",
+   "Data reconciliation, business definitions, and exception handling.",
+   "Test design, rollback engineering, and production observability.",
+   "Bounded model evaluation, source-grounded review, and failure handling.",
+   "Facilitation, process economics, GDPR-aware data design, and applicable national consultation procedures."
+  ],
+  "ambitious_version": "Offer a repeatable service-improvement cycle: identify one costly failure or decision delay, build a small controlled integration, and measure its effect with the process owner."
+ },
+ "job_code": "15-1211.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 215,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":4000});text(r.output)\n"
+  ],
+  "job": {
+   "code": "15-1211.00",
+   "title": "Computer Systems Analysts",
+   "tasks": 22,
+   "function": "Office and operations"
+  }
+ }
+}

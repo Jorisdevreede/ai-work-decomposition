@@ -1,0 +1,985 @@
+{
+ "job_code": "11-9081.00",
+ "tasks": [
+  {
+   "uid": "11-9081.00:1105",
+   "short": "Answer hotel policy inquiries and resolve occupants' complaints.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Hear occupants complaints at the desk.",
+     "actor": "lodging manager",
+     "today_means": "in_person",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "guest stay"
+     ],
+     "outputs": [
+      "logged complaint"
+     ],
+     "handoff_to": "guest",
+     "share_pct": 32,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "complaint-to-resolution",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Look up hotel policies named in inquiries.",
+     "actor": "lodging manager",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "DOCS"
+     ],
+     "inputs": [
+      "logged complaint"
+     ],
+     "outputs": [
+      "policy extract"
+     ],
+     "handoff_to": "none",
+     "share_pct": 16,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "complaint-to-resolution",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Decide how to resolve occupants complaints.",
+     "actor": "lodging manager",
+     "today_means": "in_person",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "logged complaint",
+      "policy extract"
+     ],
+     "outputs": [
+      "chosen remedy"
+     ],
+     "handoff_to": "guest",
+     "share_pct": 24,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "complaint-to-resolution",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Review the drafted status of occupants complaints.",
+     "actor": "lodging manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "logged complaint",
+      "policy extract",
+      "chosen remedy"
+     ],
+     "outputs": [
+      "approved complaint status"
+     ],
+     "handoff_to": "none",
+     "share_pct": 16,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "The logged complaint, the policy extract, and the remedy the lodging manager already chose",
+      "output": "A status note that repeats only those facts and names the complaint",
+      "check": "The lodging manager rejects any sentence that adds a fact they did not log",
+      "stop": "One draft, at most 120 words. Missing facts stay blank. No second pass.",
+      "why_not_simpler": "Complaint wording is free text, so a fixed sentence cannot start from what the occupant said"
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "complaint-to-resolution",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "File the approved status of occupants complaints.",
+     "actor": "lodging manager",
+     "today_means": "system_screen",
+     "systems": [
+      "WORKFLOW"
+     ],
+     "inputs": [
+      "approved complaint status"
+     ],
+     "outputs": [
+      "filed complaint record"
+     ],
+     "handoff_to": "front office supervisor",
+     "share_pct": 12,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "complaint-to-resolution",
+     "approver": "lodging manager",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "The lodging manager hears the occupant and chooses the remedy. A bounded draft turns only the logged facts into a status note, and the manager checks that note. {WORKFLOW} files the accepted note and does not choose the remedy.",
+   "previous_blocker": "Complaint wording sat in a mailbox or a paper log, so the status was retyped after the conversation.",
+   "enabler_now": "The property system already holds the stay, and a register can store a note the manager has accepted.",
+   "still_hard": "The remedy still depends on the guest in front of the manager, and on what the policy actually allows.",
+   "human_edge": "The manager hears the occupant and decides the remedy. A filed note is not the resolution.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Less time goes to retyping the status. Hearing occupants and choosing the remedy stay with the lodging manager.",
+   "reach": [
+    {
+     "role": "front office supervisor",
+     "task": "Log a guest complaint at the desk",
+     "learn": "File only a status the manager has already accepted"
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "3-5",
+    "testing_rollout": "2-4",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A complaint status can be drafted from facts the person logged, then checked by that person before it is filed.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "Choosing the remedy for an occupant is a decision with an effect on the guest, so it stays with the lodging manager.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The register stores a guest reference, a policy id, the facts the manager typed, the remedy, and the manager's acceptance. The manager produces the remedy. Spoken words are typed by the manager; nothing is taken from a call recording.",
+    "The workflow starts when the occupant complains and ends when the accepted status is filed. Compensation above the manager's limit, and any legal claim, stay outside it.",
+    "The prior treats the task as amplify and expects a model on most of the wording. The steps disagree: the model may draft the status only, and the remedy stays a human decision.",
+    "Upkeep is the time to keep policy ids and complaint categories current."
+   ],
+   "unknowns": [
+    "Whether the property system already stores a complaint status, so the filing step is smaller than assumed.",
+    "Whether national rules require a works-council check before complaint notes that name staff are kept."
+   ],
+   "research_questions": [
+    "Which complaint fields are already structured in the property system?",
+    "What remedy limit can the lodging manager offer without a further signature?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Checking the drafted complaint status is already in the review step",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2.0,
+      "counted_step_ids": [
+       "s4"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Keep policy ids and complaint categories current",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1.1
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5",
+     "approved_version": "complaint status the lodging manager signed after hearing the occupant",
+     "approval_step_id": "s4",
+     "approver": "lodging manager"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 20.46,
+    "high": 30.08,
+    "basis": "Hearing the occupant and choosing the remedy remain. Only the retype of an accepted status is treated as saved. The range sits under the central net and is not a measured result."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 31.2,
+   "incremental_hours_per_100_baseline_hours": 1.1,
+   "time_saved_pct": 30.1,
+   "speedup": 1.430615,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "11-9081.00:1108",
+   "short": "Set room rates, establish budgets, and allocate funds.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Post the revenue total before setting rates.",
+     "actor": "system",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "BI"
+     ],
+     "inputs": [
+      "posted stays"
+     ],
+     "outputs": [
+      "revenue total"
+     ],
+     "handoff_to": "lodging manager",
+     "share_pct": 18,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "plan-to-forecast",
+     "approver": "none",
+     "labour_scope": "system",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Check revenue figures before setting budgets.",
+     "actor": "lodging manager",
+     "today_means": "system_screen",
+     "systems": [
+      "BI",
+      "ERP"
+     ],
+     "inputs": [
+      "revenue total"
+     ],
+     "outputs": [
+      "checked revenue figures"
+     ],
+     "handoff_to": "finance colleague",
+     "share_pct": 14,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "plan-to-forecast",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Set rates during financial activities.",
+     "actor": "lodging manager",
+     "today_means": "spreadsheet",
+     "systems": [
+      "ERP",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "checked revenue figures"
+     ],
+     "outputs": [
+      "signed room rates"
+     ],
+     "handoff_to": "finance colleague",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "plan-to-forecast",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Complete establishment of budgets for departments.",
+     "actor": "lodging manager",
+     "today_means": "spreadsheet",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "signed room rates",
+      "checked revenue figures"
+     ],
+     "outputs": [
+      "department budgets"
+     ],
+     "handoff_to": "department head",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "plan-to-forecast",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Review commentary on the allocation of funds.",
+     "actor": "lodging manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "BI"
+     ],
+     "inputs": [
+      "signed room rates",
+      "department budgets",
+      "checked revenue figures"
+     ],
+     "outputs": [
+      "approved funds commentary"
+     ],
+     "handoff_to": "finance colleague",
+     "share_pct": 16,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "The signed rates, the department budgets, and the revenue total",
+      "output": "Short commentary in which every figure matches the revenue total",
+      "check": "The lodging manager rejects any figure that is not on the revenue total",
+      "stop": "One draft. If a figure does not match, that sentence is left blank. No second pass.",
+      "why_not_simpler": "The commentary is prose around figures, and a fixed sentence cannot say which department moved"
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "plan-to-forecast",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6",
+     "what": "File the approved allocation of funds.",
+     "actor": "lodging manager",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "approved funds commentary"
+     ],
+     "outputs": [
+      "filed funds allocation"
+     ],
+     "handoff_to": "finance colleague",
+     "share_pct": 12,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "plan-to-forecast",
+     "approver": "lodging manager",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "The revenue total already posts from {OPS_SYSTEM} into {BI}. The lodging manager sets the rates and the department budgets. A draft commentary is checked against those figures, and {ERP} files only the commentary the manager accepted.",
+   "previous_blocker": "Rates and budgets were rebuilt on a sheet because the revenue total was copied out by hand.",
+   "enabler_now": "The booking system already holds the revenue total, so the copy can stop. The rate decision does not require a new model.",
+   "still_hard": "Setting a rate still depends on events, contracts and judgement the total does not contain.",
+   "human_edge": "The manager sets the rate and the allocation. Commentary that does not match the figures is not filed.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "the rate for a room type whose revenue total has moved off the last signed rate"
+   },
+   "altitude": "Less time goes to copying the revenue total. Setting rates, establishing budgets and allocating funds stay with the lodging manager.",
+   "reach": [
+    {
+     "role": "finance colleague",
+     "task": "Record the department budget",
+     "learn": "Use the allocation the lodging manager signed, and do not derive the rate"
+    }
+   ],
+   "build_days": {
+    "coding": "4-6",
+    "integration": "5-8",
+    "testing_rollout": "3-5",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A booking system can post a revenue total on a schedule. That total is not a rate decision.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "Commentary on a budget can be checked figure by figure against a source total before anyone relies on it.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "The revenue total is the scheduled post the property system already runs. It is system time. It is not a new saving and it does not set the rate.",
+    "The allocation record stores the room type, the signed rate, the department, the amount, and the commentary version the manager accepted. The manager produces the rate and the allocation.",
+    "The workflow starts when the period total is posted and ends when the accepted commentary is filed. It does not publish a rate to guests.",
+    "The prior calls the task amplify. The steps keep the rate, the budget and the allocation as human decisions."
+   ],
+   "unknowns": [
+    "Whether a revenue total is already scheduled, or whether someone still assembles it by hand.",
+    "Who is allowed to sign a rate change under this employer's own rules."
+   ],
+   "research_questions": [
+    "Which revenue fields are already posted without rekeying?",
+    "How often does the signed rate actually change? "
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Checking figures and commentary is already in the review steps",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 3.0,
+      "counted_step_ids": [
+       "s2",
+       "s5"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Keep the department list and the rate calendar current",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1.3
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s6",
+     "approved_version": "funds commentary the lodging manager signed against the revenue total",
+     "approval_step_id": "s5",
+     "approver": "lodging manager"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 24.98,
+    "high": 36.73,
+    "basis": "The rate, the budget and the allocation remain human. The existing revenue total is excluded from the baseline. 18 percent is work the system already does and is not saved human labour. The range sits under the central net and is not a measured result."
+   },
+   "focal_role_share_pct": 82,
+   "excluded_labour_share_pct": 18,
+   "gross_time_saved_pct": 38.04878,
+   "incremental_hours_per_100_baseline_hours": 1.3,
+   "time_saved_pct": 36.74878,
+   "speedup": 1.580997,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "11-9081.00:1109",
+   "short": "Confer with other managers on hotel coordination.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Prepare hotel activities before the managers meet.",
+     "actor": "lodging manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "CALENDAR"
+     ],
+     "inputs": [
+      "activity list"
+     ],
+     "outputs": [
+      "meeting brief"
+     ],
+     "handoff_to": "other managers",
+     "share_pct": 22,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "none",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Confer with other managers on hotel coordination.",
+     "actor": "lodging manager",
+     "today_means": "meeting_call",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "meeting brief"
+     ],
+     "outputs": [
+      "coordination decisions"
+     ],
+     "handoff_to": "other managers",
+     "share_pct": 56,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Record coordination agreed with other managers.",
+     "actor": "lodging manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "coordination decisions"
+     ],
+     "outputs": [
+      "coordination note"
+     ],
+     "handoff_to": "other managers",
+     "share_pct": 22,
+     "fate": "person_does",
+     "remaining_pct": 65,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "The meeting stays a meeting. {CALENDAR} only holds the time and the activity list the managers already keep. The lodging manager writes the coordination note after the meeting. Nothing is sent on the manager's behalf.",
+   "previous_blocker": "The activity list and the note lived in the same mailbox thread as the meeting itself.",
+   "enabler_now": "A calendar can hold the list. It cannot hold the coordination.",
+   "still_hard": "Coordination depends on what the other managers will actually do this week.",
+   "human_edge": "The managers still have to agree. A list of activities is not the agreement.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The week still contains this meeting. Preparing the activity list is shorter. The coordination decision does not move.",
+   "reach": [
+    {
+     "role": "front office supervisor",
+     "task": "Align the desk with housekeeping on the day",
+     "learn": "Bring the activity list, and leave the coordination to the meeting"
+    }
+   ],
+   "build_days": {
+    "coding": "1-2",
+    "integration": "1-2",
+    "testing_rollout": "1-2",
+    "consent_and_access": "0-1"
+   },
+   "run_cost": "none",
+   "evidence": [
+    {
+     "claim": "A coordination meeting between managers is not replaced by a generated note.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "The brief is the date, the activity names and the open items the manager typed. No extract is taken from a recorded meeting.",
+    "The workflow is the meeting itself. It ends when the manager writes the note. It does not assign work to staff.",
+    "The prior classes this as human. The steps agree. Almost all of the time stays in the room.",
+    "Upkeep is limited to keeping the activity names on the calendar."
+   ],
+   "unknowns": [
+    "Whether these meetings are already short stand-ups or a weekly hour.",
+    "Whether another manager, rather than the lodging manager, owns the note."
+   ],
+   "research_questions": [
+    "Which activities must be on the list before the meeting is useful?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Preparing the activity list is already in the opening step",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2.0,
+      "counted_step_ids": [
+       "s1"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Keep activity names on the shared calendar",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 0.5
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 13.12,
+    "high": 19.28,
+    "basis": "The meeting and the agreement stay. A small amount of list preparation is shorter. The range sits under the central net and is not a measured result."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 19.8,
+   "incremental_hours_per_100_baseline_hours": 0.5,
+   "time_saved_pct": 19.3,
+   "speedup": 1.239157,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "11-9081.00:1104",
+   "short": "Greet guests and register the accepted stay.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Greet guests as they arrive.",
+     "actor": "lodging manager",
+     "today_means": "in_person",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "arriving guest"
+     ],
+     "outputs": [
+      "greeting done"
+     ],
+     "handoff_to": "guest",
+     "share_pct": 38,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Check the booking before you register guests.",
+     "actor": "lodging manager",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "greeting done",
+      "existing reservation"
+     ],
+     "outputs": [
+      "identity check"
+     ],
+     "handoff_to": "guest",
+     "share_pct": 22,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Accept which guests to register.",
+     "actor": "lodging manager",
+     "today_means": "in_person",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "identity check"
+     ],
+     "outputs": [
+      "accepted registration"
+     ],
+     "handoff_to": "guest",
+     "share_pct": 22,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Register accepted guests on the booking record.",
+     "actor": "lodging manager",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "accepted registration"
+     ],
+     "outputs": [
+      "registered stay"
+     ],
+     "handoff_to": "guest",
+     "share_pct": 18,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "lodging manager",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "The lodging manager greets the guest and checks the reservation the {OPS_SYSTEM} already holds. The manager accepts the stay. Only then does the system write the registration. The existing reservation is not new work.",
+   "previous_blocker": "The registration was typed again even when the reservation was already on the screen.",
+   "enabler_now": "The reservation is already a record. Writing it a second time is a field copy after the manager accepts.",
+   "still_hard": "Greeting the guest, and refusing a stay, still happen at the desk with the person.",
+   "human_edge": "The manager greets the guest and accepts the stay. The register does not greet anyone.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Greeting stays at the desk. The second typing of an accepted registration can stop. The manager still accepts each stay.",
+   "reach": [
+    {
+     "role": "hotel desk clerk",
+     "task": "Register a guest who already has a reservation",
+     "learn": "Write the stay only after the same acceptance the desk already uses"
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "3-5",
+    "testing_rollout": "2-3",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "none",
+   "evidence": [
+    {
+     "claim": "Writing a registration from an existing reservation is a field copy once a person has accepted the guest.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "Greeting a guest and refusing a stay are done by a person at the desk.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The registration write stores the reservation id, the guest name as the manager confirmed it, the room and the arrival time. The manager produces the acceptance. The reservation itself already exists and is not counted as saved human time.",
+    "The workflow starts when the guest arrives and ends when the accepted registration is written. Payment and rooming disputes stay outside it.",
+    "The prior classes greeting and registration as human. The steps agree on the greeting and the acceptance, and only the retype becomes a write.",
+    "Upkeep is the field map from the reservation to the registration."
+   ],
+   "unknowns": [
+    "Whether registration is already written by the reservation, with the desk only confirming it.",
+    "Which identity checks national rules require before a stay is accepted."
+   ],
+   "research_questions": [
+    "Does the property system already copy the reservation into the stay record?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Checking identity before registration is already in the review step",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2.0,
+      "counted_step_ids": [
+       "s2"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Keep the reservation-to-registration field map current",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 0.7
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "registration the lodging manager accepted after greeting the guest",
+     "approval_step_id": "s3",
+     "approver": "lodging manager"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 20.74,
+    "high": 30.48,
+    "basis": "Greeting and acceptance remain. The existing reservation is not treated as saved time. Only the retype after acceptance is. The range sits under the central net and is not a measured result."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 31.2,
+   "incremental_hours_per_100_baseline_hours": 0.7,
+   "time_saved_pct": 30.5,
+   "speedup": 1.438849,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "Less of the week goes to retyping complaint notes, rate commentary and registrations. Greeting guests, the managers' meeting, and setting rates stay with the lodging manager.",
+  "reach": [
+   "Front-office supervisors can file a complaint status only after the lodging manager has accepted it",
+   "Finance colleagues can use the funds allocation the lodging manager signed"
+  ],
+  "skills_to_grow": [
+   "Checking a complaint status against the logged facts before it is filed",
+   "Reading the revenue total before setting a rate",
+   "Accepting a registration before it is written"
+  ],
+  "ambitious_version": "Each complaint has a status tied to the facts the manager heard, and each rate change is a decision the manager signed against the revenue total."
+ },
+ "_meta": {
+  "model": "grok-4.7",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "11-9081.00",
+   "title": "Lodging Managers",
+   "tasks": 24,
+   "function": "Management"
+  },
+  "digest": "research/digests-minor/11-9.md",
+  "digest_sha256": "a4940c09e4dc73efe2b80ad6ea9bfcc88a5229c01f1c500b7897275e596ab193",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-15T15:31:52"
+ }
+}

@@ -1,0 +1,2312 @@
+{
+  "role_id": "recruiter",
+  "tasks": [
+    {
+      "uid": "13-1071.00:18868",
+      "short": "Review applications against the vacancy requirements.",
+      "steps": [
+        {
+          "id": "s1",
+          "what": "Collect applications and the approved vacancy requirements",
+          "actor": "recruiter",
+          "today_means": "system_screen",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "candidate application",
+            "approved vacancy brief",
+            "selection criteria"
+          ],
+          "outputs": [
+            "application bundle"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 15,
+          "fate": "machine",
+          "remaining_pct": 0,
+          "block": "integration",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "read",
+          "human_gate": false
+        },
+        {
+          "id": "s2",
+          "what": "Read CVs and record evidence for each requirement",
+          "actor": "recruiter",
+          "today_means": "document",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "application bundle"
+          ],
+          "outputs": [
+            "candidate evidence draft"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 25,
+          "fate": "person_reviews",
+          "remaining_pct": 40,
+          "block": "artefact_generator",
+          "rung": "deterministic_plus_loop",
+          "loop": {
+            "purpose": "extract",
+            "input": "Application text and approved requirement identifiers; exclude unrelated sensitive data.",
+            "output": "Unranked evidence table with source passages and explicit unknowns.",
+            "check": "Validate field types, source spans and requirement IDs. Recruiter checks every material claim against the original; no inferred traits or score.",
+            "stop": "At most two calls, 8,000 input tokens and 2,000 output tokens per call, 30 seconds total. Missing evidence, validation failure or timeout routes to the recruiter. No tools or external writes.",
+            "why_not_simpler": "Structured forms work first; varied CV prose needs extraction. A model must not select candidates."
+          },
+          "authority": "draft",
+          "human_gate": true
+        },
+        {
+          "id": "s3",
+          "what": "Compare evidence with requirements and record a screening decision",
+          "actor": "recruiter",
+          "today_means": "system_screen",
+          "systems": [
+            "Recruitee"
+          ],
+          "inputs": [
+            "candidate evidence draft",
+            "selection criteria"
+          ],
+          "outputs": [
+            "screening decision",
+            "reviewed application dossier"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 40,
+          "fate": "person_does",
+          "remaining_pct": 75,
+          "block": "judgement_step",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        },
+        {
+          "id": "s4",
+          "what": "Resolve unclear qualifications and confirm the screening decision",
+          "actor": "recruiter",
+          "today_means": "meeting_call",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "reviewed application dossier"
+          ],
+          "outputs": [
+            "candidate clarification",
+            "screening decision"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 15,
+          "fate": "person_does",
+          "remaining_pct": 80,
+          "block": "conversation",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "act_external",
+          "human_gate": true
+        },
+        {
+          "id": "s5",
+          "what": "File checked evidence and update the screening record",
+          "actor": "recruiter",
+          "today_means": "system_screen",
+          "systems": [
+            "Recruitee"
+          ],
+          "inputs": [
+            "candidate clarification",
+            "screening decision",
+            "reviewed application dossier"
+          ],
+          "outputs": [
+            "reviewed application dossier",
+            "approved stage event"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 5,
+          "fate": "machine",
+          "remaining_pct": 0,
+          "block": "workflow_automation",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": false
+        }
+      ],
+      "design": "Keep Recruitee as the candidate record and add an evidence view on a governed service with a small extraction loop. Each application event builds an unranked dossier; the recruiter checks originals and records the screening decision before any stage event can drive communication.",
+      "previous_blocker": "Hypothesis: free-text CVs and inconsistent vacancy requirements forced repeated reading and copying.",
+      "enabler_now": "The supplied REST interfaces support joins; AI coding lowers implementation effort, while bounded extraction handles the text that forms cannot replace.",
+      "still_hard": "Checking omissions and false equivalences can take as long as reading a short CV. A tidy table can still bias the reviewer.",
+      "human_edge": "Recognise relevant experience expressed in unfamiliar language and let candidates correct missing evidence.",
+      "ambition": {
+        "kind": "serve_new_group",
+        "what": "Offer a clarification route for applicants with nonstandard qualifications instead of silently treating missing evidence as failure."
+      },
+      "altitude": "The recruiter reviews evidence gaps and challenges unnecessary requirements. Hiring authority stays with the existing decision owners.",
+      "reach": [
+        {
+          "role": "hrbp",
+          "task": "Improve vacancy requirements with managers",
+          "learn": "Job analysis and the difference between necessary and preferred criteria."
+        }
+      ],
+      "build_days": {
+        "coding": "3-6",
+        "integration": "3-6",
+        "testing_rollout": "5-10",
+        "consent_and_access": "3-8"
+      },
+      "run_cost": "low",
+      "evidence": [
+        {
+          "claim": "A Dutch AFAS partner describes application profiling and vacancy matching in Profit 8; it gives no accuracy result.",
+          "grade": "E2",
+          "source": "[S4]"
+        },
+        {
+          "claim": "Annex III includes AI application analysis and candidate evaluation. Human review does not itself remove that classification.",
+          "grade": "E3",
+          "source": "[S10]"
+        },
+        {
+          "claim": "The proposed workflow and timing are an unmeasured scenario, not a customer result.",
+          "grade": "E0",
+          "source": "model knowledge"
+        }
+      ],
+      "assumptions": [
+        "E0 planning scenario, not observations: all today_means, step shares, remaining percentages and build-day ranges require validation with the two recruiters. Only the company, systems and role totals are supplied facts.",
+        "Hours are annual recruiter labour for both people: 3200 times input task.share. After hours multiply this by sum(share_pct times remaining_pct)/10000. Input rounded hours_per_fte are not used.",
+        "Each step counts only recruiter effort, including its expected review, retries and exceptions; other actors appear as handoff recipients. Existing manager, specialist and HR administration work is not claimed as saved.",
+        "Shared records are reused. The 80-hour annual recruiter operating reserve in job.md is additional to these steps. New IT, privacy, specialist and manager effort remains unpriced.",
+        "Build ranges are marginal working effort after a shared event ledger, access controls and connector host exist; do not add them into a project calendar. Consent_and_access estimates preparation work, not the time until legal permission.",
+        "All external actions check the current record version, recipient and approval scope before sending. Duplicate events are ignored; failed deliveries remain in a visible queue. Approval changes invalidate pending actions.",
+        "No assumed AFAS version or matching licence. The proposal does not use its match score.",
+        "Treat the evidence extractor as a recruitment high-risk use unless a documented legal assessment establishes an applicable exception. Complete the DPIA, provider/deployer assessment and required works-council process before live use.",
+        "jev agrees on judgement and low rule coverage; its automate label and 0.702 nearly-all probability are not a savings estimate.",
+        "A decision recorded before clarification is provisional. The recruiter confirms or revises it after clarification; only that approved version can drive a stage event."
+      ],
+      "unknowns": [
+        "Application volume, CV languages, existing screening time and rate of missing requirements.",
+        "Whether reviewers will actually open source evidence and can challenge every proposed field."
+      ],
+      "research_questions": [
+        "Does a blinded sample preserve all job-relevant evidence, including unusual career paths?",
+        "Does measured checking plus exception time fit the 40% extraction-review allowance?"
+      ]
+    },
+    {
+      "uid": "13-1071.00:18860",
+      "short": "Explain duties, pay, benefits, shifts and working conditions to applicants.",
+      "steps": [
+        {
+          "id": "s1",
+          "what": "Find the current vacancy terms and policy documents",
+          "actor": "recruiter",
+          "today_means": "document",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "approved vacancy brief",
+            "approved terms catalogue"
+          ],
+          "outputs": [
+            "candidate information pack"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 25,
+          "fate": "machine",
+          "remaining_pct": 0,
+          "block": "artefact_generator",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "read",
+          "human_gate": false
+        },
+        {
+          "id": "s2",
+          "what": "Send routine information about the role",
+          "actor": "recruiter",
+          "today_means": "email_chat",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "candidate information pack",
+            "candidate contact record"
+          ],
+          "outputs": [
+            "candidate information message"
+          ],
+          "handoff_to": "external",
+          "share_pct": 30,
+          "fate": "machine",
+          "remaining_pct": 0,
+          "block": "notification",
+          "rung": "configure",
+          "loop": null,
+          "authority": "act_external",
+          "human_gate": false
+        },
+        {
+          "id": "s3",
+          "what": "Answer questions that do not match the standard information",
+          "actor": "recruiter",
+          "today_means": "email_chat",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "candidate question",
+            "candidate information pack"
+          ],
+          "outputs": [
+            "reviewed candidate answer"
+          ],
+          "handoff_to": "external",
+          "share_pct": 15,
+          "fate": "person_reviews",
+          "remaining_pct": 40,
+          "block": "answer_desk",
+          "rung": "deterministic_plus_loop",
+          "loop": {
+            "purpose": "draft",
+            "input": "Candidate question and current approved passages only.",
+            "output": "Answer draft with clause references or an explicit referral.",
+            "check": "Recruiter confirms the intended meaning; dates, pay and shifts must match source fields exactly. Unknown policy means no answer.",
+            "stop": "At most two calls, 8,000 input tokens and 2,000 output tokens per call, 30 seconds total. Missing evidence, validation failure or timeout routes to the recruiter. No tools or external writes.",
+            "why_not_simpler": "Templates cover routine questions; free-text questions can need a short paraphrase, never a new promise."
+          },
+          "authority": "act_external",
+          "human_gate": true
+        },
+        {
+          "id": "s4",
+          "what": "Discuss personal concerns and employment tradeoffs",
+          "actor": "recruiter",
+          "today_means": "meeting_call",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "candidate question",
+            "candidate information pack"
+          ],
+          "outputs": [
+            "candidate preferences"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 20,
+          "fate": "person_does",
+          "remaining_pct": 100,
+          "block": "conversation",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "act_external",
+          "human_gate": true
+        },
+        {
+          "id": "s5",
+          "what": "Record the answer and any promised follow-up",
+          "actor": "recruiter",
+          "today_means": "system_screen",
+          "systems": [
+            "Recruitee"
+          ],
+          "inputs": [
+            "reviewed candidate answer",
+            "candidate preferences"
+          ],
+          "outputs": [
+            "communication record",
+            "follow-up request"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 10,
+          "fate": "machine",
+          "remaining_pct": 0,
+          "block": "workflow_automation",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": false
+        }
+      ],
+      "design": "Use versioned vacancy facts and approved clauses to generate a candidate information pack in Recruitee, with Microsoft 365 delivering tracked messages. Routine messages use fixed templates; a bounded drafting loop proposes answers to unusual wording, and a recruiter approves each such answer.",
+      "previous_blocker": "Hypothesis: shift details and terms sit in several documents, so each reply starts with another search.",
+      "enabler_now": "The supplied systems can hold versioned facts; deterministic templates solve the repeated questions without buying a conversational agent.",
+      "still_hard": "Two CAO contexts, changing shifts and sensitive personal concerns require the right owner. Stale source data makes even a perfect template wrong.",
+      "human_edge": "Find out whether a practical concern about nights, transport or income makes this job unsuitable for this person.",
+      "ambition": {
+        "kind": "new_service",
+        "what": "Give candidates a consistent preview of the actual shift and pay conditions before they commit to interviews."
+      },
+      "altitude": "The recruiter spends conversation time on choices that affect acceptance. Compensation policy remains with cnb and the authorised manager.",
+      "reach": [
+        {
+          "role": "cnb",
+          "task": "Maintain the candidate explanation of approved benefits",
+          "learn": "CAO scope, approved pay wording and escalation boundaries."
+        }
+      ],
+      "build_days": {
+        "coding": "2-4",
+        "integration": "2-4",
+        "testing_rollout": "3-5",
+        "consent_and_access": "2-4"
+      },
+      "run_cost": "low",
+      "evidence": [
+        {
+          "claim": "Structured facts and approved templates can answer routine questions without generative AI.",
+          "grade": "E1",
+          "source": "model knowledge"
+        },
+        {
+          "claim": "The Article 50 commentary distinguishes direct AI interaction from substantively reviewed emails.",
+          "grade": "E3",
+          "source": "[S9]"
+        },
+        {
+          "claim": "The proposed workflow and timing are an unmeasured scenario, not a customer result.",
+          "grade": "E0",
+          "source": "model knowledge"
+        }
+      ],
+      "assumptions": [
+        "E0 planning scenario, not observations: all today_means, step shares, remaining percentages and build-day ranges require validation with the two recruiters. Only the company, systems and role totals are supplied facts.",
+        "Hours are annual recruiter labour for both people: 3200 times input task.share. After hours multiply this by sum(share_pct times remaining_pct)/10000. Input rounded hours_per_fte are not used.",
+        "Each step counts only recruiter effort, including its expected review, retries and exceptions; other actors appear as handoff recipients. Existing manager, specialist and HR administration work is not claimed as saved.",
+        "Shared records are reused. The 80-hour annual recruiter operating reserve in job.md is additional to these steps. New IT, privacy, specialist and manager effort remains unpriced.",
+        "Build ranges are marginal working effort after a shared event ledger, access controls and connector host exist; do not add them into a project calendar. Consent_and_access estimates preparation work, not the time until legal permission.",
+        "All external actions check the current record version, recipient and approval scope before sending. Duplicate events are ignored; failed deliveries remain in a visible queue. Approval changes invalidate pending actions.",
+        "Routine sends require an approved terms version, verified vacancy and recipient; a mismatch stops delivery.",
+        "The loop is internal. No candidate-facing chatbot is assumed. A later direct AI interface needs a clear AI notice and a new classification assessment.",
+        "jev model_needed 0.21 fits the small drafting step; public terms do not make the candidate conversation public data."
+      ],
+      "unknowns": [
+        "Who signs off pay and shift facts, available languages and how often terms change."
+      ],
+      "research_questions": [
+        "Can every sent factual claim be reproduced from its approved source version?",
+        "How many queries need judgement or a call rather than a template?"
+      ]
+    },
+    {
+      "uid": "13-1071.00:18871",
+      "short": "Recommend applicants, agree hiring decisions and prepare approved offers.",
+      "steps": [
+        {
+          "id": "s1",
+          "what": "Assemble application, interview, reference and assessment evidence",
+          "actor": "recruiter",
+          "today_means": "document",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "reviewed application dossier",
+            "interview record",
+            "reference outcome",
+            "assessment completion"
+          ],
+          "outputs": [
+            "selection pack"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 20,
+          "fate": "machine",
+          "remaining_pct": 0,
+          "block": "artefact_generator",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "read",
+          "human_gate": false
+        },
+        {
+          "id": "s2",
+          "what": "Make a reasoned recommendation against approved criteria",
+          "actor": "recruiter",
+          "today_means": "document",
+          "systems": [
+            "Recruitee"
+          ],
+          "inputs": [
+            "selection pack",
+            "selection criteria"
+          ],
+          "outputs": [
+            "hiring recommendation"
+          ],
+          "handoff_to": "hiring-manager",
+          "share_pct": 25,
+          "fate": "person_does",
+          "remaining_pct": 100,
+          "block": "judgement_step",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        },
+        {
+          "id": "s3",
+          "what": "Discuss tradeoffs and obtain the hiring decision",
+          "actor": "recruiter",
+          "today_means": "meeting_call",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "hiring recommendation"
+          ],
+          "outputs": [
+            "approved hiring decision"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 25,
+          "fate": "person_does",
+          "remaining_pct": 100,
+          "block": "conversation",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        },
+        {
+          "id": "s4",
+          "what": "Check the proposed offer and obtain authorised terms approval",
+          "actor": "recruiter",
+          "today_means": "document",
+          "systems": [
+            "Recruitee",
+            "AFAS Profit",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "approved hiring decision",
+            "approved terms catalogue"
+          ],
+          "outputs": [
+            "approved offer"
+          ],
+          "handoff_to": "external",
+          "share_pct": 20,
+          "fate": "person_reviews",
+          "remaining_pct": 50,
+          "block": "artefact_generator",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "act_external",
+          "human_gate": true
+        },
+        {
+          "id": "s5",
+          "what": "Verify acceptance and hand the agreed hire to HR administration",
+          "actor": "recruiter",
+          "today_means": "email_chat",
+          "systems": [
+            "Recruitee",
+            "AFAS Profit"
+          ],
+          "inputs": [
+            "approved offer",
+            "candidate acceptance"
+          ],
+          "outputs": [
+            "hire handoff",
+            "approved stage event"
+          ],
+          "handoff_to": "hr-admin",
+          "share_pct": 10,
+          "fate": "person_reviews",
+          "remaining_pct": 20,
+          "block": "integration",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        }
+      ],
+      "design": "Generate a selection pack from approved records, then route human decisions and offer approvals through a fixed workflow. The governed service creates an offer from approved terms and passes a verified acceptance to AFAS for HR administration, with acknowledgement returned to Recruitee.",
+      "previous_blocker": "Hypothesis: managers receive partial email bundles and recruiters retype approved terms into a second system.",
+      "enabler_now": "Consistent candidate and vacancy IDs make record assembly and handoff deterministic; the decision need not be delegated to a model.",
+      "still_hard": "Disagreement among interviewers, inaccessible managers, exceptions to pay bands and premature start dates remain real constraints.",
+      "human_edge": "Weigh conflicting evidence, ask what the panel missed and take responsibility for the recommendation.",
+      "ambition": {
+        "kind": "decide_more_often",
+        "what": "Run short evidence-based decision meetings when a complete dossier is ready rather than accumulating a weekly email pile."
+      },
+      "altitude": "The recruiter owns dossier completeness and can return an unsupported recommendation. Managers retain hiring and compensation approval rights.",
+      "reach": [
+        {
+          "role": "hr-admin",
+          "task": "Prepare a validated hire handoff",
+          "learn": "Mandatory AFAS fields, identity checks and employment-contract ownership."
+        }
+      ],
+      "build_days": {
+        "coding": "3-5",
+        "integration": "4-8",
+        "testing_rollout": "4-7",
+        "consent_and_access": "3-6"
+      },
+      "run_cost": "low",
+      "evidence": [
+        {
+          "claim": "Human approval needs actual authority to depart from an automated recommendation; a ceremonial click is not meaningful review.",
+          "grade": "E1",
+          "source": "model knowledge"
+        },
+        {
+          "claim": "High-risk deployer provisions require competent human oversight.",
+          "grade": "E3",
+          "source": "[S10]"
+        },
+        {
+          "claim": "The proposed workflow and timing are an unmeasured scenario, not a customer result.",
+          "grade": "E0",
+          "source": "model knowledge"
+        }
+      ],
+      "assumptions": [
+        "E0 planning scenario, not observations: all today_means, step shares, remaining percentages and build-day ranges require validation with the two recruiters. Only the company, systems and role totals are supplied facts.",
+        "Hours are annual recruiter labour for both people: 3200 times input task.share. After hours multiply this by sum(share_pct times remaining_pct)/10000. Input rounded hours_per_fte are not used.",
+        "Each step counts only recruiter effort, including its expected review, retries and exceptions; other actors appear as handoff recipients. Existing manager, specialist and HR administration work is not claimed as saved.",
+        "Shared records are reused. The 80-hour annual recruiter operating reserve in job.md is additional to these steps. New IT, privacy, specialist and manager effort remains unpriced.",
+        "Build ranges are marginal working effort after a shared event ledger, access controls and connector host exist; do not add them into a project calendar. Consent_and_access estimates preparation work, not the time until legal permission.",
+        "All external actions check the current record version, recipient and approval scope before sending. Duplicate events are ignored; failed deliveries remain in a visible queue. Approval changes invalidate pending actions.",
+        "Offer drafting and acceptance handoff live here; status notices live only in 18857. Contract execution and onboarding administration stay with hr-admin.",
+        "Model-written recommendations and ranking are excluded. Upstream AI evidence still needs its own high-risk controls.",
+        "jev under-half rule coverage and late checking fit the decision steps; workflow_automation is the assembly and routing layer."
+      ],
+      "unknowns": [
+        "Manager response times, offer-authority matrix and contract handoff errors."
+      ],
+      "research_questions": [
+        "Can the approver see the original evidence and record a contrary decision?",
+        "Does an acceptance retry produce exactly one acknowledged hire handoff?"
+      ]
+    },
+    {
+      "uid": "13-1071.00:18869",
+      "short": "Arrange permitted applicant assessments and handle their administration.",
+      "steps": [
+        {
+          "id": "s1",
+          "what": "Check assessment suitability, permission and accommodation needs",
+          "actor": "recruiter",
+          "today_means": "meeting_call",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "approved assessment kit",
+            "candidate contact record"
+          ],
+          "outputs": [
+            "assessment request"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 20,
+          "fate": "person_does",
+          "remaining_pct": 80,
+          "block": "judgement_step",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        },
+        {
+          "id": "s2",
+          "what": "Agree a slot with the applicant and assessor",
+          "actor": "recruiter",
+          "today_means": "email_chat",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "assessment request",
+            "assessor availability",
+            "candidate availability"
+          ],
+          "outputs": [
+            "assessment booking"
+          ],
+          "handoff_to": "external",
+          "share_pct": 30,
+          "fate": "person_reviews",
+          "remaining_pct": 10,
+          "block": "workflow_automation",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "act_external",
+          "human_gate": true
+        },
+        {
+          "id": "s3",
+          "what": "Send instructions, reminders and changes",
+          "actor": "recruiter",
+          "today_means": "email_chat",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "assessment booking",
+            "approved assessment kit"
+          ],
+          "outputs": [
+            "assessment instructions"
+          ],
+          "handoff_to": "external",
+          "share_pct": 20,
+          "fate": "machine",
+          "remaining_pct": 0,
+          "block": "notification",
+          "rung": "configure",
+          "loop": null,
+          "authority": "act_external",
+          "human_gate": false
+        },
+        {
+          "id": "s4",
+          "what": "Support assessment delivery and resolve practical problems",
+          "actor": "recruiter",
+          "today_means": "in_person",
+          "systems": [
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "assessment instructions"
+          ],
+          "outputs": [
+            "assessment session record"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 20,
+          "fate": "person_does",
+          "remaining_pct": 100,
+          "block": "conversation",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "act_external",
+          "human_gate": true
+        },
+        {
+          "id": "s5",
+          "what": "Check completion and record the permitted outcome",
+          "actor": "recruiter",
+          "today_means": "system_screen",
+          "systems": [
+            "Recruitee"
+          ],
+          "inputs": [
+            "assessment session record",
+            "assessor outcome"
+          ],
+          "outputs": [
+            "assessment completion"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 10,
+          "fate": "person_reviews",
+          "remaining_pct": 20,
+          "block": "crud_app",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        }
+      ],
+      "design": "A deterministic booking workflow joins Recruitee requests to Microsoft 365 calendars and an approved assessment catalogue. Recruiters authorise suitability and accommodations, supervise the human portion and record only a permitted outcome; automated reminders never interpret a test.",
+      "previous_blocker": "Hypothesis: calendars, provider replies and completion records are reconciled in email.",
+      "enabler_now": "Calendar and ATS interfaces support booking, reminders and completion tracking; no model is needed for those steps.",
+      "still_hard": "The O*NET label mixes skills tests with medical, drug and psychological tests. The input does not establish that any sensitive testing is lawful or used here.",
+      "human_edge": "Notice a candidate who needs a different format and distinguish an access barrier from inability to do the job.",
+      "ambition": {
+        "kind": "serve_new_group",
+        "what": "Offer assessment slots compatible with night shifts and a human route for accommodation requests."
+      },
+      "altitude": "The recruiter manages access and exceptions. Qualified assessors keep responsibility for test administration and interpretation where required.",
+      "reach": [
+        {
+          "role": "ld",
+          "task": "Coordinate assessment and onboarding course availability",
+          "learn": "Accessible assessment logistics and the boundary between recruitment and training."
+        }
+      ],
+      "build_days": {
+        "coding": "2-4",
+        "integration": "3-6",
+        "testing_rollout": "3-5",
+        "consent_and_access": "3-7"
+      },
+      "run_cost": "low",
+      "evidence": [
+        {
+          "claim": "Scheduling is a fixed workflow; suitability and sensitive assessment outcomes need separate decisions.",
+          "grade": "E1",
+          "source": "model knowledge"
+        },
+        {
+          "claim": "Workplace emotion inference is prohibited except narrow medical or safety uses.",
+          "grade": "E3",
+          "source": "[S10]"
+        },
+        {
+          "claim": "The proposed workflow and timing are an unmeasured scenario, not a customer result.",
+          "grade": "E0",
+          "source": "model knowledge"
+        }
+      ],
+      "assumptions": [
+        "E0 planning scenario, not observations: all today_means, step shares, remaining percentages and build-day ranges require validation with the two recruiters. Only the company, systems and role totals are supplied facts.",
+        "Hours are annual recruiter labour for both people: 3200 times input task.share. After hours multiply this by sum(share_pct times remaining_pct)/10000. Input rounded hours_per_fte are not used.",
+        "Each step counts only recruiter effort, including its expected review, retries and exceptions; other actors appear as handoff recipients. Existing manager, specialist and HR administration work is not claimed as saved.",
+        "Shared records are reused. The 80-hour annual recruiter operating reserve in job.md is additional to these steps. New IT, privacy, specialist and manager effort remains unpriced.",
+        "Build ranges are marginal working effort after a shared event ledger, access controls and connector host exist; do not add them into a project calendar. Consent_and_access estimates preparation work, not the time until legal permission.",
+        "All external actions check the current record version, recipient and approval scope before sending. Duplicate events are ignored; failed deliveries remain in a visible queue. Approval changes invalidate pending actions.",
+        "Scope is ordinary lawful job-skill assessments. Medical/drug testing is disabled unless a separately confirmed legal route exists; candidate agreement alone is insufficient.",
+        "Task 1002 owns test design and validation; this task owns each candidate session. No session minutes are counted twice.",
+        "jev human class misses administration savings; workflow_automation 0.96 fits. Its special-data 0.99 flags the bundled task, not every skills booking."
+      ],
+      "unknowns": [
+        "Which assessments exist, provider calendar access, no-show rates and lawful assessment scope."
+      ],
+      "research_questions": [
+        "Can a candidate request an accommodation without disclosing a diagnosis to the ATS?",
+        "What fraction of bookings needs manual repair, and does the 10% allowance cover it?"
+      ]
+    },
+    {
+      "uid": "13-1071.00:18857",
+      "short": "Keep applicants informed about their application status.",
+      "steps": [
+        {
+          "id": "s1",
+          "what": "Check the latest application stage and approved decision",
+          "actor": "recruiter",
+          "today_means": "system_screen",
+          "systems": [
+            "Recruitee"
+          ],
+          "inputs": [
+            "approved stage event",
+            "communication record"
+          ],
+          "outputs": [
+            "current communication state"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 20,
+          "fate": "machine",
+          "remaining_pct": 0,
+          "block": "integration",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "read",
+          "human_gate": false
+        },
+        {
+          "id": "s2",
+          "what": "Chase overdue feedback and missing decisions",
+          "actor": "recruiter",
+          "today_means": "email_chat",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "current communication state",
+            "stage due date"
+          ],
+          "outputs": [
+            "decision reminder"
+          ],
+          "handoff_to": "hiring-manager",
+          "share_pct": 20,
+          "fate": "machine",
+          "remaining_pct": 0,
+          "block": "workflow_automation",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": false
+        },
+        {
+          "id": "s3",
+          "what": "Arrange interviews and send routine receipts, invitations and holding updates",
+          "actor": "recruiter",
+          "today_means": "email_chat",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "current communication state",
+            "approved message templates"
+          ],
+          "outputs": [
+            "candidate status message"
+          ],
+          "handoff_to": "external",
+          "share_pct": 25,
+          "fate": "machine",
+          "remaining_pct": 0,
+          "block": "notification",
+          "rung": "configure",
+          "loop": null,
+          "authority": "act_external",
+          "human_gate": false
+        },
+        {
+          "id": "s4",
+          "what": "Approve and explain rejections, withdrawals or changed commitments",
+          "actor": "recruiter",
+          "today_means": "meeting_call",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "approved hiring decision",
+            "screening decision",
+            "current communication state"
+          ],
+          "outputs": [
+            "candidate decision message"
+          ],
+          "handoff_to": "external",
+          "share_pct": 25,
+          "fate": "person_does",
+          "remaining_pct": 80,
+          "block": "conversation",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "act_external",
+          "human_gate": true
+        },
+        {
+          "id": "s5",
+          "what": "Resolve replies, delivery failures and disputed status",
+          "actor": "recruiter",
+          "today_means": "email_chat",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "candidate status message",
+            "candidate decision message",
+            "candidate reply"
+          ],
+          "outputs": [
+            "communication record",
+            "follow-up request"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 10,
+          "fate": "person_does",
+          "remaining_pct": 70,
+          "block": "workflow_automation",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        }
+      ],
+      "design": "Use Recruitee events and a small delivery ledger to generate approved status templates and internal deadline reminders. Messages carry a vacancy and stage version; a send is cancelled when a decision changes, and rejection content requires a recruiter gate.",
+      "previous_blocker": "Hypothesis: an inbox and a spreadsheet act as the real queue because system stages are not trusted.",
+      "enabler_now": "Explicit state transitions, delivery receipts and idempotent sends solve a known sequence with code; an autonomous agent adds no needed capability.",
+      "still_hard": "A manager who has not decided cannot be replaced by an optimistic holding email. Stale stages and changed recipients can cause harmful sends.",
+      "human_edge": "Explain an adverse decision respectfully, correct a mistake and recognise when the applicant needs a conversation.",
+      "ambition": {
+        "kind": "new_service",
+        "what": "Give every applicant a visible next update date and an accountable human contact."
+      },
+      "altitude": "The recruiter owns promised update dates and escalates overdue decisions. They no longer check each inbox thread to find the next action.",
+      "reach": [],
+      "build_days": {
+        "coding": "2-4",
+        "integration": "3-5",
+        "testing_rollout": "4-7",
+        "consent_and_access": "2-4"
+      },
+      "run_cost": "low",
+      "evidence": [
+        {
+          "claim": "Uniper reported shorter hiring stages after making overdue work visible; the partnership report does not validate Noordhaven hours.",
+          "grade": "E3",
+          "source": "[S1]"
+        },
+        {
+          "claim": "The proposed workflow and timing are an unmeasured scenario, not a customer result.",
+          "grade": "E0",
+          "source": "model knowledge"
+        }
+      ],
+      "assumptions": [
+        "E0 planning scenario, not observations: all today_means, step shares, remaining percentages and build-day ranges require validation with the two recruiters. Only the company, systems and role totals are supplied facts.",
+        "Hours are annual recruiter labour for both people: 3200 times input task.share. After hours multiply this by sum(share_pct times remaining_pct)/10000. Input rounded hours_per_fte are not used.",
+        "Each step counts only recruiter effort, including its expected review, retries and exceptions; other actors appear as handoff recipients. Existing manager, specialist and HR administration work is not claimed as saved.",
+        "Shared records are reused. The 80-hour annual recruiter operating reserve in job.md is additional to these steps. New IT, privacy, specialist and manager effort remains unpriced.",
+        "Build ranges are marginal working effort after a shared event ledger, access controls and connector host exist; do not add them into a project calendar. Consent_and_access estimates preparation work, not the time until legal permission.",
+        "All external actions check the current record version, recipient and approval scope before sending. Duplicate events are ignored; failed deliveries remain in a visible queue. Approval changes invalidate pending actions.",
+        "Automatic templates contain verified status only. No model writes or sends a rejection.",
+        "All message audit records use limited retention and role access. The applicant can correct identity and contact errors.",
+        "jev workflow_automation 0.87 fits; human_approval 0.55 cannot choose which messages need approval. Gates depend on the action."
+      ],
+      "unknowns": [
+        "Stage quality, mail bounce handling, manager deadlines and current applicant update promises.",
+        "Whether existing calendar booking can handle interviewer availability and candidate self-selection without custom code."
+      ],
+      "research_questions": [
+        "Do a duplicate event and a reversed decision cause neither a duplicate nor an outdated message?",
+        "Do overdue-stage counts fall without more misleading holding updates?"
+      ]
+    },
+    {
+      "uid": "13-1071.00:18865",
+      "short": "Find prospective candidates and develop sourcing relationships.",
+      "steps": [
+        {
+          "id": "s1",
+          "what": "Translate approved vacancy requirements into search filters",
+          "actor": "recruiter",
+          "today_means": "document",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "approved vacancy brief",
+            "selection criteria"
+          ],
+          "outputs": [
+            "approved sourcing query"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 15,
+          "fate": "machine",
+          "remaining_pct": 0,
+          "block": "artefact_generator",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "read",
+          "human_gate": false
+        },
+        {
+          "id": "s2",
+          "what": "Search authorised candidate pools and review results",
+          "actor": "recruiter",
+          "today_means": "system_screen",
+          "systems": [
+            "Recruitee"
+          ],
+          "inputs": [
+            "approved sourcing query",
+            "permitted talent pool"
+          ],
+          "outputs": [
+            "sourcing longlist"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 20,
+          "fate": "person_reviews",
+          "remaining_pct": 25,
+          "block": "crud_app",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "read",
+          "human_gate": true
+        },
+        {
+          "id": "s3",
+          "what": "Check duplicate contacts, permission and previous contact history",
+          "actor": "recruiter",
+          "today_means": "spreadsheet",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "sourcing longlist",
+            "candidate contact record"
+          ],
+          "outputs": [
+            "eligible contact list"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 20,
+          "fate": "machine",
+          "remaining_pct": 0,
+          "block": "integration",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "read",
+          "human_gate": false
+        },
+        {
+          "id": "s4",
+          "what": "Prepare and approve personalised invitations",
+          "actor": "recruiter",
+          "today_means": "email_chat",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "eligible contact list",
+            "candidate information pack"
+          ],
+          "outputs": [
+            "approved outreach"
+          ],
+          "handoff_to": "external",
+          "share_pct": 20,
+          "fate": "person_reviews",
+          "remaining_pct": 40,
+          "block": "artefact_generator",
+          "rung": "deterministic_plus_loop",
+          "loop": {
+            "purpose": "draft",
+            "input": "Approved vacancy facts and permitted professional facts about a contact.",
+            "output": "One invitation draft with cited factual fields.",
+            "check": "Recruiter checks fit, recipient, contact permission and all claims. No inferred personality, protected traits or new pay terms.",
+            "stop": "At most two calls, 8,000 input tokens and 2,000 output tokens per call, 30 seconds total. Missing evidence, validation failure or timeout routes to the recruiter. No tools or external writes.",
+            "why_not_simpler": "A fixed template handles standard outreach; tailored phrasing may help a specific contact, with a person deciding whether to send."
+          },
+          "authority": "act_external",
+          "human_gate": true
+        },
+        {
+          "id": "s5",
+          "what": "Build referral networks and speak with prospective candidates",
+          "actor": "recruiter",
+          "today_means": "meeting_call",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "approved outreach",
+            "referral introduction"
+          ],
+          "outputs": [
+            "candidate application",
+            "sourcing feedback"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 25,
+          "fate": "person_does",
+          "remaining_pct": 100,
+          "block": "conversation",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "act_external",
+          "human_gate": true
+        }
+      ],
+      "design": "Keep an authorised talent pool and contact history in Recruitee, with deterministic search filters and duplicate suppression. A bounded loop drafts outreach from approved facts; recruiters approve each send and keep networking human.",
+      "previous_blocker": "Hypothesis: repeat searches and disconnected contact lists hide prior approaches and opt-outs.",
+      "enabler_now": "Existing records can be queried and deduplicated; AI coding makes a narrow contact workflow affordable without scraping new profiles.",
+      "still_hard": "Permission to search or contact, incomplete professional records and demand for scarce shift skills remain limiting.",
+      "human_edge": "Build trust with local referrers and find people whose potential is poorly expressed in a CV.",
+      "ambition": {
+        "kind": "serve_new_group",
+        "what": "Create an opt-in route for flex workers interested in permanent roles, agreed with agencies and operations."
+      },
+      "altitude": "The recruiter chooses channels and builds relationships using source-to-day-90 outcomes, rather than counting retrieved names.",
+      "reach": [
+        {
+          "role": "hrbp",
+          "task": "Support internal and flex-to-permanent career conversations",
+          "learn": "Agency agreements, mobility policy and non-discriminatory selection."
+        }
+      ],
+      "build_days": {
+        "coding": "2-4",
+        "integration": "2-5",
+        "testing_rollout": "3-6",
+        "consent_and_access": "3-6"
+      },
+      "run_cost": "low",
+      "evidence": [
+        {
+          "claim": "Search filters and contact history do not require a model; useful candidate fit still needs human judgement.",
+          "grade": "E1",
+          "source": "model knowledge"
+        },
+        {
+          "claim": "The proposed workflow and timing are an unmeasured scenario, not a customer result.",
+          "grade": "E0",
+          "source": "model knowledge"
+        }
+      ],
+      "assumptions": [
+        "E0 planning scenario, not observations: all today_means, step shares, remaining percentages and build-day ranges require validation with the two recruiters. Only the company, systems and role totals are supplied facts.",
+        "Hours are annual recruiter labour for both people: 3200 times input task.share. After hours multiply this by sum(share_pct times remaining_pct)/10000. Input rounded hours_per_fte are not used.",
+        "Each step counts only recruiter effort, including its expected review, retries and exceptions; other actors appear as handoff recipients. Existing manager, specialist and HR administration work is not claimed as saved.",
+        "Shared records are reused. The 80-hour annual recruiter operating reserve in job.md is additional to these steps. New IT, privacy, specialist and manager effort remains unpriced.",
+        "Build ranges are marginal working effort after a shared event ledger, access controls and connector host exist; do not add them into a project calendar. Consent_and_access estimates preparation work, not the time until legal permission.",
+        "All external actions check the current record version, recipient and approval scope before sending. Duplicate events are ignored; failed deliveries remain in a visible queue. Approval changes invalidate pending actions.",
+        "No external scraping, inferred traits, automated ranking or AI ad targeting. Search criteria are approved upstream, not agreed anew by software.",
+        "jev integration 0.55 fits the records problem. Its API 0.89 is not evidence of access to external candidate sources."
+      ],
+      "unknowns": [
+        "Talent-pool lawful basis and retention, permitted source interfaces, referral yield and agency restrictions."
+      ],
+      "research_questions": [
+        "Can opt-outs and earlier contacts be honoured across every selected source?",
+        "Do hires from the proposed channel become productive and remain after 90 days?"
+      ]
+    },
+    {
+      "uid": "13-1071.00:18855",
+      "short": "Conduct proportionate reference and background checks.",
+      "steps": [
+        {
+          "id": "s1",
+          "what": "Confirm the required check, legal basis and candidate permission",
+          "actor": "recruiter",
+          "today_means": "email_chat",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "approved vacancy brief",
+            "screening decision",
+            "candidate contact record"
+          ],
+          "outputs": [
+            "authorised check request"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 15,
+          "fate": "person_reviews",
+          "remaining_pct": 50,
+          "block": "workflow_automation",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        },
+        {
+          "id": "s2",
+          "what": "Request references and chase missing responses",
+          "actor": "recruiter",
+          "today_means": "email_chat",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "authorised check request",
+            "referee contact"
+          ],
+          "outputs": [
+            "reference appointment"
+          ],
+          "handoff_to": "external",
+          "share_pct": 25,
+          "fate": "person_reviews",
+          "remaining_pct": 20,
+          "block": "workflow_automation",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "act_external",
+          "human_gate": true
+        },
+        {
+          "id": "s3",
+          "what": "Speak with referees and verify relevant facts",
+          "actor": "recruiter",
+          "today_means": "meeting_call",
+          "systems": [
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "reference appointment",
+            "approved reference questions"
+          ],
+          "outputs": [
+            "reference notes"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 30,
+          "fate": "person_does",
+          "remaining_pct": 100,
+          "block": "conversation",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "act_external",
+          "human_gate": true
+        },
+        {
+          "id": "s4",
+          "what": "Interpret inconsistencies and let the candidate respond",
+          "actor": "recruiter",
+          "today_means": "meeting_call",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "reference notes",
+            "reviewed application dossier"
+          ],
+          "outputs": [
+            "reviewed check findings"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 20,
+          "fate": "person_does",
+          "remaining_pct": 100,
+          "block": "judgement_step",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        },
+        {
+          "id": "s5",
+          "what": "Record the permitted outcome and dispose of unnecessary material",
+          "actor": "recruiter",
+          "today_means": "system_screen",
+          "systems": [
+            "Recruitee"
+          ],
+          "inputs": [
+            "reviewed check findings",
+            "retention schedule"
+          ],
+          "outputs": [
+            "reference outcome"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 10,
+          "fate": "person_reviews",
+          "remaining_pct": 20,
+          "block": "crud_app",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        }
+      ],
+      "design": "A fixed request workflow manages permission, referee contact, reminders and expiry in a restricted record. Recruiters conduct reference conversations and adjudicate discrepancies, recording a minimal outcome for the selection pack rather than circulating raw checks.",
+      "previous_blocker": "Hypothesis: permission, check requests and reminders live in separate email chains.",
+      "enabler_now": "Templates, authenticated requests and scheduled deletion are conventional workflow features that can be configured or coded cheaply.",
+      "still_hard": "Unreliable referees, mistaken identity and criminal-record restrictions cannot be resolved by a fluent summary.",
+      "human_edge": "Distinguish a factual discrepancy from retaliation, hearsay or a misunderstood job title.",
+      "ambition": {
+        "kind": "none",
+        "what": ""
+      },
+      "altitude": "The recruiter spends less time chasing replies and more time resolving contradictions. Authority to make an adverse hiring decision is unchanged.",
+      "reach": [],
+      "build_days": {
+        "coding": "2-3",
+        "integration": "2-4",
+        "testing_rollout": "3-5",
+        "consent_and_access": "3-6"
+      },
+      "run_cost": "low",
+      "evidence": [
+        {
+          "claim": "GDPR treats criminal-offence data separately from ordinary personal data; purpose and legal permission must be established before checking.",
+          "grade": "E1",
+          "source": "model knowledge"
+        },
+        {
+          "claim": "The proposed workflow and timing are an unmeasured scenario, not a customer result.",
+          "grade": "E0",
+          "source": "model knowledge"
+        }
+      ],
+      "assumptions": [
+        "E0 planning scenario, not observations: all today_means, step shares, remaining percentages and build-day ranges require validation with the two recruiters. Only the company, systems and role totals are supplied facts.",
+        "Hours are annual recruiter labour for both people: 3200 times input task.share. After hours multiply this by sum(share_pct times remaining_pct)/10000. Input rounded hours_per_fte are not used.",
+        "Each step counts only recruiter effort, including its expected review, retries and exceptions; other actors appear as handoff recipients. Existing manager, specialist and HR administration work is not claimed as saved.",
+        "Shared records are reused. The 80-hour annual recruiter operating reserve in job.md is additional to these steps. New IT, privacy, specialist and manager effort remains unpriced.",
+        "Build ranges are marginal working effort after a shared event ledger, access controls and connector host exist; do not add them into a project calendar. Consent_and_access estimates preparation work, not the time until legal permission.",
+        "All external actions check the current record version, recipient and approval scope before sending. Duplicate events are ignored; failed deliveries remain in a visible queue. Approval changes invalidate pending actions.",
+        "No social-media enrichment or automatic adverse action. A candidate authorisation is not assumed to supply every required legal basis.",
+        "jev workflow_automation 0.93 fits request logistics; relationship=no 0.62 understates the importance of a real reference conversation.",
+        "Raw medical or criminal reports never enter a model loop or the ordinary candidate dossier."
+      ],
+      "unknowns": [
+        "Actual check types, lawful grounds, approved providers and how disputes are handled."
+      ],
+      "research_questions": [
+        "Which checks are necessary for each role and which can be removed?",
+        "Does the proposed record preserve a defensible decision without retaining unnecessary raw material?"
+      ]
+    },
+    {
+      "uid": "13-1071.00:18862",
+      "short": "Interview applicants about their experience and job skills.",
+      "steps": [
+        {
+          "id": "s1",
+          "what": "Prepare interview questions and review the candidate record",
+          "actor": "recruiter",
+          "today_means": "document",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "reviewed application dossier",
+            "selection criteria",
+            "approved interview kit"
+          ],
+          "outputs": [
+            "interview plan"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 20,
+          "fate": "person_reviews",
+          "remaining_pct": 25,
+          "block": "artefact_generator",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "draft",
+          "human_gate": true
+        },
+        {
+          "id": "s2",
+          "what": "Conduct the interview and explore specific examples",
+          "actor": "recruiter",
+          "today_means": "meeting_call",
+          "systems": [
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "interview plan"
+          ],
+          "outputs": [
+            "interviewer observations"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 60,
+          "fate": "person_does",
+          "remaining_pct": 100,
+          "block": "conversation",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "act_external",
+          "human_gate": true
+        },
+        {
+          "id": "s3",
+          "what": "Write and check the evidence and unresolved questions",
+          "actor": "recruiter",
+          "today_means": "document",
+          "systems": [
+            "Recruitee"
+          ],
+          "inputs": [
+            "interviewer observations",
+            "interview plan"
+          ],
+          "outputs": [
+            "interview record"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 15,
+          "fate": "person_does",
+          "remaining_pct": 80,
+          "block": "crud_app",
+          "rung": "configure",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        },
+        {
+          "id": "s4",
+          "what": "File the record and alert the next decision owner",
+          "actor": "recruiter",
+          "today_means": "email_chat",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "interview record"
+          ],
+          "outputs": [
+            "interview record",
+            "feedback-ready event"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 5,
+          "fate": "machine",
+          "remaining_pct": 0,
+          "block": "workflow_automation",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": false
+        }
+      ],
+      "design": "Generate interview plans from an approved question bank and the reviewed dossier; collect structured human notes in Recruitee. Use a fixed workflow to request and file feedback, with no recording, emotion analysis or model-generated assessment.",
+      "previous_blocker": "Hypothesis: preparation and notes are duplicated in Word, mail and the ATS.",
+      "enabler_now": "A question bank, prefilled context and structured notes can be configured without a transcription model.",
+      "still_hard": "Listening, probing vague answers and recording relevant evidence while maintaining rapport take human attention.",
+      "human_edge": "Follow an unexpected answer, recognise misunderstanding and make the candidate comfortable enough to give a useful example.",
+      "ambition": {
+        "kind": "new_service",
+        "what": "Give candidates a short, realistic discussion of the shift before they decide whether to continue."
+      },
+      "altitude": "Interview time stays protected. The recruiter gains better preparation and clearer evidence, not permission to infer personality from behaviour.",
+      "reach": [
+        {
+          "role": "hrbp",
+          "task": "Coach managers on structured interviews",
+          "learn": "Question design, accessibility and avoiding irrelevant personal questions."
+        }
+      ],
+      "build_days": {
+        "coding": "1-2",
+        "integration": "1-3",
+        "testing_rollout": "2-4",
+        "consent_and_access": "2-4"
+      },
+      "run_cost": "low",
+      "evidence": [
+        {
+          "claim": "A reported practitioner warning says a flawed interview summary can become the effective evaluation. It does not supply an error rate.",
+          "grade": "E3",
+          "source": "[S6]"
+        },
+        {
+          "claim": "The proposed workflow and timing are an unmeasured scenario, not a customer result.",
+          "grade": "E0",
+          "source": "model knowledge"
+        }
+      ],
+      "assumptions": [
+        "E0 planning scenario, not observations: all today_means, step shares, remaining percentages and build-day ranges require validation with the two recruiters. Only the company, systems and role totals are supplied facts.",
+        "Hours are annual recruiter labour for both people: 3200 times input task.share. After hours multiply this by sum(share_pct times remaining_pct)/10000. Input rounded hours_per_fte are not used.",
+        "Each step counts only recruiter effort, including its expected review, retries and exceptions; other actors appear as handoff recipients. Existing manager, specialist and HR administration work is not claimed as saved.",
+        "Shared records are reused. The 80-hour annual recruiter operating reserve in job.md is additional to these steps. New IT, privacy, specialist and manager effort remains unpriced.",
+        "Build ranges are marginal working effort after a shared event ledger, access controls and connector host exist; do not add them into a project calendar. Consent_and_access estimates preparation work, not the time until legal permission.",
+        "All external actions check the current record version, recipient and approval scope before sending. Duplicate events are ignored; failed deliveries remain in a visible queue. Approval changes invalidate pending actions.",
+        "Interview scheduling reuses the common booking component; any recruiter scheduling effort belongs to 18857 invitations, not this interview-time estimate.",
+        "jev human class fits the conversation. Vanishes 0.47 does not justify removing interviews, and model_needed 0.52 is unnecessary for the chosen design.",
+        "Approved interview kit is produced by task 18874; applicant assessment instruments are separately governed by task 1002."
+      ],
+      "unknowns": [
+        "Actual interview duration, note burden, existing question bank and manager interview practice."
+      ],
+      "research_questions": [
+        "Does a structured human record retain relevant context without lengthening the interview?",
+        "Do interviewers actually use the approved criteria rather than unrelated impressions?"
+      ]
+    },
+    {
+      "uid": "13-1071.00:18874",
+      "short": "Review selection criteria and recommend defensible changes.",
+      "steps": [
+        {
+          "id": "s1",
+          "what": "Collect criteria versions and linked hiring outcomes",
+          "actor": "recruiter",
+          "today_means": "spreadsheet",
+          "systems": [
+            "Recruitee",
+            "AFAS Profit",
+            "Studytube",
+            "Power BI"
+          ],
+          "inputs": [
+            "selection criteria",
+            "hire handoff",
+            "day-90 outcome"
+          ],
+          "outputs": [
+            "selection outcome table"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 25,
+          "fate": "machine",
+          "remaining_pct": 0,
+          "block": "integration",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "read",
+          "human_gate": false
+        },
+        {
+          "id": "s2",
+          "what": "Check standards, documentation and gaps in the evidence",
+          "actor": "recruiter",
+          "today_means": "document",
+          "systems": [
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "selection outcome table",
+            "approved standards library"
+          ],
+          "outputs": [
+            "criteria review pack"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 20,
+          "fate": "person_reviews",
+          "remaining_pct": 50,
+          "block": "artefact_generator",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "draft",
+          "human_gate": true
+        },
+        {
+          "id": "s3",
+          "what": "Evaluate job relevance, fairness and statistical limitations",
+          "actor": "recruiter",
+          "today_means": "meeting_call",
+          "systems": [
+            "Microsoft 365",
+            "Power BI"
+          ],
+          "inputs": [
+            "criteria review pack"
+          ],
+          "outputs": [
+            "criteria findings"
+          ],
+          "handoff_to": "hrbp",
+          "share_pct": 25,
+          "fate": "person_does",
+          "remaining_pct": 100,
+          "block": "judgement_step",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "draft",
+          "human_gate": true
+        },
+        {
+          "id": "s4",
+          "what": "Agree revisions with managers and qualified specialists",
+          "actor": "recruiter",
+          "today_means": "meeting_call",
+          "systems": [
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "criteria findings"
+          ],
+          "outputs": [
+            "approved criteria revision"
+          ],
+          "handoff_to": "hr-director",
+          "share_pct": 20,
+          "fate": "person_does",
+          "remaining_pct": 80,
+          "block": "conversation",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        },
+        {
+          "id": "s5",
+          "what": "Publish approved criteria and update interview guidance",
+          "actor": "recruiter",
+          "today_means": "document",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "approved criteria revision"
+          ],
+          "outputs": [
+            "selection criteria",
+            "approved interview kit"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 10,
+          "fate": "person_reviews",
+          "remaining_pct": 20,
+          "block": "workflow_automation",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        }
+      ],
+      "design": "Join versioned selection records to permitted AFAS, Studytube and manager outcomes on the governed data service, then display cohort checks in Power BI. Recruiters review job relevance with the people analyst and specialists; only approved changes update criteria and interview kits.",
+      "previous_blocker": "Hypothesis: disconnected exports make it difficult to see which criteria were used for which hires.",
+      "enabler_now": "The supplied system interfaces permit an auditable cohort join, while fixed calculations are easier to verify than generated statistical claims.",
+      "still_hard": "Small samples, selection bias and changing role mix limit inference. Retention does not prove a criterion is valid or fair.",
+      "human_edge": "Challenge a familiar requirement that excludes good workers and recognise when statistical expertise is needed.",
+      "ambition": {
+        "kind": "decide_more_often",
+        "what": "Review a selection rule when the role changes or an outcome signal appears, with a dated evidence trail."
+      },
+      "altitude": "The recruiter can propose and explain changes to criteria. The HR Director and relevant specialists retain approval of policy and test validity.",
+      "reach": [
+        {
+          "role": "people-analyst",
+          "task": "Prepare recruitment outcome cohorts",
+          "learn": "Denominators, missing outcomes, uncertainty and lawful fairness analysis."
+        }
+      ],
+      "build_days": {
+        "coding": "2-4",
+        "integration": "3-6",
+        "testing_rollout": "4-7",
+        "consent_and_access": "3-7"
+      },
+      "run_cost": "low",
+      "evidence": [
+        {
+          "claim": "A recruitment outcome dashboard supports review but cannot establish causal validity or lawful selection on its own.",
+          "grade": "E1",
+          "source": "model knowledge"
+        },
+        {
+          "claim": "The proposed workflow and timing are an unmeasured scenario, not a customer result.",
+          "grade": "E0",
+          "source": "model knowledge"
+        }
+      ],
+      "assumptions": [
+        "E0 planning scenario, not observations: all today_means, step shares, remaining percentages and build-day ranges require validation with the two recruiters. Only the company, systems and role totals are supplied facts.",
+        "Hours are annual recruiter labour for both people: 3200 times input task.share. After hours multiply this by sum(share_pct times remaining_pct)/10000. Input rounded hours_per_fte are not used.",
+        "Each step counts only recruiter effort, including its expected review, retries and exceptions; other actors appear as handoff recipients. Existing manager, specialist and HR administration work is not claimed as saved.",
+        "Shared records are reused. The 80-hour annual recruiter operating reserve in job.md is additional to these steps. New IT, privacy, specialist and manager effort remains unpriced.",
+        "Build ranges are marginal working effort after a shared event ledger, access controls and connector host exist; do not add them into a project calendar. Consent_and_access estimates preparation work, not the time until legal permission.",
+        "All external actions check the current record version, recipient and approval scope before sending. Duplicate events are ignored; failed deliveries remain in a visible queue. Approval changes invalidate pending actions.",
+        "No protected traits are inferred or collected for fairness analysis without a lawful basis and controlled access.",
+        "Day-90 productivity requires a job-specific manager attestation; course completion alone is not productivity.",
+        "jev judgement 0.97 fits. Model_needed 0.52 overstates the need: computation is deterministic and the interpretation stays expert."
+      ],
+      "unknowns": [
+        "Available outcome identifiers, valid productivity definitions, sample sizes and permissions for fairness analysis."
+      ],
+      "research_questions": [
+        "How many hires have complete day-90 outcomes, and why are the others missing?",
+        "Can an independent specialist reproduce every calculation and distinguish association from causation?"
+      ]
+    },
+    {
+      "uid": "13-1071.00:18858",
+      "short": "Plan recruiting activity against current and future staffing needs.",
+      "steps": [
+        {
+          "id": "s1",
+          "what": "Collect staffing needs, vacancies and source outcomes",
+          "actor": "recruiter",
+          "today_means": "spreadsheet",
+          "systems": [
+            "AFAS Profit",
+            "Recruitee",
+            "Power BI"
+          ],
+          "inputs": [
+            "manager staffing request",
+            "day-90 outcome",
+            "agency fulfilment record"
+          ],
+          "outputs": [
+            "vacancy demand ledger"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 25,
+          "fate": "machine",
+          "remaining_pct": 0,
+          "block": "integration",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "read",
+          "human_gate": false
+        },
+        {
+          "id": "s2",
+          "what": "Calculate staffing and channel scenarios",
+          "actor": "recruiter",
+          "today_means": "spreadsheet",
+          "systems": [
+            "Microsoft 365",
+            "Power BI"
+          ],
+          "inputs": [
+            "vacancy demand ledger",
+            "approved cost assumptions"
+          ],
+          "outputs": [
+            "staffing scenarios"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 20,
+          "fate": "machine",
+          "remaining_pct": 0,
+          "block": "dashboard",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "draft",
+          "human_gate": false
+        },
+        {
+          "id": "s3",
+          "what": "Challenge demand and agree priorities with site managers",
+          "actor": "recruiter",
+          "today_means": "meeting_call",
+          "systems": [
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "staffing scenarios"
+          ],
+          "outputs": [
+            "approved staffing priorities"
+          ],
+          "handoff_to": "hiring-manager",
+          "share_pct": 25,
+          "fate": "person_does",
+          "remaining_pct": 100,
+          "block": "conversation",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        },
+        {
+          "id": "s4",
+          "what": "Agree sourcing actions and vacancy requirements",
+          "actor": "recruiter",
+          "today_means": "document",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "approved staffing priorities",
+            "selection criteria"
+          ],
+          "outputs": [
+            "approved vacancy brief",
+            "recruiting plan"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 20,
+          "fate": "person_does",
+          "remaining_pct": 80,
+          "block": "artefact_generator",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        },
+        {
+          "id": "s5",
+          "what": "Review progress and change the plan when evidence warrants",
+          "actor": "recruiter",
+          "today_means": "meeting_call",
+          "systems": [
+            "Microsoft 365",
+            "Power BI"
+          ],
+          "inputs": [
+            "recruiting plan",
+            "stage outcome report"
+          ],
+          "outputs": [
+            "plan review decision"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 10,
+          "fate": "person_does",
+          "remaining_pct": 100,
+          "block": "judgement_step",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        }
+      ],
+      "design": "Use a demand ledger and transparent staffing scenarios on Power BI, fed by approved requests and recruiting outcomes. Recruiters and site managers choose the plan; the same approved vacancy brief then drives sourcing, candidate facts, checks and agency orders.",
+      "previous_blocker": "Hypothesis: staffing requests and channel results are scattered across spreadsheets without shared definitions.",
+      "enabler_now": "Joined records and explicit scenario formulas can be built rapidly; a model is not needed to multiply demand by known conversion assumptions.",
+      "still_hard": "Seasonal demand, uncertain applicant supply and management priorities require negotiation. Historic yields are not guaranteed future rates.",
+      "human_edge": "Question whether a vacancy is the right response and negotiate priorities across sites.",
+      "ambition": {
+        "kind": "decide_more_often",
+        "what": "Offer a weekly permanent-versus-flex staffing review ahead of seasonal peaks, with uncertainty visible."
+      },
+      "altitude": "The recruiter becomes a regular participant in site staffing decisions and can show the consequences of delays. Budget authority stays with the authorised manager.",
+      "reach": [
+        {
+          "role": "fpa",
+          "task": "Prepare staffing cost scenarios",
+          "learn": "Agency terms, loaded cost, scenario uncertainty and budget ownership."
+        }
+      ],
+      "build_days": {
+        "coding": "2-4",
+        "integration": "3-5",
+        "testing_rollout": "3-5",
+        "consent_and_access": "2-5"
+      },
+      "run_cost": "low",
+      "evidence": [
+        {
+          "claim": "A deterministic scenario calculator can expose the assumptions behind a hiring plan; it cannot predict demand with certainty.",
+          "grade": "E1",
+          "source": "model knowledge"
+        },
+        {
+          "claim": "The proposed workflow and timing are an unmeasured scenario, not a customer result.",
+          "grade": "E0",
+          "source": "model knowledge"
+        }
+      ],
+      "assumptions": [
+        "E0 planning scenario, not observations: all today_means, step shares, remaining percentages and build-day ranges require validation with the two recruiters. Only the company, systems and role totals are supplied facts.",
+        "Hours are annual recruiter labour for both people: 3200 times input task.share. After hours multiply this by sum(share_pct times remaining_pct)/10000. Input rounded hours_per_fte are not used.",
+        "Each step counts only recruiter effort, including its expected review, retries and exceptions; other actors appear as handoff recipients. Existing manager, specialist and HR administration work is not claimed as saved.",
+        "Shared records are reused. The 80-hour annual recruiter operating reserve in job.md is additional to these steps. New IT, privacy, specialist and manager effort remains unpriced.",
+        "Build ranges are marginal working effort after a shared event ledger, access controls and connector host exist; do not add them into a project calendar. Consent_and_access estimates preparation work, not the time until legal permission.",
+        "All external actions check the current record version, recipient and approval scope before sending. Duplicate events are ignored; failed deliveries remain in a visible queue. Approval changes invalidate pending actions.",
+        "jev workflow_automation 0.68 is useful for data collection but is not the decision engine for strategy. Only-later checking 0.75 remains important.",
+        "Approved vacancy facts need managers to supply structured intake; recruiter effort for clarifying exceptions is retained in s3 and s4."
+      ],
+      "unknowns": [
+        "Demand horizon, current forecasting process, channel spend and the manager-defined meaning of productive."
+      ],
+      "research_questions": [
+        "Do scenarios reproduce the present staffing plan using the same assumptions?",
+        "Which delayed decision, rather than recruiter hours, is constraining hires?"
+      ]
+    },
+    {
+      "uid": "13-1071.00:18873",
+      "short": "Coordinate temporary staffing orders with agencies.",
+      "steps": [
+        {
+          "id": "s1",
+          "what": "Clarify the requested shifts, skills, numbers and budget",
+          "actor": "recruiter",
+          "today_means": "email_chat",
+          "systems": [
+            "Microsoft 365",
+            "Staffing agency portals"
+          ],
+          "inputs": [
+            "manager staffing request",
+            "approved staffing priorities"
+          ],
+          "outputs": [
+            "approved flex request"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 20,
+          "fate": "person_reviews",
+          "remaining_pct": 20,
+          "block": "crud_app",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        },
+        {
+          "id": "s2",
+          "what": "Read agency availability files and reconcile conflicting replies",
+          "actor": "recruiter",
+          "today_means": "spreadsheet",
+          "systems": [
+            "Microsoft 365",
+            "Staffing agency portals"
+          ],
+          "inputs": [
+            "approved flex request",
+            "agency availability reply"
+          ],
+          "outputs": [
+            "agency availability table"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 20,
+          "fate": "person_reviews",
+          "remaining_pct": 25,
+          "block": "integration",
+          "rung": "deterministic_plus_loop",
+          "loop": {
+            "purpose": "extract",
+            "input": "Agency email for the approved order; CSV files follow a fixed parser.",
+            "output": "Order ID, site, shift, headcount, qualifications and quoted terms, each with source evidence.",
+            "check": "Validate counts, dates and order IDs; compare rates to approved terms. Recruiter resolves contradictory files and duplicate workers.",
+            "stop": "At most two calls, 8,000 input tokens and 2,000 output tokens per call, 30 seconds total. Missing evidence, validation failure or timeout routes to the recruiter. No tools or external writes.",
+            "why_not_simpler": "The stated portals offer email and CSV, not confirmed APIs. Deterministic CSV parsing works; remaining free text needs a bounded reader."
+          },
+          "authority": "draft",
+          "human_gate": true
+        },
+        {
+          "id": "s3",
+          "what": "Check the order and release the authorised commitment",
+          "actor": "recruiter",
+          "today_means": "email_chat",
+          "systems": [
+            "Microsoft 365",
+            "Staffing agency portals"
+          ],
+          "inputs": [
+            "agency availability table",
+            "approved flex request",
+            "approved agency terms"
+          ],
+          "outputs": [
+            "approved agency order"
+          ],
+          "handoff_to": "external",
+          "share_pct": 20,
+          "fate": "person_reviews",
+          "remaining_pct": 25,
+          "block": "artefact_generator",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "act_external",
+          "human_gate": true
+        },
+        {
+          "id": "s4",
+          "what": "Negotiate shortages, substitutions and changed terms",
+          "actor": "recruiter",
+          "today_means": "meeting_call",
+          "systems": [
+            "Microsoft 365",
+            "Staffing agency portals"
+          ],
+          "inputs": [
+            "approved agency order",
+            "agency exception"
+          ],
+          "outputs": [
+            "approved agency amendment"
+          ],
+          "handoff_to": "external",
+          "share_pct": 25,
+          "fate": "person_does",
+          "remaining_pct": 100,
+          "block": "conversation",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "act_external",
+          "human_gate": true
+        },
+        {
+          "id": "s5",
+          "what": "Confirm coverage and hand the agreed starts to the site",
+          "actor": "recruiter",
+          "today_means": "spreadsheet",
+          "systems": [
+            "Microsoft 365",
+            "Staffing agency portals",
+            "Studytube"
+          ],
+          "inputs": [
+            "approved agency order",
+            "approved agency amendment",
+            "agency confirmation"
+          ],
+          "outputs": [
+            "agency fulfilment record",
+            "flex start handoff"
+          ],
+          "handoff_to": "hr-admin",
+          "share_pct": 15,
+          "fate": "person_reviews",
+          "remaining_pct": 20,
+          "block": "workflow_automation",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        }
+      ],
+      "design": "Replace the agency coordination sheet with a small order register on the governed service and a CSV/email intake for the three agencies. Generate approved orders and reconcile confirmations by order version; a bounded reader handles free-text replies, while people approve commitments and negotiate shortages.",
+      "previous_blocker": "Hypothesis: conflicting versions of requests and confirmations are resolved across mailboxes and agency exports.",
+      "enabler_now": "The supplied CSV exports and email channels permit a fixed intake and reconciliation flow; fast coding lowers the cost of adapting three formats.",
+      "still_hard": "Agency promises can change before a shift. Identity clashes, certificate validity and shortages still need a named resolver.",
+      "human_edge": "Negotiate a workable substitute and recognise when an agency promise cannot safely fill a shift.",
+      "ambition": {
+        "kind": "new_service",
+        "what": "Give each site a confirmed-starts list with unresolved skills and coverage gaps visible before the shift."
+      },
+      "altitude": "The recruiter owns the order exception queue and can return incomplete requests. Budget changes and worker suitability still need the authorised people.",
+      "reach": [
+        {
+          "role": "hr-admin",
+          "task": "Prepare flex-worker start handoffs",
+          "learn": "Site induction, certificate requirements and minimal personal-data sharing."
+        }
+      ],
+      "build_days": {
+        "coding": "3-5",
+        "integration": "3-7",
+        "testing_rollout": "4-7",
+        "consent_and_access": "3-6"
+      },
+      "run_cost": "low",
+      "evidence": [
+        {
+          "claim": "CSV reconciliation and versioned orders are conventional deterministic software; free-text changes can be extracted into a review queue.",
+          "grade": "E1",
+          "source": "model knowledge"
+        },
+        {
+          "claim": "The proposed workflow and timing are an unmeasured scenario, not a customer result.",
+          "grade": "E0",
+          "source": "model knowledge"
+        }
+      ],
+      "assumptions": [
+        "E0 planning scenario, not observations: all today_means, step shares, remaining percentages and build-day ranges require validation with the two recruiters. Only the company, systems and role totals are supplied facts.",
+        "Hours are annual recruiter labour for both people: 3200 times input task.share. After hours multiply this by sum(share_pct times remaining_pct)/10000. Input rounded hours_per_fte are not used.",
+        "Each step counts only recruiter effort, including its expected review, retries and exceptions; other actors appear as handoff recipients. Existing manager, specialist and HR administration work is not claimed as saved.",
+        "Shared records are reused. The 80-hour annual recruiter operating reserve in job.md is additional to these steps. New IT, privacy, specialist and manager effort remains unpriced.",
+        "Build ranges are marginal working effort after a shared event ledger, access controls and connector host exist; do not add them into a project calendar. Consent_and_access estimates preparation work, not the time until legal permission.",
+        "All external actions check the current record version, recipient and approval scope before sending. Duplicate events are ignored; failed deliveries remain in a visible queue. Approval changes invalidate pending actions.",
+        "jev workflow_automation 0.84 fits. Its API probability 0.73 is contradicted by supplied email/CSV access, which governs this design.",
+        "No invoice processing or payroll reconciliation savings are claimed. Staffing agencies keep their employment obligations.",
+        "Candidate suitability, worker assignment and pay decisions are not delegated to the extraction loop. Assess whether its actual use influences selection before deciding AI Act scope."
+      ],
+      "unknowns": [
+        "Agency file stability, duplicate-order rates, approved rates, certificate ownership and current confirmation process."
+      ],
+      "research_questions": [
+        "Can replayed and revised replies create only one valid order commitment?",
+        "What proportion of quoted coverage becomes an acknowledged start, with complete induction information?"
+      ]
+    },
+    {
+      "uid": "11-3121.00:1002",
+      "short": "Develop and evaluate applicant assessments with qualified specialists.",
+      "steps": [
+        {
+          "id": "s1",
+          "what": "Review job requirements and approved assessment standards",
+          "actor": "recruiter",
+          "today_means": "document",
+          "systems": [
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "selection criteria",
+            "approved standards library"
+          ],
+          "outputs": [
+            "assessment design brief"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 20,
+          "fate": "person_reviews",
+          "remaining_pct": 50,
+          "block": "artefact_generator",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "draft",
+          "human_gate": true
+        },
+        {
+          "id": "s2",
+          "what": "Draft job-sample exercises and assessment instructions",
+          "actor": "recruiter",
+          "today_means": "document",
+          "systems": [
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "assessment design brief"
+          ],
+          "outputs": [
+            "assessment draft"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 25,
+          "fate": "person_does",
+          "remaining_pct": 80,
+          "block": "artefact_generator",
+          "rung": "configure",
+          "loop": null,
+          "authority": "draft",
+          "human_gate": true
+        },
+        {
+          "id": "s3",
+          "what": "Review validity, accessibility and scoring with specialists",
+          "actor": "recruiter",
+          "today_means": "meeting_call",
+          "systems": [
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "assessment draft"
+          ],
+          "outputs": [
+            "specialist assessment review"
+          ],
+          "handoff_to": "hr-director",
+          "share_pct": 25,
+          "fate": "person_does",
+          "remaining_pct": 100,
+          "block": "judgement_step",
+          "rung": "stays_manual",
+          "loop": null,
+          "authority": "draft",
+          "human_gate": true
+        },
+        {
+          "id": "s4",
+          "what": "Evaluate pilot results and recommend revisions",
+          "actor": "recruiter",
+          "today_means": "spreadsheet",
+          "systems": [
+            "Microsoft 365",
+            "Power BI"
+          ],
+          "inputs": [
+            "specialist assessment review",
+            "assessment pilot results"
+          ],
+          "outputs": [
+            "assessment validation report"
+          ],
+          "handoff_to": "hr-director",
+          "share_pct": 20,
+          "fate": "person_does",
+          "remaining_pct": 75,
+          "block": "dashboard",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "draft",
+          "human_gate": true
+        },
+        {
+          "id": "s5",
+          "what": "Approve and publish the versioned assessment kit",
+          "actor": "recruiter",
+          "today_means": "document",
+          "systems": [
+            "Recruitee",
+            "Microsoft 365"
+          ],
+          "inputs": [
+            "assessment validation report",
+            "assessment draft"
+          ],
+          "outputs": [
+            "approved assessment kit"
+          ],
+          "handoff_to": "recruiter",
+          "share_pct": 10,
+          "fate": "person_reviews",
+          "remaining_pct": 20,
+          "block": "workflow_automation",
+          "rung": "deterministic",
+          "loop": null,
+          "authority": "write_internal",
+          "human_gate": true
+        }
+      ],
+      "design": "Keep a versioned catalogue of job-sample exercises, instructions and approved scoring rules in SharePoint. Deterministic templates and pilot calculations support specialist review; an authorised person releases each kit, which the separate scheduling task uses without redesigning it.",
+      "previous_blocker": "Hypothesis: assessment versions, scoring guidance and validation evidence are maintained separately.",
+      "enabler_now": "Document templates, version control and reproducible calculations can be configured quickly without asking a model to invent a valid psychological test.",
+      "still_hard": "Validity, sample size, adverse effects and specialist availability set the limit. Generated questions are not validated instruments.",
+      "human_edge": "Judge whether the exercise reflects the actual job and whether an apparent failure arose from an inaccessible assessment.",
+      "ambition": {
+        "kind": "new_service",
+        "what": "Develop a reviewed warehouse job-sample exercise that applicants can complete without irrelevant office-test demands."
+      },
+      "altitude": "The recruiter owns assessment logistics and version history. Psychometric and medical competence are not created by the software.",
+      "reach": [
+        {
+          "role": "ld",
+          "task": "Coordinate evidence for job-relevant skill assessments",
+          "learn": "Measurement limits, accessible job samples and specialist escalation."
+        }
+      ],
+      "build_days": {
+        "coding": "1-3",
+        "integration": "1-3",
+        "testing_rollout": "5-10",
+        "consent_and_access": "3-7"
+      },
+      "run_cost": "low",
+      "evidence": [
+        {
+          "claim": "Test validity requires evidence and competent review; a generated instrument is not validated merely because it appears consistent.",
+          "grade": "E1",
+          "source": "model knowledge"
+        },
+        {
+          "claim": "The proposed workflow and timing are an unmeasured scenario, not a customer result.",
+          "grade": "E0",
+          "source": "model knowledge"
+        }
+      ],
+      "assumptions": [
+        "E0 planning scenario, not observations: all today_means, step shares, remaining percentages and build-day ranges require validation with the two recruiters. Only the company, systems and role totals are supplied facts.",
+        "Hours are annual recruiter labour for both people: 3200 times input task.share. After hours multiply this by sum(share_pct times remaining_pct)/10000. Input rounded hours_per_fte are not used.",
+        "Each step counts only recruiter effort, including its expected review, retries and exceptions; other actors appear as handoff recipients. Existing manager, specialist and HR administration work is not claimed as saved.",
+        "Shared records are reused. The 80-hour annual recruiter operating reserve in job.md is additional to these steps. New IT, privacy, specialist and manager effort remains unpriced.",
+        "Build ranges are marginal working effort after a shared event ledger, access controls and connector host exist; do not add them into a project calendar. Consent_and_access estimates preparation work, not the time until legal permission.",
+        "All external actions check the current record version, recipient and approval scope before sending. Duplicate events are ignored; failed deliveries remain in a visible queue. Approval changes invalidate pending actions.",
+        "Candidate-level scheduling and administration are allocated to 18869. This task contains programme design, specialist liaison and pilot evaluation only.",
+        "jev workflow_automation 0.59 describes distribution, not validity; model_needed 0.42 is unnecessary for this design.",
+        "No automated personality, intelligence, emotion or drug-test interpretation. Any future AI scoring requires separate high-risk review; health data stay outside recruiter tooling."
+      ],
+      "unknowns": [
+        "Whether assessment development is actually recruiter work here and which specialists are available.",
+        "Existing valid tests, licensing restrictions and pilot cohort sizes."
+      ],
+      "research_questions": [
+        "Can the company defend the job relevance and measurement limits of every proposed criterion?",
+        "Does revised administration improve access without changing what the test measures?"
+      ]
+    }
+  ],
+  "role": {
+    "altitude": "The two recruiters run candidate conversations, hiring evidence and agency exceptions. One leads candidate experience and decision follow-up; the other leads sourcing, agency relationships and site planning, with cross-cover. They gain ownership of data quality, update promises and improvement proposals, not unilateral hiring, pay or assessment authority.",
+    "reach": [
+      "hr-admin: prepare complete permanent and flex start handoffs; learn AFAS field and induction requirements.",
+      "hrbp: improve vacancy briefs and coach structured interviewing; learn job analysis and fair selection.",
+      "people-analyst: prepare source-to-day-90 cohorts; learn denominator design, uncertainty and lawful data use."
+    ],
+    "skills_to_grow": [
+      "Write and maintain explicit workflow rules and approval boundaries.",
+      "Read API/CSV errors, reconcile duplicates and verify record versions.",
+      "Conduct structured interviews and challenge missing evidence without relying on a score.",
+      "Apply privacy minimisation, retention, candidate correction rights and AI oversight.",
+      "Separate labour capacity, queue time and productive retained hires when measuring results."
+    ],
+    "ambitious_version": "The hiring team provides a clear route from vacancy to a productive retained hire, including applicants on shifts and flex workers seeking permanence. Returned time funds manager decision sessions, candid job previews and follow-up on onboarding gaps; demand and outcomes must be tested before promising more hires. The governing North Star is the share of open roles filled by someone productive and still present at day 90, with cohorts fixed at vacancy opening and immature outcomes shown separately."
+  }
+}

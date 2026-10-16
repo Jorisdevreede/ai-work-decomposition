@@ -1,0 +1,1094 @@
+{
+ "tasks": [
+  {
+   "uid": "13-1199.06:15728",
+   "short": "Answer customer questions and resolve complaints about products, policies, and deliveries.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read incoming messages and register or update the customer case.",
+     "actor": "customer service adviser",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CHAT",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "customer message"
+     ],
+     "outputs": [
+      "customer case"
+     ],
+     "handoff_to": "customer service adviser",
+     "share_pct": 12,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Find the order, delivery status, and previous correspondence.",
+     "actor": "customer service adviser",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK",
+      "ECOMMERCE",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "customer case",
+      "order record",
+      "delivery status"
+     ],
+     "outputs": [
+      "case context"
+     ],
+     "handoff_to": "customer service adviser",
+     "share_pct": 18,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Read product information and policies relevant to the question.",
+     "actor": "customer service adviser",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "CMS"
+     ],
+     "inputs": [
+      "customer case",
+      "product record",
+      "customer policy"
+     ],
+     "outputs": [
+      "policy references"
+     ],
+     "handoff_to": "customer service adviser",
+     "share_pct": 12,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "read",
+      "input": "Customer question and approved product and policy passages.",
+      "output": "Relevant passages with source references, or an insufficient-information flag.",
+      "check": "References must resolve to current approved passages; unsupported conclusions are rejected.",
+      "stop": "One retrieval and one refinement; unresolved questions go to the adviser.",
+      "why_not_simpler": "Customers describe the same issue in varied language that keyword rules miss."
+     },
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Write and send an answer using order facts and relevant policies.",
+     "actor": "customer service adviser",
+     "today_means": "email_chat",
+     "systems": [
+      "HELPDESK",
+      "EMAIL",
+      "CHAT"
+     ],
+     "inputs": [
+      "customer case",
+      "case context",
+      "policy references"
+     ],
+     "outputs": [
+      "customer response"
+     ],
+     "handoff_to": "external",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Customer message, verified order facts, and approved policy references.",
+      "output": "A proposed customer response with supporting references.",
+      "check": "Validate order facts and references; adviser approves wording and commitments before sending.",
+      "stop": "One draft and one revision; missing facts or disputed remedies return to the adviser.",
+      "why_not_simpler": "Templates cover routine status answers, but mixed questions require contextual wording."
+     },
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "customer service adviser"
+    },
+    {
+     "id": "s5",
+     "what": "Discuss disputed complaints and agree an appropriate remedy.",
+     "actor": "customer service adviser",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "customer case",
+      "case context",
+      "customer response",
+      "customer policy"
+     ],
+     "outputs": [
+      "agreed remedy"
+     ],
+     "handoff_to": "customer service adviser",
+     "share_pct": 28,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Record the outcome, assign follow-up, and close resolved cases.",
+     "actor": "customer service adviser",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK"
+     ],
+     "inputs": [
+      "customer response",
+      "agreed remedy"
+     ],
+     "outputs": [
+      "case outcome",
+      "follow-up task"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure the {HELPDESK} to capture messages, attach order and delivery facts from the {ECOMMERCE} and {OPS_SYSTEM}, and record structured outcomes. Bounded reading and drafting loops use approved material from the {DOCS}; advisers approve outgoing drafts and handle disputed remedies themselves.",
+   "previous_blocker": "Order facts, policy versions, and correspondence sit in separate places. Free-text questions make complete template coverage expensive.",
+   "enabler_now": "Existing case-routing features and small integrations handle most preparation. Bounded language processing makes grounded retrieval and drafting practical.",
+   "still_hard": "Delivery data can be stale, identities can be uncertain, and a fair remedy may depend on context.",
+   "human_edge": "Recognising distress, rebuilding trust, and making proportionate concessions when policy does not settle the complaint.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly decisions on changes to delivery messages based on recurring complaints."
+   },
+   "altitude": "The adviser spends more time resolving difficult cases and reviewing recurring failures. With delegated authority, they can approve routine help-content corrections; compensation limits remain a separate commercial decision.",
+   "reach": [
+    {
+     "role": "technical writer",
+     "task": "Improve delivery and returns help articles.",
+     "learn": "Source control, plain-language instructions, and testing whether customers can find an answer."
+    },
+    {
+     "role": "marketing manager",
+     "task": "Correct campaign promises that repeatedly trigger complaints.",
+     "learn": "Campaign context and how to distinguish a misleading promise from a fulfilment failure."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-8 working days; add national consultation periods if applicable"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Case routing, order lookup, and structured closure can use configuration and deterministic integrations.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Grounded response drafting can reduce preparation while complaint negotiations retain substantial human work.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Time shares and remaining effort are planning estimates, not measured results.",
+    "The task includes routine inquiries and disputed complaints; complaint handling is less automatable than its task-level prior suggests.",
+    "Approved policies and delegated remedy limits can be made explicit.",
+    "GDPR applies to customer data. EU AI Act transparency requirements must be assessed if direct automated customer interaction is introduced."
+   ],
+   "unknowns": [
+    "Actual channel mix, complaint rate, languages, and case volumes.",
+    "Whether order and delivery interfaces support reliable customer matching.",
+    "Current help-content quality and adviser compensation authority.",
+    "Access requirements and any employee consultation required under national rules."
+   ],
+   "research_questions": [
+    "Which inquiry categories can use fixed templates without a model?",
+    "How often do drafts contain unsupported commitments or outdated policy references?",
+    "Does linked case context reduce handling time without increasing reopened cases?"
+   ],
+   "new_work": [
+    "Review outgoing drafts and unsupported-answer flags.",
+    "Maintain approved policy sources and response templates.",
+    "Handle failed identity matches and stale delivery data.",
+    "Audit sampled responses and maintain integrations."
+   ],
+   "time_saved_pct": 70,
+   "speedup": 3.36
+  },
+  {
+   "uid": "13-1199.06:15733",
+   "short": "Source, assess, and buy merchandise for online resale.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Copy sales, stock, and open orders into a replenishment workbook.",
+     "actor": "online merchant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "ECOMMERCE",
+      "OPS_SYSTEM",
+      "PROCUREMENT",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "sales history",
+      "stock position",
+      "open purchase orders"
+     ],
+     "outputs": [
+      "replenishment workbook"
+     ],
+     "handoff_to": "online merchant",
+     "share_pct": 15,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Search supplier listings and identify available merchandise.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "PARTNER_PORTAL",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "replenishment workbook",
+      "supplier listing",
+      "supplier record"
+     ],
+     "outputs": [
+      "merchandise shortlist"
+     ],
+     "handoff_to": "online merchant",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Inspect samples or used merchandise for condition, quality, and suitability.",
+     "actor": "online merchant",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "merchandise shortlist",
+      "merchandise sample",
+      "quality criteria"
+     ],
+     "outputs": [
+      "condition assessment"
+     ],
+     "handoff_to": "online merchant",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Compare quoted prices, freight, minimum quantities, and expected resale margins.",
+     "actor": "online merchant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "PROCUREMENT",
+      "ERP"
+     ],
+     "inputs": [
+      "supplier quote",
+      "condition assessment",
+      "freight rate",
+      "resale forecast"
+     ],
+     "outputs": [
+      "purchase comparison"
+     ],
+     "handoff_to": "online merchant",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Negotiate quantity, price, delivery, and condition guarantees.",
+     "actor": "online merchant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "purchase comparison",
+      "supplier quote"
+     ],
+     "outputs": [
+      "agreed purchase terms"
+     ],
+     "handoff_to": "procurement manager",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve the purchase against budget, assortment needs, and supplier risk.",
+     "actor": "procurement manager",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT",
+      "ERP"
+     ],
+     "inputs": [
+      "agreed purchase terms",
+      "purchase comparison",
+      "buying budget"
+     ],
+     "outputs": [
+      "approved purchase"
+     ],
+     "handoff_to": "online merchant",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Submit the approved order and record the supplier confirmation.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT",
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "approved purchase",
+      "agreed purchase terms"
+     ],
+     "outputs": [
+      "purchase order",
+      "supplier confirmation"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "procurement manager"
+    }
+   ],
+   "design": "Replace the copied workbook with a purchasing view fed by the {ECOMMERCE}, {OPS_SYSTEM}, and {PROCUREMENT}. Deterministic comparisons calculate costs and margins, while the merchant inspects goods and negotiates; an integration submits only the purchase approved in the {PROCUREMENT}.",
+   "previous_blocker": "Supplier listings, stock records, and buying calculations use inconsistent identifiers and formats. Commercial judgement also made the whole task appear unsuitable for automation.",
+   "enabler_now": "Small data adapters and calculation tools can be built faster. Existing purchasing approvals can control order submission without automating merchandise judgement.",
+   "still_hard": "Used-item condition, uncertain resale demand, supplier reliability, and portals without stable interfaces.",
+   "human_edge": "Judging saleability, detecting poor quality, and trading price against reliability and assortment fit.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A limited resale pilot for inspected returned merchandise."
+   },
+   "altitude": "The merchant spends less time copying figures and more time assessing stock quality and supplier opportunities. A delegated pilot budget could give them authority to test a returned-goods assortment within agreed loss limits.",
+   "reach": [
+    {
+     "role": "market research analyst",
+     "task": "Validate demand for a returned-goods assortment.",
+     "learn": "Demand sampling, willingness-to-pay research, and separating stated interest from purchases."
+    },
+    {
+     "role": "sustainability specialist",
+     "task": "Assess evidence supporting reuse claims for returned merchandise.",
+     "learn": "Traceability, claim substantiation, and the limits of available lifecycle evidence."
+    }
+   ],
+   "build_days": {
+    "coding": "6-12",
+    "integration": "8-18",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-10 working days; add national consultation periods if applicable"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Pactum checks requisitions against policy inside Coupa; this supports purchasing checks, not merchandise selection.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Stock consolidation, cost comparisons, and approved order submission can use deterministic technology.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Time shares represent a blended buying cycle; physical inspection is concentrated in samples and used merchandise.",
+    "Structured supplier feeds or agreed quote templates cover enough purchases to justify integration.",
+    "Purchase submission uses the approval recorded in the preceding step; it does not require a second approval.",
+    "GDPR and the EU AI Act apply where relevant. National consultation requirements depend on the implementation."
+   ],
+   "unknowns": [
+    "Share of new, used, imported, and auction purchases.",
+    "Supplier feed availability, permitted access, and product identifier quality.",
+    "Approval thresholds, buying budgets, and supplier onboarding requirements.",
+    "Whether a returned-goods pilot is commercially and operationally feasible.",
+    "Applicable employee consultation and access requirements."
+   ],
+   "research_questions": [
+    "Which supplier comparisons can use existing purchasing configuration?",
+    "How often do condition assessments overturn an apparently attractive margin?",
+    "Can supplier confirmations be matched reliably without reading free text?"
+   ],
+   "new_work": [
+    "Maintain supplier feeds, identifiers, and cost rules.",
+    "Resolve unmatched listings and incomplete quotes.",
+    "Check that submitted orders match approved quantities and terms.",
+    "Review demand assumptions and pilot resale outcomes."
+   ],
+   "time_saved_pct": 50,
+   "speedup": 2.01
+  },
+  {
+   "uid": "13-1199.06:15707",
+   "short": "Set product prices using costs, market conditions, stock, and commercial goals.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather purchase costs, stock, sales, fees, and return costs.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "ECOMMERCE",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "purchase cost",
+      "stock position",
+      "sales history",
+      "selling fees",
+      "return costs"
+     ],
+     "outputs": [
+      "pricing inputs"
+     ],
+     "handoff_to": "online merchant",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Review comparable market prices and current promotions.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "ADS",
+      "OTHER"
+     ],
+     "inputs": [
+      "market price observations",
+      "promotion calendar",
+      "product record"
+     ],
+     "outputs": [
+      "market comparison"
+     ],
+     "handoff_to": "online merchant",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "market-insight",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Calculate candidate prices, margins, and discount effects.",
+     "actor": "online merchant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "pricing inputs",
+      "market comparison",
+      "pricing policy"
+     ],
+     "outputs": [
+      "price scenarios"
+     ],
+     "handoff_to": "online merchant",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Choose prices and resolve margin or positioning exceptions.",
+     "actor": "online merchant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "price scenarios",
+      "pricing policy"
+     ],
+     "outputs": [
+      "proposed price list"
+     ],
+     "handoff_to": "online merchant",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Check and publish the selected prices to the shop.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE"
+     ],
+     "inputs": [
+      "proposed price list"
+     ],
+     "outputs": [
+      "published price list",
+      "price change log"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "online merchant"
+    },
+    {
+     "id": "s6",
+     "what": "Check sales and margin results after price changes.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "BI"
+     ],
+     "inputs": [
+      "published price list",
+      "sales history",
+      "purchase cost"
+     ],
+     "outputs": [
+      "pricing outcome report"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "data-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "A scheduled calculation on the {DATA_PLATFORM} joins costs, stock, fees, and market observations into explainable price scenarios. The merchant reviews exceptions and approves each publication batch in the {ECOMMERCE}; the {BI} tracks margin and stock effects.",
+   "previous_blocker": "Costs and market comparisons are fragmented, and pricing logic often lives in personal workbooks. Automatic publication was difficult to trust without visible margins and change history.",
+   "enabler_now": "Deterministic calculations, validation rules, and publication checks can be assembled quickly. Numeric pricing decisions do not require a language model.",
+   "still_hard": "Comparable products may differ materially, demand response is uncertain, and returns or fees can arrive late.",
+   "human_edge": "Choosing commercial positioning and deciding when a lower margin serves a clear assortment or stock objective.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily markdown decisions for slow-moving stock."
+   },
+   "altitude": "The merchant reviews price exceptions and measured outcomes instead of rebuilding margin calculations. Delegated markdown limits could let them act daily within an agreed margin and inventory budget.",
+   "reach": [
+    {
+     "role": "market research analyst",
+     "task": "Design a price-response experiment.",
+     "learn": "Comparable cohorts, seasonal effects, and why a sales change alone does not establish causation."
+    },
+    {
+     "role": "marketing manager",
+     "task": "Coordinate promotions with margin and stock objectives.",
+     "learn": "Campaign economics, promotional calendars, and interactions between discounts and advertising."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "5-12",
+    "testing_rollout": "6-12",
+    "consent_and_access": "2-7 working days; add national consultation periods if applicable"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Cost consolidation, margin scenarios, price validation, and batch publication can use deterministic technology.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Pricing outcomes require commercial interpretation because demand, promotions, and stock availability interact.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Time shares and effort reductions are planning estimates.",
+    "The OTHER slot represents a market-price monitoring service.",
+    "Market observations are obtained through permitted access and can be matched to comparable products.",
+    "The initial scope uses product-level prices rather than personalised customer prices.",
+    "GDPR and the EU AI Act apply where relevant; national pricing and consultation rules also need local assessment."
+   ],
+   "unknowns": [
+    "Availability and freshness of costs, fees, returns, and market observations.",
+    "Current publication controls and support for reversing price batches.",
+    "Actual pricing authority and discount approval thresholds.",
+    "Applicable promotional-price requirements and national consultation requirements."
+   ],
+   "research_questions": [
+    "Can existing shop configuration express the required pricing and publication rules?",
+    "Which missing costs most often create misleading margins?",
+    "Which product groups have enough comparable demand for a useful markdown experiment?"
+   ],
+   "new_work": [
+    "Maintain cost mappings, margin floors, and comparison rules.",
+    "Review unmatched products and unusual price movements.",
+    "Approve publication batches and investigate failed updates.",
+    "Evaluate experiments and refresh assumptions about demand."
+   ],
+   "time_saved_pct": 83,
+   "speedup": 5.97
+  },
+  {
+   "uid": "13-1199.06:15730",
+   "short": "Calculate and present purchase subtotals, taxes, and shipping charges.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Calculate and display standard checkout totals from configured prices, taxes, and shipping rules.",
+     "actor": "system",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE"
+     ],
+     "inputs": [
+      "basket",
+      "delivery address",
+      "tax rules",
+      "shipping rules"
+     ],
+     "outputs": [
+      "checkout totals"
+     ],
+     "handoff_to": "external",
+     "share_pct": 0,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check missing details for bespoke orders or failed checkout calculations.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "customer case",
+      "basket",
+      "delivery address"
+     ],
+     "outputs": [
+      "validated order details"
+     ],
+     "handoff_to": "online merchant",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Look up applicable tax treatment and shipping rates.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "PARTNER_PORTAL",
+      "DOCS"
+     ],
+     "inputs": [
+      "validated order details",
+      "tax rules",
+      "freight rate"
+     ],
+     "outputs": [
+      "applicable charge rules"
+     ],
+     "handoff_to": "online merchant",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Calculate the bespoke subtotal, tax, and shipping charge in a quotation workbook.",
+     "actor": "online merchant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "validated order details",
+      "applicable charge rules"
+     ],
+     "outputs": [
+      "draft customer quote"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Validate exceptional tax treatment or a nonstandard charge override.",
+     "actor": "finance team",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "draft customer quote",
+      "applicable charge rules",
+      "tax evidence"
+     ],
+     "outputs": [
+      "charge exception decision"
+     ],
+     "handoff_to": "online merchant",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "tax-and-filing",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Check and send the completed quote to the customer.",
+     "actor": "online merchant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ECOMMERCE"
+     ],
+     "inputs": [
+      "draft customer quote",
+      "charge exception decision"
+     ],
+     "outputs": [
+      "customer quote"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "online merchant"
+    }
+   ],
+   "design": "Keep standard checkout calculations in the {ECOMMERCE} and use its draft-order calculator for bespoke quotations. An integration supplies approved rates from the {ERP} and {PARTNER_PORTAL}; unresolved tax exceptions go to the finance team, and the merchant approves the resulting customer quote.",
+   "previous_blocker": "Routine checkout is usually already automated. Remaining manual work comes from missing order details, disconnected carrier rates, and exceptional tax treatment.",
+   "enabler_now": "Configuration and a small rate integration can bring bespoke quotations through the same calculation path as checkout. No model breakthrough is needed.",
+   "still_hard": "Unusual destinations, incomplete parcel dimensions, tax evidence, and carrier surcharges that are not known when quoting.",
+   "human_edge": "Recognising when a superficially valid calculation rests on the wrong tax or delivery assumptions.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Customers needing quotations for oversized or mixed-parcel orders."
+   },
+   "altitude": "The merchant handles incomplete details and unusual quotes while the finance team settles tax exceptions. Nothing changes in tax decision rights; a new quotation service needs separately agreed shipping limits.",
+   "reach": [
+    {
+     "role": "web and digital interface designer",
+     "task": "Improve address and parcel-detail forms for bespoke orders.",
+     "learn": "Field validation, accessible error messages, and collecting only information needed for a quote."
+    },
+    {
+     "role": "technical writer",
+     "task": "Explain shipping charges and quotation limitations.",
+     "learn": "Clear charge breakdowns and wording that distinguishes estimates from confirmed charges."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "4-10",
+    "testing_rollout": "5-9",
+    "consent_and_access": "2-6 working days; add national consultation periods if applicable"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Standard checkout totals generally use configured deterministic calculations rather than manual arithmetic.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Draft-order calculation and rate integration can reduce bespoke quotation work without a language model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Shares describe remaining human handling time; unattended standard checkout therefore has a zero share.",
+    "The manual quotation path is a subset of orders, and finance review applies only to exceptions.",
+    "The task prior overstates new savings if most orders already use standard checkout.",
+    "The existing shop supports draft orders and configurable tax and shipping calculations.",
+    "GDPR applies to customer addresses. EU AI Act and national consultation requirements are assessed where relevant."
+   ],
+   "unknowns": [
+    "Share of orders requiring manual quotation or finance review.",
+    "Supported tax territories, customer types, and delivery services.",
+    "Availability of parcel dimensions, carrier rates, and surcharge information.",
+    "Draft-order capabilities and ownership of tax configuration.",
+    "Access and employee consultation requirements under national rules."
+   ],
+   "research_questions": [
+    "Which manual quotations can already be handled through shop configuration?",
+    "Do calculated quotes reconcile with invoices across representative tax and shipping cases?",
+    "Which missing fields cause most quotation failures?"
+   ],
+   "new_work": [
+    "Maintain tax and shipping configurations and their effective dates.",
+    "Resolve missing address, parcel, and tax evidence.",
+    "Review exception quotes before sending.",
+    "Reconcile quoted shipping charges with actual carrier charges."
+   ],
+   "time_saved_pct": 84,
+   "speedup": 6.25
+  }
+ ],
+ "role": {
+  "altitude": "The online merchant spends more of the week on assortment quality, difficult customer cases, and commercial experiments. New decision rights require explicit delegation of markdown limits, pilot buying budgets, and help-content changes.",
+  "reach": [
+   "Market research: test demand and pricing assumptions with comparable evidence.",
+   "Technical writing: turn repeated customer questions into useful product and delivery guidance.",
+   "Digital interface design: reduce missing information in checkout and quotation forms.",
+   "Sustainability: substantiate reuse claims for a returned-goods assortment."
+  ],
+  "skills_to_grow": [
+   "Contribution-margin and inventory analysis.",
+   "Experiment design and interpretation.",
+   "Supplier assessment and condition grading.",
+   "Difficult complaint handling and negotiation.",
+   "Data quality, configuration, and exception monitoring."
+  ],
+  "ambitious_version": "Run a returned-goods assortment pilot with an agreed buying budget, inspected stock, clear condition descriptions, and measured margin and complaint outcomes."
+ },
+ "job_code": "13-1199.06",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 206,
+  "attempts": 1,
+  "checks": [
+   "13-1199.06:15707 s4: judgement step marked deterministic"
+  ],
+  "web": "off",
+  "tool_calls": [
+   "text(await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3500}));\n"
+  ],
+  "job": {
+   "code": "13-1199.06",
+   "title": "Online Merchants",
+   "tasks": 34,
+   "function": "Marketing"
+  }
+ }
+}

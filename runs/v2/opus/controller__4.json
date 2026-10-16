@@ -1,0 +1,662 @@
+{
+ "role_id": "controller",
+ "role": {
+  "altitude": "The controller stops building tax packs, fiscal adjustments and asset schedules by hand and starts designing them. They own the fiscal mapping table, the asset policy table, the materiality thresholds and the audit trail. A scheduled job drafts from AFAS, and the controller reviews exceptions and signs off.",
+  "reach": [
+   "fpa: plan to forecast. Learn the driver model so tax and depreciation scenarios read from the live forecast, not a copy.",
+   "accountant: month close. Learn the fixed-asset and accrual postings so tax and asset schedules tie to the ledger every month, not only at year end.",
+   "bookkeeper: accounts payable. Learn how capex invoices are coded in AFAS so asset additions are captured at entry."
+  ],
+  "skills_to_grow": [
+   "Writing rules as data: fiscal mapping and asset policy as versioned tables, not hidden Excel formulas",
+   "Reviewing model-drafted classifications and memos against a tie-out",
+   "Reading SQL and Python on the data platform well enough to check a job's logic with the builder",
+   "Dutch tax levers (KIA, EIA/MIA, fiscal unity, provisions) linked to the driver-based forecast"
+  ],
+  "ambitious_version": "Every quarter the controller runs a fiscal position: expected corporate income tax (Vpb), open investment deductions and the tax effect of planned capex, all from the AFAS data and FP&A forecast the business already trusts. The year-end tax pack becomes a byproduct of the close, and the tax advisor's hours and questions shrink."
+ },
+ "tasks": [
+  {
+   "uid": "11-3031.01:8855",
+   "short": "Build the year-end tax pack from AFAS for the outside tax advisor, then review and approve returns.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export trial balance and ledger detail from AFAS into Excel",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "trial balance",
+      "ledger detail"
+     ],
+     "outputs": [
+      "tax workbook"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Map ledger lines to fiscal adjustments: non-deductible, mixed costs, fiscal depreciation",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "tax workbook",
+      "fiscal mapping table",
+      "fixed asset register"
+     ],
+     "outputs": [
+      "fiscal reconciliation"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Ledger lines on mixed-cost accounts (representation, gifts, staff events, fines) with free-text descriptions",
+      "output": "Proposed fiscal category per line with the reason, or 'unsure'",
+      "check": "Totals per account tie to the trial balance; every line has a category; 'unsure' and lines above the materiality threshold go to the controller",
+      "stop": "One pass per line, at most two retries on invalid output; otherwise mark 'unsure' for manual review",
+      "why_not_simpler": "Account mapping handles most lines, but mixed-cost accounts need the free-text description read to split deductible from non-deductible parts"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Gather supporting documents and answer advisor questions by mail",
+     "actor": "controller",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "SharePoint",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "fiscal reconciliation",
+      "advisor question list",
+      "fixed asset register"
+     ],
+     "outputs": [
+      "tax pack"
+     ],
+     "handoff_to": "external",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Review the draft return from the tax advisor against the reconciliation",
+     "actor": "controller",
+     "today_means": "document",
+     "systems": [
+      "Excel",
+      "Outlook"
+     ],
+     "inputs": [
+      "draft tax return",
+      "fiscal reconciliation"
+     ],
+     "outputs": [
+      "review notes"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Approve the return with the finance director; advisor files it",
+     "actor": "controller",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook"
+     ],
+     "inputs": [
+      "draft tax return",
+      "review notes"
+     ],
+     "outputs": [
+      "filed tax return"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "A scheduled Python job on the governed data platform reads the AFAS trial balance, ledger detail and asset register, applies a versioned fiscal mapping table and builds the fiscal reconciliation and tax pack in a fixed SharePoint folder. A bounded model step proposes fiscal categories only for lines on mixed-cost accounts; the controller reviews those and lines above materiality, and filing stays with the advisor after sign-off.",
+   "previous_blocker": "The pack is built once a year, so nobody invested in a pipeline; fiscal treatment of mixed-cost lines needs reading of free text.",
+   "enabler_now": "AI-assisted coding makes a small reconciliation job cheap to build, and a model can read ledger descriptions with a deterministic tie-out deciding what is used.",
+   "still_hard": "Fiscal judgement on unusual items, Dutch tax rules the benchmarks do not cover, and any year with new entities or restructuring.",
+   "human_edge": "The controller decides fiscal positions, answers for them to the Belastingdienst and auditor, and signs off before anything leaves the company.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A quarterly provisional Vpb position from the same pipeline, instead of a once-a-year surprise."
+   },
+   "altitude": "The controller spends a few days reviewing exceptions instead of two weeks assembling the pack. They gain the right to set the fiscal mapping table and the materiality threshold for review.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Year-end close and fixed asset postings",
+     "learn": "Which asset and accrual postings drive fiscal differences, so they are tagged during the close."
+    },
+    {
+     "role": "payroll",
+     "task": "Payroll journal and staff-cost postings",
+     "learn": "How work-related cost scheme (werkkostenregeling) items reach the ledger, since they overlap with mixed-cost lines."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "3-5",
+    "testing_rollout": "4-6",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Tax estimates need mandatory human review and approval with timestamped logs.",
+     "grade": "E3",
+     "source": "[S7]"
+    },
+    {
+     "claim": "Estimates must be rebuildable by the auditor, so prompts and outputs must not live in personal accounts.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "Large companies file accounts with KVK via SBR from FY2025 and AFAS cannot do this for them.",
+     "grade": "E3",
+     "source": "[S11]"
+    },
+    {
+     "claim": "Leading models meet about 62% of criteria on full close tasks; judgement is the bottleneck, so drafts need review.",
+     "grade": "E3",
+     "source": "[S2]"
+    },
+    {
+     "claim": "AFAS Profit exposes ledger and asset data through GetConnectors for extraction.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Corporate income tax return is prepared and filed by an outside tax advisor",
+    "VAT returns are already produced from AFAS and are out of scope here",
+    "A governed data platform or scheduled job host is available to finance"
+   ],
+   "unknowns": [
+    "Whether Noordhaven has one fiscal unity or several taxable entities",
+    "How many ledger lines sit on mixed-cost accounts each year",
+    "What the tax advisor accepts as pack format",
+    "Whether the auditor wants the model step logged and retained"
+   ],
+   "research_questions": [
+    "How many hours did the last tax pack take, and which part was mixed-cost classification?",
+    "Can the advisor work from a standard pack in SharePoint instead of mail questions?",
+    "What share of mixed-cost lines can a fixed account mapping classify without reading descriptions?",
+    "Does the auditor accept a model-proposed classification with a logged controller approval?"
+   ],
+   "time_saved_pct": 60,
+   "speedup": 2.52
+  },
+  {
+   "uid": "11-3031.01:8874",
+   "short": "Model tax scenarios on planned investments and results, and agree tax choices with the advisor and finance director.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect forecast, capex plan and entity results from FP&A and AFAS",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit",
+      "Power BI"
+     ],
+     "inputs": [
+      "forecast",
+      "capex plan",
+      "trial balance"
+     ],
+     "outputs": [
+      "tax planning workbook"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Model scenarios: investment deductions, provisions timing, loss carry-forward, fiscal unity",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "tax planning workbook",
+      "fiscal mapping table"
+     ],
+     "outputs": [
+      "tax scenarios"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 55,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Track Dutch tax rule changes such as the yearly tax plan",
+     "actor": "controller",
+     "today_means": "document",
+     "systems": [
+      "Outlook"
+     ],
+     "inputs": [
+      "advisor newsletters",
+      "tax plan publications"
+     ],
+     "outputs": [
+      "rule change digest"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "read",
+      "input": "Advisor newsletters and official tax plan texts collected in a SharePoint folder",
+      "output": "Short digest of changes relevant to logistics, fleet and warehousing, with source links",
+      "check": "Each item must cite a source passage; the controller checks items before they change any scenario input",
+      "stop": "One digest per document batch; items without a source passage are dropped",
+      "why_not_simpler": "The input is long free text; no rule can pick out what matters for this company"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Discuss options with tax advisor and finance director",
+     "actor": "controller",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "tax scenarios",
+      "rule change digest"
+     ],
+     "outputs": [
+      "tax decision"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Write the decision memo for the file and the auditor",
+     "actor": "controller",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "SharePoint"
+     ],
+     "inputs": [
+      "tax decision",
+      "tax scenarios"
+     ],
+     "outputs": [
+      "tax decision memo"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Scenario outputs and meeting notes",
+      "output": "Draft memo with figures pulled from the scenario model",
+      "check": "Every figure in the memo is filled from the model, not written by the model; controller edits and approves",
+      "stop": "One draft; if the notes are incomplete the draft lists open points instead of guessing",
+      "why_not_simpler": "A template covers the figures, but the reasoning from the meeting is free text"
+     },
+     "authority": "draft",
+     "human_gate": true
+    }
+   ],
+   "design": "A scenario model in Python on the governed data platform reads the FP&A forecast, capex plan and AFAS actuals, and computes tax outcomes per scenario from versioned rule parameters (rates, deduction brackets). A bounded model step digests rule changes and drafts the decision memo; the controller and advisor make the choices.",
+   "previous_blocker": "Tax planning lived in one-off Excel files that copied the forecast, so each run was slow and quickly stale.",
+   "enabler_now": "Cheap AI-assisted coding of a parameter-driven model linked to the forecast, and models that summarise long rule texts with citations.",
+   "still_hard": "Choosing positions with legal and financial risk, interpreting new rules, and timing decisions with the business.",
+   "human_edge": "Weighing tax savings against risk and business plans, and agreeing positions with the advisor and finance director.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Test the tax effect of each major capex request (trucks, forklifts, racking) before approval, not only at year end."
+   },
+   "altitude": "The controller runs scenarios in minutes and brings options to capex decisions. They gain a seat in capex approval for the tax angle.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Build the forecast and capex plan",
+     "learn": "Which drivers move taxable profit, so the forecast carries the fields the tax model needs."
+    },
+    {
+     "role": "finance-director",
+     "task": "Approve capex and financing",
+     "learn": "Which decisions the board wants tax effects for, and how often."
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "3-5",
+    "testing_rollout": "3-5",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Products draft and people approve; teams stay responsible for review.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Tax estimates need mandatory human review and approval with logs.",
+     "grade": "E3",
+     "source": "[S7]"
+    },
+    {
+     "claim": "Benchmarks are US GAAP; Dutch tax rules are untested for models.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "FP&A keeps a forecast and capex plan in a structured form",
+    "The tax advisor stays involved for positions with legal risk"
+   ],
+   "unknowns": [
+    "How many legal entities and whether a fiscal unity exists",
+    "How many capex decisions a year are large enough to need a tax view",
+    "Whether the advisor shares rule updates in a form that can be stored"
+   ],
+   "research_questions": [
+    "How often in the last two years did a tax choice change after the forecast moved?",
+    "Can the forecast export capex per asset class and month without manual work?",
+    "Would the finance director use a tax view in capex approval?"
+   ],
+   "time_saved_pct": 52,
+   "speedup": 2.09
+  },
+  {
+   "uid": "11-3031.01:8875",
+   "short": "Set depreciation on new assets and advise management on buying, leasing or disposing of trucks, forklifts and racking.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pick up capex invoices and classify them into asset classes",
+     "actor": "controller",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "supplier invoice",
+      "asset policy table"
+     ],
+     "outputs": [
+      "asset addition"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Invoice lines booked on capex or high-value cost accounts, with description and amount",
+      "output": "Proposed asset class, capitalise or expense, and reason",
+      "check": "Amount above the capitalisation threshold; asset class exists in the policy table; totals tie to the AP booking; low confidence goes to the controller",
+      "stop": "One pass per line, two retries on invalid output, then manual",
+      "why_not_simpler": "Invoice descriptions vary by supplier, and splitting capex from repairs needs reading the text"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Set useful life and residual value per asset by policy",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "asset addition",
+      "asset policy table"
+     ],
+     "outputs": [
+      "depreciation schedule"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Run monthly depreciation in AFAS and check it ties to the ledger",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "depreciation schedule",
+      "fixed asset register"
+     ],
+     "outputs": [
+      "depreciation journal"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Analyse buy, lease or dispose options with cost and usage data",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "fixed asset register",
+      "lease offer",
+      "maintenance costs"
+     ],
+     "outputs": [
+      "lease-buy analysis"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Advise management in a memo or meeting",
+     "actor": "controller",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams",
+      "PowerPoint"
+     ],
+     "inputs": [
+      "lease-buy analysis"
+     ],
+     "outputs": [
+      "asset advice"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    }
+   ],
+   "design": "Configure AFAS fixed assets with a maintained asset policy table so useful lives and monthly depreciation run without Excel. A bounded model step proposes capitalise-or-expense and asset class for invoice lines, and a deterministic lease-versus-buy calculator on the data platform reads asset register, maintenance costs and offers to produce a standard analysis for management.",
+   "previous_blocker": "Capex invoices arrive with varied descriptions, and the lease-buy analysis was rebuilt in Excel for each request.",
+   "enabler_now": "Models can read invoice descriptions under a tie-out check, and a standard calculator is cheap to build with AI-assisted coding.",
+   "still_hard": "Judging useful life for unusual assets, impairment, and the operational trade-offs of fleet choices.",
+   "human_edge": "The controller weighs operational needs, financing and risk with site managers and the finance director, and owns the depreciation policy.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A standard lease-buy-dispose check for every truck, forklift and racking request from the three sites."
+   },
+   "altitude": "The controller reviews exceptions instead of coding every addition, and spends the time on fleet and equipment advice. They gain a formal advisory role in site capex requests.",
+   "reach": [
+    {
+     "role": "bookkeeper",
+     "task": "Code supplier invoices in AFAS",
+     "learn": "Which invoice lines are capex, so they are flagged at entry."
+    },
+    {
+     "role": "fpa",
+     "task": "Capex plan in the forecast",
+     "learn": "How planned assets flow into depreciation forecasts."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "2-4",
+    "testing_rollout": "3-5",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Products draft entries and people review and approve them before posting.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Posting should wait until a deterministic tie-out passes.",
+     "grade": "E3",
+     "source": "[S6]"
+    },
+    {
+     "claim": "AFAS Profit has a fixed asset module that runs depreciation per asset.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The AFAS fixed asset module is licensed or can be added",
+    "Leases are handled under Dutch GAAP, not IFRS 16"
+   ],
+   "unknowns": [
+    "How many capex invoices arrive per year",
+    "Whether depreciation already runs in AFAS or in Excel",
+    "Who owns fleet decisions at site level"
+   ],
+   "research_questions": [
+    "What share of capex invoices is misclassified today and found at the audit?",
+    "Is the AFAS fixed asset module in use and configured per asset class?",
+    "Would site managers use a standard lease-buy check before requesting equipment?"
+   ],
+   "time_saved_pct": 62,
+   "speedup": 2.67
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 109,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

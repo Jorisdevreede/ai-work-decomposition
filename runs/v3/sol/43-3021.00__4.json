@@ -1,0 +1,1032 @@
+{
+ "tasks": [
+  {
+   "uid": "43-3021.00:23245",
+   "short": "Review service and delivery evidence and calculate the base charges due.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve order details and service or delivery evidence.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "sales order",
+      "service record",
+      "delivery record"
+     ],
+     "outputs": [
+      "billing evidence"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read supporting documents and identify billable quantities, dates and service codes.",
+     "actor": "billing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "billing evidence"
+     ],
+     "outputs": [
+      "billable items",
+      "evidence exception"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Supporting documents without usable structured fields.",
+      "output": "Billable items with document references and unresolved fields.",
+      "check": "Validate identifiers, dates, units and duplicates against order records; require evidence for each field.",
+      "stop": "One extraction and one repair attempt per document; unresolved or contradictory fields enter the evidence exception queue.",
+      "why_not_simpler": "Use structured records first. Remaining documents contain variable layouts and free-text service descriptions."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "billing clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Find the applicable tariff and its effective dates.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "billable items",
+      "tariff register"
+     ],
+     "outputs": [
+      "applicable tariff"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Calculate base fees and check quantities against the supporting evidence.",
+     "actor": "billing clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "billable items",
+      "applicable tariff"
+     ],
+     "outputs": [
+      "base charge calculation",
+      "fee exception"
+     ],
+     "handoff_to": "service owner",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Clarify missing service details and supply corrected evidence.",
+     "actor": "service owner",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "evidence exception",
+      "fee exception"
+     ],
+     "outputs": [
+      "clarified billing evidence"
+     ],
+     "handoff_to": "billing supervisor",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve exceptional fee interpretations or return them for more evidence.",
+     "actor": "billing supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "fee exception",
+      "clarified billing evidence",
+      "base charge calculation"
+     ],
+     "outputs": [
+      "fee decision"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "billing supervisor"
+    },
+    {
+     "id": "s7",
+     "what": "Record supported base charges against the order.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "base charge calculation",
+      "fee decision"
+     ],
+     "outputs": [
+      "base charges"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "An integration gathers billing evidence from the {ERP}, {OPS_SYSTEM} and {DOCS}; a bounded extraction loop handles only documents without structured fields. Configured tariffs in the {ERP} calculate base charges, while a queue in the {WORKFLOW} routes missing evidence and exceptional fees to the responsible people.",
+   "previous_blocker": "Document layouts, service codes and tariff versions differ. Manual reading has bridged gaps between operational evidence and billing records.",
+   "enabler_now": "Structured feeds and existing tariff configuration cover routine cases. AI-assisted coding reduces the effort of building adapters and a small validated extraction loop.",
+   "still_hard": "Ambiguous service descriptions and disputed entitlement to charge remain difficult. Healthcare evidence may contain special-category personal data: GDPR requires an appropriate legal basis, strict access and data minimisation.",
+   "human_edge": "A person establishes what service was actually delivered and whether an exceptional charge is defensible.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Charge previews for service coordinators using approved tariffs."
+   },
+   "altitude": "The clerk spends more time resolving weak evidence and explaining charge differences. A proposed delegation lets the clerk return incomplete submissions; fee exceptions remain with the billing supervisor.",
+   "reach": [
+    {
+     "role": "cost estimator",
+     "task": "Compare billed service quantities with the quantities assumed in a quotation.",
+     "learn": "Service scope, measurement units and the difference between a tariff and an estimated cost."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "AFAS Profit extracts invoice fields and identifies suppliers. This supports document capture feasibility, not clinical coding or customer fee interpretation.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Effective-dated tariffs, quantity checks and arithmetic can handle routine base-charge calculations deterministically.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This task calculates base charges; contractual discounts and shipment adjustments belong to the separate billing-terms task.",
+    "Tariffs and service codes can be made explicit and versioned.",
+    "Time shares and remaining percentages are planning estimates, including exception handling.",
+    "Build ranges cover one billing stream. The access range includes consultation under national rules where applicable; elapsed approval waits can be longer."
+   ],
+   "unknowns": [
+    "Which source records are structured and which require document reading?",
+    "Does billing evidence contain health data or other special-category personal data?",
+    "Who may approve exceptional fees and return incomplete submissions?",
+    "Can the available interfaces create internal charges with source references?"
+   ],
+   "research_questions": [
+    "Which fields can be obtained directly before introducing document extraction?",
+    "How often do tariff selection and service-code interpretation disagree with a human review?"
+   ],
+   "new_work": [
+    "Review extracted billable items and resolve evidence exceptions.",
+    "Maintain tariff versions and service-code mappings.",
+    "Monitor duplicate imports and failed record writes.",
+    "Maintain access restrictions and extraction quality checks."
+   ],
+   "time_saved_pct": 77,
+   "speedup": 4.35
+  },
+  {
+   "uid": "43-3021.00:23263",
+   "short": "Compile cost-factor reports from labour, production, storage and equipment records.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export labour costs, production volumes, storage usage and equipment costs.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "PAYROLL",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "labour cost records",
+      "production records",
+      "storage records",
+      "equipment cost records"
+     ],
+     "outputs": [
+      "cost extracts"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Combine extracts and reconcile periods, cost centres and measurement units.",
+     "actor": "billing clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "cost extracts",
+      "cost mapping"
+     ],
+     "outputs": [
+      "reconciled cost dataset",
+      "cost data exception"
+     ],
+     "handoff_to": "cost accountant",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Choose allocation treatments for shared costs and resolve unusual classifications.",
+     "actor": "cost accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "reconciled cost dataset",
+      "cost data exception",
+      "allocation policy"
+     ],
+     "outputs": [
+      "approved allocation treatment"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "record-to-report",
+     "approver": "cost accountant"
+    },
+    {
+     "id": "s4",
+     "what": "Prepare cost tables and the report using the agreed allocation treatment.",
+     "actor": "billing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "reconciled cost dataset",
+      "approved allocation treatment",
+      "report template"
+     ],
+     "outputs": [
+      "cost factor report draft"
+     ],
+     "handoff_to": "cost accountant",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Review totals and material movements before releasing the report.",
+     "actor": "cost accountant",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "cost factor report draft",
+      "cost extracts",
+      "approved allocation treatment"
+     ],
+     "outputs": [
+      "cost factor report"
+     ],
+     "handoff_to": "finance manager",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "data-to-report",
+     "approver": "cost accountant"
+    }
+   ],
+   "design": "Scheduled imports into the {DATA_PLATFORM} reconcile cost extracts from the {ERP}, {PAYROLL} and {OPS_SYSTEM}, with failed checks routed through the {WORKFLOW}. A deterministic generator produces the report in the {DOCS} and a drill-down view in the {BI}; the cost accountant approves allocation changes and report release.",
+   "previous_blocker": "Sources use different periods, units and cost-centre mappings. Shared-cost allocations often depend on undocumented judgement.",
+   "enabler_now": "Reusable mappings, reconciliation checks and report templates can now be assembled with less development effort. No model is needed for the proposed reporting path.",
+   "still_hard": "A balanced report can still allocate costs misleadingly. Changes in production mix, capacity and allocation policy need accounting judgement.",
+   "human_edge": "The cost accountant decides whether an allocation represents how resources were consumed.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly review of unit-cost movements by service line."
+   },
+   "altitude": "The clerk investigates source differences and prepares explanations instead of assembling tables. A proposed delegation permits source-data queries to operational owners; allocation policy remains with the cost accountant.",
+   "reach": [
+    {
+     "role": "budget analyst",
+     "task": "Separate volume changes from rate changes in service-line costs.",
+     "learn": "Cost drivers, fixed and variable costs, and variance decomposition."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "6-12",
+    "testing_rollout": "5-9",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Scheduled extracts, mapping tables and deterministic report generation can automate recurring cost-report assembly.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Judgement remains necessary when shared-cost allocations lack a settled policy.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The report supports billing and cost analysis rather than a complete statutory costing process.",
+    "Approved allocation treatments can be reused until policy or operating conditions change.",
+    "Aggregated labour costs are sufficient; individual employee records are excluded where unnecessary under GDPR.",
+    "Time shares and build ranges are estimates for one recurring report.",
+    "The access range includes employee consultation under national rules where applicable. Individual performance monitoring would require a separate GDPR and EU AI Act assessment."
+   ],
+   "unknowns": [
+    "Are allocation policies documented and approved?",
+    "Do source periods and cost centres align?",
+    "Which labour-cost aggregation levels are available and permitted?",
+    "Who can approve report release and request operational corrections?"
+   ],
+   "research_questions": [
+    "Can existing reporting configuration produce the required report before custom generation is built?",
+    "Which reconciliations detect incomplete extracts and period-cutoff errors?",
+    "How sensitive are reported unit costs to alternative approved allocation methods?"
+   ],
+   "new_work": [
+    "Resolve failed imports and unmapped cost centres.",
+    "Maintain allocation versions, report definitions and source mappings.",
+    "Review material movements and approve report release.",
+    "Check that source changes do not expose unnecessary employee data."
+   ],
+   "time_saved_pct": 74,
+   "speedup": 3.85
+  },
+  {
+   "uid": "43-3021.00:23243",
+   "short": "Investigate accounting discrepancies, agree corrections and update the records.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve disputed entries and related account transactions.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "BANK"
+     ],
+     "inputs": [
+      "discrepancy case",
+      "billing records",
+      "account transactions"
+     ],
+     "outputs": [
+      "discrepancy transaction set"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compare amounts, references and dates to isolate unmatched or duplicate entries.",
+     "actor": "billing clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "discrepancy transaction set",
+      "matching rules"
+     ],
+     "outputs": [
+      "reconciliation findings"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Read invoices and supporting documents to identify possible causes.",
+     "actor": "billing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "reconciliation findings",
+      "billing evidence",
+      "invoice",
+      "credit note"
+     ],
+     "outputs": [
+      "discrepancy evidence summary"
+     ],
+     "handoff_to": "service owner",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "reconcile",
+      "input": "A fixed case packet containing unmatched entries and their supporting documents.",
+      "output": "Evidence-linked possible causes, conflicting facts and missing evidence.",
+      "check": "Recompute amounts in code; validate every cited document and field; label unsupported causes as unresolved.",
+      "stop": "One analysis and one repair attempt per case; unresolved cases return to the billing clerk without a posting.",
+      "why_not_simpler": "Exact matching runs first. Remaining explanations can be scattered across free-text documents."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "billing clerk"
+    },
+    {
+     "id": "s4",
+     "what": "Explain missing operational facts and provide supporting evidence.",
+     "actor": "service owner",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "discrepancy evidence summary"
+     ],
+     "outputs": [
+      "clarified billing evidence"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Choose the proposed correction and record its accounting rationale.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "reconciliation findings",
+      "discrepancy evidence summary",
+      "clarified billing evidence"
+     ],
+     "outputs": [
+      "correction proposal"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve the correction, accounting period and supporting rationale.",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "correction proposal",
+      "clarified billing evidence"
+     ],
+     "outputs": [
+      "approved correction"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "record-to-report",
+     "approver": "accountant"
+    },
+    {
+     "id": "s7",
+     "what": "Post the approved correction and attach the evidence.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "approved correction",
+      "discrepancy evidence summary"
+     ],
+     "outputs": [
+      "corrected billing records",
+      "correction audit trail"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "Configured matching in the {ERP} isolates discrepancies using records from the {ERP} and {BANK}; a bounded loop reads the relevant evidence in the {DOCS} and drafts possible causes. A case queue in the {WORKFLOW} gathers missing facts, records the accountant's approval and posts only the approved correction through the {ERP}.",
+   "previous_blocker": "Identifiers do not always match, and the reason for a difference often sits outside the ledger. A matching rule cannot establish whether a charge was justified.",
+   "enabler_now": "Existing matching configuration handles exact cases, while cheaper integrations assemble a complete case packet. A bounded reading loop can organise the remaining evidence without posting decisions.",
+   "still_hard": "Missing delivery evidence, disputed facts and closed accounting periods still require people. Equal amounts alone do not establish a valid match.",
+   "human_edge": "People establish the economic substance of the transaction and accept responsibility for the correction.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Monthly recurring billing-defect review for operational owners."
+   },
+   "altitude": "The clerk spends more time on causes and corrective proposals. A proposed delegation allows the clerk to group recurring defects and request operational fixes; accounting approval remains with the accountant.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Prepare an evidence-backed correction proposal with the appropriate accounting period.",
+     "learn": "Cutoff, materiality, reversals and the difference between a billing adjustment and a ledger correction."
+    },
+    {
+     "role": "business intelligence analyst",
+     "task": "Identify recurring discrepancy causes by source process.",
+     "learn": "Consistent cause codes, denominators and measures of repeat occurrence."
+    }
+   ],
+   "build_days": {
+    "coding": "6-10",
+    "integration": "5-12",
+    "testing_rollout": "6-12",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "AFAS Profit supports automatic bank matching using payment references, account identifiers or invoice numbers, with unmatched items requiring attention.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "That matching capability supports routine reconciliation, but does not establish that arbitrary accounting discrepancies can be resolved automatically.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Evidence summaries can assist investigation when validated against source records; accounting corrections still require an authorised decision.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The scope is billing-related discrepancies, not a full financial close.",
+    "Approval and posting permissions are separate and enforced.",
+    "Posting checks include balanced entries, valid periods, approval scope and duplicate prevention.",
+    "GDPR access and retention rules apply to case packets. Consultation under national rules is included where applicable.",
+    "Time shares and build ranges are estimates for one reconciliation process."
+   ],
+   "unknowns": [
+    "Which discrepancy types dominate and which matching configuration already exists?",
+    "Which corrections require an accountant's approval under current policy?",
+    "Can the available interfaces enforce approval scope and prevent duplicate posting?",
+    "How often are source documents missing or inaccessible?"
+   ],
+   "research_questions": [
+    "What share of cases disappears after identifier and source-data repairs?",
+    "Can the case summary distinguish conflicting evidence from missing evidence reliably?",
+    "Which recurring causes can be prevented upstream?"
+   ],
+   "new_work": [
+    "Review evidence summaries and resolve unsupported explanations.",
+    "Maintain matching tolerances and discrepancy cause codes.",
+    "Handle rejected postings and approval changes.",
+    "Audit corrections and feed recurring defects back to operational owners."
+   ],
+   "time_saved_pct": 61,
+   "speedup": 2.56
+  },
+  {
+   "uid": "43-3021.00:23258",
+   "short": "Apply agreed credit terms, discounts and shipment rates to complete billing drafts.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check the customer's agreed payment terms and discount conditions.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "CLM"
+     ],
+     "inputs": [
+      "base charges",
+      "contract terms",
+      "customer account"
+     ],
+     "outputs": [
+      "applicable billing terms"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Find the shipment tariff using destination, weight and service level.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "shipment record",
+      "tariff register"
+     ],
+     "outputs": [
+      "applicable shipment tariff"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Calculate discounts, shipment charges, due dates and billing totals.",
+     "actor": "billing clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "base charges",
+      "applicable billing terms",
+      "applicable shipment tariff",
+      "shipment record"
+     ],
+     "outputs": [
+      "calculated charges",
+      "billing exception"
+     ],
+     "handoff_to": "finance manager",
+     "share_pct": 40,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Approve nonstandard discounts or payment terms and resolve conflicting conditions.",
+     "actor": "finance manager",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "billing exception",
+      "contract terms",
+      "calculated charges"
+     ],
+     "outputs": [
+      "approved billing adjustment"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "finance manager"
+    },
+    {
+     "id": "s5",
+     "what": "Enter the calculated amounts and approved adjustments into the billing draft.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "base charges",
+      "calculated charges",
+      "approved billing adjustment"
+     ],
+     "outputs": [
+      "billing draft"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure effective-dated payment terms, discounts, shipment tariffs and rounding rules in the {ERP}, using shipment facts from the {OPS_SYSTEM}. A queue in the {WORKFLOW} captures nonstandard approvals and returns them to the {ERP}, which generates the billing draft with a calculation trace.",
+   "previous_blocker": "Commercial conditions and shipment tariffs have not always been maintained as usable master data. A workbook often bridges that gap even when calculation features already exist.",
+   "enabler_now": "Existing configuration can perform most calculations. AI-assisted coding reduces the effort of migrating rate tables, validating them and connecting shipment records.",
+   "still_hard": "Contract precedence, retrospective rate changes and negotiated concessions remain difficult. An automated calculation cannot settle an ambiguous commercial agreement.",
+   "human_edge": "The finance manager decides when a concession is justified and who may commit to changed terms.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Pre-dispatch checks for unexpected shipment surcharges."
+   },
+   "altitude": "The clerk investigates rate exceptions and explains calculations instead of rekeying totals. A proposed delegation lets the clerk hold incomplete drafts; nonstandard terms remain with the finance manager.",
+   "reach": [
+    {
+     "role": "credit analyst",
+     "task": "Flag proposed payment terms that exceed an already approved account limit.",
+     "learn": "Exposure calculations, approval limits and escalation criteria without making a new creditworthiness decision."
+    }
+   ],
+   "build_days": {
+    "coding": "1-4",
+    "integration": "3-7",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Contractual discounts, due dates and shipment-rate calculations are suitable for configured rules rather than model judgement.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The digest provides no directly documented outgoing-billing implementation or measured result for this task.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This task applies approved credit terms; it does not assess creditworthiness or send invoices.",
+    "Commercial terms are available as structured master data. Unstructured contracts require a separate reviewed migration.",
+    "Existing configuration supports the required calculation sequence; gaps are confirmed before custom code is commissioned.",
+    "GDPR applies where customer records contain personal data. Expansion into natural-person creditworthiness assessment requires separate EU AI Act assessment.",
+    "Time shares and build ranges are estimates for one rate family. The access range includes consultation under national rules where applicable."
+   ],
+   "unknowns": [
+    "Which calculation features are already licensed and configured?",
+    "Are tariffs, discounts and contract precedence maintained centrally?",
+    "Who may approve concessions, and at what limits?",
+    "Which shipment facts arrive before the billing draft is prepared?"
+   ],
+   "research_questions": [
+    "Can existing configuration reproduce representative historical bills, including rounding and effective-date changes?",
+    "Which manual calculations remain after correcting master data?",
+    "Can surcharge exceptions be detected before dispatch using available shipment facts?"
+   ],
+   "new_work": [
+    "Maintain rate tables, effective dates and approval limits.",
+    "Review conflicting terms and missing shipment facts.",
+    "Verify representative calculations after tariff changes.",
+    "Monitor draft-generation failures and preserve calculation traces."
+   ],
+   "time_saved_pct": 85,
+   "speedup": 6.67
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts from document reading, arithmetic and rekeying toward evidence quality, billing exceptions and recurring error prevention. Proposed authority covers returning incomplete submissions and holding unsupported drafts; pricing concessions, allocation policy and accounting approvals remain with designated finance roles.",
+  "reach": [
+   "Cost estimators: compare delivered quantities with quoted scope.",
+   "Budget analysts: explain volume and rate movements in service costs.",
+   "Accountants: prepare evidence-backed correction proposals.",
+   "Credit analysts: flag departures from approved terms and limits."
+  ],
+  "skills_to_grow": [
+   "Tariff and contract interpretation.",
+   "Source-data reconciliation and accounting cutoff.",
+   "Cost drivers and allocation methods.",
+   "Rule configuration and calculation validation.",
+   "Evidence review, GDPR data minimisation and appropriate AI literacy."
+  ],
+  "ambitious_version": "Run a billing-quality service that offers charge previews, detects shipment surcharges before dispatch and turns recurring discrepancies into specific operational fixes."
+ },
+ "job_code": "43-3021.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 170,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "text(await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":2000}));\n"
+  ],
+  "job": {
+   "code": "43-3021.00",
+   "title": "Billing and Posting Clerks",
+   "tasks": 26,
+   "function": "Finance"
+  }
+ }
+}

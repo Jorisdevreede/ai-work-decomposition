@@ -1,0 +1,725 @@
+{
+ "tasks": [
+  {
+   "uid": "43-4151.00:2686",
+   "short": "Compile order statistics and prepare management reports.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export orders, cancellations and order values for the reporting period.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "reporting period",
+      "order records"
+     ],
+     "outputs": [
+      "order export"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Retrieve shipment dates and outstanding quantities.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "reporting period",
+      "shipment records"
+     ],
+     "outputs": [
+      "shipment export"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Match exports, resolve discrepancies and calculate agreed order statistics.",
+     "actor": "order clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "order export",
+      "shipment export",
+      "metric definitions"
+     ],
+     "outputs": [
+      "order statistics",
+      "data exceptions"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "order clerk"
+    },
+    {
+     "id": "s4",
+     "what": "Prepare the management report and explain material changes.",
+     "actor": "order clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "order statistics",
+      "data exceptions",
+      "report template"
+     ],
+     "outputs": [
+      "management report"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "data-to-report",
+     "approver": "order clerk"
+    },
+    {
+     "id": "s5",
+     "what": "Email the report to management and retain the distributed version.",
+     "actor": "order clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "management report",
+      "report recipients"
+     ],
+     "outputs": [
+      "report distribution"
+     ],
+     "handoff_to": "sales manager",
+     "share_pct": 5,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "Scheduled exports from the {ERP} and {OPS_SYSTEM} feed deterministic joins, reconciliations and calculations on the {DATA_PLATFORM}. An artefact generator prepares tables and threshold-based variance statements; the order clerk resolves exceptions and adds explanations before publishing an approved snapshot in the {BI}. Management reads the shared snapshot, removing attachment distribution.",
+   "previous_blocker": "Separate exports, inconsistent order identifiers and changing metric definitions make a recurring report costly to maintain.",
+   "enabler_now": "Existing scheduling and reporting features can cover much of the work. AI-assisted coding reduces the effort of building missing joins, checks and report templates; no model is needed at runtime.",
+   "still_hard": "Partial deliveries, returns, currency changes and reporting cut-offs can change the meaning of a metric. Explaining causes still needs operational knowledge.",
+   "human_edge": "Recognise when an apparent sales change is a data issue, and explain which operational action management should consider.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily prioritisation of overdue order exceptions instead of waiting for the management reporting cycle."
+   },
+   "altitude": "The week shifts from assembling reports to investigating exceptions and proposing order-recovery priorities. Commercial and fulfilment approval rights remain unchanged.",
+   "reach": [
+    {
+     "role": "sales manager",
+     "task": "Prepare an evidence-based order-recovery priority list.",
+     "learn": "Backlog ageing, margin interpretation and the limits of order-value measures."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "3-7",
+    "testing_rollout": "3-6",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Fixed order metrics, reconciliation checks and report templates can use deterministic calculations.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Exact documents order imports and stock synchronisation, supporting the feasibility of connected order records.",
+     "grade": "E2",
+     "source": "[S5]"
+    }
+   ],
+   "assumptions": [
+    "This typical workflow uses separate order and shipment records, with a spreadsheet joining them.",
+    "Time shares and build ranges are planning estimates, not measured customer results.",
+    "Existing reporting configuration is checked before custom code is built.",
+    "Access is limited to necessary order data under GDPR; national consultation rules apply if employee monitoring is introduced."
+   ],
+   "unknowns": [
+    "Whether the existing {ERP} already provides the required report.",
+    "Availability of stable order identifiers and scheduled exports.",
+    "Agreed definitions for cancellations, returns, overdue orders and reporting cut-offs.",
+    "Who may publish management figures and access customer-level detail."
+   ],
+   "research_questions": [
+    "Which reconciliation checks detect duplicate lines and missing shipments?",
+    "Can an approved shared snapshot satisfy management's reporting needs?"
+   ],
+   "new_work": [
+    "Review reconciliation exceptions and unexplained changes.",
+    "Maintain metric definitions, reporting calendars and access permissions.",
+    "Monitor failed refreshes and preserve approved report versions."
+   ],
+   "time_saved_pct": 86,
+   "speedup": 7.14
+  },
+  {
+   "uid": "43-4151.00:2685",
+   "short": "Recommend suitable packing and labels for customer orders.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check ordered items, quantities, destination and recorded handling requirements.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "order records",
+      "item master"
+     ],
+     "outputs": [
+      "order handling profile"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read customer packing instructions and applicable packing specifications.",
+     "actor": "order clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "customer instructions",
+      "packing specifications",
+      "order handling profile"
+     ],
+     "outputs": [
+      "packing requirements"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Customer instructions and the current packing specifications.",
+      "output": "Structured packing requirements with source passages and unresolved conflicts.",
+      "check": "Validate required fields, units and document versions; the clerk confirms extracted requirements before use.",
+      "stop": "One extraction and one repair attempt per instruction pack; unresolved or missing requirements go to the clerk.",
+      "why_not_simpler": "Customer instructions contain varied prose, exceptions and document layouts that fixed field mappings cannot reliably capture."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "order clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Select a packing method and label specification against the requirements.",
+     "actor": "order clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "order handling profile",
+      "packing requirements",
+      "packing rules"
+     ],
+     "outputs": [
+      "packing recommendation",
+      "packing exceptions"
+     ],
+     "handoff_to": "warehouse supervisor",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Resolve nonstandard requirements and approve exceptional packing arrangements.",
+     "actor": "warehouse supervisor",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "packing recommendation",
+      "packing exceptions"
+     ],
+     "outputs": [
+      "approved exception plan"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "warehouse supervisor"
+    },
+    {
+     "id": "s5",
+     "what": "Record packing and label instructions on the order for fulfilment.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "packing recommendation",
+      "packing exceptions",
+      "approved exception plan"
+     ],
+     "outputs": [
+      "order packing instructions"
+     ],
+     "handoff_to": "warehouse team",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "The {ERP} supplies item and destination attributes, while a bounded extraction loop turns instructions in the {DOCS} into requirements for clerk review. Versioned rules in the {WORKFLOW} select standard packing and labels; unmatched or conflicting requirements go to the warehouse supervisor. Only rule-covered recommendations or approved exception plans become packing instructions in the {ERP}.",
+   "previous_blocker": "Packing knowledge is split between specifications, customer instructions and warehouse experience. Incomplete item attributes prevent reliable rule matching.",
+   "enabler_now": "A small extraction loop can prepare free-text requirements, while ordinary rules handle known combinations. Existing order fields and approval configuration can carry the result.",
+   "still_hard": "Physical condition, unusual loads and safety-critical shipments need qualified judgement. Extraction cannot establish that a packing method is safe or legally sufficient.",
+   "human_edge": "Notice unusual handling risks, question conflicting instructions and involve qualified specialists when needed.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The clerk spends less time searching specifications and retyping instructions, and more time resolving unusual requirements with fulfilment staff. Decision rights do not change.",
+   "reach": [
+    {
+     "role": "sales representative",
+     "task": "Clarify customer handling requirements before an order is accepted.",
+     "learn": "Packing constraints, label requirements and when to seek warehouse or specialist advice."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "3-8",
+    "testing_rollout": "5-10",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Standard packing choices can use versioned decision tables when item and shipment attributes are complete.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Rossum documents extraction from order documents, business-rule checks and exception routing; this supports the capture pattern, not packing safety.",
+     "grade": "E2",
+     "source": "[S4]"
+    }
+   ],
+   "assumptions": [
+    "The workflow covers ordinary merchandise; specialist shipments are routed to qualified people.",
+    "Approved packing rules exist or can be documented before automated selection starts.",
+    "Time shares are averaged across routine orders and orders requiring consultation.",
+    "Build ranges include access approval and a national consultation check; they exclude developing specialist packing standards.",
+    "Customer documents receive purpose-limited access and retention under GDPR."
+   ],
+   "unknowns": [
+    "Completeness of item dimensions, weights and handling classifications.",
+    "Which packing standards and destination requirements apply.",
+    "Who is qualified to approve safety-critical or nonstandard arrangements.",
+    "Whether the {ERP} can enforce unresolved-exception holds."
+   ],
+   "research_questions": [
+    "Which requirements can be expressed as complete, testable rules?",
+    "What test set covers conflicting instructions, missing attributes and obsolete specifications?"
+   ],
+   "new_work": [
+    "Review extracted requirements and resolve ambiguous passages.",
+    "Maintain packing rules, specification versions and specialist escalation routes.",
+    "Investigate incorrect recommendations and update the regression examples."
+   ],
+   "time_saved_pct": 72,
+   "speedup": 3.64
+  },
+  {
+   "uid": "43-4151.00:2676",
+   "short": "Sell relevant additional merchandise or services through calls and customer visits.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Review account history, recent orders and open customer issues.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "account records",
+      "order history",
+      "customer issues"
+     ],
+     "outputs": [
+      "account brief"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check product information and select relevant additional offers.",
+     "actor": "order clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "account brief",
+      "product information",
+      "offer rules"
+     ],
+     "outputs": [
+      "offer shortlist"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Discuss needs, propose useful additions and respond to objections by phone.",
+     "actor": "order clerk",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "account brief",
+      "offer shortlist"
+     ],
+     "outputs": [
+      "customer requirements",
+      "conversation notes",
+      "proposed terms"
+     ],
+     "handoff_to": "none",
+     "share_pct": 55,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Record the conversation outcome and schedule agreed follow-up.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "conversation notes",
+      "customer requirements",
+      "proposed terms"
+     ],
+     "outputs": [
+      "opportunity update",
+      "follow-up task"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Clerk-written conversation notes and the permitted customer-record fields.",
+      "output": "Draft opportunity fields and follow-up actions with supporting note passages.",
+      "check": "Validate field types and dates; the clerk confirms intent, commitments and actions before saving.",
+      "stop": "One extraction and one repair attempt per conversation; unclear commitments remain blank for clerk completion.",
+      "why_not_simpler": "Free-text notes describe needs and commitments in varied language; fixed rules cannot reliably map them to fields."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "order clerk"
+    },
+    {
+     "id": "s5",
+     "what": "Approve proposed discounts or commitments outside the clerk's delegated authority.",
+     "actor": "sales manager",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "proposed terms",
+      "customer requirements",
+      "commercial policy"
+     ],
+     "outputs": [
+      "approved terms"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "opportunity-to-order",
+     "approver": "sales manager"
+    },
+    {
+     "id": "s6",
+     "what": "Send the agreed offer or follow-up information to the customer.",
+     "actor": "order clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "customer requirements",
+      "proposed terms",
+      "approved terms",
+      "offer template"
+     ],
+     "outputs": [
+      "customer offer"
+     ],
+     "handoff_to": "external",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "opportunity-to-order",
+     "approver": "order clerk"
+    }
+   ],
+   "design": "The {CRM} assembles an account brief, and deterministic compatibility and eligibility rules produce an offer shortlist from approved information in the {DOCS}. The clerk conducts the conversation; a bounded loop converts their notes into reviewed {CRM} updates and follow-up tasks. An artefact generator prepares the customer offer in the {EMAIL}, with approval required for exceptional terms and for sending.",
+   "previous_blocker": "Account preparation and follow-up span separate records, while customer conversations resist scripting. Reliable records still depend on the clerk completing paperwork.",
+   "enabler_now": "Configured account views and small generators reduce preparation effort. A bounded extraction loop can turn the clerk's notes into editable records without recording calls.",
+   "still_hard": "Trust, timing, objections and commercial judgement remain human work. Poor product compatibility data can make an apparently relevant suggestion unsuitable.",
+   "human_edge": "Understand the customer's situation, recognise when selling would be unhelpful and negotiate within delegated authority.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Small repeat accounts receiving a scheduled replenishment call."
+   },
+   "altitude": "Preparation and paperwork shrink, leaving more time for useful customer conversations and planned follow-up. The clerk can prioritise eligible accounts within an agreed contact policy; pricing authority stays unchanged.",
+   "reach": [
+    {
+     "role": "sales representative",
+     "task": "Develop a qualified additional-sales opportunity from a replenishment conversation.",
+     "learn": "Needs discovery, product compatibility, qualification and commercial boundaries."
+    },
+    {
+     "role": "sales manager",
+     "task": "Summarise recurring objections for a proposed offer change.",
+     "learn": "Distinguish repeated evidence from isolated comments and assess margin implications."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-7",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Account briefs, rule-based offer shortlists and template offers can reduce administrative work without automating the sales conversation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The NBER study reports productivity gains from assistance in customer support; it does not establish additional-sales conversion gains.",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "GDPR Article 22 restricts certain solely automated decisions with legal or similarly significant effects.",
+     "grade": "E2",
+     "source": "[S11]"
+    }
+   ],
+   "assumptions": [
+    "The representative workflow uses phone calls; customer visits retain the same human conversation step.",
+    "The {CRM} exposes account history and customer issues sufficiently for an account brief.",
+    "Follow-up offers use standard templates, with explicit approval of exceptional terms.",
+    "No call recording or employee scoring is introduced; consultation obligations are checked under national rules.",
+    "GDPR and applicable national marketing rules govern contact selection, customer data and retention.",
+    "Time shares include averaged exception-approval effort; build ranges are estimates."
+   ],
+   "unknowns": [
+    "Which accounts may be contacted and where objections or contact permissions are recorded.",
+    "Quality of product compatibility, eligibility and current offer information.",
+    "The clerk's delegated pricing and commitment limits.",
+    "Whether national rules or collective arrangements require employee consultation."
+   ],
+   "research_questions": [
+    "Which offer rules can exclude unsuitable suggestions before a conversation?",
+    "Does reduced preparation time enable useful replenishment calls without increasing unwanted contact?",
+    "Can note extraction preserve uncertainty without inventing customer commitments?"
+   ],
+   "new_work": [
+    "Confirm extracted outcomes and follow-up dates.",
+    "Maintain offer eligibility, compatibility rules and contact exclusions.",
+    "Handle missing account history and outdated product information.",
+    "Review customer response and stop contact patterns that prove unhelpful."
+   ],
+   "time_saved_pct": 32,
+   "speedup": 1.47
+  }
+ ],
+ "role": {
+  "altitude": "The order clerk spends less time joining exports, searching instructions and updating records. More of the week goes to order exceptions, fulfilment coordination and customer conversations; additional commercial authority requires explicit delegation.",
+  "reach": [
+   "Support sales managers with order-recovery priorities.",
+   "Help sales representatives clarify handling needs before order acceptance.",
+   "Develop qualified opportunities from repeat-customer conversations."
+  ],
+  "skills_to_grow": [
+   "Order-data reconciliation and metric interpretation.",
+   "Packing-rule literacy and specialist escalation.",
+   "Customer needs discovery and commercial qualification.",
+   "Checking extracted requirements and customer commitments."
+  ],
+  "ambitious_version": "An order clerk who combines reliable order intelligence with practical customer support: spotting recoverable delays, resolving handling questions early and developing relevant repeat-account opportunities."
+ },
+ "job_code": "43-4151.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 141,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r=await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":4000});text(r.output)\n"
+  ],
+  "job": {
+   "code": "43-4151.00",
+   "title": "Order Clerks",
+   "tasks": 19,
+   "function": "Sales and account management"
+  }
+ }
+}

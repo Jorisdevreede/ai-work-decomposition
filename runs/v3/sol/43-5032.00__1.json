@@ -1,0 +1,1093 @@
+{
+ "tasks": [
+  {
+   "uid": "43-5032.00:2723",
+   "short": "Assign crews, equipment and vehicles to jobs, then transmit assignments and confirm receipt.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the work order, location, timing and service requirements.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "approved work order"
+     ],
+     "outputs": [
+      "dispatch requirements"
+     ],
+     "handoff_to": "none",
+     "share_pct": 12,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check crew availability, qualifications and equipment against the dispatch requirements.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "dispatch requirements",
+      "crew roster",
+      "qualification record",
+      "equipment availability"
+     ],
+     "outputs": [
+      "available resources"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Confirm uncertain availability, access and practical constraints by telephone or radio.",
+     "actor": "dispatcher",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY",
+      "OTHER"
+     ],
+     "inputs": [
+      "available resources",
+      "dispatch requirements"
+     ],
+     "outputs": [
+      "confirmed dispatch constraints"
+     ],
+     "handoff_to": "none",
+     "share_pct": 18,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Compare feasible assignments on the dispatch board.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "confirmed dispatch constraints",
+      "available resources",
+      "dispatch board"
+     ],
+     "outputs": [
+      "assignment options"
+     ],
+     "handoff_to": "none",
+     "share_pct": 23,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "judgement_step",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Choose the assignment and authorize its release.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "assignment options",
+      "service priorities"
+     ],
+     "outputs": [
+      "approved assignment"
+     ],
+     "handoff_to": "none",
+     "share_pct": 12,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "dispatcher"
+    },
+    {
+     "id": "s6",
+     "what": "Transmit the approved assignment to the crew by telephone or radio.",
+     "actor": "dispatcher",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY",
+      "OTHER"
+     ],
+     "inputs": [
+      "approved assignment"
+     ],
+     "outputs": [
+      "issued assignment"
+     ],
+     "handoff_to": "crew leader",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 30,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Acknowledge receipt of the assignment.",
+     "actor": "crew leader",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY",
+      "OTHER"
+     ],
+     "inputs": [
+      "issued assignment"
+     ],
+     "outputs": [
+      "assignment acknowledgement"
+     ],
+     "handoff_to": "dispatcher",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Connect work orders and resource status in the {OPS_SYSTEM} to relevant availability and qualification records in the {HCM}. A deterministic solver on the {DATA_PLATFORM} proposes feasible assignments; the dispatcher authorizes release, and the {WORKFLOW} sends instructions and tracks acknowledgements. Telephone and radio remain available for unclear constraints, critical instructions and connectivity failures.",
+   "previous_blocker": "Availability went stale between systems and field calls. Dispatch rules included undocumented local knowledge, making reliable live replanning expensive.",
+   "enabler_now": "Structured resource feeds and established constraint solvers can support live proposals. AI-assisted coding reduces the effort of building adapters and checks; field judgement still needs people.",
+   "still_hard": "Travel times, equipment condition and practical access can change without a system event. GDPR applies to worker data; national rules may require consultation, and EU AI Act classification needs assessment if allocation uses personal traits or behaviour.",
+   "human_edge": "The dispatcher weighs urgency, crew fatigue and local conditions, then takes responsibility for a workable assignment.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Reconsider the next two hours of assignments whenever a delay threatens a service commitment."
+   },
+   "altitude": "The dispatcher spends less time checking screens and repeating instructions, and more time resolving competing priorities. Existing dispatch authority stays with the dispatcher; broader spending or staffing rights require separate delegation.",
+   "reach": [
+    {
+     "role": "logistics analyst",
+     "task": "Compare recovery options when delays threaten delivery commitments.",
+     "learn": "Constraint modelling, travel-time uncertainty and the operational cost of reassignment."
+    },
+    {
+     "role": "facilities manager",
+     "task": "Prioritize urgent field repairs across sites.",
+     "learn": "Asset criticality, site access restrictions and service restoration priorities."
+    }
+   ],
+   "build_days": {
+    "coding": "8-15",
+    "integration": "10-20",
+    "testing_rollout": "10-20",
+    "consent_and_access": "10-30"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Boltrics 3PL Dynamics provides transport and operational records; this supports the records foundation, not a proven live dispatch solver.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Constraint solvers can propose assignments from explicit availability, qualification, timing and equipment rules.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Worker-data processing requires GDPR safeguards; applicable national consultation rules and EU AI Act classification need assessment.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The company has a dispatch board in the {OPS_SYSTEM}; telephone and radio handle field exceptions.",
+    "Jobs have structured locations, service windows and basic resource requirements.",
+    "Routine instructions can move to an accessible field interface; acknowledgement still requires the recipient.",
+    "The proposed solver uses operational constraints rather than inferred worker behaviour.",
+    "Time shares are estimates across actors; these tasks overlap and their savings should not be added.",
+    "Build ranges are working-day estimates for a limited rollout. Consultation and access waiting can extend elapsed time."
+   ],
+   "unknowns": [
+    "Which planning and notification features are already licensed in the {OPS_SYSTEM}?",
+    "How current are crew availability, qualification and equipment records?",
+    "Which crews have reliable field connectivity?",
+    "Which assignments require supervisor approval or critical read-back?",
+    "Which national employment and consultation rules apply?",
+    "What time shares and exception rates appear in actual dispatch logs?"
+   ],
+   "research_questions": [
+    "Which solver approach gives useful alternatives within the required dispatch response time?",
+    "How should stale resource feeds suppress proposals without blocking unrelated jobs?",
+    "Which field acknowledgement patterns work during intermittent connectivity?"
+   ],
+   "new_work": [
+    "Review infeasible jobs and stale resource warnings.",
+    "Maintain qualification, timing, travel and equipment constraints.",
+    "Handle failed notifications and missing acknowledgements.",
+    "Check reassignment outcomes for avoidable disruption.",
+    "Maintain access controls, integrations and worker-data retention."
+   ],
+   "time_saved_pct": 63,
+   "speedup": 2.72
+  },
+  {
+   "uid": "43-5032.00:2727",
+   "short": "Prepare daily crew and vehicle run schedules, resolve conflicts and publish the approved plan.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve due jobs and service windows.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "approved work order",
+      "job backlog"
+     ],
+     "outputs": [
+      "daily job list"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check the crew roster, absences, qualifications and equipment availability.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "crew roster",
+      "absence record",
+      "qualification record",
+      "equipment availability"
+     ],
+     "outputs": [
+      "available resources"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Resolve missing durations, access restrictions and capacity assumptions with the operations supervisor.",
+     "actor": "dispatcher",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "daily job list",
+      "available resources",
+      "service priorities"
+     ],
+     "outputs": [
+      "confirmed dispatch constraints"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Sequence jobs and assign resources in the schedule workbook.",
+     "actor": "dispatcher",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "daily job list",
+      "available resources",
+      "confirmed dispatch constraints"
+     ],
+     "outputs": [
+      "draft run schedule"
+     ],
+     "handoff_to": "operations supervisor",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Review conflicts and approve the daily run schedule.",
+     "actor": "operations supervisor",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "draft run schedule",
+      "service priorities"
+     ],
+     "outputs": [
+      "approved run schedule"
+     ],
+     "handoff_to": "dispatcher",
+     "share_pct": 22,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "operations supervisor"
+    },
+    {
+     "id": "s6",
+     "what": "Format and issue crew run sheets from the approved schedule.",
+     "actor": "dispatcher",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "approved run schedule"
+     ],
+     "outputs": [
+      "crew run sheet"
+     ],
+     "handoff_to": "crew leader",
+     "share_pct": 8,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure daily planning in the {OPS_SYSTEM}, with availability and qualification feeds from the {HCM} and deterministic checks for overlaps, working time and equipment conflicts. The operations supervisor approves the proposed schedule before the {WORKFLOW} issues crew run sheets and stores the approved version in the {DOCS}.",
+   "previous_blocker": "The schedule workbook joined job demand to staffing and equipment data that changed separately. Planning features existed, but integration and rule setup were costly.",
+   "enabler_now": "Existing scheduling modules and structured exports can replace much of the workbook assembly. Faster adapter development makes a limited, rules-based rollout more affordable.",
+   "still_hard": "Real job durations, access constraints and staffing compromises remain uncertain. GDPR, applicable EU AI Act duties and national rules on working-time changes or employee consultation must be assessed before rollout.",
+   "human_edge": "The supervisor understands which service commitments can move and when a mathematically feasible schedule would overload a crew.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Choose the next day's reserve capacity before accepting late service requests."
+   },
+   "altitude": "The dispatcher spends less of the week assembling schedules and can compare capacity scenarios with the supervisor. Schedule approval and staffing decision rights remain unchanged.",
+   "reach": [
+    {
+     "role": "production, planning, and expediting clerk",
+     "task": "Reconcile daily workload with constrained resource capacity.",
+     "learn": "Capacity buffers, duration estimates and the difference between hard constraints and preferences."
+    },
+    {
+     "role": "supply chain manager",
+     "task": "Set reserve capacity for expected demand peaks.",
+     "learn": "Demand uncertainty, service-level trade-offs and the cost of unused capacity."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "7-15",
+    "testing_rollout": "8-15",
+    "consent_and_access": "10-30"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Configurable planning modules can assemble schedules from structured demand, resource calendars and explicit constraints.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The Smurfit Kappa Hoya case documents loading-bay time-slot scheduling; it does not establish the same gains for crew scheduling.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "Worker scheduling and associated personal-data processing require assessment under GDPR, the EU AI Act and applicable national rules.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The {OPS_SYSTEM} holds jobs, while a {SPREADSHEET} joins the daily plan across teams.",
+    "A configurable planning module can represent the ordinary run templates and constraints.",
+    "If that module is unavailable, a deterministic scheduling component is needed and the build estimate increases.",
+    "Scheduling receives availability flags rather than medical reasons for absence.",
+    "The operations supervisor currently approves the daily schedule.",
+    "Build ranges include a limited pilot, access setup and applicable consultation effort; elapsed approval time can be longer."
+   ],
+   "unknowns": [
+    "Can the existing {OPS_SYSTEM} represent the required scheduling constraints?",
+    "Who currently approves schedules and overtime?",
+    "Which working-time agreements and national consultation rules apply?",
+    "How accurate are planned job durations?",
+    "How many schedule revisions occur each day?",
+    "Are machine-readable crew and equipment calendars available?"
+   ],
+   "research_questions": [
+    "Which schedule checks can be configured in existing modules without custom code?",
+    "How should the planner represent duration uncertainty and reserve capacity?",
+    "Which measures reveal whether a schedule is practical during a pilot?"
+   ],
+   "new_work": [
+    "Review schedule conflicts and capacity warnings.",
+    "Maintain calendars, run templates and constraint settings.",
+    "Compare planned durations with actual completion times.",
+    "Investigate stale availability feeds and failed schedule publication.",
+    "Review access, retention and scheduling-rule changes with the relevant employee representatives."
+   ],
+   "time_saved_pct": 76,
+   "speedup": 4.22
+  },
+  {
+   "uid": "43-5032.00:2726",
+   "short": "Discuss service questions and problems, agree workable options and record the resulting actions.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Hear the customer's or supervisor's question and establish the requested outcome.",
+     "actor": "dispatcher",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "service question"
+     ],
+     "outputs": [
+      "service inquiry"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check job status, service terms and available options.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "DOCS"
+     ],
+     "inputs": [
+      "service inquiry",
+      "approved work order",
+      "service terms",
+      "available resources"
+     ],
+     "outputs": [
+      "service case brief",
+      "service options"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Approve a proposed service exception beyond the dispatcher's delegated limits.",
+     "actor": "operations supervisor",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "service case brief",
+      "service options",
+      "delegation limits"
+     ],
+     "outputs": [
+      "service exception decision"
+     ],
+     "handoff_to": "dispatcher",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "inquiry-to-answer",
+     "approver": "operations supervisor"
+    },
+    {
+     "id": "s4",
+     "what": "Explain feasible options and agree the next action.",
+     "actor": "dispatcher",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "service options",
+      "service exception decision",
+      "delegation limits"
+     ],
+     "outputs": [
+      "agreement notes"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Record the agreement and update the work order when service changes.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "agreement notes",
+      "approved work order",
+      "service exception decision"
+     ],
+     "outputs": [
+      "service case record",
+      "approved work order"
+     ],
+     "handoff_to": "dispatcher",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Dispatcher's agreement notes, current work order and allowed update fields.",
+      "output": "Proposed case summary and work-order field changes with supporting note excerpts.",
+      "check": "Validate identifiers, dates and allowed fields; the dispatcher confirms commitments before saving.",
+      "stop": "One extraction and one correction attempt per case; missing or conflicting commitments go to manual entry.",
+      "why_not_simpler": "Agreement notes use varied language. Structured forms remain the cheaper option where accepted."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "dispatcher"
+    }
+   ],
+   "design": "A deterministic case view joins status and capacity from the {OPS_SYSTEM} with approved service terms from the {DOCS}. The dispatcher conducts the conversation, obtains approval only for exceptions beyond delegated limits, and reviews a bounded extraction of agreement notes before the {WORKFLOW} saves changes in the {OPS_SYSTEM}.",
+   "previous_blocker": "The answer depended on scattered status, service terms and supervisor knowledge. Informal agreements then needed manual transcription into operational records.",
+   "enabler_now": "Shared identifiers and rule-based lookups can bring the relevant facts into one view. Bounded extraction can turn short notes into proposed updates with a clear review point.",
+   "still_hard": "The system cannot settle disputed expectations or promise capacity that has not been confirmed. GDPR governs notes and access; EU AI Act duties depend on the deployed features, and new employee monitoring may trigger national consultation rules.",
+   "human_edge": "The dispatcher listens for the real problem, explains trade-offs and rebuilds trust when service has failed.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Offer a feasible revised service slot during the first customer call."
+   },
+   "altitude": "The dispatcher spends less time searching and writing up calls, leaving more time for difficult agreements. The software grants no new authority to waive charges, add resources or change contractual commitments.",
+   "reach": [
+    {
+     "role": "project management specialist",
+     "task": "Agree service changes without losing track of scope and dependencies.",
+     "learn": "Change acceptance, dependency checks and explicit ownership of the next action."
+    },
+    {
+     "role": "administrative services manager",
+     "task": "Resolve competing internal service requests.",
+     "learn": "Service recovery, delegated spending limits and clear escalation criteria."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "5-12",
+    "testing_rollout": "6-12",
+    "consent_and_access": "4-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Structured status and policy lookups can prepare a service conversation without automating the negotiation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "A bounded extraction loop can propose record changes from free-text notes, with schema checks and human confirmation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The digest provides no documented case establishing savings for this specific customer-conversation task.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Telephone calls are common; some inquiries also arrive through the {EMAIL}.",
+    "Service terms and delegation limits can be represented as approved structured fields.",
+    "Supervisor approval is conditional; its time share is an average across routine and exceptional inquiries.",
+    "The loop receives dispatcher notes and does not require recording calls.",
+    "A structured entry form replaces the loop if dispatchers find it easier.",
+    "Build ranges cover one service queue, relevant access and consultation where applicable."
+   ],
+   "unknowns": [
+    "Which service decisions are already delegated to dispatchers?",
+    "Where are the current service terms and exception policies stored?",
+    "Can job status and available slots be retrieved reliably?",
+    "How often do calls involve disputed commitments or supervisor approval?",
+    "What personal information appears in service notes?",
+    "Does the company already have an approved note-entry workflow?"
+   ],
+   "research_questions": [
+    "Does a structured agreement form outperform note extraction for typical calls?",
+    "Which source checks best detect invented or altered service commitments?",
+    "How should the case view display stale capacity and uncertain completion times?"
+   ],
+   "new_work": [
+    "Review extracted commitments before saving.",
+    "Correct incomplete notes and handle conflicting dates or instructions.",
+    "Maintain service terms and delegation limits.",
+    "Audit a sample of record changes for unsupported commitments.",
+    "Maintain the extraction schema, prompts, access and retention settings."
+   ],
+   "time_saved_pct": 33,
+   "speedup": 1.49
+  },
+  {
+   "uid": "43-5032.00:2725",
+   "short": "Relay field instructions and messages, confirm understanding and keep a transmission record.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive a field message by telephone or two-way radio.",
+     "actor": "dispatcher",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY",
+      "OTHER"
+     ],
+     "inputs": [
+      "field message"
+     ],
+     "outputs": [
+      "message notes"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Match the message to the job and check the latest instruction.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "message notes",
+      "approved work order",
+      "dispatch board"
+     ],
+     "outputs": [
+      "linked field message"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Clarify unclear details or conflicting instructions with the sender.",
+     "actor": "dispatcher",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY",
+      "OTHER"
+     ],
+     "inputs": [
+      "linked field message"
+     ],
+     "outputs": [
+      "clarified field message"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Select the recipient and authorize the instruction to be relayed.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "clarified field message",
+      "crew roster",
+      "dispatch board"
+     ],
+     "outputs": [
+      "approved relay instruction"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "dispatcher"
+    },
+    {
+     "id": "s5",
+     "what": "Relay the instruction to the crew, supervisor or field inspector.",
+     "actor": "dispatcher",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY",
+      "OTHER"
+     ],
+     "inputs": [
+      "approved relay instruction"
+     ],
+     "outputs": [
+      "issued relay instruction"
+     ],
+     "handoff_to": "field worker",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 25,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Acknowledge receipt and read back critical instructions.",
+     "actor": "field worker",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY",
+      "OTHER"
+     ],
+     "inputs": [
+      "issued relay instruction"
+     ],
+     "outputs": [
+      "delivery acknowledgement"
+     ],
+     "handoff_to": "dispatcher",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Copy transmission details and acknowledgement into the job record.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "issued relay instruction",
+      "delivery acknowledgement"
+     ],
+     "outputs": [
+      "transmission log"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure job-linked messages and acknowledgements in the {OPS_SYSTEM}, with the {WORKFLOW} routing dispatcher-approved instructions to the current recipient. Delivery events create the transmission log automatically, removing separate copying; telephone and radio remain for ambiguity, critical read-back and failed digital delivery.",
+   "previous_blocker": "Voice channels did not share job identifiers, recipient lists or delivery events with the operational record. Repeating and logging messages was the reliable bridge.",
+   "enabler_now": "Structured message forms, job-linked field interfaces and delivery events can remove routine repetition. Deterministic routing uses the current crew assignment without interpreting free text.",
+   "still_hard": "A delivery receipt proves receipt, not understanding. Radio-only crews, noisy environments and changed instructions still require conversation; GDPR, applicable EU AI Act duties and national rules govern any new worker logging or monitoring.",
+   "human_edge": "The dispatcher notices ambiguity and conflicting instructions. The field worker confirms what can actually be understood and carried out safely.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The dispatcher repeats fewer routine messages and spends less time copying logs, leaving more attention for unclear or urgent instructions. Decision rights do not change.",
+   "reach": [
+    {
+     "role": "business continuity planner",
+     "task": "Design a communication fallback when field connectivity fails.",
+     "learn": "Channel failure modes, escalation timing and acknowledgement procedures."
+    },
+    {
+     "role": "quality control systems manager",
+     "task": "Verify that operational instructions are received and understood.",
+     "learn": "Instruction version control, evidence of receipt and critical read-back."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "5-12",
+    "testing_rollout": "7-15",
+    "consent_and_access": "7-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "TransFollow and Qargo support creating and signing digital consignment notes within the transport system; this supports shared instruction records, not radio replacement.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Job-linked notifications, recipient routing and delivery logs can use deterministic workflow rules.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Critical read-back remains a human communication control; a technical delivery receipt does not establish understanding.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The {OPS_SYSTEM} maintains current job-to-crew assignments.",
+    "Routine messages can use structured fields and a digital field interface.",
+    "A telephone or radio fallback remains available.",
+    "Clarification time is concentrated in exceptional messages, so automation leaves that step intact.",
+    "Automatic logs capture digital events; fallback voice messages still need a short exception entry.",
+    "The target does not classify call content or score worker performance.",
+    "Build ranges cover one operating team and applicable access and employee consultation work."
+   ],
+   "unknowns": [
+    "Which crews and inspectors have a usable digital field interface?",
+    "How accurately does the dispatch board identify current recipients?",
+    "Which instructions require read-back?",
+    "How often do radio-only or offline situations occur?",
+    "Can the existing {OPS_SYSTEM} capture delivery and acknowledgement events?",
+    "Which national consultation and retention requirements apply to transmission logs?"
+   ],
+   "research_questions": [
+    "Which acknowledgement design avoids confusing receipt with operational acceptance?",
+    "How should revised instructions supersede earlier messages on an offline device?",
+    "What escalation timing works for missed acknowledgements without creating notification overload?"
+   ],
+   "new_work": [
+    "Handle failed deliveries and missing acknowledgements.",
+    "Maintain recipient routing and escalation rules.",
+    "Record short exception logs for voice-only communication.",
+    "Check that revised instructions supersede earlier versions.",
+    "Maintain devices, access rights, log retention and communication fallback procedures."
+   ],
+   "time_saved_pct": 52,
+   "speedup": 2.09
+  }
+ ],
+ "role": {
+  "altitude": "The dispatcher becomes less occupied with gathering status, assembling plans and repeating routine instructions. More of the week goes to live recovery, customer agreements and safe coordination; dispatch authority remains human, and broader decision rights require explicit delegation.",
+  "reach": [
+   "Logistics analyst: compare recovery scenarios and identify recurring capacity constraints.",
+   "Facilities manager: prioritize urgent service restoration across sites.",
+   "Business continuity planner: establish reliable field communication during outages."
+  ],
+  "skills_to_grow": [
+   "Translate practical dispatch constraints into explicit scheduling rules.",
+   "Read capacity scenarios and recognize stale or uncertain data.",
+   "Negotiate feasible service recovery within delegated limits.",
+   "Review proposed record changes against the actual agreement.",
+   "Design acknowledgement, escalation and communication fallback procedures."
+  ],
+  "ambitious_version": "A dispatcher who can reconsider near-term capacity after each material disruption, offer feasible recovery options during the first customer call, and preserve clear human responsibility for assignments and critical instructions."
+ },
+ "job_code": "43-5032.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 270,
+  "attempts": 1,
+  "checks": [
+   "43-5032.00:2723 s4: judgement step marked deterministic"
+  ],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"sed -n '1,180p' /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3000});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-5032.00",
+   "title": "Dispatchers, Except Police, Fire, and Ambulance",
+   "tasks": 12,
+   "function": "Office and operations"
+  }
+ }
+}

@@ -1,0 +1,1199 @@
+{
+ "tasks": [
+  {
+   "uid": "43-3031.00:2509",
+   "short": "Match supplier invoices to orders and receipts, resolve differences, and record the accounting entry.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read incoming supplier invoices and capture their details.",
+     "actor": "accounts payable clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "supplier invoice"
+     ],
+     "outputs": [
+      "invoice record"
+     ],
+     "handoff_to": "accounts payable clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Unstructured supplier invoice; structured invoices use a parser.",
+      "output": "Invoice fields with source locations and confidence flags.",
+      "check": "Validate totals, VAT arithmetic, supplier identity and duplicate keys. Matching checks follow.",
+      "stop": "One extraction and one repair attempt per invoice; failed checks enter the exception queue.",
+      "why_not_simpler": "A parser handles structured invoices, but varied document layouts need bounded extraction."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Find the purchase order and recorded goods or service receipt.",
+     "actor": "accounts payable clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT",
+      "ERP"
+     ],
+     "inputs": [
+      "invoice record",
+      "purchase order",
+      "receipt record"
+     ],
+     "outputs": [
+      "matching pack"
+     ],
+     "handoff_to": "accounts payable clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Compare invoice quantities, prices and totals against order and receipt records.",
+     "actor": "accounts payable clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "matching pack",
+      "matching tolerances"
+     ],
+     "outputs": [
+      "match result",
+      "invoice exception"
+     ],
+     "handoff_to": "accounts payable clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Resolve missing receipts, disputed prices and other invoice differences.",
+     "actor": "accounts payable clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "invoice exception",
+      "matching pack"
+     ],
+     "outputs": [
+      "resolution evidence"
+     ],
+     "handoff_to": "budget holder",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve an exception or return the invoice for correction.",
+     "actor": "budget holder",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "invoice exception",
+      "resolution evidence"
+     ],
+     "outputs": [
+      "invoice decision"
+     ],
+     "handoff_to": "accounts payable clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "budget holder"
+    },
+    {
+     "id": "s6",
+     "what": "Post cleared invoices with their accounting codes and supporting records.",
+     "actor": "accounts payable clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "invoice record",
+      "match result",
+      "invoice decision",
+      "accounting rules"
+     ],
+     "outputs": [
+      "supplier ledger entry"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure capture, matching tolerances and posting rules in the {ERP}, linked to orders and receipts in the {PROCUREMENT}. Use a bounded extraction loop only for unstructured invoices, and route failed checks through the {WORKFLOW} with source evidence. Matched invoices post under approved rules; disputed exceptions require the budget holder's decision.",
+   "previous_blocker": "Missing receipts, inconsistent invoice references and disconnected records prevented reliable matching. Existing matching functions were often only partly configured.",
+   "enabler_now": "Capture and three-way matching already exist. AI-assisted coding reduces the effort of building adapters, validation checks and exception views.",
+   "still_hard": "Service receipts, partial deliveries, disputed charges and unreliable supplier records still need people. Extraction cannot establish that a service was delivered.",
+   "human_edge": "Establish what was actually received and negotiate a fair resolution when the records disagree.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily decision on which missing receipts threaten the next payment run."
+   },
+   "altitude": "The clerk spends more time resolving blocked purchases and less time copying invoice fields. They can prioritise exceptions within policy; spending and payment authority do not expand automatically.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Review supplier accruals at period end.",
+     "learn": "Cut-off rules, receipt evidence and the difference between an invoice delay and an unrecorded liability."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Invoice capture can identify suppliers using registration, VAT and bank details.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Line-level matching of invoices, orders and receipts is an existing capability.",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "A vendor case reports automatic processing rising from 40% to 65% nine months after implementation.",
+     "grade": "E3",
+     "source": "[S3]"
+    },
+    {
+     "claim": "Manual and email invoice approval remain common in the cited survey; its sample is not a European prevalence estimate.",
+     "grade": "E2",
+     "source": "[S8]"
+    },
+    {
+     "claim": "Step shares, remaining time and build ranges are planning estimates, not measured outcomes.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline is an order-backed invoice process; non-order invoices need a separate coding and approval path.",
+    "Exception steps are weighted across the invoice workload, rather than occurring on every invoice.",
+    "The model covers checking time in the matching step rather than treating all verification as document handling.",
+    "Posting under approved matching rules is permitted; posting does not release payment.",
+    "Build ranges assume existing capture and matching functions. Missing interfaces increase integration effort.",
+    "GDPR and the EU AI Act apply; national rules determine any employee consultation needed for changed work practices."
+   ],
+   "unknowns": [
+    "Which matching, capture and interface functions are licensed and enabled?",
+    "How often are receipts missing, and who can confirm service delivery?",
+    "Which tolerances, accounting codes and posting permissions are approved?",
+    "What document-processing access, retention rules and national consultation requirements apply?"
+   ],
+   "research_questions": [
+    "How well does the available extraction capability perform on the relevant invoice layouts and languages?"
+   ],
+   "new_work": [
+    "Review failed extraction checks and unresolved matches.",
+    "Maintain supplier identifiers, tolerances and accounting mappings.",
+    "Monitor duplicate prevention, posting failures and interface changes.",
+    "Sample automatic postings and investigate recurring receipt gaps."
+   ],
+   "time_saved_pct": 77,
+   "speedup": 4.35
+  },
+  {
+   "uid": "43-3031.00:18561",
+   "short": "Collect approved payroll changes, process the pay run, resolve warnings and prepare payroll outputs.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect approved employee, contract and absence changes for the payroll period.",
+     "actor": "payroll clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "approved employee changes",
+      "payroll calendar"
+     ],
+     "outputs": [
+      "payroll change set"
+     ],
+     "handoff_to": "payroll clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Consolidate approved hours, overtime and variable pay from departmental returns.",
+     "actor": "payroll clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "EMAIL"
+     ],
+     "inputs": [
+      "approved timesheet",
+      "approved variable pay",
+      "payroll calendar"
+     ],
+     "outputs": [
+      "variable pay import",
+      "payroll input exception"
+     ],
+     "handoff_to": "payroll clerk",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "pay-cycle",
+     "approver": "payroll clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Enter or import changes and check that all expected records arrived.",
+     "actor": "payroll clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL"
+     ],
+     "inputs": [
+      "payroll change set",
+      "variable pay import"
+     ],
+     "outputs": [
+      "payroll input register"
+     ],
+     "handoff_to": "payroll clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Calculate draft pay and generate validation and period comparison reports.",
+     "actor": "payroll clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL"
+     ],
+     "inputs": [
+      "payroll input register",
+      "payroll rules",
+      "previous payroll"
+     ],
+     "outputs": [
+      "draft payroll",
+      "payroll warning report"
+     ],
+     "handoff_to": "payroll clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Investigate warnings, confirm entitlements and correct approved payroll inputs.",
+     "actor": "payroll clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL",
+      "HCM"
+     ],
+     "inputs": [
+      "payroll warning report",
+      "approved employee changes",
+      "approved timesheet"
+     ],
+     "outputs": [
+      "resolved payroll exceptions",
+      "checked payroll"
+     ],
+     "handoff_to": "payroll manager",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 65,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve the checked payroll and lock the run.",
+     "actor": "payroll manager",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL"
+     ],
+     "inputs": [
+      "checked payroll",
+      "resolved payroll exceptions",
+      "payroll control totals"
+     ],
+     "outputs": [
+      "approved payroll"
+     ],
+     "handoff_to": "payroll clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "pay-cycle",
+     "approver": "payroll manager"
+    },
+    {
+     "id": "s7",
+     "what": "Release payslips to employees through the employee portal.",
+     "actor": "payroll clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL"
+     ],
+     "inputs": [
+      "approved payroll"
+     ],
+     "outputs": [
+      "payslip"
+     ],
+     "handoff_to": "employee",
+     "share_pct": 8,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "pay-cycle",
+     "approver": "payroll clerk"
+    },
+    {
+     "id": "s8",
+     "what": "Transfer the payroll journal and prepare payment instructions.",
+     "actor": "payroll clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL",
+      "ERP"
+     ],
+     "inputs": [
+      "approved payroll",
+      "accounting rules"
+     ],
+     "outputs": [
+      "payroll journal",
+      "payroll payment batch"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 7,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    }
+   ],
+   "design": "Connect approved changes from the {HCM} to the {PAYROLL}, with a validated {WORKFLOW} for variable pay. Configure calculations, comparison checks and journal transfers to the {ERP}; people resolve entitlement questions, approve the run and release payslips. Send the payroll payment batch into the separately authorised payment process.",
+   "previous_blocker": "Late departmental inputs, inconsistent pay codes and unclear approvals made imports unreliable. Payroll calculation itself was already supported by specialist software.",
+   "enabler_now": "Existing payroll checks and interfaces cover much of the work. AI-assisted coding makes validated input forms and adapters cheaper to build; no model is needed for wage arithmetic.",
+   "still_hard": "Entitlements, retroactive changes, collective agreements and national rules need maintained payroll expertise. A technically valid calculation can still use the wrong approved input.",
+   "human_edge": "Recognise when a pay result is unfair or legally wrong, establish the employee's entitlement and handle sensitive corrections.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly payroll readiness decision before the period closes."
+   },
+   "altitude": "The clerk can investigate missing approvals throughout the month instead of concentrating data entry near payday. They can assess readiness and recommend corrections; payroll approval and payment release remain designated decisions.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Reconcile payroll liabilities to ledger balances.",
+     "learn": "Payroll control accounts, accruals, clearing items and journal reconciliation."
+    },
+    {
+     "role": "budget analyst",
+     "task": "Explain changes in personnel spending.",
+     "learn": "Separate headcount, pay-rate, overtime and timing effects without exposing individual pay unnecessarily."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "5-12",
+    "testing_rollout": "10-20",
+    "consent_and_access": "5-25"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Existing payroll software provides run checks covering salary changes.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Existing payroll software compares outputs across three periods per employee.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Dutch works-council consent rules cover specified employee-data and monitoring arrangements; national rules elsewhere differ.",
+     "grade": "E2",
+     "source": "[S15]"
+    },
+    {
+     "claim": "The digest provides payroll capabilities but no documented payroll implementation outcome.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Step shares, remaining time and build ranges are planning estimates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The clerk supports an established payroll function rather than replacing payroll expertise.",
+    "Departmental variable-pay returns still require consolidation; core employee records are already structured.",
+    "Approved changes are distinguishable from requests awaiting approval.",
+    "Bank payment release and statutory filing are separate downstream tasks.",
+    "Testing includes representative historical periods and a parallel run before release.",
+    "GDPR applies to employee data. The EU AI Act applies where relevant; this design does not score or monitor employees with a model.",
+    "The access range includes consultation work where national rules require it; formal consultation can extend elapsed time."
+   ],
+   "unknowns": [
+    "Which national rules, agreements and payroll calendars apply?",
+    "Which variable-pay inputs already arrive through approved structured records?",
+    "Who can approve payroll changes, lock runs and release payslips?",
+    "Which interfaces, test environments and historical payroll records are accessible?",
+    "Does the proposed change require employee or works-council consultation?"
+   ],
+   "research_questions": [
+    "Which supported interfaces preserve effective dates, corrections and payroll audit history?"
+   ],
+   "new_work": [
+    "Resolve rejected imports and missing departmental approvals.",
+    "Maintain pay-code mappings and validation rules.",
+    "Check rule updates with the payroll specialist.",
+    "Monitor journal reconciliation and access logs.",
+    "Review readiness exceptions before the payroll deadline."
+   ],
+   "time_saved_pct": 75,
+   "speedup": 3.97
+  },
+  {
+   "uid": "43-3031.00:2499",
+   "short": "Balance cashier receipts, prepare physical deposits and reconcile the bank credit.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Produce cashier closing summaries from the point-of-sale system.",
+     "actor": "cashier",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "sales record",
+      "cashier closing record"
+     ],
+     "outputs": [
+      "cashier summary"
+     ],
+     "handoff_to": "cash clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Receive sealed takings, count cash and record custody.",
+     "actor": "cash clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "sealed takings",
+      "cashier summary"
+     ],
+     "outputs": [
+      "cash count",
+      "custody record"
+     ],
+     "handoff_to": "cash clerk",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Balance counted takings against cashier summaries and separate non-cash receipts.",
+     "actor": "cash clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "cash count",
+      "cashier summary",
+      "card settlement report"
+     ],
+     "outputs": [
+      "deposit reconciliation",
+      "cash discrepancy"
+     ],
+     "handoff_to": "cash clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Investigate discrepancies with the cashier and record the agreed explanation.",
+     "actor": "cash clerk",
+     "today_means": "meeting_call",
+     "systems": [],
+     "inputs": [
+      "cash discrepancy",
+      "cashier summary",
+      "custody record"
+     ],
+     "outputs": [
+      "discrepancy explanation"
+     ],
+     "handoff_to": "cash clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Prepare the deposit slip and custody paperwork.",
+     "actor": "cash clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "deposit reconciliation",
+      "discrepancy explanation",
+      "custody record"
+     ],
+     "outputs": [
+      "deposit pack"
+     ],
+     "handoff_to": "cash supervisor",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve and hand the sealed deposit to the authorised collection service.",
+     "actor": "cash supervisor",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "sealed takings",
+      "deposit pack"
+     ],
+     "outputs": [
+      "deposit handover receipt"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "cash supervisor"
+    },
+    {
+     "id": "s7",
+     "what": "Match the bank credit to the deposit and update cash clearing.",
+     "actor": "cash clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK",
+      "ERP"
+     ],
+     "inputs": [
+      "bank statement",
+      "deposit handover receipt",
+      "deposit reconciliation"
+     ],
+     "outputs": [
+      "cash clearing entry",
+      "deposit exception"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Import point-of-sale closing records from the {OTHER} into a deposit register in the {WORKFLOW}. Deterministic checks balance recorded counts, generate deposit paperwork and match bank credits from the {BANK} to clearing entries in the {ERP}. People count physical cash, resolve discrepancies and approve its handover.",
+   "previous_blocker": "Physical custody cannot be replaced by software. Disconnected closing reports, paper custody records and bank references also created avoidable clerical work.",
+   "enabler_now": "Standard exports and bank feeds can connect the records. AI-assisted coding reduces the effort of building a small deposit register and document generator.",
+   "still_hard": "Cash must still be counted, secured and transported. A balanced digital record cannot prove the contents of a sealed bag.",
+   "human_edge": "Maintain custody, notice physical irregularities and investigate differences fairly without assuming misconduct.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily escalation decision for deposits that have not received the expected bank credit."
+   },
+   "altitude": "The clerk spends less time balancing reports and preparing slips, while physical cash work remains. They can prioritise delayed-credit investigations; deposit limits and write-off authority need explicit delegation.",
+   "reach": [
+    {
+     "role": "treasurer",
+     "task": "Monitor cash in transit and expected available funds.",
+     "learn": "Settlement timing, bank cut-offs, custody exposure and cash-clearing reconciliation."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Bank matching on references and other identifiers is an existing capability, with unmatched items sent to people.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Deposit balancing and paperwork can use deterministic rules; physical cash custody remains human work.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The digest provides no documented case for automating this physical deposit workflow.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Step shares, remaining time and build ranges are planning estimates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This supplemental task applies to a business with physical takings; many mid-size companies have no such workflow.",
+    "Electronic card receipts settle separately and are excluded from the physical deposit.",
+    "Cheques are included only where local banking practice and the receiving bank support them.",
+    "Physical counting and custody take more time than the supplied means prior suggests.",
+    "A standard closing report is available from the point-of-sale system, represented by {OTHER}.",
+    "GDPR applies to named cashier records. National rules determine consultation requirements if the change alters employee monitoring.",
+    "Discrepancy records support reconciliation, not automated employee scoring."
+   ],
+   "unknowns": [
+    "What volumes and forms of physical takings exist?",
+    "What counting equipment, custody controls and collection arrangements are already used?",
+    "Can closing records and bank credits share a stable deposit reference?",
+    "Who approves shortages, adjustments and deposit handovers?",
+    "Would named cashier reporting change existing monitoring arrangements?"
+   ],
+   "research_questions": [
+    "Which receiving-bank references and collection-service records support reliable deposit matching?"
+   ],
+   "new_work": [
+    "Investigate unmatched or short bank credits.",
+    "Maintain closing-record mappings and deposit reference rules.",
+    "Check duplicate imports and missing custody records.",
+    "Maintain templates when bank deposit requirements change."
+   ],
+   "time_saved_pct": 44,
+   "speedup": 1.8
+  },
+  {
+   "uid": "43-3031.00:2501",
+   "short": "Calculate amounts due, prepare payment batches and obtain authorised release.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Select approved invoices and other liabilities approaching their due dates.",
+     "actor": "payments clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "supplier ledger entry",
+      "approved liability",
+      "payment calendar"
+     ],
+     "outputs": [
+      "due payment list"
+     ],
+     "handoff_to": "payments clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Calculate tax and recurring payment amounts from approved schedules and assessments.",
+     "actor": "payments clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "approved tax schedule",
+      "tax assessment",
+      "recurring payment schedule"
+     ],
+     "outputs": [
+      "calculated payment schedule",
+      "payment calculation exception"
+     ],
+     "handoff_to": "payments clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "tax-and-filing",
+     "approver": "accountant"
+    },
+    {
+     "id": "s3",
+     "what": "Prepare the payment proposal with due dates, discounts, holds and available funds.",
+     "actor": "payments clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "BANK"
+     ],
+     "inputs": [
+      "due payment list",
+      "calculated payment schedule",
+      "payroll payment batch",
+      "cash position"
+     ],
+     "outputs": [
+      "payment proposal",
+      "beneficiary change"
+     ],
+     "handoff_to": "payments clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Verify changed beneficiary details through an independently sourced contact.",
+     "actor": "payments clerk",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "beneficiary change",
+      "verified contact record"
+     ],
+     "outputs": [
+      "beneficiary verification"
+     ],
+     "handoff_to": "payments clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Create and upload the payment batch for bank authorisation.",
+     "actor": "payments clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "BANK"
+     ],
+     "inputs": [
+      "payment proposal",
+      "beneficiary verification",
+      "approved beneficiary record"
+     ],
+     "outputs": [
+      "staged payment batch",
+      "payment control totals"
+     ],
+     "handoff_to": "authorised signatory",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Review the payment batch and authorise bank release.",
+     "actor": "authorised signatory",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK"
+     ],
+     "inputs": [
+      "staged payment batch",
+      "payment control totals",
+      "beneficiary verification"
+     ],
+     "outputs": [
+      "payment authorisation"
+     ],
+     "handoff_to": "payments clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "authorised signatory"
+    },
+    {
+     "id": "s7",
+     "what": "Record settled payments and investigate rejected or unmatched transactions.",
+     "actor": "payments clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK",
+      "ERP"
+     ],
+     "inputs": [
+      "bank statement",
+      "payment authorisation",
+      "staged payment batch"
+     ],
+     "outputs": [
+      "payment ledger entry",
+      "payment exception"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure the {ERP} to select approved liabilities, apply payment rules and stage batches in the {BANK}. A deterministic generator calculates amounts from approved tax and recurring-payment schedules, while the {WORKFLOW} records exceptions and beneficiary verification. An authorised signatory releases funds, and bank statements reconcile settled payments back to the {ERP}.",
+   "previous_blocker": "Payment rules and approvals were split between records, workbooks and bank screens. Concerns about releasing money often prevented automation of preparation as well.",
+   "enabler_now": "Payment proposals, bank batch formats and statement matching are established capabilities. AI-assisted coding reduces the effort of connecting approved schedules and producing control reports.",
+   "still_hard": "Tax interpretation, disputed liabilities, cash shortages and beneficiary fraud need accountable decisions. Bank access and signatory arrangements can dominate implementation time.",
+   "human_edge": "Decide which obligations need attention when cash is constrained, verify unusual requests and accept responsibility for releasing money.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily recommendation on payment timing when available cash is constrained."
+   },
+   "altitude": "The clerk spends less time calculating and uploading batches and more time explaining holds, deadlines and cash constraints. They can recommend payment timing; bank release rights remain with authorised signatories.",
+   "reach": [
+    {
+     "role": "treasurer",
+     "task": "Prepare the short-term cash forecast.",
+     "learn": "Value dates, settlement cut-offs, committed outflows and liquidity buffers."
+    },
+    {
+     "role": "tax preparer",
+     "task": "Reconcile tax payments to approved returns and assessments.",
+     "learn": "Payment references, tax periods and the boundary between calculation and tax interpretation."
+    }
+   ],
+   "build_days": {
+    "coding": "2-6",
+    "integration": "4-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Automatic bank matching using references and identifiers is an existing capability.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Payment calculations and batch preparation can use deterministic rules while bank release remains human.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Electronic payment batches are a more suitable baseline than routine cheque preparation for this European company profile.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Step shares, remaining time and build ranges are planning estimates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Electronic transfers replace the cheque wording in the source task; physical cheques are an exception.",
+    "Tax specialists approve tax treatment and schedules before payment calculations use them.",
+    "Beneficiary changes follow a separate controlled master-data approval process before batch creation.",
+    "Staging a batch cannot release funds, and approval binds to the exact batch version and control totals.",
+    "Standing instructions are already authorised and are not re-created as new ad hoc payments.",
+    "The final reconciliation step reviews unmatched cases; exact settlements can post automatically.",
+    "GDPR applies to personal bank details. National rules determine any consultation required for changed employee-data handling."
+   ],
+   "unknowns": [
+    "Which banks, payment formats and staging interfaces are available?",
+    "What signatory limits, dual approvals and payment cut-offs apply?",
+    "Who approves tax schedules and beneficiary master-data changes?",
+    "How often do cash constraints require payment prioritisation?",
+    "Are physical cheques still required for any payment category?",
+    "What access and employee consultation requirements apply?"
+   ],
+   "research_questions": [
+    "Does the bank interface preserve approval controls and expose reliable batch and settlement identifiers?"
+   ],
+   "new_work": [
+    "Maintain payment calendars, calculation rules and bank mappings.",
+    "Review calculation exceptions and rejected payments.",
+    "Verify beneficiary changes and maintain the evidence trail.",
+    "Monitor duplicate-payment controls and batch integrity.",
+    "Reconcile payment failures and unexpected settlement dates."
+   ],
+   "time_saved_pct": 76,
+   "speedup": 4.08
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts from copying and calculating toward maintaining reliable transaction flows and resolving exceptions. Clerks gain better grounds to recommend priorities and corrections; spending, payroll approval, cash custody and payment release retain explicit authority limits.",
+  "reach": [
+   "Accountant: reconcile payroll liabilities, supplier accruals and clearing accounts.",
+   "Treasurer: explain cash in transit, settlement delays and upcoming outflows.",
+   "Budget analyst: explain personnel-cost changes using approved, appropriately aggregated records.",
+   "Tax preparer: reconcile payments to approved tax schedules and assessments."
+  ],
+  "skills_to_grow": [
+   "Control totals, reconciliations and accounting cut-off.",
+   "Exception investigation and clear evidence gathering.",
+   "Import validation, reference mapping and duplicate prevention.",
+   "Payroll entitlement boundaries and sensitive employee communication.",
+   "Cash timing, beneficiary verification and approval controls.",
+   "GDPR, relevant EU AI Act duties and applicable national consultation rules."
+  ],
+  "ambitious_version": "Provide a daily finance readiness service covering blocked invoices, payroll inputs, cash in transit and payments due. Give each exception an accountable owner, supporting evidence and a recommended next action within the clerk's authority."
+ },
+ "job_code": "43-3031.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 195,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3000}); text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-3031.00",
+   "title": "Bookkeeping, Accounting, and Auditing Clerks",
+   "tasks": 28,
+   "function": "Finance"
+  }
+ }
+}

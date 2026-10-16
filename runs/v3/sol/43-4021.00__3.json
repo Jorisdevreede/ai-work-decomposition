@@ -1,0 +1,1114 @@
+{
+ "tasks": [
+  {
+   "uid": "43-4021.00:11289",
+   "short": "Turn orders received in correspondence into confirmed orders and fulfilment instructions.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read correspondence and summarise requested goods, quantities, delivery details and special instructions.",
+     "actor": "correspondence clerk",
+     "today_means": "document",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "customer correspondence",
+      "order attachment"
+     ],
+     "outputs": [
+      "order brief"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Customer correspondence and order attachments.",
+      "output": "Order brief with source references and unresolved fields.",
+      "check": "Validate required fields, quantities and source references; flag ambiguous product descriptions.",
+      "stop": "One extraction and one repair attempt per order; send unresolved fields to the clerk.",
+      "why_not_simpler": "Free-text descriptions and varied attachments do not follow one reliable form."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check customer details, product codes, prices, stock and account restrictions.",
+     "actor": "correspondence clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM",
+      "ERP",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "order brief",
+      "customer record",
+      "product master",
+      "price list",
+      "stock record"
+     ],
+     "outputs": [
+      "order checks"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Enter order lines and delivery details into a provisional order.",
+     "actor": "correspondence clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "order brief",
+      "order checks"
+     ],
+     "outputs": [
+      "provisional order"
+     ],
+     "handoff_to": "order coordinator",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Approve the order or resolve discrepancies within delegated authority.",
+     "actor": "order coordinator",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "CRM"
+     ],
+     "inputs": [
+      "provisional order",
+      "order checks",
+      "approval limits"
+     ],
+     "outputs": [
+      "released order",
+      "order exception"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "order coordinator"
+    },
+    {
+     "id": "s5",
+     "what": "Send the customer an order acknowledgement with agreed terms.",
+     "actor": "correspondence clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "released order",
+      "acknowledgement template"
+     ],
+     "outputs": [
+      "order acknowledgement"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Send released order details to the fulfilment team.",
+     "actor": "correspondence clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "released order"
+     ],
+     "outputs": [
+      "fulfilment instruction"
+     ],
+     "handoff_to": "fulfilment team",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Copy the order reference and status into a local tracking workbook.",
+     "actor": "correspondence clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "released order",
+      "order acknowledgement"
+     ],
+     "outputs": [
+      "order tracker"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "A bounded extractor turns correspondence from the {EMAIL} into a sourced order brief, then deterministic checks match it against the {CRM}, {ERP} and {OPS_SYSTEM}. The {WORKFLOW} routes discrepancies and release approval to the order coordinator; approved orders trigger acknowledgements and fulfilment instructions. The {ERP} order queue replaces the separate tracker.",
+   "previous_blocker": "Variable attachments, inconsistent product descriptions and disconnected records made reliable entry expensive.",
+   "enabler_now": "Existing interfaces and validation rules handle most processing. AI-assisted coding reduces implementation effort, while a small extraction loop handles variable text.",
+   "still_hard": "Ambiguous substitutions, conflicting terms, stale stock and credit holds need accountable decisions.",
+   "human_edge": "Recognise when an apparently valid order would disappoint the customer and negotiate a workable alternative.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Alternative fulfilment proposals for orders blocked by stock shortages."
+   },
+   "altitude": "The clerk spends more time resolving delivery and specification problems. They can propose alternatives; price, credit and release authority remain delegated by the relevant manager.",
+   "reach": [
+    {
+     "role": "customer service representative",
+     "task": "Resolve order changes before dispatch.",
+     "learn": "Stock allocation, amendment cut-offs and customer agreement requirements."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "6-12",
+    "testing_rollout": "5-9",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Rossum describes extracting correspondence orders, checking master data and routing exceptions before posting to finance systems.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "The digest reports an allnex vendor case with 70% touchless orders; this is not a forecast for this task.",
+     "grade": "E3",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Exact supports webshop order imports and stock synchronisation, demonstrating deterministic order integration.",
+     "grade": "E2",
+     "source": "[S5]"
+    }
+   ],
+   "assumptions": [
+    "Orders arrive as correspondence and attachments; physical packing belongs to the fulfilment team.",
+    "A small local tracker bridges systems today; its share is secondary to document and system work.",
+    "Release approval remains human in the initial design.",
+    "Build ranges cover one order channel and one fulfilment connection, with overlapping workstreams."
+   ],
+   "unknowns": [
+    "Order volumes, languages and attachment formats.",
+    "Available interfaces, permissions and current order-entry configuration.",
+    "Delegated approval limits and existing fulfilment triggers.",
+    "Whether a separate tracker exists and why it is needed.",
+    "Applicable national rules on employee consultation for the proposed workflow change."
+   ],
+   "research_questions": [
+    "How reliably can extraction distinguish product variants and delivery instructions on representative orders?",
+    "Can existing import and acknowledgement configuration remove any proposed custom code?"
+   ],
+   "new_work": [
+    "Review uncertain extraction fields and order discrepancies.",
+    "Maintain product aliases, validation rules and approval limits.",
+    "Monitor duplicate prevention, failed handoffs and acknowledgements.",
+    "Maintain access controls and retention for customer correspondence."
+   ],
+   "time_saved_pct": 87,
+   "speedup": 7.69
+  },
+  {
+   "uid": "43-4021.00:11272",
+   "short": "Explain applicable rules and procedures clearly in customer correspondence.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the question and identify the customer's circumstances and requested explanation.",
+     "actor": "correspondence clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "customer correspondence",
+      "case record"
+     ],
+     "outputs": [
+      "question brief"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Customer correspondence and relevant case history.",
+      "output": "Question brief separating stated facts, questions and missing facts.",
+      "check": "Require source references; prohibit inferred personal circumstances.",
+      "stop": "One extraction and one repair attempt; unresolved facts go to the clerk.",
+      "why_not_simpler": "Customers describe circumstances and questions in varied free text."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Find current governing clauses, approved guidance and relevant procedure versions.",
+     "actor": "correspondence clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "question brief",
+      "approved guidance",
+      "governing rules"
+     ],
+     "outputs": [
+      "source pack"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "answer_desk",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Determine which rules apply and identify matters requiring specialist interpretation.",
+     "actor": "correspondence clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK",
+      "CRM"
+     ],
+     "inputs": [
+      "question brief",
+      "source pack",
+      "case record"
+     ],
+     "outputs": [
+      "applicability note",
+      "specialist referral"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Write a clear explanation with relevant conditions, next steps and references.",
+     "actor": "correspondence clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "applicability note",
+      "source pack",
+      "reply template"
+     ],
+     "outputs": [
+      "draft reply"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Approved applicability note, current source pack and reply template.",
+      "output": "Draft reply linking each substantive explanation to its source.",
+      "check": "Check references and dates; a clerk verifies meaning, exceptions and next steps.",
+      "stop": "One draft and one revision; unsupported points remain flagged for manual writing.",
+      "why_not_simpler": "Variable questions need tailored plain-language explanations beyond fixed approved passages."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Verify accuracy and approve the reply, obtaining specialist advice where necessary.",
+     "actor": "correspondence clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "draft reply",
+      "source pack",
+      "specialist referral"
+     ],
+     "outputs": [
+      "approved reply"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "correspondence clerk"
+    },
+    {
+     "id": "s6",
+     "what": "Send the approved explanation and retain it with the case.",
+     "actor": "correspondence clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "approved reply",
+      "case record"
+     ],
+     "outputs": [
+      "sent reply",
+      "updated case record"
+     ],
+     "handoff_to": "external",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    }
+   ],
+   "design": "An answer desk retrieves versioned sources from the {DOCS} and {HELPDESK}, using topic, jurisdiction and effective-date filters. Small bounded loops prepare the question brief and draft an explanation after the clerk determines applicability. The {WORKFLOW} records approval before the {EMAIL} sends and the {HELPDESK} retains the reply.",
+   "previous_blocker": "Rules were spread across documents, and templates could not cover every customer's circumstances.",
+   "enabler_now": "Versioned retrieval and bounded drafting can reduce searching and writing. Approved passages still use deterministic assembly where they fit.",
+   "still_hard": "Conflicting rules, changing effective dates and explanations affecting rights require competent interpretation. A convincing draft can still be wrong.",
+   "human_edge": "Distinguish a request for explanation from a dispute or a decision requiring specialist authority.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Case-specific checklists of evidence needed for a complete customer submission."
+   },
+   "altitude": "The clerk spends more time interpreting circumstances and preventing incomplete submissions. They gain discretion over explanation structure and clarification questions, without gaining legal decision rights.",
+   "reach": [
+    {
+     "role": "customer service representative",
+     "task": "Help customers complete a procedure after receiving an explanation.",
+     "learn": "Submission requirements, common misunderstandings and escalation boundaries."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "3-7",
+    "testing_rollout": "6-12",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "TOPdesk Robin answers from a knowledge base and hands unresolved questions into a pre-filled request.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "The NBER study reports improved support productivity with assistance; it does not establish legal accuracy or justify automatic release.",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "GDPR Article 22 restricts solely automated decisions with legal or similarly significant effects; explaining a rule must not silently become such a decision.",
+     "grade": "E2",
+     "source": "[S11]"
+    }
+   ],
+   "assumptions": [
+    "The company maintains approved guidance and can identify its responsible policy specialists.",
+    "The clerk explains rules within delegated competence; specialists resolve contested interpretations.",
+    "Source retrieval begins with deterministic search and filters.",
+    "The high automation prior is moderated by the time needed to determine applicability and approve explanations.",
+    "Build ranges cover one policy domain and a supervised rollout."
+   ],
+   "unknowns": [
+    "Policy domains, jurisdictions and languages handled.",
+    "Whether authoritative sources have owners, versions and effective dates.",
+    "Which replies require specialist or supervisor approval.",
+    "Current access restrictions, retention policies and applicable national consultation rules."
+   ],
+   "research_questions": [
+    "Which recurring questions can use approved passages without model drafting?",
+    "Can reviewers reliably detect omitted exceptions and unsupported interpretations in draft replies?"
+   ],
+   "new_work": [
+    "Maintain authoritative sources, effective dates and topic tags.",
+    "Review draft explanations and resolve missing facts.",
+    "Track recurring misunderstandings and update approved passages.",
+    "Audit access, citations and retention under GDPR.",
+    "Review EU AI Act transparency duties if the service later becomes customer-facing."
+   ],
+   "time_saved_pct": 58,
+   "speedup": 2.41
+  },
+  {
+   "uid": "43-4021.00:11275",
+   "short": "Check correspondence, assemble the prescribed document pack and obtain an authorised signature.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather the draft, attachments, prescribed form and signature requirements.",
+     "actor": "correspondence clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "EMAIL"
+     ],
+     "inputs": [
+      "draft reply",
+      "supporting documents",
+      "document template",
+      "signature rules"
+     ],
+     "outputs": [
+      "document pack"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check spelling, typography, references and required formatting.",
+     "actor": "correspondence clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "document pack",
+      "style guide"
+     ],
+     "outputs": [
+      "checked draft",
+      "format exceptions"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Populate the prescribed form and assemble attachments in the required order.",
+     "actor": "correspondence clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "checked draft",
+      "supporting documents",
+      "document template"
+     ],
+     "outputs": [
+      "signature pack"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Prepare required copies or digital recipient sets and check pack completeness.",
+     "actor": "correspondence clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "signature pack",
+      "distribution rules"
+     ],
+     "outputs": [
+      "distribution pack",
+      "completeness check"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Submit the complete pack to the authorised signatory and track its return.",
+     "actor": "correspondence clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "distribution pack",
+      "completeness check",
+      "signature rules"
+     ],
+     "outputs": [
+      "signature request"
+     ],
+     "handoff_to": "authorised signatory",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Review and sign the correspondence or return it for correction.",
+     "actor": "authorised signatory",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "signature request",
+      "distribution pack"
+     ],
+     "outputs": [
+      "signed correspondence",
+      "correction request"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "authorised signatory"
+    }
+   ],
+   "design": "Controlled templates in the {DOCS} enforce formatting, while a deterministic generator assembles the form, attachments and recipient sets. The {WORKFLOW} checks completeness and routes the frozen version through the {ESIGN} where suitable, retaining the signed version in the {DOCS}. The authorised signatory reviews the actual document before signing.",
+   "previous_blocker": "Informal templates, manual attachment assembly and mailbox chasing made the process depend on individual habits.",
+   "enabler_now": "Template controls, document generation and signature routing are established capabilities that are cheaper to connect and customise now.",
+   "still_hard": "A typographically correct letter may contain a substantive error. Some document classes still require physical originals, special signatures or manual handling.",
+   "human_edge": "Notice when polished wording changes a commitment or when an attachment should not reach a recipient.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The clerk handles pack exceptions and sensitive document checks instead of repetitive assembly and chasing. Signature authority does not change.",
+   "reach": [
+    {
+     "role": "first-line supervisor of office and administrative support workers",
+     "task": "Manage signature queues and resolve delayed approvals.",
+     "learn": "Delegation limits, substitute signatories and document retention requirements."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-7",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Template validation, deterministic document assembly and signature routing can automate preparation while retaining human signing.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Ordinary spelling and formatting checks do not require a generative model; semantic proofreading remains a separate judgement.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Most correspondence is digital; genuinely required paper copies remain exceptions.",
+    "Case references and attachment identifiers can be retrieved without interpreting arbitrary documents.",
+    "The prescribed form has stable fields and an approved template.",
+    "The task boundary includes signature approval so the approval gate is explicit.",
+    "Build ranges cover one document family and one signature route."
+   ],
+   "unknowns": [
+    "Document families, mandatory copy requirements and physical-original requirements.",
+    "Whether current document tools already support the required controls.",
+    "Authorised signatories, delegation rules and accepted signature methods.",
+    "Access restrictions, retention periods and applicable national consultation requirements."
+   ],
+   "research_questions": [
+    "Can current template and approval configuration cover the entire preparation process?",
+    "Which layout and attachment failures occur on representative long or multilingual letters?"
+   ],
+   "new_work": [
+    "Maintain templates, distribution rules and signatory mappings.",
+    "Review flagged corrections and exceptional physical-copy requests.",
+    "Verify generated layouts after template changes.",
+    "Handle failed signature requests and retain version-linked approval records."
+   ],
+   "time_saved_pct": 86,
+   "speedup": 7.41
+  },
+  {
+   "uid": "43-4021.00:11283",
+   "short": "Calculate lawful charges for supplied records and request payment with an itemised explanation.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather the request, records supplied and evidence of copying, retrieval or delivery quantities.",
+     "actor": "correspondence clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "records request",
+      "fulfilment log",
+      "case record"
+     ],
+     "outputs": [
+      "charge facts"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Establish whether charging is permitted and whether exemptions or waivers apply.",
+     "actor": "correspondence clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "charge facts",
+      "fee policy",
+      "governing rules"
+     ],
+     "outputs": [
+      "fee basis",
+      "fee exception"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Calculate chargeable quantities, rates, taxes and the total due.",
+     "actor": "correspondence clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "charge facts",
+      "fee basis",
+      "fee schedule",
+      "tax rules"
+     ],
+     "outputs": [
+      "fee calculation"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Create the invoice or payment reference in the finance records.",
+     "actor": "correspondence clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "fee calculation",
+      "customer record",
+      "fee basis"
+     ],
+     "outputs": [
+      "draft invoice"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Write an itemised payment request explaining the charge and payment instructions.",
+     "actor": "correspondence clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft invoice",
+      "fee basis",
+      "payment request template"
+     ],
+     "outputs": [
+      "draft payment request"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve the charge and request, resolving fee exceptions with the responsible specialist.",
+     "actor": "finance team",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "draft payment request",
+      "draft invoice",
+      "fee calculation",
+      "fee exception"
+     ],
+     "outputs": [
+      "approved payment request",
+      "approved invoice"
+     ],
+     "handoff_to": "correspondence clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "finance team"
+    },
+    {
+     "id": "s7",
+     "what": "Send the payment request and record its issue against the case.",
+     "actor": "correspondence clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "approved payment request",
+      "approved invoice",
+      "case record"
+     ],
+     "outputs": [
+      "sent payment request",
+      "updated case record"
+     ],
+     "handoff_to": "external",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "A deterministic calculator combines fulfilment quantities from the {DOCS} or {HELPDESK} with a versioned fee schedule, after a person establishes the charging basis. An integration creates a draft invoice in the {ERP}, and a template generator produces an itemised payment request. The {WORKFLOW} records finance approval before issue through the {EMAIL} and updates the case.",
+   "previous_blocker": "Quantities, fee schedules and finance records were separate, while charging exceptions discouraged unattended processing.",
+   "enabler_now": "Straightforward calculations, controlled templates and finance interfaces cover most work. Faster custom development makes the connections more affordable.",
+   "still_hard": "Charging rights, exemptions, disputed fulfilment quantities and unusual tax treatment require accountable review.",
+   "human_edge": "Recognise when requesting payment is legally inappropriate or when a waiver better resolves the customer's situation.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Itemised fee estimates before chargeable records are retrieved."
+   },
+   "altitude": "The clerk spends more time checking charging entitlement and resolving disputes. They can prepare estimates and recommend waivers; finance and privacy decision rights remain with authorised roles.",
+   "reach": [
+    {
+     "role": "credit authorizer, checker or clerk",
+     "task": "Resolve disputed balances before further payment reminders.",
+     "learn": "Invoice adjustments, payment allocation and dispute holds."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-9",
+    "testing_rollout": "5-9",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Versioned fee tables, decimal arithmetic and document templates can calculate charges and generate itemised requests without a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "GDPR generally requires free handling of data-subject access requests; charging exceptions and further-copy charges require a valid basis.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This task concerns records for which a valid charging basis may exist, not an automatic fee on every records request.",
+    "Routine GDPR access requests are routed through the privacy process before any payment request.",
+    "A small calculation workbook is used today; most effort remains gathering facts and preparing correspondence.",
+    "No bounded model loop is needed when fulfilment quantities are recorded and payment wording is standard.",
+    "Build ranges cover one fee schedule, one finance connection and a supervised rollout."
+   ],
+   "unknowns": [
+    "Types of records supplied and the legal or contractual charging basis.",
+    "Fee schedules, exemptions, waiver authority and tax treatment.",
+    "Whether fulfilment quantities are recorded in usable fields.",
+    "Existing invoice and payment-request capabilities.",
+    "Privacy approval routes, access requirements and applicable national consultation rules."
+   ],
+   "research_questions": [
+    "Which charging scenarios can be represented completely by approved decision tables?",
+    "Can current finance configuration generate the itemised request without a separate generator?"
+   ],
+   "new_work": [
+    "Maintain fee schedules, effective dates and rounding rules.",
+    "Review charging entitlement, exemptions and disputed quantities.",
+    "Reconcile generated requests with posted invoices and prevent duplicate charges.",
+    "Maintain specialist referral routes and test fee changes before release."
+   ],
+   "time_saved_pct": 81,
+   "speedup": 5.26
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts from copying facts and assembling letters towards resolving ambiguous requests, checking substantive accuracy and coordinating exceptions. New authority is limited to explicitly delegated order alternatives, explanation choices and fee recommendations.",
+  "reach": [
+   "Customer service representatives: resolve order changes and guide customers through procedures.",
+   "First-line supervisors of office and administrative support workers: manage approval queues and delegation.",
+   "Credit authorizers, checkers and clerks: resolve disputed charges before collection continues."
+  ],
+  "skills_to_grow": [
+   "Verify drafts against source records and current governing rules.",
+   "Design clear templates, validation rules and exception routes.",
+   "Understand order, invoice and approval states across connected systems.",
+   "Apply GDPR access, minimisation and retention requirements.",
+   "Explain uncertain cases clearly and recognise specialist escalation boundaries."
+  ],
+  "ambitious_version": "Provide a correspondence resolution service that catches incomplete requests, proposes fulfilment alternatives and gives lawful fee estimates before avoidable work begins. Measure fewer corrections and resolved customer problems, with human authority attached to substantive commitments."
+ },
+ "job_code": "43-4021.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 183,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3000});text(r.output)\n"
+  ],
+  "job": {
+   "code": "43-4021.00",
+   "title": "Correspondence Clerks",
+   "tasks": 17,
+   "function": "Customer support"
+  }
+ }
+}

@@ -1,0 +1,975 @@
+{
+ "job_code": "11-9013.00",
+ "tasks": [
+  {
+   "uid": "11-9013.00:21386",
+   "short": "Answer customer questions on how to care for the plants they bought.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Take the question, the plant and the symptoms.",
+     "actor": "customer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CRM"
+     ],
+     "inputs": [
+      "customer question"
+     ],
+     "outputs": [
+      "care question"
+     ],
+     "handoff_to": "farm manager",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "customer",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Match the question to a signed care card.",
+     "actor": "system",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "care question",
+      "care card"
+     ],
+     "outputs": [
+      "card match"
+     ],
+     "handoff_to": "farm manager",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "the question and the signed care cards",
+      "output": "the card id or no match",
+      "check": "a match is kept only when the plant name and the topic are on that card",
+      "stop": "one pass; no match goes to the manager with the question unchanged",
+      "why_not_simpler": "wording varies, but the answer must be a card the manager has signed"
+     },
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "system",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Sign new cards and retire wrong ones.",
+     "actor": "farm manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "care card"
+     ],
+     "outputs": [
+      "signed card"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "content-to-publish",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Send the matched card to the customer.",
+     "actor": "system",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "card match",
+      "signed card"
+     ],
+     "outputs": [
+      "care answer"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "farm manager",
+     "labour_scope": "system",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
+     "id": "s5",
+     "what": "Diagnose trees, shrubs or plants that matched no card.",
+     "actor": "farm manager",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY",
+      "EMAIL"
+     ],
+     "inputs": [
+      "care question"
+     ],
+     "outputs": [
+      "bespoke answer"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "Questions land as plant plus topic. A match is sent only when it is a care card the farm manager has signed in {DOCS}. Anything else stays a conversation. {CRM} keeps the question and which card went out.",
+   "previous_blocker": "The same watering question was answered from memory, differently, by whoever picked up the mail.",
+   "enabler_now": "A signed card is a stable answer. Matching on plant and topic does not invent advice.",
+   "still_hard": "A sick plant in a photo is not a card. That still needs a person.",
+   "human_edge": "The manager knows when the standard advice would harm that plant.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Give retail buyers who never reach the manager a signed care card the same day, which the desk does not do today."
+   },
+   "altitude": "Repeat questions leave the week. Odd diagnoses stay. The manager still owns the wording on the card.",
+   "reach": [
+    {
+     "role": "sales assistant",
+     "task": "Handle the counter question",
+     "learn": "Which cards are signed and which questions to escalate"
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "2-4",
+    "testing_rollout": "2-3",
+    "consent_and_access": "0-1"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Sending a pre-signed card for a recognised plant and topic is a lookup. Diagnosing an unseen problem is not.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "Workflow boundary: the farm manager signs cards and answers the rest. A customer receives a card only. Sales staff can point at the same cards.",
+    "Structured input: plant name, topic, question text, card id. Producer of the question is the customer message. No card is sent without an exact plant and topic match.",
+    "Card upkeep is extra. Diagnosis time is already in the last step."
+   ],
+   "unknowns": [
+    "Is there already a care sheet with plant and topic?",
+    "Which channel do questions arrive on?"
+   ],
+   "research_questions": [
+    "What share of questions are repeats of ten topics?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Signing and retiring cards is already remaining review time.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Rewrite a card when a variety's care changes.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 3
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "signed card version named in the match",
+     "approval_step_id": "s3",
+     "approver": "farm manager"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 10.4,
+    "high": 19.7,
+    "basis": "If questions are shouted at a counter with no plant name, the match does not run. The conversation stays. Provisional."
+   },
+   "focal_role_share_pct": 50,
+   "excluded_labour_share_pct": 50,
+   "gross_time_saved_pct": 32.0,
+   "incremental_hours_per_100_baseline_hours": 3,
+   "time_saved_pct": 29.0,
+   "speedup": 1.408451,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "11-9013.00:21387",
+   "short": "Set next season's hectares from prices, costs and what the land can grow.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pull recent prices, costs and yields by crop.",
+     "actor": "farm manager",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "ERP"
+     ],
+     "inputs": [
+      "price series",
+      "cost record"
+     ],
+     "outputs": [
+      "market table"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "market-insight",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Draft two or three hectare splits from that table.",
+     "actor": "farm manager",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "market table",
+      "field constraint"
+     ],
+     "outputs": [
+      "draft split"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "the market table and the field constraints",
+      "output": "hectare splits that sum to the farm",
+      "check": "each split uses only prices in the table and sums to the usable hectares",
+      "stop": "two splits; discard any that invent a price or exceed the land",
+      "why_not_simpler": "the sums are fixed; the wording of the comparison is not"
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "plan-to-forecast",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Choose the split and name what would change it.",
+     "actor": "farm manager",
+     "today_means": "meeting_call",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft split"
+     ],
+     "outputs": [
+      "acreage decision"
+     ],
+     "handoff_to": "none",
+     "share_pct": 40,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "strategy-and-planning",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Publish the acreage allocation to the crop plan.",
+     "actor": "farm manager",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "acreage decision"
+     ],
+     "outputs": [
+      "acreage plan"
+     ],
+     "handoff_to": "farm worker",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "strategy-and-planning",
+     "approver": "farm manager",
+     "labour_scope": "focal_role",
+     "shared_step_id": "acreage-plan",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "Prices and costs already in {ERP} fill a table. A draft split must use only those prices and must sum to the usable hectares. The farm manager chooses. {OPS_SYSTEM} shows the crew that choice, not the draft.",
+   "previous_blocker": "The comparison was a private workbook rebuilt when someone remembered last year's price.",
+   "enabler_now": "Price, cost and hectares are numbers. A split that fails the sum is rejectable.",
+   "still_hard": "A contract not yet signed, or a rotation the soil needs, is not in the price table.",
+   "human_edge": "The manager knows which crop the land should not repeat, whatever the price.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Revisit the hectare split when a price moves past a threshold the manager set, not only once a year."
+   },
+   "altitude": "Rebuilding the workbook shrinks. The choice stays. The manager can still override a price-led split.",
+   "reach": [
+    {
+     "role": "crop technician",
+     "task": "Place the crops on the blocks",
+     "learn": "Which hectare figure is the decision, not the draft"
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "2-5",
+    "testing_rollout": "2-3",
+    "consent_and_access": "0-1"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Checking that hectares sum, and that every price came from the table, is deterministic. Choosing the split is not.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "Workflow boundary: the farm manager chooses the hectares. The crew places crops only from the published plan. Sales does not change it in the order book.",
+    "Structured input: crop, price, cost, yield, hectares, field limit. Producer is the ledger and the field list. A missing price is shown as missing, not filled in.",
+    "Thresholds that trigger a revisit are upkeep."
+   ],
+   "unknowns": [
+    "Are prices a series in the ledger, or a mail from a merchant?",
+    "Who else must agree the hectares?"
+   ],
+   "research_questions": [
+    "Which price move is large enough that the manager would reopen the plan?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Choosing the split is already remaining time.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 10,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Reset the price threshold after each season.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "acreage decision the manager chose; a new split needs a new choice",
+     "approval_step_id": "s3",
+     "approver": "farm manager"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 24.5,
+    "high": 46.2,
+    "basis": "If prices live in a merchant's mail, someone still types them. The choice stays either way. Provisional."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 70.0,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 68.0,
+   "speedup": 3.125,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "11-9013.00:21388",
+   "short": "Supervise building work on houses, fences, drains, wells or roads.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the drawing and the agreed scope.",
+     "actor": "farm manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "PROJECT"
+     ],
+     "inputs": [
+      "drawing",
+      "scope"
+     ],
+     "outputs": [
+      "check list"
+     ],
+     "handoff_to": "site contractor",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Walk the construction and compare it to the drawing.",
+     "actor": "farm manager",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "check list",
+      "drawing"
+     ],
+     "outputs": [
+      "site note"
+     ],
+     "handoff_to": "site contractor",
+     "share_pct": 40,
+     "fate": "person_does",
+     "remaining_pct": 95,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Log snags with a place and a photo.",
+     "actor": "farm manager",
+     "today_means": "paper_phone",
+     "systems": [
+      "PROJECT"
+     ],
+     "inputs": [
+      "site note"
+     ],
+     "outputs": [
+      "snag"
+     ],
+     "handoff_to": "site contractor",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "build-snag",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Accept the work or refuse it.",
+     "actor": "farm manager",
+     "today_means": "in_person",
+     "systems": [
+      "PROJECT"
+     ],
+     "inputs": [
+      "snag",
+      "drawing"
+     ],
+     "outputs": [
+      "acceptance"
+     ],
+     "handoff_to": "site contractor",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "project-intake-to-delivery",
+     "approver": "farm manager",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "Snags go into {PROJECT} with a place and a photo, against the drawing held in {DOCS}. The farm manager still walks the work and still accepts or refuses it. The contractor sees the snag, not a notebook.",
+   "previous_blocker": "Snags were a notebook and a phone call, so the same defect was described three ways.",
+   "enabler_now": "A snag with a place and a photo is a normal project record.",
+   "still_hard": "Whether the work matches the drawing, and whether it is safe, is seen on site.",
+   "human_edge": "The manager can refuse work the photo makes look finished.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Rewriting snags shrinks. The walk and the acceptance stay. The manager gains no right to skip the drawing.",
+   "reach": [
+    {
+     "role": "site contractor",
+     "task": "Close a snag",
+     "learn": "Which photo and which clause the manager refused"
+    }
+   ],
+   "build_days": {
+    "coding": "1-2",
+    "integration": "1-3",
+    "testing_rollout": "1-2",
+    "consent_and_access": "0-1"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A snag list with a place and a photo is a configured project record. Acceptance is not.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "Workflow boundary: the farm manager accepts the work. The contractor builds. A structural sign-off, where the law requires an engineer, is not this task.",
+    "Structured input: structure, place, snag, photo, drawing reference, accept or refuse. Producer is the manager on site. A snag with no place is rejected.",
+    "The walk is most of the time."
+   ],
+   "unknowns": [
+    "Which structures need an external sign-off?",
+    "Is there a project record today?"
+   ],
+   "research_questions": [
+    "How often is accepted work reopened?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Reading the drawing before the walk is already remaining review time.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s1"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "File new drawings against the structure name.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "snag list and drawing version the manager accepts or refuses",
+     "approval_step_id": "s4",
+     "approver": "farm manager"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 11.6,
+    "high": 21.9,
+    "basis": "The walk does not get shorter. Savings are the notebook only. Provisional."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 34.25,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 32.25,
+   "speedup": 1.476015,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "11-9013.00:21389",
+   "short": "Replace a chemical spray with a practice that pests do not require.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "List where chemicals are used and for which pest.",
+     "actor": "farm manager",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "application order",
+      "spray log"
+     ],
+     "outputs": [
+      "chemical map"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "fertiliser-order",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Choose a practice and the block that will trial it.",
+     "actor": "farm manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "chemical map",
+      "crop plan"
+     ],
+     "outputs": [
+      "trial choice"
+     ],
+     "handoff_to": "farm worker",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "strategy-and-planning",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Run the trial and record pest and crop outcomes.",
+     "actor": "farm worker",
+     "today_means": "in_person",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "trial choice"
+     ],
+     "outputs": [
+      "trial log"
+     ],
+     "handoff_to": "farm manager",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Keep the practice or return to the chemical.",
+     "actor": "farm manager",
+     "today_means": "meeting_call",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "trial log",
+      "chemical map"
+     ],
+     "outputs": [
+      "practice decision"
+     ],
+     "handoff_to": "farm worker",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "strategy-and-planning",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Update the spray protocol to the decision.",
+     "actor": "farm manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "practice decision"
+     ],
+     "outputs": [
+      "spray protocol"
+     ],
+     "handoff_to": "farm worker",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "compliance-and-risk",
+     "approver": "farm manager",
+     "labour_scope": "focal_role",
+     "shared_step_id": "spray-protocol",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "Spray logs already in {OPS_SYSTEM} show where a chemical is used. The trial and the decision stay with the farm manager. {DOCS} holds a new protocol version only when they keep the practice. Workers follow that version.",
+   "previous_blocker": "The protocol and the spray log disagreed, so a trial's result never replaced the old instruction.",
+   "enabler_now": "The log can show the blocks and products. Replacing a product is still a decision.",
+   "still_hard": "One quiet season does not prove a practice. Pest pressure returns.",
+   "human_edge": "The manager carries the loss if the practice fails, so they keep the decision.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Finding where a chemical is used gets faster. The trial and the decision stay. The protocol changes only when they say so.",
+   "reach": [
+    {
+     "role": "farm worker",
+     "task": "Spray or use the alternative",
+     "learn": "Which protocol version is in force on that block"
+    }
+   ],
+   "build_days": {
+    "coding": "1-3",
+    "integration": "1-3",
+    "testing_rollout": "1-2",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A list of products by block is a query on the spray log. Declaring a new practice is not.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "Cutting a regulated product can be a permit condition. National rules differ, so the protocol stays a signed document.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "Workflow boundary: the farm manager changes the protocol. Workers apply it. The spray log is the source of where chemicals went.",
+    "Structured input: block, product, pest, date, rate. Producer is the application order already signed. A trial with no outcome is not a protocol change.",
+    "Protocol editing time is partly left in the last step. Filing old versions is upkeep."
+   ],
+   "unknowns": [
+    "Is every application already on the log?",
+    "Who else signs a protocol change?"
+   ],
+   "research_questions": [
+    "How many trials have been abandoned without a protocol update?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The keep-or-return decision is already remaining time.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 6,
+      "counted_step_ids": [
+       "s4"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Archive protocol versions that are no longer in force.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5",
+     "approved_version": "practice decision the manager made for that pest and block",
+     "approval_step_id": "s4",
+     "approver": "farm manager"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 16.0,
+    "high": 30.1,
+    "basis": "If spray logs are paper, the map is typed once and the trial is unchanged. Provisional."
+   },
+   "focal_role_share_pct": 75,
+   "excluded_labour_share_pct": 25,
+   "gross_time_saved_pct": 46.333333,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 44.333333,
+   "speedup": 1.796407,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "Repeat plant-care questions can leave as a signed card. Hectares, building acceptance and spray changes stay decisions. The manager still walks a building and still runs a trial.",
+  "reach": [
+   "Counter staff use the same signed cards.",
+   "Contractors see a snag with a photo."
+  ],
+  "skills_to_grow": [
+   "Retire a card that would harm a variety.",
+   "Refuse work that does not match the drawing."
+  ],
+  "ambitious_version": "A retail buyer gets a signed care answer the same day, and a snag has a place."
+ },
+ "_meta": {
+  "model": "grok-4.7",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "11-9013.00",
+   "title": "Farmers, Ranchers, and Other Agricultural Managers",
+   "tasks": 30,
+   "function": "Management"
+  },
+  "digest": "research/digests-minor/11-9.md",
+  "digest_sha256": "a4940c09e4dc73efe2b80ad6ea9bfcc88a5229c01f1c500b7897275e596ab193",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-15T14:27:06"
+ }
+}

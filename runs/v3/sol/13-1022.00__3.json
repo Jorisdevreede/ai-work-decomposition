@@ -1,0 +1,977 @@
+{
+ "tasks": [
+  {
+   "uid": "13-1022.00:66",
+   "short": "Analyze sales, market signals and stock to anticipate demand and inventory needs.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve sales, stock, returns and outstanding orders from the {ERP} and {OPS_SYSTEM}.",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "sales records",
+      "stock records",
+      "return records",
+      "open orders"
+     ],
+     "outputs": [
+      "sales and stock extract"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read category reports and economic releases held in {DOCS}.",
+     "actor": "buyer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "category reports",
+      "economic releases"
+     ],
+     "outputs": [
+      "market signals"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Approved category reports and economic releases.",
+      "output": "Dated market signals with source passages and affected categories.",
+      "check": "Require source passages and dates; buyer checks material signals and conflicting interpretations.",
+      "stop": "At most 20 documents and two extraction passes per run; unreadable sources go to buyer.",
+      "why_not_simpler": "Sources express demand drivers in varied prose; fixed fields cannot capture them reliably."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "market-insight",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Combine extracts and calculate trends, stock cover and baseline demand in {SPREADSHEET}.",
+     "actor": "buyer",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "sales and stock extract",
+      "promotion calendar",
+      "product master"
+     ],
+     "outputs": [
+      "demand workbook"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Adjust demand assumptions for promotions, stockouts and market signals in {SPREADSHEET}.",
+     "actor": "buyer",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "demand workbook",
+      "market signals",
+      "promotion calendar"
+     ],
+     "outputs": [
+      "forecast proposal"
+     ],
+     "handoff_to": "purchasing manager",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Agree inventory assumptions and the forecast with the buyer and sales manager.",
+     "actor": "purchasing manager",
+     "today_means": "meeting_call",
+     "systems": [],
+     "inputs": [
+      "forecast proposal",
+      "inventory budget"
+     ],
+     "outputs": [
+      "approved forecast"
+     ],
+     "handoff_to": "buyer",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "plan-to-forecast",
+     "approver": "purchasing manager"
+    },
+    {
+     "id": "s6",
+     "what": "Record the approved forecast and inventory targets in the {ERP}.",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "approved forecast"
+     ],
+     "outputs": [
+      "inventory targets"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure scheduled feeds from the {ERP} and {OPS_SYSTEM}; deterministic calculations on the {DATA_PLATFORM} feed a {BI} view of demand, stock cover and forecast error. A bounded loop extracts source-linked market signals from {DOCS}, while buyers adjust assumptions and managers approve forecasts. The approved version updates inventory targets in the {ERP}.",
+   "previous_blocker": "Product identifiers, promotion calendars and stockout history often needed manual alignment. Report interpretation and category judgement remained separate from planning systems.",
+   "enabler_now": "Existing connectors and statistical methods handle structured inputs. AI-assisted coding reduces the effort of building joins, scenario controls and validation; bounded extraction helps with prose.",
+   "still_hard": "Lost sales during stockouts, new products and changing promotions weaken historical forecasts. Backtesting cannot establish demand for an unseen assortment.",
+   "human_edge": "The buyer distinguishes temporary noise from a real category shift and accepts commercial risk under uncertainty.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly category inventory rebalancing"
+   },
+   "altitude": "The buyer spends more time comparing scenarios and investigating forecast misses. Within delegated limits, they can propose weekly inventory reallocations; spending authority requires a separate delegation.",
+   "reach": [
+    {
+     "role": "purchasing manager",
+     "task": "Compare inventory allocations across categories.",
+     "learn": "Working-capital constraints, forecast bias and portfolio trade-offs."
+    }
+   ],
+   "build_days": {
+    "coding": "8-15",
+    "integration": "8-18",
+    "testing_rollout": "10-20",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Structured sales and inventory analysis can use deterministic pipelines, statistical forecasts and dashboards.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Source-linked extraction can assist market reading, but category interpretation still needs review.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This describes a buyer with system records and a spreadsheet planning bridge in a mid-size European company.",
+    "Time shares and build ranges are planning estimates for one category pilot, not measured results.",
+    "Available connectors support scheduled extracts; custom historical alignment still needs code.",
+    "Analysis uses category aggregates. GDPR applies if personal data enters the inputs; EU AI Act duties depend on intended use.",
+    "Access estimates include national employee consultation requirements if the implementation changes employee monitoring."
+   ],
+   "unknowns": [
+    "Which planning features and connectors are already licensed?",
+    "Are product identifiers, promotions and stockout histories reliable?",
+    "Who approves forecasts, and which inventory decisions are delegated?",
+    "What are current forecast error, preparation time and reporting frequency?"
+   ],
+   "research_questions": [
+    "Which baseline forecast beats current practice in historical backtests?",
+    "Do extracted market signals improve decisions beyond sales and promotion data?"
+   ],
+   "new_work": [
+    "Review extracted market signals and conflicting sources.",
+    "Resolve missing products, stale feeds and promotion mismatches.",
+    "Monitor forecast bias and document overrides.",
+    "Maintain calculations, source permissions and connector mappings."
+   ],
+   "time_saved_pct": 66,
+   "speedup": 2.94
+  },
+  {
+   "uid": "13-1022.00:20712",
+   "short": "Select suitable merchandise and place approved purchase orders.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check inventory targets, budget and merchandise requirements in the {ERP} and {PROCUREMENT}.",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "inventory targets",
+      "inventory budget",
+      "merchandise requirements"
+     ],
+     "outputs": [
+      "buying brief"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compare supplier quotations, specifications and environmental evidence held in {DOCS}.",
+     "actor": "buyer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "buying brief",
+      "supplier quotations",
+      "product specifications",
+      "environmental recommendation"
+     ],
+     "outputs": [
+      "merchandise comparison"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Buying brief, supplier quotations, specifications and approved environmental recommendation.",
+      "output": "Source-linked quotation fields and explicit missing requirements.",
+      "check": "Validate currencies, units and required fields; deterministic code calculates totals; buyer checks material terms.",
+      "stop": "At most ten quotations and two passes per comparison; unresolved fields remain missing for buyer review.",
+      "why_not_simpler": "Supplier documents express specifications and exclusions in varied prose; calculations themselves remain deterministic."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Inspect samples for quality, finish and suitability against merchandise requirements.",
+     "actor": "buyer",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "product samples",
+      "merchandise requirements",
+      "merchandise comparison"
+     ],
+     "outputs": [
+      "sample assessment"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Select merchandise and quantities, recording the decision in {PROCUREMENT}.",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "buying brief",
+      "merchandise comparison",
+      "sample assessment"
+     ],
+     "outputs": [
+      "merchandise selection"
+     ],
+     "handoff_to": "procurement clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "buyer"
+    },
+    {
+     "id": "s5",
+     "what": "Enter purchase order lines and agreed terms in {PROCUREMENT}.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "merchandise selection",
+      "supplier quotations",
+      "supplier master"
+     ],
+     "outputs": [
+      "draft purchase order"
+     ],
+     "handoff_to": "purchasing manager",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve the purchase commitment against delegated limits in {PROCUREMENT}.",
+     "actor": "purchasing manager",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "draft purchase order",
+      "inventory budget",
+      "approval limits"
+     ],
+     "outputs": [
+      "approved purchase order"
+     ],
+     "handoff_to": "procurement clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "purchasing manager"
+    },
+    {
+     "id": "s7",
+     "what": "Send the approved purchase order to the supplier through {EMAIL}.",
+     "actor": "procurement clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "approved purchase order"
+     ],
+     "outputs": [
+      "issued purchase order"
+     ],
+     "handoff_to": "external",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure {PROCUREMENT} to assemble buying briefs, create orders from approved selections and enforce spending approvals. A bounded loop extracts quotation terms from {DOCS}, while deterministic calculations compare quantities, costs and explicit requirements. Buyers inspect samples and select merchandise; only the approved order version is sent through {EMAIL}.",
+   "previous_blocker": "Quotation formats differ, product records are incomplete and selected terms are often retyped. Physical quality and assortment judgement cannot be reduced to purchasing rules.",
+   "enabler_now": "Existing order and approval features handle the transaction. Bounded document extraction and faster connector development reduce the cost of preparing a reliable comparison.",
+   "still_hard": "Supplier substitutions, ambiguous specifications and late term changes require investigation. Physical quality, consumer appeal and commercial commitments remain consequential judgements.",
+   "human_edge": "The buyer judges whether merchandise will sell, recognises quality problems and balances margin against supplier reliability.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Structured quotation comparisons for small regional suppliers"
+   },
+   "altitude": "The buyer can assess more regional suppliers without proportional paperwork. They gain capacity to recommend assortment changes; formal buying limits still depend on delegation.",
+   "reach": [
+    {
+     "role": "purchasing manager",
+     "task": "Assess category exposure to supplier failure.",
+     "learn": "Supplier concentration, contingency sourcing and approval thresholds."
+    },
+    {
+     "role": "procurement clerk",
+     "task": "Maintain purchase order data quality.",
+     "learn": "Product identifiers, units, version control and duplicate prevention."
+    }
+   ],
+   "build_days": {
+    "coding": "7-14",
+    "integration": "8-18",
+    "testing_rollout": "8-15",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Pactum checks requisitions against purchasing policy inside Coupa; this supports policy-check feasibility, not merchandise-selection accuracy.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "The SUEZ vendor case reports reduced requisition review work; its results do not establish savings for retail assortment buying.",
+     "grade": "E3",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Quotation extraction, deterministic comparison and configured approval routing can assist buyers while preserving selection judgement.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "A procurement clerk prepares orders, with a purchasing manager approving commitments in this example.",
+    "Sample inspection applies to relevant new or changed merchandise, not every repeat order.",
+    "Build ranges cover one merchandise category and one order channel.",
+    "The existing {PROCUREMENT} supports approval routing and order transmission.",
+    "Supplier contact data is handled under GDPR; EU AI Act obligations are assessed for the actual use.",
+    "Access estimates include national employee consultation where process or monitoring changes require it."
+   ],
+   "unknowns": [
+    "Which order preparation and transmission features are already configured?",
+    "Which buyers can commit spending without manager approval?",
+    "How many quotations require document extraction rather than structured import?",
+    "Which quality and environmental requirements are mandatory?",
+    "How often do selected terms change before order release?"
+   ],
+   "research_questions": [
+    "Which quotation fields cause the most ordering errors?",
+    "Can existing configuration create orders directly from approved selections?"
+   ],
+   "new_work": [
+    "Review extracted terms and unresolved specification differences.",
+    "Maintain product mappings and supplier master records.",
+    "Investigate blocked orders and failed transmissions.",
+    "Check that order amendments invalidate prior approval where required."
+   ],
+   "time_saved_pct": 53,
+   "speedup": 2.13
+  },
+  {
+   "uid": "13-1022.00:77",
+   "short": "Give clerks accurate, approved merchandise data for price tags.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve approved prices, product identifiers and season codes from the {ERP}.",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "product master",
+      "approved prices",
+      "price effective dates"
+     ],
+     "outputs": [
+      "tag source data"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Copy tag fields and calculate displayed price changes in {SPREADSHEET}.",
+     "actor": "buyer",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "tag source data",
+      "tag field rules"
+     ],
+     "outputs": [
+      "tag worksheet"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Check tag fields, arithmetic and effective dates in {SPREADSHEET}.",
+     "actor": "buyer",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "tag worksheet",
+      "approved prices",
+      "tag field rules"
+     ],
+     "outputs": [
+      "validated tag data"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Send validated tag data and instructions to the procurement clerk through {EMAIL}.",
+     "actor": "buyer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "validated tag data",
+      "price effective dates"
+     ],
+     "outputs": [
+      "tag instructions"
+     ],
+     "handoff_to": "procurement clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure the {ERP} to expose approved tag fields and validate prices, identifiers and effective dates. A deterministic adapter sends versioned tag instructions directly to the label-printing system in {OTHER}, replacing the {SPREADSHEET} and routine {EMAIL} handoff. Invalid records enter an exception queue in {WORKFLOW}.",
+   "previous_blocker": "Product and price records were disconnected from the printing process. A spreadsheet and mailbox provided a cheap bridge.",
+   "enabler_now": "Existing exports and validation features can supply approved data. AI-assisted coding makes a small field-mapping adapter cheaper to build and maintain.",
+   "still_hard": "Incorrect master data, overlapping price changes and unsupported printer formats still need correction. Consumer price-display requirements vary under national rules.",
+   "human_edge": "The buyer resolves ambiguous price instructions and decides whether an unusual promotion needs a different presentation.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Routine tag preparation disappears where the manual bridge exists. The buyer handles exceptions and gains no additional pricing authority.",
+   "reach": [
+    {
+     "role": "procurement clerk",
+     "task": "Resolve rejected label batches and control reprints.",
+     "learn": "Template fields, effective dates and label version checks."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "3-8",
+    "testing_rollout": "4-8",
+    "consent_and_access": "1-7"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Approved structured product and price data can feed label instructions through deterministic mappings and validation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Benefits may be small where the existing price-to-label connection already works.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The task communicates already approved prices; setting prices is outside its scope.",
+    "The example company still uses a manual spreadsheet and email bridge.",
+    "Configured validation replaces the worksheet check using authoritative source fields.",
+    "Invalid records are held rather than corrected or released automatically.",
+    "Ranges cover one label format and one receiving system.",
+    "Access work includes any consultation required by national rules; no employee monitoring is introduced."
+   ],
+   "unknowns": [
+    "Is tag data already linked directly to label printing?",
+    "Can the receiving system import structured batches?",
+    "Which fields, price-display rules and effective-date conventions apply?",
+    "How much buyer time does this handoff currently consume?"
+   ],
+   "research_questions": [
+    "Can existing configuration remove the manual bridge without an adapter?",
+    "Which validation rules prevent the actual label errors seen today?"
+   ],
+   "new_work": [
+    "Correct rejected master data and conflicting price dates.",
+    "Maintain field mappings and label templates.",
+    "Monitor failed batches and prevent duplicate releases.",
+    "Approve changes to price-display rules through the existing pricing process."
+   ],
+   "time_saved_pct": 100,
+   "speedup": 20.0
+  },
+  {
+   "uid": "13-1022.00:19547",
+   "short": "Compare environmental evidence for competing merchandise and recommend buying trade-offs.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Request missing environmental evidence from suppliers through {EMAIL}.",
+     "actor": "buyer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "merchandise shortlist",
+      "environmental criteria",
+      "evidence register"
+     ],
+     "outputs": [
+      "supplier evidence"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read supplier declarations, certificates and environmental studies stored in {DOCS}.",
+     "actor": "buyer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "supplier evidence",
+      "environmental criteria"
+     ],
+     "outputs": [
+      "environmental evidence register"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Supplier declarations, certificates, studies and the environmental criteria.",
+      "output": "Draft evidence register with values, units, scope, dates, source passages and missing information.",
+      "check": "Require source references; validate field types and units; buyer checks scope and material claims. Extraction does not establish authenticity.",
+      "stop": "At most ten documents per product and two passes; missing or conflicting evidence goes to buyer.",
+      "why_not_simpler": "Evidence mixes tables and prose with inconsistent descriptions of scope, exclusions and product coverage."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Compare compatible metrics and record evidence gaps in {SPREADSHEET}.",
+     "actor": "buyer",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "environmental evidence register",
+      "environmental criteria",
+      "merchandise shortlist"
+     ],
+     "outputs": [
+      "environmental comparison"
+     ],
+     "handoff_to": "sustainability specialist",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Discuss conflicting evidence and environmental trade-offs with the buyer.",
+     "actor": "sustainability specialist",
+     "today_means": "meeting_call",
+     "systems": [],
+     "inputs": [
+      "environmental comparison",
+      "environmental evidence register"
+     ],
+     "outputs": [
+      "environmental advice"
+     ],
+     "handoff_to": "buyer",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Record the environmental recommendation and accepted trade-offs in {PROCUREMENT}.",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "environmental comparison",
+      "environmental advice",
+      "buying brief"
+     ],
+     "outputs": [
+      "environmental recommendation"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "supplier-to-contract",
+     "approver": "buyer"
+    }
+   ],
+   "design": "Configure evidence requests and expiry reminders in {WORKFLOW}, with supplier documents held in {DOCS}. A bounded loop drafts an evidence register; deterministic comparisons on the {DATA_PLATFORM} feed {BI}, converting only compatible metrics and exposing missing scope. The buyer reviews comparability, consults a specialist and records the approved recommendation in {PROCUREMENT}.",
+   "previous_blocker": "Environmental evidence uses inconsistent scopes, units and product coverage. Cheap document storage did not make claims comparable or trustworthy.",
+   "enabler_now": "Structured intake and deterministic unit checks already work. Bounded extraction reduces document reading effort, while AI-assisted coding lowers the cost of maintaining an evidence register.",
+   "still_hard": "Authenticity, lifecycle boundaries and trade-offs between impacts require expertise. Missing evidence cannot safely become an average score or a claim of environmental superiority.",
+   "human_edge": "The buyer challenges supplier claims and weighs environmental uncertainty against durability, affordability and commercial suitability.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Pre-buy environmental evidence clinic for assistant buyers"
+   },
+   "altitude": "The buyer spends less time finding certificates and more time challenging weak comparisons. They can give assistant buyers documented advice; authority to waive environmental requirements needs explicit delegation.",
+   "reach": [
+    {
+     "role": "purchasing manager",
+     "task": "Set category environmental evidence requirements.",
+     "learn": "Lifecycle boundaries, evidence strength and the consequences of exclusion thresholds."
+    },
+    {
+     "role": "purchasing agent",
+     "task": "Request comparable environmental evidence during supplier qualification.",
+     "learn": "Functional units, certificate coverage and evidence expiry."
+    }
+   ],
+   "build_days": {
+    "coding": "8-15",
+    "integration": "5-12",
+    "testing_rollout": "10-20",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Document extraction can structure environmental evidence, but does not establish authenticity or lifecycle comparability.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Deterministic comparisons can convert compatible units and flag missing scope without resolving environmental trade-offs.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "A sustainability specialist is available for disputed or material comparisons.",
+    "Routine evidence requests use approved wording, known supplier contacts and bounded reminders.",
+    "Compared metrics remain separate unless an approved method establishes comparability and weighting.",
+    "The structured-input prior fits numeric comparisons; underlying evidence still commonly includes declarations and certificates.",
+    "Ranges cover one category and an agreed evidence schema, excluding commissioned environmental studies.",
+    "GDPR applies to supplier contact data; EU AI Act obligations depend on the intended use.",
+    "Access estimates include consultation under national rules where applicable."
+   ],
+   "unknowns": [
+    "Which environmental criteria and exclusion thresholds are approved?",
+    "Which evidence sources can be accessed and reused?",
+    "Who verifies certificate authenticity and resolves disputed claims?",
+    "Is specialist support internal or external?",
+    "Which national product and environmental-claim requirements affect the merchandise?"
+   ],
+   "research_questions": [
+    "Which metrics are genuinely comparable within the selected category?",
+    "Can suppliers provide structured evidence instead of repeated document requests?",
+    "Which extraction errors could change a buying recommendation?"
+   ],
+   "new_work": [
+    "Review extracted scope, units and product coverage.",
+    "Verify material certificates and investigate conflicting claims.",
+    "Maintain evidence criteria, expiry rules and comparison methods.",
+    "Handle unanswered requests and supplier corrections.",
+    "Record unresolved uncertainty alongside recommendations."
+   ],
+   "time_saved_pct": 52,
+   "speedup": 2.11
+  }
+ ],
+ "role": {
+  "altitude": "The buyer's week shifts toward assortment judgement, supplier challenge and inventory scenarios. Preparation becomes faster, while purchasing commitments and environmental exceptions remain subject to explicit delegated authority.",
+  "reach": [
+   "Support purchasing managers with category inventory and supplier-risk scenarios.",
+   "Help purchasing agents request comparable supplier evidence.",
+   "Help procurement clerks resolve order and label-data exceptions."
+  ],
+  "skills_to_grow": [
+   "Forecast backtesting and stockout interpretation",
+   "Product data and unit consistency",
+   "Supplier quotation and contract-term review",
+   "Environmental evidence and lifecycle comparability",
+   "Commercial scenario analysis and exception judgement"
+  ],
+  "ambitious_version": "Offer a shared category decision service that combines demand scenarios, supplier comparisons and environmental evidence for buyers with limited analytical support."
+ },
+ "job_code": "13-1022.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 284,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "text(await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:4000}));\n"
+  ],
+  "job": {
+   "code": "13-1022.00",
+   "title": "Wholesale and Retail Buyers, Except Farm Products",
+   "tasks": 16,
+   "function": "Procurement"
+  }
+ }
+}

@@ -1,0 +1,1121 @@
+{
+ "tasks": [
+  {
+   "uid": "43-3011.00:2474",
+   "short": "Record customers’ financial circumstances, collection contacts, disputes and payment promises.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open the customer account and check balances, payments and existing collection status.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "customer account",
+      "open items",
+      "payment records"
+     ],
+     "outputs": [
+      "account snapshot"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read correspondence for disputes, payment promises and reported changes in financial circumstances.",
+     "actor": "collector",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "customer correspondence",
+      "account snapshot"
+     ],
+     "outputs": [
+      "reported account facts"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Customer correspondence linked to one verified customer account.",
+      "output": "Dated reported facts with source excerpts and unresolved ambiguities.",
+      "check": "Validate account identity, dates and amounts; require a source excerpt for each fact.",
+      "stop": "One extraction and one repair attempt per message; ambiguity returns to the collector.",
+      "why_not_simpler": "Customers describe disputes and circumstances in varied free text."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "collector"
+    },
+    {
+     "id": "s3",
+     "what": "Clarify missing or contradictory information with the customer.",
+     "actor": "collector",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "reported account facts",
+      "account snapshot"
+     ],
+     "outputs": [
+      "verified account facts",
+      "contact outcome"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Enter dated notes and attach supporting correspondence to the customer record.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "verified account facts",
+      "reported account facts",
+      "contact outcome",
+      "customer correspondence"
+     ],
+     "outputs": [
+      "collection record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Update collection flags and set the next follow-up date.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "collection record",
+      "collection policy"
+     ],
+     "outputs": [
+      "collection status",
+      "follow-up date"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure an account view joining balances in the {ERP} with contact history in the {CRM}; add an integration only where native links are missing. A bounded extractor proposes sourced facts from the {EMAIL}, while the collector verifies sensitive claims and records call outcomes through structured fields. Approved facts drive routine status updates and follow-up dates in the {ERP}.",
+   "previous_blocker": "Account balances and correspondence sit apart. Free-text circumstances need interpretation, and collectors often re-enter the same facts.",
+   "enabler_now": "Existing records and workflow features cover most updates. AI-assisted coding reduces the effort of building missing links, and bounded extraction can prepare sourced facts.",
+   "still_hard": "A customer’s reported circumstances may be incomplete or contested. GDPR requires proportionate collection, restricted access and retention; sensitive details should not become unsupported labels.",
+   "human_edge": "The collector distinguishes a verified fact from a customer statement and asks tactful questions without collecting unnecessary personal details.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The week shifts from repeated entry to checking unusual facts and resolving contradictory accounts. No new approval rights follow automatically.",
+   "reach": [
+    {
+     "role": "billing and posting clerk",
+     "task": "Resolve an invoice dispute using the collection record and supporting correspondence.",
+     "learn": "Invoice correction procedures, evidence requirements and the distinction between billing disputes and inability to pay."
+    },
+    {
+     "role": "compliance officer",
+     "task": "Review collection-record access and retention.",
+     "learn": "Data minimisation, access controls and retention requirements for customer correspondence."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-9",
+    "testing_rollout": "5-9",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Collection software already supports dunning workflows and debtor management.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Structured entry and linked records can reduce repeated collection-note entry.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Free-text fact extraction requires source checks and human review before contested facts become account records.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The collector works in an internal finance team with linked customer identifiers.",
+    "Financial status means relevant reported circumstances, not automated creditworthiness assessment.",
+    "The steps give correspondence and structured records more weight than the prior’s document and meeting shares.",
+    "Automatic flags reflect verified events; hardship classifications and disputed facts remain human decisions.",
+    "Time percentages and build ranges are planning estimates, not measured results.",
+    "Consultation effort is included where national rules apply; waiting for access or consultation can extend elapsed delivery."
+   ],
+   "unknowns": [
+    "Which system holds the authoritative collection record.",
+    "Whether customer identifiers match across the {ERP}, {CRM} and {EMAIL}.",
+    "Available interfaces, write permissions and licensed workflow features.",
+    "Actual correspondence volume, correction rates and record-entry time.",
+    "Retention policy and permitted financial-circumstance fields.",
+    "Whether the change introduces employee monitoring that needs consultation."
+   ],
+   "research_questions": [
+    "Which existing record features can replace custom forms and integrations?",
+    "How reliably can extraction distinguish customer claims from verified facts on representative correspondence?",
+    "Which national rules govern the recording and use of customer financial circumstances?"
+   ],
+   "new_work": [
+    "Review extracted facts and correct account-linking errors.",
+    "Handle contradictory claims and unsupported statements.",
+    "Maintain status mappings, access controls and retention settings.",
+    "Check extraction quality after correspondence formats change."
+   ],
+   "time_saved_pct": 61,
+   "speedup": 2.56
+  },
+  {
+   "uid": "43-3011.00:2475",
+   "short": "Find valid customer contact details, send overdue reminders and speak with customers about payment.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open the collection worklist and review the balance, disputes and previous contacts.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "collection worklist",
+      "account snapshot",
+      "collection status"
+     ],
+     "outputs": [
+      "contact brief"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check customer contact details and resolve missing or conflicting addresses.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "customer account",
+      "contact details",
+      "contact brief"
+     ],
+     "outputs": [
+      "verified contact details"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "collector"
+    },
+    {
+     "id": "s3",
+     "what": "Prepare the appropriate reminder using an approved letter or email template.",
+     "actor": "collector",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "contact brief",
+      "verified contact details",
+      "reminder template",
+      "collection policy"
+     ],
+     "outputs": [
+      "draft reminder"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Check the recipient, balance and wording, then send the reminder.",
+     "actor": "collector",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "draft reminder",
+      "verified contact details",
+      "account snapshot"
+     ],
+     "outputs": [
+      "sent reminder",
+      "delivery status"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "collector"
+    },
+    {
+     "id": "s5",
+     "what": "Telephone the customer, establish the reason for delay and request payment.",
+     "actor": "collector",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "contact brief",
+      "verified contact details",
+      "sent reminder"
+     ],
+     "outputs": [
+      "contact outcome",
+      "payment promise",
+      "invoice dispute"
+     ],
+     "handoff_to": "none",
+     "share_pct": 40,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Record the contact outcome and any promised payment or dispute.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "contact outcome",
+      "payment promise",
+      "invoice dispute",
+      "delivery status"
+     ],
+     "outputs": [
+      "collection record"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure reminder templates and contact campaigns from the {ERP}, using verified contact details in the {CRM}. The {WORKFLOW} checks dispute holds, recent payments and duplicate contacts before presenting each reminder for release through the {EMAIL}; approved accessible templates support requested formats. The collector handles calls, with the contact brief and structured outcome form beside the {TELEPHONY}.",
+   "previous_blocker": "Collectors switch between balances, contact records and templates. Recipient uncertainty and sensitive conversations prevent unattended handling of many accounts.",
+   "enabler_now": "Dunning workflows already exist. Faster configuration and integration work can bring account context, approved templates and contact outcomes into one flow.",
+   "still_hard": "Tracing missing contacts and persuading customers remain difficult. GDPR and national collection rules govern contact methods, disclosures and frequency; personal visits are a separate, uncommon branch in this baseline.",
+   "human_edge": "The collector recognises distress, resolves misunderstandings and changes the conversation without making inappropriate threats or promises.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Customers requesting accessible written reminders."
+   },
+   "altitude": "The week contains fewer template edits and more purposeful customer conversations. The collector can select approved channels and accessible formats within policy; settlement and enforcement rights do not change.",
+   "reach": [
+    {
+     "role": "billing and posting clerk",
+     "task": "Supply a corrected invoice or clear invoice explanation before another reminder.",
+     "learn": "Billing correction routes and which supporting documents answer common disputes."
+    },
+    {
+     "role": "compliance officer",
+     "task": "Approve reminder templates and contact-frequency limits.",
+     "learn": "National collection rules, accessible communication and permitted customer-data disclosures."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "4-8",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Onguard CreditManager supports dunning workflows including letters, reminders and call campaigns.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Approved templates and structured account fields can generate routine reminders without a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Customer persuasion, disputed debts and hardship conversations still require human judgement.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Most contact is by email and telephone; printed letters and visits depend on the portfolio.",
+    "The prior understates mailbox use for written reminders; telephone conversations still take the largest share here.",
+    "Contact lookup uses authorised records, with human investigation when those records fail.",
+    "Reminder release stays gated; drafting, checks and preparation remain open to automation.",
+    "Accessible reminder formats use approved templates, not unchecked generated wording.",
+    "Time percentages and build ranges are planning estimates.",
+    "Access and applicable national employee consultation are included; elapsed waiting time may be longer."
+   ],
+   "unknowns": [
+    "Customer mix, countries served and whether debts concern businesses or natural persons.",
+    "Actual split between email, telephone, letters and visits.",
+    "Contact-data quality and how missing addresses are currently investigated.",
+    "Available dunning, template and delivery-status features.",
+    "Approved contact limits, dispute holds and accessibility requirements.",
+    "Whether call recording or employee-performance reporting is planned."
+   ],
+   "research_questions": [
+    "Which reminders can existing dunning configuration generate with complete payment and dispute checks?",
+    "Which national rules apply to contact tracing and collection communications?",
+    "Which accessible formats customers need and can approved templates provide them?"
+   ],
+   "new_work": [
+    "Review queued reminders and investigate failed delivery.",
+    "Maintain approved templates, accessible versions and contact limits.",
+    "Resolve stale contact details and duplicate customer records.",
+    "Check that payments and dispute holds suppress further reminders."
+   ],
+   "time_saved_pct": 45,
+   "speedup": 1.82
+  },
+  {
+   "uid": "43-3011.00:2473",
+   "short": "Identify overdue accounts, reconcile their status and maintain a prioritised collection worklist.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Review the ageing report for unpaid invoices and overdue balances.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "open items",
+      "payment records",
+      "due dates"
+     ],
+     "outputs": [
+      "ageing report"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Combine ageing, payment promises and dispute status in a tracking workbook.",
+     "actor": "collector",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "ERP",
+      "CRM"
+     ],
+     "inputs": [
+      "ageing report",
+      "payment promise",
+      "collection status"
+     ],
+     "outputs": [
+      "account watchlist"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Investigate unmatched payments, disputed balances and missed payment promises.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "CRM"
+     ],
+     "inputs": [
+      "account watchlist",
+      "payment records",
+      "collection record"
+     ],
+     "outputs": [
+      "account exception findings"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Prioritise accounts and assign the next collection action.",
+     "actor": "collector",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "account watchlist",
+      "account exception findings",
+      "collection policy"
+     ],
+     "outputs": [
+      "collection worklist"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "collector"
+    },
+    {
+     "id": "s5",
+     "what": "Send unresolved balance exceptions and stalled disputes to the responsible finance colleague.",
+     "actor": "collector",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "account exception findings",
+      "collection worklist"
+     ],
+     "outputs": [
+      "account exception referral"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Keep ageing calculations in the {ERP} and join collection status from the {CRM} through a scheduled job on the {DATA_PLATFORM}. A {BI} view shows source freshness, missed promises and balance exceptions; deterministic rules propose a worklist for collector approval. The {WORKFLOW} routes unresolved exceptions to finance and records their resolution.",
+   "previous_blocker": "The ageing report lacks current promises and dispute context. A workbook bridges those records, but refreshes and account matching are manual.",
+   "enabler_now": "Native ageing reports and stable identifiers support deterministic joins. AI-assisted coding makes missing connectors and exception views cheaper to build and test.",
+   "still_hard": "Late payment posting, unallocated receipts and unclear dispute ownership can make a technically correct report misleading. Operational queue ranking must not quietly become model-based creditworthiness assessment of natural persons; that use can fall within EU AI Act Annex III [S17].",
+   "human_edge": "The collector understands why a balance is overdue and when another reminder would worsen an unresolved dispute.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily allocation of collection capacity between stalled disputes and overdue payment chasing."
+   },
+   "altitude": "The collector spends less time refreshing lists and more time deciding which exceptions need action. With delegated authority, the collector can resequence their queue each day; the financial manager retains team-capacity and enforcement decisions.",
+   "reach": [
+    {
+     "role": "bookkeeping, accounting, and auditing clerk",
+     "task": "Resolve unallocated receipts that make paid accounts appear overdue.",
+     "learn": "Payment allocation rules, reference matching and reconciliation controls."
+    },
+    {
+     "role": "business intelligence analyst",
+     "task": "Maintain an ageing and dispute dashboard with traceable source data.",
+     "learn": "Ageing definitions, refresh checks, account identifiers and exception measures."
+    },
+    {
+     "role": "financial manager",
+     "task": "Allocate collector capacity using dispute and overdue-account queues.",
+     "learn": "Workload measures and the difference between overdue value and actionable collection work."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "5-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Collection software already supports debtor workflows and call campaigns.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "AFAS supports bank-line matching by payment reference, IBAN or invoice number, with exceptions handled manually.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Ageing, status joins and event-based queue rules can be implemented deterministically.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline uses a workbook to combine an existing ageing report with collection context.",
+    "Where the {ERP} already provides the joined watchlist, configure it and eliminate the workbook instead.",
+    "This task produces the collection worklist; the contact task consumes it.",
+    "Monitoring is primarily internal record work, despite the prior’s high external-action probability.",
+    "No model or autonomous agent is needed for the proposed monitoring flow.",
+    "Build ranges assume read access to source records and approved internal routing.",
+    "Time percentages and build ranges are planning estimates; consultation and access delays can extend elapsed time."
+   ],
+   "unknowns": [
+    "Whether an integrated account watchlist already exists.",
+    "Actual use of workbooks and manual refreshes.",
+    "Payment-posting latency and responsibility for unallocated receipts.",
+    "Source identifiers, interface availability and refresh frequency.",
+    "Current prioritisation policy and delegated queue-management rights.",
+    "Whether dashboards will measure individual employee performance."
+   ],
+   "research_questions": [
+    "Can native account views eliminate the workbook without custom code?",
+    "Which mismatches explain most false overdue flags?",
+    "Which deterministic priorities improve queue usefulness without adding customer scoring?",
+    "What national consultation requirements apply if individual employee-performance measures are introduced?"
+   ],
+   "new_work": [
+    "Monitor failed refreshes, stale data and duplicate identifiers.",
+    "Resolve exceptions the join cannot explain.",
+    "Maintain priority thresholds and routing destinations.",
+    "Check dashboard totals against the {ERP} after source changes."
+   ],
+   "time_saved_pct": 83,
+   "speedup": 5.8
+  },
+  {
+   "uid": "43-3011.00:2481",
+   "short": "Discuss customers’ circumstances, agree affordable repayment terms and establish approved payment schedules.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check the outstanding balance, existing promises and any dispute or collection hold.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "CRM"
+     ],
+     "inputs": [
+      "open items",
+      "payment records",
+      "collection record"
+     ],
+     "outputs": [
+      "account snapshot"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Discuss financial circumstances and what payments the customer can realistically make.",
+     "actor": "collector",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "account snapshot",
+      "collection policy"
+     ],
+     "outputs": [
+      "reported account facts",
+      "customer payment proposal"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Calculate instalment amounts, dates and alternative repayment schedules.",
+     "actor": "collector",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "account snapshot",
+      "customer payment proposal",
+      "collection policy"
+     ],
+     "outputs": [
+      "repayment options"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Choose proposed terms considering affordability, policy limits and the customer relationship.",
+     "actor": "collector",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "repayment options",
+      "reported account facts",
+      "collection policy"
+     ],
+     "outputs": [
+      "proposed repayment plan"
+     ],
+     "handoff_to": "credit manager",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve repayment terms that exceed the collector’s delegated limits.",
+     "actor": "credit manager",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "proposed repayment plan",
+      "account snapshot",
+      "collection policy"
+     ],
+     "outputs": [
+      "repayment approval"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "credit manager"
+    },
+    {
+     "id": "s6",
+     "what": "Prepare the repayment agreement from the selected terms and approved template.",
+     "actor": "collector",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "proposed repayment plan",
+      "repayment approval",
+      "repayment template"
+     ],
+     "outputs": [
+      "draft repayment agreement"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Check the agreement and send it to the customer for acceptance.",
+     "actor": "collector",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "draft repayment agreement",
+      "verified contact details",
+      "repayment approval"
+     ],
+     "outputs": [
+      "issued repayment agreement"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "collector"
+    },
+    {
+     "id": "s8",
+     "what": "Check that the customer accepted the issued terms without changes.",
+     "actor": "collector",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "issued repayment agreement",
+      "customer acceptance"
+     ],
+     "outputs": [
+      "accepted repayment agreement"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "collector"
+    },
+    {
+     "id": "s9",
+     "what": "Record the accepted schedule and set instalment follow-up dates.",
+     "actor": "collector",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "accepted repayment agreement"
+     ],
+     "outputs": [
+      "repayment schedule",
+      "follow-up date",
+      "collection status"
+     ],
+     "handoff_to": "collector",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure a repayment calculator in the {ERP} or {WORKFLOW} to produce exact schedules from human-selected amounts and dates. The {WORKFLOW} routes exceptions to the credit manager, generates an agreement from the {DOCS}, and presents it for release through the {EMAIL}. After the collector verifies acceptance, it records the schedule in the {ERP} and flags missed instalments for a human check-in.",
+   "previous_blocker": "Negotiation and approval were mixed with calculation, document preparation and re-entry. Exceptions often travelled through a mailbox without structured approval evidence.",
+   "enabler_now": "Repayment calculations and template filling need no model. Existing approval features and faster integration work can connect the human decisions to agreement generation and scheduling.",
+   "still_hard": "Affordability, disputed debts and customer vulnerability cannot be established from a calculator. GDPR and national debt and contract rules apply; model-based assessment of natural-person creditworthiness can bring EU AI Act high-risk obligations [S17].",
+   "human_edge": "The collector negotiates a credible commitment, recognises hardship and knows when to seek concessions or specialist help.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A human repayment-plan check-in triggered by the first missed instalment."
+   },
+   "altitude": "The week shifts from arithmetic and agreement assembly to negotiation and early plan repair. Within expressly delegated limits, the collector can adjust instalment dates; concessions beyond those limits remain with the credit manager.",
+   "reach": [
+    {
+     "role": "credit analyst",
+     "task": "Assess a repayment exception that exceeds normal limits.",
+     "learn": "Evidence quality, affordability considerations and the distinction between plan arithmetic and creditworthiness assessment."
+    },
+    {
+     "role": "financial manager",
+     "task": "Approve concessions and review repayment-plan performance.",
+     "learn": "Delegation limits, cash timing and measures of sustainable repayment."
+    },
+    {
+     "role": "bookkeeping, accounting, and auditing clerk",
+     "task": "Allocate instalment receipts and reconcile them against the accepted schedule.",
+     "learn": "Partial-payment allocation and how schedule changes affect reconciliation."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "4-9",
+    "testing_rollout": "6-12",
+    "consent_and_access": "4-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Instalment arithmetic and agreement generation from approved terms can be deterministic.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Collection software supports configurable dunning workflows.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Repayment negotiations and approval of exceptional concessions require human judgement.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Routine plans can be approved within documented collector limits; manager approval applies to exceptions.",
+    "Approval-step time is averaged across routine and exceptional cases.",
+    "The baseline calculator is a workbook; native repayment functionality replaces it where available.",
+    "The human classification applies to negotiation and judgement, while preparation and paperwork can change substantially.",
+    "The proposed calculator performs arithmetic and policy checks, not automated affordability or creditworthiness assessment.",
+    "Customer acceptance is verified before schedule activation.",
+    "Time percentages and build ranges are planning estimates; applicable consultation and access work are included."
+   ],
+   "unknowns": [
+    "Whether the portfolio includes consumer debt, commercial debt or both.",
+    "Collector delegation limits and which concessions require manager approval.",
+    "Existing repayment-schedule and approval features.",
+    "Required agreement wording and legally valid acceptance methods.",
+    "How interest, fees, holidays and partial payments affect schedules.",
+    "Available capacity for missed-instalment check-ins.",
+    "Applicable national consultation requirements and access approvals."
+   ],
+   "research_questions": [
+    "Can existing repayment features calculate and record the required schedules without custom code?",
+    "Which national rules govern affordability discussions, concessions and acceptance?",
+    "Which schedule edge cases must be validated before rollout?",
+    "Does an early human check-in improve plan recovery without creating excessive contact?"
+   ],
+   "new_work": [
+    "Maintain approved calculation parameters, templates and delegation limits.",
+    "Test schedule changes, partial payments and rounding.",
+    "Handle changed or ambiguous customer acceptance.",
+    "Review missed-instalment alerts and conduct the new check-ins.",
+    "Reconcile accepted agreements with active schedules."
+   ],
+   "time_saved_pct": 50,
+   "speedup": 2.0
+  }
+ ],
+ "role": {
+  "altitude": "The collector’s week centres on purposeful customer conversations, disputed balances and sustainable repayment plans. Record assembly, routine calculations and follow-up routing shrink; wider settlement or enforcement authority requires explicit delegation.",
+  "reach": [
+   "Help billing and posting clerks resolve invoice disputes with complete contact evidence.",
+   "Help bookkeeping, accounting, and auditing clerks remove false overdue flags caused by unallocated receipts.",
+   "Work with credit analysts on exceptional repayment proposals and evidence quality.",
+   "Help financial managers allocate collection capacity using actionable account queues.",
+   "Work with compliance officers on collection communications, data use and national requirements."
+  ],
+  "skills_to_grow": [
+   "Hardship-sensitive negotiation and clear payment explanations.",
+   "Payment allocation, ageing logic and invoice-dispute diagnosis.",
+   "Repayment arithmetic and agreement verification.",
+   "Reading dashboard exceptions and tracing figures to source records.",
+   "Data minimisation and accurate separation of claims from verified facts.",
+   "Testing workflow rules and recognising integration failures."
+  ],
+  "ambitious_version": "Become a receivables-resolution specialist who connects customer conversations, billing corrections and repayment follow-through. With explicit delegation, resolve routine schedule changes and coordinate stalled disputes while managers retain exceptional concessions and enforcement decisions."
+ },
+ "job_code": "43-3011.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 252,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "text(await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3000}));\n"
+  ],
+  "job": {
+   "code": "43-3011.00",
+   "title": "Bill and Account Collectors",
+   "tasks": 15,
+   "function": "Finance"
+  }
+ }
+}

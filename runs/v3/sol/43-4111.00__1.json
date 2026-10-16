@@ -1,0 +1,1054 @@
+{
+ "tasks": [
+  {
+   "uid": "43-4111.00:2627",
+   "short": "Collect employee information through prescribed questions and confirm the answers.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check the prescribed questionnaire and instructions for this interview.",
+     "actor": "interviewer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "questionnaire",
+      "collection instructions"
+     ],
+     "outputs": [
+      "interview question set"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Look up existing employee details before asking for missing information.",
+     "actor": "interviewer",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "employee identifier",
+      "interview question set"
+     ],
+     "outputs": [
+      "existing employee details"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Ask the employee the standard factual questions.",
+     "actor": "interviewer",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "interview question set",
+      "existing employee details"
+     ],
+     "outputs": [
+      "initial interview answers"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Clarify misunderstood questions and help the employee explain unusual circumstances.",
+     "actor": "interviewer",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "initial interview answers",
+      "collection instructions"
+     ],
+     "outputs": [
+      "clarification notes"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Record the answers and read them back for employee confirmation.",
+     "actor": "interviewer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "initial interview answers",
+      "clarification notes"
+     ],
+     "outputs": [
+      "confirmed interview answers"
+     ],
+     "handoff_to": "employee",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Structured answers and interviewer clarification notes.",
+      "output": "Draft answers mapped to questionnaire fields, with supporting note references.",
+      "check": "Validate field types; show every inferred mapping; require employee confirmation before submission.",
+      "stop": "One extraction and one correction attempt; unresolved fields return to the interviewer.",
+      "why_not_simpler": "Structured answers need no model, but free-text clarification notes need interpretation."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "employee"
+    },
+    {
+     "id": "s6",
+     "what": "Enter confirmed answers into the employee record.",
+     "actor": "interviewer",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "confirmed interview answers",
+      "employee identifier"
+     ],
+     "outputs": [
+      "intake record"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure a questionnaire in the {HCM} or {WORKFLOW}, prefilled from authorised employee records, and remove questions without a justified collection purpose. Employees complete routine fields directly; interviewers handle clarification, while a bounded extraction loop prepares notes for employee confirmation and validated entry into the {HCM}.",
+   "previous_blocker": "Interview scripts, notes and employee records sit apart. Unusual answers and accessibility needs make a single rigid form insufficient.",
+   "enabler_now": "Existing form controls and record interfaces cover routine collection. AI-assisted coding reduces the effort of building mappings and validation; bounded extraction can handle clarification notes.",
+   "still_hard": "Accessible assisted completion, multilingual ambiguity and lawful collection of sensitive fields need careful design. Religion is special-category data under GDPR and is not a default HR intake field.",
+   "human_edge": "Build trust, notice confusion and help employees describe circumstances without steering their answers.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Accessible assisted intake for employees who cannot complete the standard digital form"
+   },
+   "altitude": "The interviewer spends more time on assisted intake and ambiguous answers. They gain discretion to choose the assistance channel, while substantive HR decisions remain with authorised roles.",
+   "reach": [
+    {
+     "role": "Human Resources Assistant",
+     "task": "Prepare complete employee-change submissions.",
+     "learn": "Field ownership, effective dates and the difference between recording facts and approving changes."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-8",
+    "testing_rollout": "3-6",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS supports employee self-service changes flowing to payroll; this supports the records pattern, not this complete intake design.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Forms, prefilling and validation can replace routine interviewer collection; the time shares and build estimates are planning assumptions.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "GDPR requires a justified purpose and an appropriate legal basis, including additional conditions for special-category data.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The HR interpretation is factual employee intake, not candidate assessment.",
+    "Time shares describe an illustrative interview with clarification, not measured company data.",
+    "The interviewer remains available for assisted completion; employee effort does not disappear.",
+    "Automatic writes cover confirmed factual fields, not pay, benefit or employment decisions.",
+    "Build ranges assume one questionnaire and one employee-record interface. Consultation and access ranges cover working effort; external waiting may be longer.",
+    "Conversation-heavy priors fit clarification, but routine factual collection is sufficiently structured for configured forms."
+   ],
+   "unknowns": [
+    "Which questions are actually asked and why each field is required.",
+    "Available self-service features, record interfaces and write permissions.",
+    "The proportion of employees needing assisted completion.",
+    "Applicable national rules and employee consultation requirements."
+   ],
+   "research_questions": [
+    "Which accessibility and language options reduce assisted-completion failures?",
+    "Can existing field controls support the questionnaire without custom code?"
+   ],
+   "new_work": [
+    "Review unmatched note-to-field mappings.",
+    "Maintain questionnaire versions and collection purposes.",
+    "Handle failed submissions and duplicate records.",
+    "Check assisted-completion accessibility with employees."
+   ],
+   "time_saved_pct": 70,
+   "speedup": 3.31
+  },
+  {
+   "uid": "43-4111.00:2634",
+   "short": "Find invalid or missing interview data, investigate the cause and report unresolved problems.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check completed intake records against required fields and validation instructions.",
+     "actor": "interviewer",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "intake record",
+      "validation instructions"
+     ],
+     "outputs": [
+      "validity exceptions"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compare exceptions with interview notes to understand missing or inconsistent answers.",
+     "actor": "interviewer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "validity exceptions",
+      "clarification notes"
+     ],
+     "outputs": [
+      "exception assessment"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Validity exceptions and relevant clarification notes.",
+      "output": "Suggested problem category with quoted supporting passages and explicit uncertainties.",
+      "check": "Require source passages and an allowed category; interviewer confirms interpretation.",
+      "stop": "One classification pass; unsupported or ambiguous cases remain unclassified for manual review.",
+      "why_not_simpler": "Rules detect missing fields, but narrative contradictions and misunderstood questions require reading."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "interviewer"
+    },
+    {
+     "id": "s3",
+     "what": "Contact the employee to clarify the problem and request corrections.",
+     "actor": "interviewer",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "exception assessment"
+     ],
+     "outputs": [
+      "correction notes"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Write an unresolved-data report and send it to the responsible HR specialist.",
+     "actor": "interviewer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "exception assessment",
+      "correction notes"
+     ],
+     "outputs": [
+      "data-quality report"
+     ],
+     "handoff_to": "HR specialist",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Reviewed exception assessment, correction notes and report template.",
+      "output": "Draft report separating observed facts, attempted corrections and unresolved questions.",
+      "check": "Every factual claim links to a record or note; interviewer reviews before sending.",
+      "stop": "One draft and one revision; incomplete evidence produces a template for manual completion.",
+      "why_not_simpler": "Narrative causes vary; fixed fields alone do not explain why collection failed."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "compliance-and-risk",
+     "approver": "interviewer"
+    },
+    {
+     "id": "s5",
+     "what": "Decide whether to accept, correct or escalate the disputed data.",
+     "actor": "HR specialist",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "data-quality report",
+      "intake record"
+     ],
+     "outputs": [
+      "resolution decision"
+     ],
+     "handoff_to": "interviewer",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "HR specialist"
+    },
+    {
+     "id": "s6",
+     "what": "Record the resolution and update the exception status.",
+     "actor": "interviewer",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "resolution decision",
+      "validity exceptions"
+     ],
+     "outputs": [
+      "resolved exception record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    }
+   ],
+   "design": "Run explicit validation rules on intake records in the {HCM} and manage exceptions in the {WORKFLOW}. Bounded loops classify narrative problems and draft evidence-linked reports; interviewers clarify answers and HR specialists approve disputed resolutions before the {HCM} is updated.",
+   "previous_blocker": "Validation instructions were separate from collection screens. Explanations and resolutions were scattered across notes and the {EMAIL}.",
+   "enabler_now": "Configurable checks handle objective defects. Small reading and drafting loops can prepare the narrative work without deciding whether an employee is credible.",
+   "still_hard": "An unusual answer may be valid. Resolving conflicting accounts, changing a poorly designed question and deciding whether collection is appropriate still require people.",
+   "human_edge": "Distinguish a confusing question from an unreliable answer and investigate without treating employees as suspects.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly decisions on recurring questionnaire defects"
+   },
+   "altitude": "The interviewer handles fewer mechanical checks and brings documented patterns to a weekly intake review. They can propose question changes; the HR process owner approves them.",
+   "reach": [
+    {
+     "role": "Human Resources Specialist",
+     "task": "Investigate recurring employee-record quality problems.",
+     "learn": "Root-cause analysis, evidence standards and correction versus escalation criteria."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "3-7",
+    "testing_rollout": "4-7",
+    "consent_and_access": "3-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Deterministic checks can detect missing fields and incompatible values; narrative review and estimated savings remain design assumptions.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The documented Amsterdam welfare case shows that automated flags did not establish better judgement than caseworkers; it is a caution, not an HR result.",
+     "grade": "E3",
+     "source": "[S10]"
+    },
+    {
+     "claim": "GDPR Article 22 constrains solely automated decisions with legal or similarly significant effects.",
+     "grade": "E1",
+     "source": "[S11]"
+    }
+   ],
+   "assumptions": [
+    "This task checks information quality rather than fraud, employee performance or hiring suitability.",
+    "Objective validation is separated from accepting disputed facts.",
+    "Shares include the HR specialist handoff and are illustrative.",
+    "The low-rule-coverage prior fits interpreting exceptions, while completeness checks have higher rule coverage.",
+    "Build ranges cover an initial rule set and one intake workflow; access and consultation waiting may exceed the stated working effort."
+   ],
+   "unknowns": [
+    "Existing validation rules and exception volumes.",
+    "Who may accept disputed data or authorise corrections.",
+    "Whether notes are sufficiently complete to support classification.",
+    "National rules governing consultation if exception data could monitor staff."
+   ],
+   "research_questions": [
+    "Which validation rules produce false alarms on legitimate employee circumstances?",
+    "Can recurring defects be reported in aggregate without exposing individual interview notes?"
+   ],
+   "new_work": [
+    "Review narrative classifications and draft reports.",
+    "Investigate false alarms and missed defects.",
+    "Maintain validation rules when questionnaires change.",
+    "Monitor unresolved cases and their assigned owners."
+   ],
+   "time_saved_pct": 55,
+   "speedup": 2.23
+  },
+  {
+   "uid": "43-4111.00:2633",
+   "short": "Verify coverage for employee services and arrange payment where coverage is incomplete.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect the service request, provider details and authority to request coverage information.",
+     "actor": "interviewer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "service request",
+      "employee details"
+     ],
+     "outputs": [
+      "authorised coverage request"
+     ],
+     "handoff_to": "employee",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "start",
+     "workflow": "employee-lifecycle",
+     "approver": "employee"
+    },
+    {
+     "id": "s2",
+     "what": "Check the provider portal for current coverage and authorisation requirements.",
+     "actor": "interviewer",
+     "today_means": "system_screen",
+     "systems": [
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "authorised coverage request"
+     ],
+     "outputs": [
+      "provider coverage response"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Read coverage conditions, exclusions and any unresolved provider qualifications.",
+     "actor": "interviewer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "provider coverage response",
+      "service request"
+     ],
+     "outputs": [
+      "coverage summary"
+     ],
+     "handoff_to": "benefits specialist",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Provider response, applicable coverage wording and requested service.",
+      "output": "Coverage conditions, limits, expiry dates and unresolved questions with source passages.",
+      "check": "Validate amounts and dates against the source; benefits specialist confirms the summary.",
+      "stop": "One extraction and one repair; ambiguous coverage returns to the provider through a person.",
+      "why_not_simpler": "Provider qualifications may be narrative. Structured responses bypass the model entirely."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "benefits specialist"
+    },
+    {
+     "id": "s4",
+     "what": "Calculate the uncovered amount using service prices and confirmed coverage.",
+     "actor": "interviewer",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "coverage summary",
+      "service price"
+     ],
+     "outputs": [
+      "payment calculation"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Discuss the uncovered amount and permitted payment options with the employee.",
+     "actor": "interviewer",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "payment calculation",
+      "payment policy"
+     ],
+     "outputs": [
+      "proposed payment arrangement"
+     ],
+     "handoff_to": "finance manager",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve the arrangement and issue the confirmed payment terms.",
+     "actor": "finance manager",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "proposed payment arrangement",
+      "payment policy"
+     ],
+     "outputs": [
+      "approved payment arrangement"
+     ],
+     "handoff_to": "finance assistant",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "finance manager"
+    }
+   ],
+   "design": "An access-controlled case in the {WORKFLOW} requests minimum coverage data through the {PARTNER_PORTAL} and stores the response in the {DOCS}. A bounded loop extracts narrative terms, deterministic calculations in the {ERP} show the uncovered amount, and approved payment terms are issued only after employee acceptance and finance approval.",
+   "previous_blocker": "Coverage terms differ between providers, access is fragmented and negotiated arrangements need accountable approval.",
+   "enabler_now": "Where provider interfaces exist, ordinary integrations can retrieve coverage. Bounded extraction can prepare a checked summary of narrative terms, while calculations remain plain code.",
+   "still_hard": "A coverage check is not a payment guarantee. Provider access, disputed coverage, sensitive information and regulated financing arrangements may dominate cost.",
+   "human_edge": "Explain uncertainty clearly and discuss affordability without pressuring the employee into an unsuitable arrangement.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A pre-service estimate of uncovered employee costs"
+   },
+   "altitude": "The interviewer spends less time navigating provider records and calculating amounts. They can present approved options earlier; they gain no authority to grant coverage, credit or payroll deductions.",
+   "reach": [
+    {
+     "role": "Compensation and Benefits Specialist",
+     "task": "Resolve unclear benefit coverage with providers.",
+     "learn": "Coverage terminology, provider evidence requirements and boundaries between estimates and binding commitments."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "10-25",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Provider integration, checked extraction and deterministic cost calculations are a proposed architecture; the digest contains no direct benefits-verification case.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "GDPR imposes additional conditions on processing health data; an employee's operational authorisation alone does not establish every required legal basis.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Solely automated decisions with legal or similarly significant effects are constrained by GDPR Article 22.",
+     "grade": "E1",
+     "source": "[S11]"
+    }
+   ],
+   "assumptions": [
+    "This is a conditional benefits-service intake scenario. Insurance verification and service financing are not typical duties in every HR department.",
+    "The employer has a legitimate role in coordinating payment; clinical records and diagnoses remain outside interviewer access.",
+    "A supported provider interface exists. Without one, portal checking remains manual and the integration estimate must be revised.",
+    "Payment options come from an approved policy. Credit underwriting and payroll deductions require separate assessment and authority.",
+    "Employee acceptance is recorded before finance issues binding terms.",
+    "Time shares describe this specialised scenario. The API-heavy prior is not proof that a particular provider offers access.",
+    "Build ranges cover one provider. Consultation, contracting and access waiting can be substantially longer than working effort."
+   ],
+   "unknowns": [
+    "Whether this task exists in the customer's HR remit.",
+    "Which providers permit coverage queries and through which interfaces.",
+    "Who is liable for uncovered charges and whether financing involves regulated credit.",
+    "Applicable GDPR bases, special-category conditions and national rules.",
+    "Who can approve arrangements and how employee acceptance is recorded."
+   ],
+   "research_questions": [
+    "What does each provider response establish, and how long is it valid?",
+    "Which proposed payment options require specialist credit or employment-law review?"
+   ],
+   "new_work": [
+    "Review extracted coverage qualifications.",
+    "Handle unavailable providers and stale coverage responses.",
+    "Maintain provider mappings, prices and payment policies.",
+    "Reconcile estimates against final charges and provider payments."
+   ],
+   "time_saved_pct": 55,
+   "speedup": 2.22
+  },
+  {
+   "uid": "43-4111.00:20435",
+   "short": "Handle HR office enquiries, maintain staff records and coordinate applicable service billing and receipts.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read incoming enquiries and identify the responsible team.",
+     "actor": "HR assistant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "office enquiry"
+     ],
+     "outputs": [
+      "routed enquiry"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Enquiry text and an approved routing taxonomy.",
+      "output": "Queue assignment and a minimal case description.",
+      "check": "Use explicit routing rules first; validate allowed queues and access restrictions.",
+      "stop": "One classification pass; ambiguous or sensitive cases enter a restricted manual triage queue.",
+      "why_not_simpler": "Free-text enquiries may lack explicit routing terms. Structured submissions use rules only."
+     },
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Find the applicable HR guidance and answer the enquiry.",
+     "actor": "HR assistant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "routed enquiry",
+      "HR guidance"
+     ],
+     "outputs": [
+      "enquiry response"
+     ],
+     "handoff_to": "employee",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Enquiry and current, authorised HR guidance passages.",
+      "output": "Draft response with supporting guidance references.",
+      "check": "Check source version and employee access; HR assistant approves before sending.",
+      "stop": "One retrieval and one draft; missing or conflicting guidance triggers specialist referral.",
+      "why_not_simpler": "Varied wording and context need a short tailored explanation; fixed requests use templates."
+     },
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "HR assistant"
+    },
+    {
+     "id": "s3",
+     "what": "Enter authorised staff changes into the employee record.",
+     "actor": "HR assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "approved staff change",
+      "employee identifier"
+     ],
+     "outputs": [
+      "updated employee record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Forward approved service charges and payment terms to finance.",
+     "actor": "HR assistant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "approved payment arrangement",
+      "service charge"
+     ],
+     "outputs": [
+      "billing instruction"
+     ],
+     "handoff_to": "finance assistant",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Prepare and issue the invoice against the authorised billing instruction.",
+     "actor": "finance assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "billing instruction"
+     ],
+     "outputs": [
+      "service invoice"
+     ],
+     "handoff_to": "employee",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "finance assistant"
+    },
+    {
+     "id": "s6",
+     "what": "Match incoming payments to invoices and record outstanding balances.",
+     "actor": "finance assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "BANK"
+     ],
+     "inputs": [
+      "service invoice",
+      "bank transaction"
+     ],
+     "outputs": [
+      "payment allocation",
+      "outstanding balance"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Use the {HELPDESK} for enquiry routing and reviewed answers grounded in current {DOCS}, while configured approvals feed authorised changes into the {HCM}. Where service billing belongs to this desk, the {WORKFLOW} passes approved charges to the {ERP}, which generates reviewed invoices and matches exact payment references from the {BANK}.",
+   "previous_blocker": "A shared mailbox connects enquiries, employee changes and finance handoffs. Each team re-enters information because authorisation and record identifiers do not travel with the request.",
+   "enabler_now": "Configured case routing, employee self-service and invoice matching already cover much of the work. Bounded loops are useful only for unstructured routing and response drafts.",
+   "still_hard": "Sensitive enquiries need restricted queues. Record-change authority, disputed charges and unmatched receipts still require clear ownership and human resolution.",
+   "human_edge": "Recognise when a routine enquiry masks a grievance, hardship or confidential issue and arrange the right human response.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A single status view for employee requests and related service charges"
+   },
+   "altitude": "The assistant spends less time forwarding messages and copying approved changes. They can coordinate stalled cases across HR and finance, without gaining authority to approve benefits or waive debts.",
+   "reach": [
+    {
+     "role": "Payroll and Timekeeping Clerk",
+     "task": "Check employee-change effective dates before the payroll cutoff.",
+     "learn": "Payroll cutoffs, correction procedures and which changes require separate payroll approval."
+    },
+    {
+     "role": "Human Resources Specialist",
+     "task": "Separate routine policy enquiries from cases needing confidential handling.",
+     "learn": "Escalation criteria, restricted access and neutral case summaries."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "6-15",
+    "testing_rollout": "5-10",
+    "consent_and_access": "4-12"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "AFAS supports employee self-service changes flowing to payroll and HR questions grounded in collective-agreement material.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "TOPdesk Robin answers from a knowledge base or opens a prefilled request, supporting the answer-and-handover pattern.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Approved invoice generation and exact-reference payment matching can use configured finance controls; these estimates are not documented case results.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This broad occupational task is interpreted primarily as HR enquiries and staff-record administration.",
+    "Telemarketing and patient billing are sector-specific variants, not assumed general HR duties.",
+    "The billing steps apply only to the specialised employee-service scenario described in the coverage task.",
+    "Time shares illustrate a desk with that billing remit and include finance handoffs. A general HR desk needs a different allocation.",
+    "Approved staff changes already contain the required authorisation; automation does not approve substantive employment changes.",
+    "Payment matching accepts exact, unambiguous matches; partial, duplicate and disputed payments become exceptions.",
+    "The mailbox share is higher than the supplied prior because this scenario uses a shared mailbox for cross-team handoffs.",
+    "Build ranges assume existing systems and supported interfaces. National consultation and access waiting may exceed working effort."
+   ],
+   "unknowns": [
+    "Which office duties actually belong to this role.",
+    "Whether the desk handles any billable employee services.",
+    "Existing enquiry queues, guidance ownership and response volumes.",
+    "Supported interfaces and approval controls across HR and finance.",
+    "National rules and consultation requirements if new reporting could monitor employees."
+   ],
+   "research_questions": [
+    "Can current enquiry and self-service configuration remove the mailbox handoffs?",
+    "Which payment exceptions need manual investigation rather than automatic allocation?"
+   ],
+   "new_work": [
+    "Review answer drafts and maintain current guidance.",
+    "Handle restricted, ambiguous and misrouted enquiries.",
+    "Investigate failed employee-record updates.",
+    "Review invoices and reconcile unmatched payments.",
+    "Maintain routing rules, permissions and integration alerts."
+   ],
+   "time_saved_pct": 90,
+   "speedup": 9.52
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts toward assisted information collection, clarification and documented exception handling. Routine entry and handoffs shrink; hiring, benefit entitlement, credit and employment decisions remain with their authorised decision makers.",
+  "reach": [
+   "Help HR assistants prepare complete employee-change cases.",
+   "Support benefits specialists with checked coverage evidence where this service exists.",
+   "Give HR specialists recurring evidence of confusing questions and collection failures."
+  ],
+  "skills_to_grow": [
+   "Accessible interviewing and neutral clarification.",
+   "Data minimisation and handling sensitive employee information.",
+   "Checking extracted facts against their sources.",
+   "Designing field validation and testing exceptions.",
+   "Understanding approval boundaries and effective dates.",
+   "Investigating failed handoffs across HR and finance."
+  ],
+  "ambitious_version": "Run an accessible intake service that helps employees complete difficult requests, provides clear status updates and brings recurring collection defects to HR for correction."
+ },
+ "job_code": "43-4111.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 173,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r=await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":2200});text(r.output)\n"
+  ],
+  "job": {
+   "code": "43-4111.00",
+   "title": "Interviewers, Except Eligibility and Loan",
+   "tasks": 16,
+   "function": "HR"
+  }
+ }
+}

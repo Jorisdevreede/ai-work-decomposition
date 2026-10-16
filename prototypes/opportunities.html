@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Opportunity board · Noordhaven team reimagine</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<style>
+  .ob-layout { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 32px; align-items: start; }
+  .ob-side { position: sticky; top: calc(var(--nav-h) + 16px); display: flex; flex-direction: column; gap: 8px; max-height: calc(100vh - var(--nav-h) - 32px); }
+  .ob-side > :not(.onet-list) { flex-shrink: 0; }
+  .ob-mode3 { grid-template-columns: repeat(3, 1fr); }
+  .ob-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ob-filters .select { font-size: 14px; padding-top: 7px; padding-bottom: 7px; }
+  .ob-count { margin: 0; }
+  .ob-notice { margin: 0 0 24px; padding: 12px 16px; border-radius: var(--r8); background: var(--gold-tag); color: var(--ink-700); font-size: 14px; line-height: 22px; }
+  .ob-notice code, .ob-detail code { font: 400 13px/20px var(--mono); letter-spacing: 0; }
+  .ob-figs { margin: 0 0 24px; }
+  .ob-how { margin: 0 0 16px; font-size: 14px; line-height: 22px; color: var(--ink-700); }
+  .ob-how summary { cursor: pointer; color: var(--teal); }
+  .ob-how p { margin: 6px 0 0; max-width: 100ch; }
+  .ob-warn { color: var(--danger); }
+  .ob-extra { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 4px 12px; margin: 12px 0 0; font-size: 14px; line-height: 22px; }
+  .ob-extra dt { color: var(--ink-muted); }
+  .ob-extra dd { margin: 0; }
+
+  .ob-row-top { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 4px; align-items: baseline; }
+  .ob-row-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 4px 0 0 32px; font-size: 12px; line-height: 18px; color: var(--ink-muted); }
+  .ob-prio { display: grid; grid-template-columns: minmax(0, 1fr) 56px; gap: 8px; align-items: center; margin: 6px 0 0 32px; }
+  .ob-prio .onet-meter-fill { background: var(--gold-600); }
+  .ob-prio span:last-child { font: 400 12px/18px var(--mono); letter-spacing: 0; text-align: right; color: var(--ink-muted); }
+
+  .te-eyebrow { display: block; font: 500 12px/20px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--gold-600); }
+  .ob-detail { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+  .ob-detail h2 { font-size: 26px; line-height: 34px; font-weight: 500; letter-spacing: -.01em; color: var(--teal); }
+  .ob-detail h3 { font-size: 20px; line-height: 28px; font-weight: 500; letter-spacing: -.01em; margin: 2px 0 8px; }
+  .ob-detail h4 { margin: 16px 0 6px; font-size: 14px; line-height: 20px; font-weight: 600; }
+  .ob-oneliner { margin: 6px 0 0; font-size: 17px; line-height: 26px; max-width: 75ch; }
+  .ob-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 12px; }
+  .ob-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+
+  .te-pattern { display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: var(--pill); border: 1px solid var(--line); background: var(--ground); font-size: 13px; line-height: 22px; white-space: nowrap; color: var(--ink); }
+  .te-pattern::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--pat); }
+  .te-pattern[data-pattern='deterministic_software'] { --pat: var(--ink-700); }
+  .te-pattern[data-pattern='llm_step'] { --pat: var(--teal-bright); }
+  .te-pattern[data-pattern='agent_with_gate'] { --pat: var(--teal); }
+  .te-pattern[data-pattern='copilot'] { --pat: var(--gold); }
+  .te-pattern[data-pattern='keep_human'] { --pat: var(--danger); }
+  .ob-row-meta .te-pattern { font-size: 12px; line-height: 18px; }
+  .te-auto { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; line-height: 20px; color: var(--ink-700); white-space: nowrap; }
+  .te-auto-cells { display: inline-flex; gap: 2px; }
+  .te-auto-cells i { width: 9px; height: 12px; border-radius: 2px; background: var(--line-soft); border: 1px solid var(--line); }
+  .te-auto-cells i.on { background: var(--teal); border-color: var(--teal); }
+  .te-grade { display: inline-flex; padding: 0 6px; border-radius: var(--r4); font: 600 12px/20px var(--mono); letter-spacing: 0; background: var(--line-soft); color: var(--ink-700); }
+  .te-grade[data-grade='E0'] { background: var(--danger-tint); color: var(--danger); }
+  .te-grade[data-grade='E2'] { background: var(--gold-tag); }
+  .te-grade[data-grade='E3'] { background: var(--teal-100); color: var(--teal); }
+  .te-grade[data-grade='E4'] { background: var(--teal); color: var(--on-dark); }
+  .te-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+  .te-dot[data-class='automate'] { background: var(--class-s); }
+  .te-dot[data-class='amplify'] { background: var(--class-a); }
+  .te-dot[data-class='machines'] { background: var(--class-m); }
+  .te-dot[data-class='human'] { background: var(--class-i); }
+
+  /* the business case as an equation */
+  .ob-eq { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 8px 0 4px; }
+  .ob-term { display: flex; flex-direction: column; justify-content: center; flex: 1 1 0; min-width: 104px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r8); background: var(--ground); }
+  .ob-op { flex: none; }
+  .ob-term b { font: 400 20px/28px var(--mono); letter-spacing: 0; color: var(--ink); white-space: nowrap; }
+  .ob-term span { font-size: 12px; line-height: 18px; color: var(--ink-muted); }
+  .ob-term.is-result { background: var(--teal); border-color: var(--teal); }
+  .ob-term.is-result b, .ob-term.is-result span { color: var(--on-dark); }
+  .ob-term.is-assumed { border-style: dashed; }
+  .ob-op { align-self: center; font: 400 20px/1 var(--mono); color: var(--ink-muted); }
+  .ob-formula { margin: 6px 0 0; font: 400 13px/20px var(--mono); letter-spacing: 0; color: var(--ink-muted); overflow-wrap: anywhere; }
+  .ob-lines { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 22px; }
+  .ob-lines th { text-align: left; font-size: 13px; font-weight: 600; color: var(--ink-muted); background: var(--ground-50); padding: 6px 10px; border-bottom: 1px solid var(--line); }
+  .ob-lines td { padding: 8px 10px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  .ob-lines td.num { font-family: var(--mono); letter-spacing: 0; white-space: nowrap; text-align: right; }
+  .ob-lines .ob-tbd { color: var(--gold-600); font-family: var(--sans); font-size: 13px; white-space: normal; }
+  .ob-route { margin: 12px 0 0; padding: 10px 14px; border-left: 3px solid var(--gold); background: var(--cream); border-radius: 0 var(--r8) var(--r8) 0; font-size: 15px; line-height: 23px; }
+
+  /* north star, value stream, lean */
+  .ob-chain { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; margin: 4px 0 0; padding: 0; }
+  .ob-chain li { padding: 4px 10px; border-radius: var(--r4); background: var(--line-soft); color: var(--ink-muted); font-size: 13px; line-height: 20px; }
+  .ob-chain li.is-on { background: var(--teal); color: var(--on-dark); font-weight: 600; }
+  .ob-chips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 4px 0 0; padding: 0; }
+  .ob-chip { display: inline-block; padding: 1px 8px; border-radius: var(--r4); background: var(--line-soft); color: var(--ink-700); font-size: 13px; line-height: 20px; }
+  .ob-chip.is-on { background: var(--gold-tag); color: var(--ink); font-weight: 600; box-shadow: inset 0 0 0 1px var(--gold-600); }
+  .ob-chip.is-have { background: var(--teal-100); color: var(--teal); }
+  .ob-chip.is-new { background: var(--gold-tag); }
+  .ob-step { margin: 8px 0 0; font-size: 15px; line-height: 22px; }
+  .ob-tim { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin-top: 6px; }
+  .ob-tim div { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; align-items: center; padding: 4px 8px 4px 4px; border-radius: var(--r8); border: 1px solid var(--line-soft); color: var(--ink-placeholder); }
+  .ob-tim b { display: grid; place-items: center; height: 26px; border-radius: var(--r4); background: var(--ground-50); font: 600 14px/1 var(--mono); }
+  .ob-tim span { font-size: 13px; line-height: 18px; }
+  .ob-tim small { display: block; font-size: 11px; line-height: 14px; }
+  .ob-tim div.is-on { background: var(--gold-tag); border-color: var(--gold-600); color: var(--ink); }
+  .ob-tim div.is-on b { background: var(--gold); color: var(--teal-dark); }
+
+  /* tasks */
+  .ob-tasks { list-style: none; margin: 0; padding: 0; }
+  .ob-tasks li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 16px; padding: 10px 0; border-top: 1px solid var(--line-soft); }
+  .ob-tasks li:first-child { border-top: 0; }
+  .ob-task-text { font-size: 15px; line-height: 22px; }
+  .ob-task-h { font: 400 13px/22px var(--mono); letter-spacing: 0; color: var(--ink-muted); white-space: nowrap; text-align: right; }
+  .ob-task-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: 13px; line-height: 20px; color: var(--ink-muted); }
+
+  /* golden demo */
+  .te-flow { list-style: none; margin: 8px 0 0; padding: 0; }
+  .te-flow li { position: relative; padding: 0 0 16px 40px; }
+  .te-flow li::before { content: ""; position: absolute; left: 12px; top: 26px; bottom: 2px; width: 2px; background: var(--line); }
+  .te-flow li:last-child { padding-bottom: 0; }
+  .te-flow li:last-child::before { display: none; }
+  .te-mark { position: absolute; left: 0; top: 0; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--line); background: var(--ground); font: 600 12px/1 var(--mono); color: var(--ink-700); }
+  .te-flow li[data-kind='trigger'] .te-mark { border-color: var(--teal); color: var(--teal); }
+  .te-flow li[data-kind='gate'] .te-mark { border-color: var(--gold); background: var(--gold); color: var(--teal-dark); }
+  .te-flow li[data-kind='number'] .te-mark { border-color: var(--teal); background: var(--teal); color: var(--on-dark); }
+  .te-node-label { display: block; font: 500 12px/20px var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-muted); }
+  .te-node-text { margin: 0; font-size: 15px; line-height: 22px; }
+  .te-flow li[data-kind='gate'] .te-node-text { padding: 8px 12px; border-radius: var(--r8); background: var(--gold-tag); }
+  .te-flow li[data-kind='number'] .te-node-text { padding: 8px 12px; border-radius: var(--r8); background: var(--teal-100); color: var(--teal-dark); font-weight: 600; }
+  .te-flow li.is-missing .te-node-text { color: var(--ink-placeholder); font-style: italic; }
+  .ob-plain { margin: 4px 0 0; padding-left: 18px; font-size: 14px; line-height: 22px; }
+  .te-ev { list-style: none; margin: 0; padding: 0; }
+  .te-ev li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 8px; padding: 6px 0; border-top: 1px solid var(--line-soft); font-size: 14px; line-height: 22px; }
+  .te-ev li:first-child { border-top: 0; }
+  .te-src { display: block; font-size: 12px; line-height: 18px; color: var(--ink-muted); overflow-wrap: anywhere; }
+
+  @media (max-width: 960px) {
+    .ob-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .ob-side { position: static; max-height: none; }
+    .ob-side .onet-list { max-height: 45vh; }
+    .ob-two { grid-template-columns: minmax(0, 1fr); }
+    .ob-extra { grid-template-columns: minmax(0, 1fr); }
+    .ob-lines { font-size: 13px; line-height: 20px; }
+    .ob-lines th, .ob-lines td { padding: 6px 4px; }
+    .ob-term { min-width: 0; flex: 1 1 40%; }
+    .ob-op { flex: none; }
+    .ob-detail h2 { font-size: 22px; line-height: 30px; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#detail">Skip to the opportunity</a>
+<header class="topnav">
+  <a class="brand" href="team-canvas.html"><span class="brand-mark">Noordhaven</span><span class="product">Team reimagine</span></a>
+  <nav class="nav-links" aria-label="Prototypes">
+    <a href="flow/index.html">Team flow</a>
+    <a href="team-canvas.html">Team canvas</a>
+    <a href="task-explorer.html">Task explorer</a>
+    <a href="task-table.html">Task table</a>
+    <a href="task-graph.html">Task graph</a>
+    <a href="intake.html">Intake</a>
+    <a href="opportunities.html" class="active" aria-current="page">Opportunities</a>
+    <a href="job.html">Jobs</a>
+  </nav>
+  <div class="nav-side"><span class="tag tag-secondary">fictional company</span></div>
+</header>
+
+<main class="page">
+  <div class="page-head">
+    <div>
+      <div class="crumbs">Prototype P4 · rungs 6 and 7 of the model</div>
+      <h1>Opportunity board</h1>
+      <p class="meta" id="source-meta"><span class="loading">Loading the opportunities…</span></p>
+    </div>
+  </div>
+  <div id="notice"></div>
+  <div class="onet-figs ob-figs" id="figs"></div>
+
+  <div class="ob-layout">
+    <aside class="ob-side" aria-label="Ranked opportunities">
+      <div class="onet-mode ob-mode3" role="radiogroup" aria-label="Team" id="team-mode"></div>
+      <div class="ob-filters">
+        <div><label class="sr-only" for="pattern">Pattern</label><select class="select" id="pattern"></select></div>
+        <div><label class="sr-only" for="sort">Sort</label><select class="select" id="sort">
+          <option value="priority">By priority</option>
+          <option value="value">By capacity returned</option>
+          <option value="ttv">Quickest to value</option>
+        </select></div>
+      </div>
+      <label class="sr-only" for="stream">Value stream</label>
+      <select class="select" id="stream"></select>
+      <p class="ob-count xs muted" id="count"></p>
+      <ul class="onet-list" id="list"></ul>
+    </aside>
+    <section class="ob-detail" id="detail" tabindex="-1" aria-label="Opportunity"></section>
+  </div>
+</main>
+
+<footer class="site-attribution">
+  <p>Task statements come from the O*NET database by the U.S. Department of Labor, Employment and Training Administration (USDOL/ETA), used under the CC BY 4.0 license; O*NET is a trademark of USDOL/ETA. Noordhaven Logistics is fictional. Business cases follow the method in <code>method/model-v0.md</code>: capacity returned is hours × % removed × loaded cost, and priority is value × confidence ÷ time to value.</p>
+</footer>
+
+<script type="module">
+const SYNTH_URL = '../data/synthesis/opportunities.json';
+const SAMPLE_URL = 'sample-opportunities.json';
+const PATTERNS = {
+  deterministic_software: 'Deterministic software', llm_step: 'LLM step', agent_with_gate: 'Agent with gate',
+  copilot: 'Copilot', keep_human: 'Keep human',
+};
+const AUTONOMY = ['manual', 'assisted', 'partial', 'conditional', 'high', 'full'];
+const CONFIDENCE = { low: 0.3, medium: 0.6, high: 0.9 };
+const TIMWOODS = [
+  ['transport', 'T', 'Transport', 'handoffs'], ['inventory', 'I', 'Inventory', 'queues'], ['motion', 'M', 'Motion', 'app switching'],
+  ['waiting', 'W', 'Waiting', ''], ['overproduction', 'O', 'Overproduction', ''], ['overprocessing', 'O', 'Overprocessing', ''],
+  ['defects', 'D', 'Defects', 'rework'], ['skills', 'S', 'Skills', 'unused'],
+];
+const DEMO = [
+  ['event_trigger', 'Event trigger', 'trigger', ['trigger', 'event', 'event_trigger', 'starts_from_event']],
+  ['messy_case', 'Messy case', 'step', ['messy_case', 'messy', 'handles_messy_case', 'edge_case']],
+  ['real_artefact', 'Real artefact', 'step', ['real_artefact', 'real_artifact', 'artefact', 'artifact', 'works_in_real_artefact']],
+  ['approval_gate', 'Approval gate', 'gate', ['approval_gate', 'approval', 'gate', 'enforces_approval', 'human_gate']],
+  ['closes_the_loop', 'Closes the loop', 'step', ['closes_the_loop', 'closes_loop', 'close_the_loop', 'loop']],
+  ['business_number', 'Ends on the business number', 'number', ['business_number', 'ends_on', 'ends_on_business_number', 'number', 'ends_on_the_business_number']],
+];
+const WASTE = {
+  transport: /transport|hand-?off/, inventory: /inventor|queue|backlog/, motion: /motion|switch/, waiting: /wait/,
+  overprocessing: /over-?\s?process/, overproduction: /over-?\s?produc/, defects: /defect|rework|error/, skills: /skill|talent|unused/,
+};
+const HAVE = /AFAS|Recruitee|Studytube|Outlook|Teams|SharePoint|Excel|Power ?BI|Rabobank|agency|Microsoft 365|Graph|CAMT|SEPA/i;
+const NEW = /Copilot|GPT|Claude|OpenAI|agent|LLM|model|bot/i;
+
+const state = { teamsData: null, roles: new Map(), source: null, file: null, all: [], team: 'all', pattern: 'all', stream: 'all', sort: 'priority', id: null };
+
+const $ = (sel, el = document) => el.querySelector(sel);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const fmt = (n, d = 0) => (Number.isFinite(n) ? n.toLocaleString('en-GB', { maximumFractionDigits: d, minimumFractionDigits: d }) : '–');
+const eur = (n) => (Number.isFinite(n) ? `€${fmt(n)}` : '–');
+const pick = (...xs) => xs.find((x) => x != null && x !== '');
+const num = (x) => { if (x == null || x === '') return null; if (typeof x === 'object') return num(pick(x.value, x.eur, x.median)); const n = Number(String(x).replace(/[€,\s%]/g, '')); return Number.isFinite(n) ? n : null; };
+const patternChip = (p) => (p ? `<span class="te-pattern" data-pattern="${esc(p)}">${esc(PATTERNS[p] ?? p)}</span>` : '');
+const autoScale = (level) => {
+  if (level == null) return '';
+  const lv = Math.round(level);
+  return `<span class="te-auto" title="Autonomy level ${level} of 5"><span class="te-auto-cells" aria-hidden="true">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= lv ? 'on' : ''}"></i>`).join('')}</span>L${lv} ${esc(AUTONOMY[lv] ?? '')}</span>`;
+};
+const gradeTag = (g) => `<span class="te-grade" data-grade="${esc(g)}">${esc(g)}</span>`;
+const teamName = (id) => state.teamsData?.teams.find((t) => t.id === id)?.name ?? id;
+
+/* ------------------------------------------------------------ loading */
+
+async function listDir(url) {
+  try {
+    const r = await fetch(url, { cache: 'no-store' });
+    if (!r.ok || !(r.headers.get('content-type') ?? '').includes('text/html')) return null;
+    return [...(await r.text()).matchAll(/href="([^"?#]+)"/g)].map((m) => decodeURIComponent(m[1]));
+  } catch { return null; }
+}
+
+async function loadOpportunities() {
+  // Only ask for SYNTH's file when the folder listing shows it, so a missing file leaves no 404 in the console.
+  const data = await listDir('../data/');
+  const synth = data?.includes('synthesis/') ? await listDir('../data/synthesis/') : null;
+  const useSynth = synth ? synth.includes('opportunities.json') : data === null;
+  if (useSynth) {
+    try {
+      const r = await fetch(SYNTH_URL, { cache: 'no-store' });
+      if (r.ok) return { json: await r.json(), source: 'synthesis', file: 'data/synthesis/opportunities.json' };
+    } catch { /* fall through to the sample */ }
+  }
+  const r = await fetch(SAMPLE_URL, { cache: 'no-store' });
+  return { json: await r.json(), source: 'sample', file: 'prototypes/sample-opportunities.json' };
+}
+
+/* SYNTH writes the real file (tools/synthesize.py); read its field names, and stay tolerant of
+   the variants its order allows. The sample uses the same names where they exist. */
+function normalise(o, i, hoursPerFte) {
+  const bc = pick(o.business_case, o.case) ?? {};
+  const lab = pick(bc.labour, bc.labor, bc.capacity, o.labour) ?? {};
+  const ratio = (x) => { const n = num(x); return n != null && n > 1 ? n / 100 : n; };
+  const labLines = [].concat(lab.lines ?? []).map((l) => ({
+    role: pick(l.role_id, l.role), title: l.title, hours: num(l.hours), pct: ratio(l.pct_removed),
+    hoursRemoved: num(l.hours_removed), cost: num(pick(l.cost_per_hour, l.cost)), eur: num(pick(l.eur, l.value_eur)), formula: l.formula,
+  }));
+  const hours = num(pick(lab.hours, lab.annual_hours, lab.hours_per_year));
+  const pct = ratio(pick(lab.pct_removed, lab.percent_removed, lab.removed_pct, lab.share_removed, lab.pct));
+  const hoursRemoved = num(lab.hours_removed) ?? (hours != null && pct != null ? hours * pct : null);
+  const capacity = num(pick(lab.capacity_returned_eur, lab.capacity_returned, lab.eur, lab.value_eur, lab.value))
+    ?? (labLines.length ? labLines.reduce((sum, l) => sum + (l.eur ?? 0), 0) : null);
+  const givenCost = num(pick(lab.cost_per_hour, lab.hourly_cost, lab.loaded_cost_per_hour, lab.cost));
+  const cost = givenCost ?? (labLines.length === 1 ? labLines[0].cost : capacity != null && hoursRemoved ? capacity / hoursRemoved : null);
+  const computed = hours != null && pct != null && cost != null ? hours * pct * cost : null;
+  const fte = num(pick(lab.fte, lab.capacity_returned_fte, lab.fte_returned)) ?? (hoursRemoved != null ? hoursRemoved / hoursPerFte : null);
+  const lines = (xs) => [].concat(xs ?? []).map((l) => (typeof l === 'string' ? { name: l } : {
+    name: pick(l.name, l.line, l.label, l.what), formula: pick(l.formula, l.calc), eur: num(pick(l.eur, l.value_eur, l.value, l.amount)),
+    note: pick(l.note, l.basis, l.source), grade: l.grade, assumption: !!l.assumption, notPriced: /not priced/i.test(String(l.formula ?? '')),
+  }));
+  let tasks = [].concat(pick(o.tasks, o.task_uids, o.task_ids) ?? []).map((t) => (typeof t === 'string' ? { uid: t } : {
+    ...t, uid: pick(t.uid, t.id), role: pick(t.role, t.role_id), hours: num(pick(t.hours, t.hours_per_year, t.annual_hours)),
+  }));
+  tasks = tasks.map((t) => {
+    const role = t.role ? state.roles.get(t.role) : [...state.roles.values()].find((r) => r.tasks.some((x) => x.uid === t.uid));
+    const onet = role?.tasks.find((x) => x.uid === t.uid);
+    return { ...t, role: role?.id ?? t.role, statement: pick(t.short, t.statement, onet?.statement, t.uid), cls: pick(t.class, t.class_name, onet?.class_name),
+      hours: t.hours ?? (onet && role ? onet.hours_per_fte * role.fte : null), hoursRemoved: num(t.hours_removed),
+      pattern: t.pattern, fallback: /fallback/i.test(String(t.source ?? '')) };
+  });
+  const roles = [...new Set([].concat(o.roles ?? []).map((r) => (typeof r === 'string' ? r : pick(r.id, r.role, r.role_id))).concat(tasks.map((t) => t.role)).filter(Boolean))];
+  let teams = [].concat(pick(o.teams, o.team) ?? []).map((t) => String(typeof t === 'string' ? t : pick(t.id, t.name)).toLowerCase());
+  if (!teams.length) teams = [...new Set(roles.map((r) => state.roles.get(r)?.team).filter(Boolean))];
+  const ns = o.north_star;
+  const vs = o.value_stream;
+  const pr = typeof o.priority === 'object' && o.priority ? o.priority : { score: o.priority };
+  const confRaw = pick(pr.confidence, o.confidence);
+  const confFactor = num(pick(pr.confidence_factor, typeof confRaw === 'number' ? confRaw : CONFIDENCE[String(confRaw).toLowerCase()]));
+  const months = num(pick(pr.time_to_value_months, o.time_to_value_months));
+  const weeks = num(pick(pr.time_to_value_weeks, o.time_to_value_weeks, pr.time_to_value, o.time_to_value));
+  const financial = lines(pick(bc.financial, o.financial));
+  const quality = lines(pick(bc.quality, bc.quality_risk, o.quality));
+  const value = num(pick(pr.value_eur, bc.value_eur, o.value_eur)) ?? (capacity ?? 0) + financial.reduce((sum, l) => sum + (l.eur ?? 0), 0);
+  const ttv = months ?? weeks;
+  const score = num(pr.score) ?? (confFactor != null && ttv ? value * confFactor / ttv : null);
+  const brief = pick(o.build_brief, o.brief) ?? {};
+  const demoRaw = pick(brief.golden_demo, brief.golden_demo_script, o.golden_demo, o.golden_demo_script) ?? {};
+  const used = new Set();
+  const demo = DEMO.map(([key, label, kind, alts], k) => {
+    let text;
+    if (Array.isArray(demoRaw)) {
+      const hit = demoRaw.find((d) => typeof d === 'object' && alts.includes(String(pick(d.key, d.step, d.kind, d.label, '')).toLowerCase().replace(/[\s-]+/g, '_')));
+      text = hit ? pick(hit.text, hit.what, hit.description) : (typeof demoRaw[k] === 'string' ? demoRaw[k] : pick(demoRaw[k]?.text, demoRaw[k]?.what));
+    } else if (typeof demoRaw === 'object') {
+      const a = alts.find((x) => demoRaw[x] != null && demoRaw[x] !== '');
+      if (a) { text = demoRaw[a]; used.add(a); }
+    }
+    return { key, label, kind, text };
+  });
+  const demoExtra = Array.isArray(demoRaw) ? [] : Object.entries(demoRaw).filter(([k, v]) => !used.has(k) && v);
+  const briefSkip = new Set(['golden_demo', 'golden_demo_script', 'summary', 'what', 'scope', 'not_in_scope', 'out_of_scope']);
+  return {
+    id: String(pick(o.id, o.slug, `opp-${i + 1}`)), rank: num(o.rank), name: pick(o.name, o.title, `Opportunity ${i + 1}`),
+    oneLiner: pick(o.one_liner, o.summary, o.description, brief.summary), activity: pick(o.work_activity, o.activity),
+    teams, tasks, roles, missing: [].concat(o.missing_tasks ?? []),
+    pattern: pick(o.pattern, o.build_pattern), autonomy: num(pick(o.autonomy, o.autonomy_level)), patternWhy: o.pattern_why,
+    modelPattern: o.model_pattern, modelPatterns: o.model_patterns_by_hours ?? null, modelAutonomy: num(o.model_autonomy_median), patternMatches: o.pattern_matches_models,
+    systems: [].concat(o.systems ?? []), systemsByModels: [].concat(o.systems_named_by_models ?? []),
+    flags: Object.entries(o.flags ?? {}).filter(([, v]) => v).map(([k]) => k),
+    labour: { hours, pct, cost, costBlended: givenCost == null && labLines.length > 1, capacity, fte, hoursRemoved, lines: labLines,
+      low: num(lab.eur_low), high: num(lab.eur_high), formula: pick(lab.formula), source: lab.source, computed: givenCost != null ? computed : null },
+    financial, quality, qualityCounted: bc.quality_counted !== false, valueFormula: typeof bc.formula === 'string' && bc.formula !== lab.formula ? bc.formula : null,
+    route: pick(bc.route_to_cash, o.route_to_cash),
+    northStar: pick(typeof ns === 'string' ? ns : null, ns?.input_metric, ns?.input, o.north_star_input, o.north_star_input_metric, o.input_metric),
+    northStarTeam: ns?.team,
+    stream: pick(typeof vs === 'string' ? vs : vs?.name), step: pick(o.value_stream_step, vs?.step, o.step),
+    waste: [].concat(pick(o.lean_waste, o.waste) ?? []).map((w) => String(w).toLowerCase()),
+    priority: { value, conf: confRaw, confFactor, confParts: o.confidence_parts ?? pr.confidence_parts ?? null, ttv, unit: months != null ? 'month' : 'week',
+      ttvWhy: pick(o.time_to_value_why, pr.time_to_value_why), score, relative: num(o.priority_score), formula: pick(pr.formula, o.priority_formula) },
+    brief: { summary: pick(brief.summary, brief.what, typeof brief === 'string' ? brief : null), scope: [].concat(brief.scope ?? []),
+      out: [].concat(pick(brief.not_in_scope, brief.out_of_scope) ?? []), demo, demoExtra,
+      extra: typeof brief === 'object' ? Object.entries(brief).filter(([k, v]) => !briefSkip.has(k) && v != null && v !== '' && !(Array.isArray(v) && !v.length)) : [] },
+    evidence: [].concat(o.evidence ?? []), risks: [].concat(o.risks ?? []), questions: [].concat(o.research_questions ?? []),
+  };
+}
+
+const human = (k) => String(k).replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+
+/* ------------------------------------------------------------ filtering */
+
+function filtered() {
+  const xs = state.all.filter((o) => (state.team === 'all' || o.teams.includes(state.team))
+    && (state.pattern === 'all' || o.pattern === state.pattern)
+    && (state.stream === 'all' || o.stream === state.stream));
+  const key = { priority: (o) => -(o.priority.score ?? -Infinity), value: (o) => -(o.labour.capacity ?? -Infinity), ttv: (o) => o.priority.ttv ?? Infinity }[state.sort];
+  return xs.sort((a, b) => key(a) - key(b) || (a.rank ?? 99) - (b.rank ?? 99));
+}
+
+function readUrl() {
+  const p = new URLSearchParams(location.search);
+  state.id = p.get('id');
+  for (const k of ['team', 'pattern', 'stream', 'sort']) if (p.get(k)) state[k] = p.get(k);
+}
+
+function writeUrl(push) {
+  const p = new URLSearchParams();
+  if (state.id) p.set('id', state.id);
+  for (const [k, d] of [['team', 'all'], ['pattern', 'all'], ['stream', 'all'], ['sort', 'priority']]) if (state[k] !== d) p.set(k, state[k]);
+  history[push ? 'pushState' : 'replaceState'](null, '', `?${p}`);
+}
+
+/* ------------------------------------------------------------ render */
+
+function renderChrome() {
+  const teams = [['all', 'Both teams'], ...state.teamsData.teams.map((t) => [t.id, t.name])];
+  $('#team-mode').innerHTML = teams.map(([v, l]) => `<label><input type="radio" name="team" value="${esc(v)}" ${v === state.team ? 'checked' : ''}><span>${esc(l)}</span></label>`).join('');
+  const patterns = [...new Set(state.all.map((o) => o.pattern).filter(Boolean))];
+  $('#pattern').innerHTML = `<option value="all">Every pattern</option>${patterns.map((p) => `<option value="${esc(p)}" ${p === state.pattern ? 'selected' : ''}>${esc(PATTERNS[p] ?? p)}</option>`).join('')}`;
+  const streams = state.teamsData.teams.map((t) => [t.name, t.value_streams]);
+  const known = new Set(streams.flatMap(([, s]) => s));
+  const extra = [...new Set(state.all.map((o) => o.stream).filter((s) => s && !known.has(s)))];
+  const count = (s) => state.all.filter((o) => o.stream === s).length;
+  $('#stream').innerHTML = `<option value="all">Every value stream</option>${streams.map(([team, ss]) => `<optgroup label="${esc(team)}">${ss.map((s) => `<option value="${esc(s)}" ${s === state.stream ? 'selected' : ''}>${esc(s)} (${count(s)})</option>`).join('')}</optgroup>`).join('')}${extra.length ? `<optgroup label="Other">${extra.map((s) => `<option value="${esc(s)}" ${s === state.stream ? 'selected' : ''}>${esc(s)} (${count(s)})</option>`).join('')}</optgroup>` : ''}`;
+  $('#sort').value = state.sort;
+}
+
+function renderMeta() {
+  $('#source-meta').innerHTML = `<span>From <code>${esc(state.file)}</code>${state.generated ? ` · ${esc(String(state.generated).replace('T', ' ').slice(0, 16))}` : ''}</span><span>${state.all.length} opportunities across ${state.teamsData.teams.map((t) => esc(t.name)).join(' and ')}</span>`;
+  const how = state.meta?.note ? `<details class="ob-how"><summary>How the ranking works</summary><p class="small">${esc(state.meta.note)}</p></details>` : '';
+  $('#notice').innerHTML = state.source === 'sample'
+    ? `<p class="ob-notice"><strong>Sample data.</strong> <code>data/synthesis/opportunities.json</code> does not exist yet, so this board shows three made-up opportunities from <code>prototypes/sample-opportunities.json</code>. Hours and costs come from <code>data/teams.json</code>; the % removed, confidence and time to value are assumptions, not findings. The board switches to the synthesis file on reload once it lands.</p>`
+    : how;
+}
+
+function renderFigs(list) {
+  const cap = list.reduce((sum, o) => sum + (o.labour.capacity ?? 0), 0);
+  const fte = list.reduce((sum, o) => sum + (o.labour.fte ?? 0), 0);
+  const value = list.reduce((sum, o) => sum + (o.priority.value ?? 0), 0);
+  const fin = list.flatMap((o) => o.financial.concat(o.quality)).filter((l) => !l.notPriced);
+  const open = fin.filter((l) => l.eur == null).length;
+  const uids = list.flatMap((o) => o.tasks.map((t) => `${t.role}|${t.uid}`));
+  const dup = uids.length - new Set(uids).size;
+  const unclustered = state.unclustered ?? [];
+  const fig = (label, val, note) => `<div class="onet-fig"><span class="onet-fig-label">${label}</span><span class="onet-fig-value">${val}</span><span class="onet-fig-note">${note}</span></div>`;
+  $('#figs').innerHTML = [
+    fig('Opportunities', fmt(list.length), `${state.team === 'all' ? 'both teams' : esc(teamName(state.team))}${unclustered.length ? ` · ${unclustered.length} tasks not in any yet` : ''}`),
+    fig('Capacity returned', eur(cap), `a year, labour line${dup ? ` · ${dup} task${dup > 1 ? 's' : ''} in two opportunities, counted twice` : ''}`),
+    fig('FTE returned', fmt(fte, 2), `at ${fmt(state.teamsData.company.hours_per_fte)} hours per FTE`),
+    fig('Value with financial lines', eur(value), open ? `${open} line${open > 1 ? 's' : ''} still to measure` : `${fin.length} financial and quality lines, each an assumption`),
+  ].join('');
+}
+
+function renderList(list) {
+  const max = Math.max(...list.map((o) => o.priority.score ?? 0), 1);
+  $('#count').textContent = `${list.length} of ${state.all.length} shown · ranked ${$('#sort').selectedOptions[0].textContent.toLowerCase()}`;
+  $('#list').innerHTML = list.map((o, i) => `<li><a class="onet-row" href="?id=${encodeURIComponent(o.id)}" data-id="${esc(o.id)}" ${o.id === state.id ? 'aria-current="true"' : ''}>
+      <span class="ob-row-top"><span class="onet-rank">${i + 1}</span><span class="onet-row-title">${esc(o.name)}</span><span class="onet-row-code">${eur(o.labour.capacity)}</span></span>
+      <span class="ob-row-meta">${o.teams.map((t) => `<span class="tag tag-secondary">${esc(teamName(t))}</span>`).join('')}${patternChip(o.pattern)}${o.stream ? `<span>${esc(o.stream)}</span>` : ''}</span>
+      <span class="ob-prio" title="Priority score"><span class="onet-meter-bar"><span class="onet-meter-fill" style="width:${Math.round(100 * (o.priority.score ?? 0) / max)}%"></span></span><span>${fmt(o.priority.score)}</span></span>
+    </a></li>`).join('') || '<li class="onet-row small muted">No opportunity matches these filters.</li>';
+}
+
+function term(value, label, cls = '') { return `<div class="ob-term ${cls}"><b>${value}</b><span>${label}</span></div>`; }
+const op = (s) => `<span class="ob-op" aria-hidden="true">${s}</span>`;
+
+function lineTable(lines, empty) {
+  if (!lines.length) return `<p class="small muted">${empty}</p>`;
+  return `<div class="table-scroll"><table class="ob-lines"><thead><tr><th>Line</th><th>Formula</th><th style="text-align:right">€ a year</th></tr></thead><tbody>${lines.map((l) => `
+    <tr><td>${esc(l.name)}${l.grade ? ` ${gradeTag(l.grade)}` : ''}${l.assumption ? ' <span class="xs muted">assumption</span>' : ''}${l.note && l.eur != null ? `<span class="te-src">${esc(l.note)}</span>` : ''}</td><td class="small">${esc(l.notPriced ? '' : l.formula ?? '')}</td>
+    <td class="num">${l.notPriced ? '<span class="ob-tbd">not priced</span>' : l.eur != null ? eur(l.eur) : `<span class="ob-tbd">${esc(l.note ?? 'to measure')}</span>`}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderDetail(o) {
+  if (!o) { $('#detail').innerHTML = '<p class="muted">No opportunity matches these filters.</p>'; return; }
+  const teamsOf = state.teamsData.teams.filter((t) => o.teams.includes(t.id) || t.id === o.northStarTeam);
+  const L = o.labour;
+  const P = o.priority;
+  const sample = state.source === 'sample';
+  const nsTeam = state.teamsData.teams.find((t) => t.id === o.northStarTeam);
+  const inputs = (nsTeam ? [nsTeam] : teamsOf).flatMap((t) => t.input_metrics);
+  const streams = teamsOf.flatMap((t) => t.value_streams);
+  const pos = filtered().findIndex((x) => x.id === o.id) + 1;
+  const weighted = P.score != null && P.ttv ? P.score * P.ttv : null;
+  const per = P.unit === 'month' ? 'month' : 'week';
+  const modelVotes = o.modelPatterns ? Object.entries(o.modelPatterns) : [];
+
+  $('#detail').innerHTML = `
+    <div>
+      <span class="te-eyebrow">${pos ? `#${pos} · ` : ''}${o.teams.map(teamName).map(esc).join(' + ')}${o.activity ? ` · ${esc(o.activity)}` : ''}</span>
+      <h2 tabindex="-1" id="detail-title">${esc(o.name)}</h2>
+      ${o.oneLiner ? `<p class="ob-oneliner">${esc(o.oneLiner)}</p>` : ''}
+      <div class="ob-tags">${patternChip(o.pattern)}${autoScale(o.autonomy)}${o.roles.map((r) => `<span class="tag tag-secondary">${esc(state.roles.get(r)?.title ?? r)}</span>`).join('')}${o.flags.map((f) => `<span class="tag">${esc(human(f))}</span>`).join('')}</div>
+      ${o.patternWhy ? `<p class="small muted" style="margin:8px 0 0">${esc(o.patternWhy)}</p>` : ''}
+      ${modelVotes.length ? `<p class="small ${o.patternMatches === false ? 'ob-warn' : 'muted'}" style="margin:6px 0 0">${o.patternMatches === false ? 'The models lean another way: ' : 'The models agree: '}their consensus patterns by hours are ${modelVotes.map(([p, h]) => `${esc(PATTERNS[p] ?? p)} ${fmt(h)} h`).join(', ')}${o.modelAutonomy != null ? `, median autonomy L${o.modelAutonomy}` : ''}.</p>` : ''}
+    </div>
+
+    <section class="card">
+      <span class="te-eyebrow">Rung 6 · business case</span>
+      <h3>Capacity returned</h3>
+      ${L.lines.length > 1 ? `<div class="table-scroll"><table class="ob-lines"><thead><tr><th>Role</th><th style="text-align:right">Hours</th><th style="text-align:right">Removed</th><th style="text-align:right">€/h</th><th style="text-align:right">€ a year</th></tr></thead><tbody>${L.lines.map((l) => `
+        <tr><td>${esc(l.title ?? state.roles.get(l.role)?.title ?? l.role)}</td><td class="num">${fmt(l.hours)} h</td><td class="num">${l.pct != null ? `${fmt(l.pct * 100)}%` : '–'}</td><td class="num">€${fmt(l.cost)}</td><td class="num">${eur(l.eur)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+      <div class="ob-eq" role="group" aria-label="hours times percent removed times cost equals capacity returned">
+        ${term(`${fmt(L.hours)} h`, 'hours a year on these tasks')}${op('×')}
+        ${term(L.pct != null ? `${fmt(L.pct * 100)}%` : '–', sample ? 'removed (assumed)' : L.lines.length ? 'removed, from the models’ speedups' : 'removed', sample ? 'is-assumed' : '')}${op('×')}
+        ${term(L.cost != null ? `€${fmt(L.cost, 2)}` : '–', L.costBlended ? 'an hour, blended over the roles' : 'an hour, loaded')}${op('=')}
+        ${term(eur(L.capacity), `a year · ≈ ${fmt(L.fte, 2)} FTE`, 'is-result')}
+      </div>
+      ${L.formula ? `<p class="ob-formula">${esc(L.formula)}</p>` : ''}
+      ${L.low != null && L.high != null && L.low !== L.high ? `<p class="xs muted">Range ${eur(L.low)} to ${eur(L.high)}, from the slowest and fastest model speedups.</p>` : ''}
+      ${L.computed != null && L.capacity != null && Math.abs(L.computed - L.capacity) > Math.max(1, L.capacity * 0.01) ? `<p class="small error">The terms multiply to ${eur(L.computed)}, not ${eur(L.capacity)}; check the source file.</p>` : ''}
+      ${L.source ? `<p class="xs muted">${esc(L.source)}</p>` : ''}
+      <h4>Financial</h4>${lineTable(o.financial, 'No financial line: this case rests on capacity.')}
+      <h4>Quality and risk</h4>${lineTable(o.quality, 'No quality line.')}
+      <p class="xs muted">${o.qualityCounted ? 'A quality line never carries a case on its own.' : 'Quality lines are not counted here: a quality line never carries a case on its own.'}</p>
+      ${o.valueFormula ? `<p class="ob-formula">Value: ${esc(o.valueFormula)}</p>` : ''}
+      ${o.route ? `<p class="ob-route"><strong>Route to cash.</strong> ${esc(o.route)}</p>` : ''}
+      <h4>Priority</h4>
+      <div class="ob-eq" role="group" aria-label="value times confidence, divided by time to value, equals priority">
+        ${term(eur(P.value), 'value a year')}${op('×')}
+        ${term(P.confFactor != null ? fmt(P.confFactor, 2) : '–', `confidence${typeof P.conf === 'string' ? ` (${esc(P.conf)})` : ''}`, sample ? 'is-assumed' : '')}${op('→')}
+        ${term(eur(weighted), 'confidence-weighted value')}${op('÷')}
+        ${term(P.ttv != null ? `${fmt(P.ttv, 1)} ${per === 'month' ? 'mo' : 'wk'}` : '–', 'time to value', sample ? 'is-assumed' : '')}${op('=')}
+        ${term(eur(P.score), `a ${per} of waiting${P.relative != null ? ` · score ${fmt(P.relative)}` : ''}`, 'is-result')}
+      </div>
+      ${P.formula ? `<p class="ob-formula">${esc(P.formula)}</p>` : ''}
+      ${P.confParts ? `<p class="xs muted">Confidence parts: ${Object.entries(P.confParts).map(([k, v]) => `${esc(human(k).toLowerCase())} ${fmt(num(v), 2)}`).join(' · ')}.</p>` : ''}
+      ${P.ttvWhy ? `<p class="xs muted">Time to value: ${esc(P.ttvWhy)}.</p>` : ''}
+    </section>
+
+    <div class="ob-two">
+      <section class="card">
+        <span class="te-eyebrow">North Star</span>
+        <h3>What it moves</h3>
+        <p class="small muted">${(nsTeam ? [nsTeam] : teamsOf).map((t) => `${esc(t.name)}: ${esc(t.north_star)}`).join('<br>')}</p>
+        <h4>Input metric</h4>
+        <ul class="ob-chips">${(inputs.length ? inputs : [o.northStar]).filter(Boolean).map((m) => `<li class="ob-chip ${m === o.northStar ? 'is-on' : ''}">${esc(m)}</li>`).join('')}
+          ${o.northStar && !inputs.includes(o.northStar) && inputs.length ? `<li class="ob-chip is-on">${esc(o.northStar)}</li>` : ''}</ul>
+        <h4>Value stream</h4>
+        <ol class="ob-chain">${streams.map((st) => `<li class="${st === o.stream ? 'is-on' : ''}">${esc(st)}</li>`).join('')}
+          ${o.stream && !streams.includes(o.stream) ? `<li class="is-on">${esc(o.stream)}</li>` : ''}</ol>
+        ${o.step ? `<p class="ob-step"><span class="muted">Step:</span> ${esc(o.step)}</p>` : ''}
+      </section>
+      <section class="card">
+        <span class="te-eyebrow">Lean</span>
+        <h3>The waste it removes</h3>
+        <div class="ob-tim">${TIMWOODS.map(([k, letter, name, hint]) => `<div class="${o.waste.some((w) => WASTE[k].test(w)) ? 'is-on' : ''}"><b aria-hidden="true">${letter}</b><span>${esc(name)}${hint ? `<small>${esc(hint)}</small>` : ''}</span></div>`).join('')}</div>
+        <p class="small muted" style="margin-top:8px">TIMWOODS: ${o.waste.length ? `this removes ${o.waste.map(esc).join(', ')}` : 'no waste named'}.</p>
+        <h4>Systems</h4>
+        <ul class="ob-chips">${o.systems.map((x) => `<li class="ob-chip ${HAVE.test(x) && !NEW.test(x) ? 'is-have' : 'is-new'}">${esc(x)}</li>`).join('')}</ul>
+        <p class="xs muted" style="margin-top:6px"><span class="ob-chip is-have">teal</span> Noordhaven has it · <span class="ob-chip is-new">gold</span> to add</p>
+        ${o.systemsByModels.length ? `<h4>Named by the models</h4><ul class="ob-chips">${o.systemsByModels.map((x) => `<li class="ob-chip">${esc(x.name ?? x)}${x.count ? ` <span class="xs muted">×${x.count}</span>` : ''}</li>`).join('')}</ul>` : ''}
+      </section>
+    </div>
+
+    <section class="card">
+      <span class="te-eyebrow">Rung 6 · the cluster</span>
+      <h3>${o.tasks.length} ${o.tasks.length === 1 ? 'task' : 'tasks'} across ${o.roles.length} ${o.roles.length === 1 ? 'role' : 'roles'}</h3>
+      <ul class="ob-tasks">${o.tasks.map((t) => {
+        const role = state.roles.get(t.role);
+        return `<li><span class="ob-task-text">${esc(t.statement)}</span><span class="ob-task-h">${t.hours != null ? `${fmt(t.hours)} h` : ''}${t.hoursRemoved != null ? ` → ${fmt(t.hoursRemoved)} h back` : ''}</span>
+          <span class="ob-task-meta">${t.cls ? `<span><span class="te-dot" data-class="${esc(t.cls)}"></span>${esc(t.cls)}</span>` : ''}${role ? `<span>${esc(role.title)}</span>` : ''}${patternChip(t.pattern)}${t.fallback ? '<span class="ob-warn">no model answer yet: fallback speedup</span>' : ''}
+          ${role ? `<a href="task-explorer.html?role=${encodeURIComponent(role.id)}&task=${encodeURIComponent(t.uid)}">Open in the task explorer</a>` : `<span class="onet-num">${esc(t.uid)}</span>`}</span></li>`;
+      }).join('')}</ul>
+      ${o.missing.length ? `<p class="small error">${o.missing.length} task id${o.missing.length > 1 ? 's' : ''} in the cluster file not found: ${o.missing.map(esc).join(', ')}.</p>` : ''}
+    </section>
+
+    <section class="card">
+      <span class="te-eyebrow">Rung 7 · build brief</span>
+      <h3>What to build</h3>
+      ${o.brief.summary ? `<p>${esc(o.brief.summary)}</p>` : ''}
+      ${o.brief.scope.length || o.brief.out.length ? `<div class="ob-two">
+        ${o.brief.scope.length ? `<div><h4>In scope</h4><ul class="ob-plain">${o.brief.scope.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
+        ${o.brief.out.length ? `<div><h4>Not in scope</h4><ul class="ob-plain">${o.brief.out.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}</div>` : ''}
+      ${o.brief.extra.map(([k, v]) => `<h4>${esc(human(k))}</h4>${Array.isArray(v) ? `<ul class="ob-plain">${v.map((x) => `<li>${esc(typeof x === 'object' ? JSON.stringify(x) : x)}</li>`).join('')}</ul>` : `<p class="small">${esc(typeof v === 'object' ? JSON.stringify(v) : v)}</p>`}`).join('')}
+      <h4>Golden demo script</h4>
+      <p class="small muted">Six beats every demo must hit, in this order.</p>
+      <ol class="te-flow">${o.brief.demo.map((d, k) => `<li data-kind="${d.kind}" class="${d.text ? '' : 'is-missing'}"><span class="te-mark" aria-hidden="true">${k + 1}</span>
+        <span class="te-node-label">${esc(d.label)}</span><p class="te-node-text">${esc(d.text ?? 'not in the brief yet')}</p></li>`).join('')}</ol>
+      ${o.brief.demoExtra.length ? `<dl class="ob-extra">${o.brief.demoExtra.map(([k, v]) => `<dt>${esc(human(k))}</dt><dd>${esc(Array.isArray(v) ? v.join('; ') : v)}</dd>`).join('')}</dl>` : ''}
+    </section>
+
+    ${o.evidence.length || o.risks.length || o.questions.length ? `<section class="card">
+      <span class="te-eyebrow">Evidence and open questions</span>
+      <h3>What this rests on</h3>
+      ${o.evidence.length ? `<ul class="te-ev">${o.evidence.map((e) => (typeof e === 'string' ? `<li><span></span><span>${esc(e)}</span></li>`
+        : `<li>${gradeTag(e.grade ?? '–')}<span>${esc(pick(e.claim, e.text))}<span class="te-src">${esc(e.source ?? '')}</span></span></li>`)).join('')}</ul>` : ''}
+      <div class="ob-two">
+        ${o.risks.length ? `<div><h4>Risks</h4><ul class="ob-plain">${o.risks.map((r) => `<li>${esc(typeof r === 'string' ? r : r.text)}</li>`).join('')}</ul></div>` : ''}
+        ${o.questions.length ? `<div><h4>Research questions</h4><ul class="ob-plain">${o.questions.map((q) => `<li>${esc(typeof q === 'string' ? q : q.text)}</li>`).join('')}</ul></div>` : ''}
+      </div>
+    </section>` : ''}`;
+}
+
+function render() {
+  const list = filtered();
+  if (!list.some((o) => o.id === state.id)) state.id = list[0]?.id ?? null;
+  renderFigs(list);
+  renderList(list);
+  renderDetail(state.all.find((o) => o.id === state.id));
+}
+
+function wire() {
+  const set = (k, v) => { state[k] = v; writeUrl(false); render(); };
+  $('#team-mode').addEventListener('change', (e) => set('team', e.target.value));
+  $('#pattern').addEventListener('change', (e) => set('pattern', e.target.value));
+  $('#stream').addEventListener('change', (e) => set('stream', e.target.value));
+  $('#sort').addEventListener('change', (e) => set('sort', e.target.value));
+  $('#list').addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-id]');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    state.id = a.dataset.id;
+    writeUrl(true);
+    render();
+    $('#detail-title')?.focus({ preventScroll: true });
+    if (matchMedia('(max-width: 960px)').matches) $('#detail').scrollIntoView({ block: 'start' });
+  });
+  addEventListener('popstate', () => { readUrl(); renderChrome(); render(); });
+}
+
+async function main() {
+  let loaded;
+  try {
+    const [teams, opps] = await Promise.all([fetch('../data/teams.json').then((r) => r.json()), loadOpportunities()]);
+    state.teamsData = teams;
+    loaded = opps;
+  } catch (error) {
+    $('#source-meta').innerHTML = '<span class="error">Could not load the data. Serve this folder from its root: python3 -m http.server 8790.</span>';
+    throw error;
+  }
+  for (const team of state.teamsData.teams) for (const r of team.roles) state.roles.set(r.id, { ...r, team: team.id });
+  const { json, source, file } = loaded;
+  Object.assign(state, { source, file, generated: pick(json.generated, json._meta?.generated), meta: json._meta ?? null, unclustered: Array.isArray(json.unclustered) ? json.unclustered : null });
+  const raw = Array.isArray(json) ? json : json.opportunities ?? [];
+  state.all = raw.map((o, i) => normalise(o, i, state.teamsData.company.hours_per_fte));
+  readUrl();
+  renderMeta();
+  renderChrome();
+  wire();
+  render();
+  writeUrl(false);
+}
+
+main();
+</script>
+</body>
+</html>

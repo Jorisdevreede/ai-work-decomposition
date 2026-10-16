@@ -1,0 +1,1026 @@
+{
+ "tasks": [
+  {
+   "uid": "43-3031.00:2498",
+   "short": "File finance records, handle calls, and prepare routine correspondence.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive and sort incoming finance correspondence and documents.",
+     "actor": "finance clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "finance correspondence",
+      "finance document"
+     ],
+     "outputs": [
+      "routed correspondence",
+      "filing queue"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Incoming correspondence, attachment metadata, and approved routing categories.",
+      "output": "Proposed category, record reference, and destination.",
+      "check": "Require an allowed category and valid destination; validate record references against authorised records.",
+      "stop": "One classification attempt per item; ambiguous references or categories enter the clerk's exception queue.",
+      "why_not_simpler": "Sender rules handle known streams; varied free-text requests still need interpretation."
+     },
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Index documents and file them against the relevant finance record.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS",
+      "ERP"
+     ],
+     "inputs": [
+      "filing queue",
+      "finance document"
+     ],
+     "outputs": [
+      "indexed finance document"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Answer calls, establish the request, and provide information or transfer the caller.",
+     "actor": "finance clerk",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "caller request",
+      "contact directory"
+     ],
+     "outputs": [
+      "call outcome",
+      "account query"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Prepare routine acknowledgements and correspondence using approved wording and finance records.",
+     "actor": "finance clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "ERP"
+     ],
+     "inputs": [
+      "routed correspondence",
+      "account answer",
+      "correspondence template"
+     ],
+     "outputs": [
+      "correspondence draft"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Check the recipient and content, then send and retain the correspondence.",
+     "actor": "finance clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "correspondence draft"
+     ],
+     "outputs": [
+      "sent correspondence",
+      "indexed finance document"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "finance clerk"
+    }
+   ],
+   "design": "Configure filing between {EMAIL}, {DOCS}, and {ERP}, with a bounded classifier for unfamiliar correspondence and an exception queue in {WORKFLOW}. Generate routine drafts from approved templates and verified records, then require recipient and content approval before sending through {EMAIL}. Keep calls human, supported by a contact directory and linked account answers.",
+   "previous_blocker": "Filing references and routing knowledge lived in individual inboxes. Templates lacked reliable links to finance records.",
+   "enabler_now": "Existing filing rules cover known streams. AI-assisted coding makes the connectors and template generator cheaper to build; bounded classification covers remaining free text.",
+   "still_hard": "Poor references, confidential attachments, and callers with several intertwined concerns still require attention.",
+   "human_edge": "Recognising urgency, calming a frustrated caller, and noticing when routine wording would mislead.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A finance request receipt showing the responsible team and expected response date."
+   },
+   "altitude": "The week shifts from sorting and filing toward resolving misrouted requests and handling calls. The clerk can assign routine requests within an agreed routing matrix; authority over financial commitments does not change.",
+   "reach": [
+    {
+     "role": "billing and posting clerk",
+     "task": "Link customer correspondence to billing records.",
+     "learn": "Billing references, recipient permissions, and the difference between an acknowledgement and a payment commitment."
+    },
+    {
+     "role": "compliance officer",
+     "task": "Apply retention schedules to finance correspondence.",
+     "learn": "Retention categories, access restrictions, and exceptions requiring preservation."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-8",
+    "testing_rollout": "4-7",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Rule-based filing and template generation are feasible; this design and its time estimates are proposals.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The cited survey found paper or email invoice approvals common, supporting an inbox-handoff assumption.",
+     "grade": "E2",
+     "source": "[S8]"
+    }
+   ],
+   "assumptions": [
+    "These are typical steps and estimated time shares, not measured customer activity.",
+    "Physical post is occasional; regular paper intake would add scanning work.",
+    "The prior understates correspondence work for this finance-specific task; calls remain a substantial human share.",
+    "GDPR applies to personal data. EU AI Act duties depend on the deployed use; national rules determine employee consultation requirements.",
+    "Build ranges describe an initial departmental rollout with usable interfaces, including access review and consultation where required."
+   ],
+   "unknowns": [
+    "Document retention rules and available record identifiers.",
+    "The actual split between calls, electronic correspondence, and paper.",
+    "Whether mailbox and document-store access is already approved.",
+    "Whether national rules require employee consultation for the proposed routing or logging."
+   ],
+   "research_questions": [
+    "Can existing filing configuration attach documents to finance records without custom code?",
+    "Which incoming categories cannot be routed reliably using sender and reference rules?"
+   ],
+   "new_work": [
+    "Review ambiguous routing and missing record references.",
+    "Maintain correspondence templates and the contact directory.",
+    "Check filing failures, retention settings, and access permissions.",
+    "Approve outgoing correspondence."
+   ],
+   "time_saved_pct": 68,
+   "speedup": 3.1
+  },
+  {
+   "uid": "43-3031.00:2494",
+   "short": "Find financial records and answer general or account-specific questions.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Clarify the question, identify the account, and verify the requester's entitlement.",
+     "actor": "finance clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "account query",
+      "access policy"
+     ],
+     "outputs": [
+      "verified account query"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Retrieve account balances, transactions, and payment status.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "verified account query"
+     ],
+     "outputs": [
+      "account record"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Check supporting documents and reconcile apparent differences in the account record.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "account record",
+      "indexed finance document"
+     ],
+     "outputs": [
+      "verified account facts",
+      "account exception"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Write an answer explaining the verified figures and any unresolved issue.",
+     "actor": "finance clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "verified account query",
+      "verified account facts",
+      "account exception"
+     ],
+     "outputs": [
+      "account answer"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Verified query and permission-filtered facts with source references.",
+      "output": "Answer draft with each financial assertion linked to a source.",
+      "check": "Validate all amounts, dates, account references, and source links; prohibit unsupported explanations.",
+      "stop": "One draft and one repair attempt; unresolved discrepancies receive a factual holding response for review.",
+      "why_not_simpler": "Templates cover common questions; varied questions need short explanations assembled from several facts."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve and send the response, or refer the unresolved issue to an accountant.",
+     "actor": "finance clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "account answer",
+      "account exception"
+     ],
+     "outputs": [
+      "sent correspondence",
+      "referred account exception"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "finance clerk"
+    }
+   ],
+   "design": "Expose approved account views from {ERP}, with supporting links from {DOCS} and permission checks at retrieval. Deterministic checks assemble verified facts; templates answer standard queries and a bounded loop drafts varied explanations. A {WORKFLOW} queue handles discrepancies, while a clerk approves outgoing responses through {EMAIL}.",
+   "previous_blocker": "Account views, attachments, and permissions were fragmented. Generic search could retrieve figures without establishing whether they answered the question.",
+   "enabler_now": "Configured account views and inexpensive connectors reduce retrieval work. Bounded drafting can explain a verified fact bundle without performing financial calculations.",
+   "still_hard": "Unposted transactions, disputed balances, and unclear requester authority remain difficult. A technically correct balance can still need accounting interpretation.",
+   "human_edge": "Understanding what the requester needs and explaining uncertainty without implying an unsupported financial commitment.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Permission-scoped invoice-status self-service for budget holders."
+   },
+   "altitude": "The clerk spends more time resolving discrepancies and less time searching screens. They can deliver approved factual answers faster; authority to amend accounts or settle disputes does not change.",
+   "reach": [
+    {
+     "role": "credit analyst",
+     "task": "Assemble an account history for a credit review.",
+     "learn": "Ageing definitions, disputed items, and the limits of factual reporting versus credit decisions."
+    },
+    {
+     "role": "business intelligence analyst",
+     "task": "Define a permission-scoped account-status view.",
+     "learn": "Record access, refresh timing, and definitions of posted, paid, and outstanding."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "4-10",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Permission-filtered financial retrieval and source-checked answer drafting are feasible; the combined service is a proposed design.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "AFAS documents matching bank lines to records using references, IBAN, or invoice numbers, with misses handled by people.",
+     "grade": "E2",
+     "source": "[S2]"
+    }
+   ],
+   "assumptions": [
+    "These are typical steps and estimated time shares, not measured customer activity.",
+    "Most requested figures already exist as structured records in the {ERP}.",
+    "The prior's near-total automation estimate is optimistic when questions include unclear identity, disputes, or interpretation.",
+    "The self-service ambition starts with authorised internal budget holders and approved factual views.",
+    "GDPR applies to account-related personal data. EU AI Act classification depends on use; this service does not decide natural-person creditworthiness.",
+    "Build ranges include access review and employee consultation where national rules require it."
+   ],
+   "unknowns": [
+    "Available account views, interfaces, and document links.",
+    "Which requesters may see which account details.",
+    "The share of questions requiring accounting interpretation.",
+    "Whether budget holders already have suitable self-service access.",
+    "Applicable employee consultation requirements."
+   ],
+   "research_questions": [
+    "Which questions can an existing {ERP} account view answer directly?",
+    "Can every answer fact carry a stable record reference and freshness timestamp?"
+   ],
+   "new_work": [
+    "Review explanatory drafts and approve outgoing responses.",
+    "Resolve stale data, missing documents, and disputed balances.",
+    "Maintain approved query types and answer templates.",
+    "Test permissions when roles or account ownership change."
+   ],
+   "time_saved_pct": 75,
+   "speedup": 4.04
+  },
+  {
+   "uid": "43-3031.00:2490",
+   "short": "Classify transactions, prepare journals, and maintain financial records and summaries.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather source transactions and supporting documents for recording.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "source transaction",
+      "indexed finance document"
+     ],
+     "outputs": [
+      "transaction batch"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check completeness and assign routine ledger, tax, and cost-centre codes.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "transaction batch",
+      "coding rules"
+     ],
+     "outputs": [
+      "coded transaction",
+      "coding exception"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Resolve ambiguous accounting treatment and authorise exceptional coding.",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "coding exception",
+      "indexed finance document",
+      "accounting policy"
+     ],
+     "outputs": [
+      "authorised coding"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "accountant"
+    },
+    {
+     "id": "s4",
+     "what": "Prepare balanced journal entries from routine and authorised exceptional coding.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "coded transaction",
+      "authorised coding"
+     ],
+     "outputs": [
+      "journal draft",
+      "journal validation"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Review and approve manual journals and material exceptions.",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "journal draft",
+      "journal validation",
+      "accounting policy"
+     ],
+     "outputs": [
+      "approved journal",
+      "rejected journal"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "accountant"
+    },
+    {
+     "id": "s6",
+     "what": "Post validated entries and produce ledger summaries.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "approved journal",
+      "journal draft",
+      "journal validation"
+     ],
+     "outputs": [
+      "ledger entry",
+      "ledger summary",
+      "posting log"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "Connect source records and attachments to {ERP}, then configure completeness checks, coding defaults, balanced journals, and ledger summaries. Route ambiguous treatment and manual journal approval through {WORKFLOW}; post routine entries under approved rules and exceptional entries only after their required approval. Retain source references and posting logs for correction and audit.",
+   "previous_blocker": "Source feeds were inconsistent, coding rules were partly tacit, and exceptional entries travelled outside the posting workflow.",
+   "enabler_now": "Most accounting checks already exist in the {ERP}. AI-assisted coding lowers the cost of source adapters and exception handling without changing accounting policy.",
+   "still_hard": "New transaction types, tax treatment, cut-off, and capitalisation require accounting judgement. Duplicate prevention and recovery after partial imports need careful testing.",
+   "human_edge": "Recognising economic substance and identifying when a familiar-looking transaction needs different accounting treatment.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A daily accountant decision on unresolved cut-off and coding exceptions."
+   },
+   "altitude": "The clerk works an exception queue and checks source completeness instead of repeatedly entering journals. They can clear evidenced clerical errors within delegated limits; accountants retain policy and material judgement decisions.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Prepare evidence for cut-off and classification decisions.",
+     "learn": "Accruals, capitalisation, materiality, and when a correction needs approval."
+    },
+    {
+     "role": "financial manager",
+     "task": "Identify recurring causes of late or misclassified transactions.",
+     "learn": "Close dependencies, control ownership, and how to distinguish source defects from accounting policy issues."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "5-12",
+    "testing_rollout": "6-12",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Configured coding, balanced journal generation, and ledger summaries are established accounting capabilities; implementation estimates are proposals.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Medius supports line-level invoice, order, and receipt matching, providing an upstream source-validation example.",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "The Huuskes vendor case reports automatically processed invoices increasing from 40% to 65%; it does not establish general-ledger automation rates.",
+     "grade": "E3",
+     "source": "[S3]"
+    }
+   ],
+   "assumptions": [
+    "These are typical steps and estimated time shares, not measured customer activity.",
+    "Most inputs are structured; upstream invoice extraction is not rebuilt within this task.",
+    "Routine entries can post under approved rules; manual journals and material exceptions require the stated approvals.",
+    "Human treatment and approval steps include adjacent-role time in the end-to-end task.",
+    "This task overlaps ledger calculation and correction work in task 43-3031.00:2489; their savings must not be added without removing overlap.",
+    "GDPR applies where records contain personal data. EU AI Act duties depend on use, and employee consultation follows national rules.",
+    "Build ranges include accounting configuration, access approval, and consultation where required."
+   ],
+   "unknowns": [
+    "Transaction sources, volumes, and existing coding coverage.",
+    "Delegated correction limits and journal approval policy.",
+    "Available import controls, reversal functions, and audit logs.",
+    "The actual split of clerk and accountant effort.",
+    "Applicable employee consultation requirements."
+   ],
+   "research_questions": [
+    "Which source transactions can use existing {ERP} posting profiles?",
+    "Can imports prevent duplicates and recover safely after interrupted posting?",
+    "Which exception categories require judgement rather than another deterministic rule?"
+   ],
+   "new_work": [
+    "Investigate missing sources, rejected imports, and duplicate warnings.",
+    "Maintain coding mappings when accounts or cost centres change.",
+    "Review exceptional coding and manual journals.",
+    "Reconcile imported transaction counts and values to posting logs."
+   ],
+   "time_saved_pct": 77,
+   "speedup": 4.4
+  },
+  {
+   "uid": "43-3031.00:2489",
+   "short": "Calculate debit and credit totals, reconcile balances, and process approved corrections.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Select the accounts, entity, and period for the balance check.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "reporting scope",
+      "ledger entry"
+     ],
+     "outputs": [
+      "scoped ledger"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Export ledger balances into a reconciliation workbook.",
+     "actor": "finance clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "ERP",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "scoped ledger"
+     ],
+     "outputs": [
+      "balance export"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 15,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Calculate debit totals, credit totals, and opening-to-closing balances.",
+     "actor": "finance clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "balance export"
+     ],
+     "outputs": [
+      "account totals"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Compare totals with control balances and identify discrepancies.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "account totals",
+      "control balance"
+     ],
+     "outputs": [
+      "reconciliation result",
+      "balance exception"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Investigate discrepancies and prepare supported correcting entries.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "balance exception",
+      "indexed finance document",
+      "coding rules"
+     ],
+     "outputs": [
+      "journal draft",
+      "correction evidence"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Review the proposed correction and approve its accounting treatment.",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "journal draft",
+      "correction evidence"
+     ],
+     "outputs": [
+      "approved journal",
+      "rejected journal"
+     ],
+     "handoff_to": "finance clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "accountant"
+    },
+    {
+     "id": "s7",
+     "what": "Post approved corrections and refresh the balance check.",
+     "actor": "finance clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "approved journal",
+      "reporting scope"
+     ],
+     "outputs": [
+      "ledger entry",
+      "reconciliation result",
+      "posting log"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "Use configured {ERP} reports to calculate debit, credit, and closing balances directly, removing the duplicate {SPREADSHEET} export. Add deterministic control comparisons on {DATA_PLATFORM}, with an exception view in {BI} linked to supporting records in {DOCS}. Accountants approve correcting entries in {ERP}; posting then refreshes the checks automatically.",
+   "previous_blocker": "Workbook checks bridged gaps between standard reports and local control definitions. Exporting became routine even where the underlying arithmetic was already available.",
+   "enabler_now": "Existing reports handle the arithmetic. AI-assisted coding makes the small control adapter and exception view cheaper to build and maintain.",
+   "still_hard": "Balanced debits and credits do not prove correct classification, completeness, or cut-off. Explaining a discrepancy often requires source investigation.",
+   "human_edge": "Distinguishing a harmless timing difference from an error that changes the financial picture.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily triage of newly unreconciled control accounts."
+   },
+   "altitude": "The clerk reviews new balance exceptions instead of rebuilding workbooks. They can prioritise investigations using agreed materiality and age limits; approval rights over correcting journals do not change.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Prepare control-account reconciliation evidence for the close.",
+     "learn": "Reconciliation assertions, timing differences, cut-off, and correction versus reversal."
+    },
+    {
+     "role": "financial manager",
+     "task": "Prioritise unresolved balance exceptions before reporting.",
+     "learn": "Materiality, exception ageing, and dependencies that could delay the close."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "2-7",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Ledger totals and trial-balance arithmetic are standard accounting configuration; bespoke control comparisons can use deterministic code.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "AFAS documents deterministic matching with human handling of misses; this supports the exception-handling pattern, not all ledger reconciliation claims.",
+     "grade": "E2",
+     "source": "[S2]"
+    }
+   ],
+   "assumptions": [
+    "These are typical steps and estimated time shares, not measured customer activity.",
+    "The {ERP} performs ordinary double-entry arithmetic; the workbook supports selected reconciliation checks rather than the whole ledger.",
+    "The task wording supports more spreadsheet work than its prior, but existing system calculations should be reused.",
+    "Investigation remains human even though evidence retrieval and draft-entry preparation become faster.",
+    "Shared journals, approvals, and posting work overlap task 43-3031.00:2490 and must not be counted twice.",
+    "GDPR applies to personal data in drill-down records. EU AI Act duties depend on deployed use; employee consultation follows national rules.",
+    "Build ranges include access review and consultation where required."
+   ],
+   "unknowns": [
+    "Which workbook checks are already available in the {ERP}.",
+    "Definitions and authoritative sources of control balances.",
+    "Whether reporting includes multiple entities or currencies.",
+    "Correction approval thresholds and period-lock rules.",
+    "Applicable employee consultation requirements."
+   ],
+   "research_questions": [
+    "Can configured {ERP} reports replace the reconciliation export completely?",
+    "Which discrepancies can deterministic checks explain without proposing an accounting correction?",
+    "Can refreshes use a consistent ledger snapshot to avoid false differences?"
+   ],
+   "new_work": [
+    "Review newly flagged differences and record their explanations.",
+    "Maintain control definitions and reporting scope.",
+    "Approve corrections and resolve locked-period exceptions.",
+    "Check that control data and ledger snapshots remain aligned."
+   ],
+   "time_saved_pct": 80,
+   "speedup": 5.13
+  }
+ ],
+ "role": {
+  "altitude": "The week shifts from retrieval, copying, and arithmetic toward source-quality checks, exception investigation, and clear financial explanations. Delegated clerical correction and routing rights can expand within explicit limits; accounting policy, material journal approval, and financial commitments remain with authorised roles.",
+  "reach": [
+   "Accountant: prepare supported reconciliations and classification proposals.",
+   "Financial manager: explain recurring exceptions and their effect on reporting readiness.",
+   "Business intelligence analyst: define traceable, permission-scoped financial views."
+  ],
+  "skills_to_grow": [
+   "Accounting assertions, cut-off, and materiality.",
+   "Source-to-ledger reconciliation and import controls.",
+   "Exception investigation and evidence writing.",
+   "Access permissions and personal-data handling.",
+   "Configuration, rule maintenance, and bounded-model output review."
+  ],
+  "ambitious_version": "A finance operations specialist who provides daily visibility into unresolved posting and balance issues, prepares evidence for accountant decisions, and delivers permission-scoped account answers."
+ },
+ "job_code": "43-3031.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 197,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"sed -n '1,180p' /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:2500}); text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-3031.00",
+   "title": "Bookkeeping, Accounting, and Auditing Clerks",
+   "tasks": 28,
+   "function": "Finance"
+  }
+ }
+}

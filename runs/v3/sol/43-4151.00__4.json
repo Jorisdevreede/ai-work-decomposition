@@ -1,0 +1,986 @@
+{
+ "tasks": [
+  {
+   "uid": "43-4151.00:2679",
+   "short": "Trace delayed shipments and coordinate recovery with warehouse, sales, production and carriers.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check the order, promised date and customer requirements.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "sales order",
+      "delivery promise"
+     ],
+     "outputs": [
+      "order context"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check warehouse progress and carrier tracking for the latest shipment event.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "order context",
+      "shipment reference"
+     ],
+     "outputs": [
+      "shipment status"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Email the responsible team or carrier for missing shipment details.",
+     "actor": "order clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "order context",
+      "shipment status"
+     ],
+     "outputs": [
+      "status request"
+     ],
+     "handoff_to": "shipping coordinator",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Order context, timestamped shipment events and the unresolved information gap.",
+      "output": "A short status request with shipment references and specific questions.",
+      "check": "Verify references and recipient; the clerk approves wording before sending.",
+      "stop": "One draft and one revision per request; missing references return to the clerk.",
+      "why_not_simpler": "A template handles standard gaps; unusual shipment histories need a short contextual explanation."
+     },
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "order clerk"
+    },
+    {
+     "id": "s4",
+     "what": "Discuss constraints and negotiate feasible recovery options with the responsible people.",
+     "actor": "order clerk",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "status request",
+      "shipment status",
+      "delivery promise"
+     ],
+     "outputs": [
+      "recovery options"
+     ],
+     "handoff_to": "shipping supervisor",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve a recovery option requiring extra cost or changed shipping commitments.",
+     "actor": "shipping supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "recovery options",
+      "delivery promise"
+     ],
+     "outputs": [
+      "approved recovery plan"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "shipping supervisor"
+    },
+    {
+     "id": "s6",
+     "what": "Record the agreed recovery plan and next follow-up date against the order.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "approved recovery plan"
+     ],
+     "outputs": [
+      "order update",
+      "follow-up date"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Combine order context from the {ERP} with timestamped events from the {OPS_SYSTEM} and {PARTNER_PORTAL} in one exception view. A bounded drafting loop prepares unusual status requests in the {EMAIL}; people negotiate recovery and approve changed commitments. The {WORKFLOW} records the approved plan and schedules follow-up.",
+   "previous_blocker": "Shipment references and event meanings differ across systems. Recovery also depends on people accepting changed priorities.",
+   "enabler_now": "Available interfaces and configurable exception views can remove repeated lookups. AI coding can shorten connector development, while bounded drafting handles unusual explanations.",
+   "still_hard": "Stale carrier events, missing scans and scarce production capacity. Software cannot make another team accept a recovery plan.",
+   "human_edge": "Know whom to call, test whether a promise is credible and negotiate a workable compromise.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Reprioritise shipment recovery each morning and afternoon using verified delay and customer-impact signals."
+   },
+   "altitude": "The clerk spends less time assembling status and more time resolving contested shipments. They can prioritise the recovery queue; spending and changed shipping commitments retain supervisor approval.",
+   "reach": [
+    {
+     "role": "sales representative",
+     "task": "Recommend which delayed customer orders deserve account-level intervention.",
+     "learn": "Customer commitments, account priorities and the commercial cost of delay."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "8-18",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Joining order and shipment events by stable references can remove repeated status lookups.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Rossum documents order validation and exception routing; this supports order-context preparation, not autonomous shipment recovery.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Cross-team recovery negotiation remains dependent on operational constraints and human commitments.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The typical setting has an {ERP}, an {OPS_SYSTEM} and carrier tracking through a {PARTNER_PORTAL}.",
+    "Time shares are illustrative estimates, informed by the coordination-heavy priors.",
+    "Build ranges cover one order flow and a small carrier set, including access, rollout and consultation assessment.",
+    "GDPR applies to contact and shipment data; employee consultation depends on national rules and the proposed monitoring."
+   ],
+   "unknowns": [
+    "Which carrier interfaces and stable shipment identifiers are available?",
+    "Who may approve extra freight cost or change a delivery commitment?",
+    "Does the proposed exception view require employee consultation under applicable national rules?"
+   ],
+   "research_questions": [
+    "Which missing shipment events account for most follow-up effort?",
+    "Can configured exception views cover the main gaps before custom connectors are built?"
+   ],
+   "new_work": [
+    "Review drafted status requests before sending.",
+    "Investigate stale events and unmatched shipment references.",
+    "Maintain carrier mappings, escalation contacts and follow-up rules."
+   ],
+   "time_saved_pct": 58,
+   "speedup": 2.38
+  },
+  {
+   "uid": "43-4151.00:2673",
+   "short": "Route approved orders to the departments that prepare and ship them.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check order approval, destination, stock allocation and dispatch requirements.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "sales order",
+      "stock allocation",
+      "dispatch requirements"
+     ],
+     "outputs": [
+      "release checklist"
+     ],
+     "handoff_to": "shipping supervisor",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Resolve blocked releases, special handling or competing dispatch priorities.",
+     "actor": "shipping supervisor",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "release checklist",
+      "dispatch requirements"
+     ],
+     "outputs": [
+      "release exception decision"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "shipping supervisor"
+    },
+    {
+     "id": "s3",
+     "what": "Create preparation instructions identifying quantities, destination, handling and responsible department.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "sales order",
+      "release checklist",
+      "release exception decision"
+     ],
+     "outputs": [
+      "dispatch instruction"
+     ],
+     "handoff_to": "warehouse team",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Email departments that the dispatch instruction is ready.",
+     "actor": "order clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "dispatch instruction"
+     ],
+     "outputs": [
+      "dispatch notification"
+     ],
+     "handoff_to": "warehouse team",
+     "share_pct": 15,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Check that the responsible department has accepted the preparation work.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "dispatch instruction",
+      "department acceptance"
+     ],
+     "outputs": [
+      "order handoff status"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure release checks in the {ERP} and route eligible orders into departmental queues in the {OPS_SYSTEM}. Queue assignment replaces duplicate {EMAIL} notifications, while the {WORKFLOW} escalates unaccepted work. Blocked releases and competing priorities go to the shipping supervisor before instructions take effect.",
+   "previous_blocker": "Release conditions and departmental responsibilities were inconsistently configured. Email compensated for gaps in queue ownership.",
+   "enabler_now": "Existing release rules and work queues may already cover most cases. AI-assisted configuration and connector development reduce implementation effort without requiring a model at runtime.",
+   "still_hard": "Conflicting priorities, unusual destinations and special handling need clear operational authority.",
+   "human_edge": "Balance urgent orders against capacity and understand when a technically valid release would disrupt operations.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Provide sales representatives with a pre-release split-shipment proposal for constrained orders."
+   },
+   "altitude": "The clerk monitors blocked and unaccepted work instead of repeatedly routing routine orders. They gain queue-triage responsibility; approval of exceptional releases stays with the shipping supervisor.",
+   "reach": [
+    {
+     "role": "first-line sales supervisor",
+     "task": "Coordinate customer order priorities with available dispatch capacity.",
+     "learn": "Release cut-offs, warehouse capacity and the effect of split shipments on customer promises."
+    }
+   ],
+   "build_days": {
+    "coding": "1-4",
+    "integration": "4-10",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Exact documents order imports and stock synchronisation, supporting structured order handoffs.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Configured release rules and departmental queues can handle routine preparation instructions without a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The estimated gain is greater than the human-heavy prior where orders are already approved and release rules are explicit.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Most orders have structured quantities, destinations and handling requirements.",
+    "Exception discussion is averaged across the workload; not every order requires it.",
+    "The {OPS_SYSTEM} supports departmental queues and acceptance status.",
+    "Build ranges include permissions, rollout and assessment of consultation under national rules."
+   ],
+   "unknowns": [
+    "Which release checks are already configured?",
+    "Can departments reliably work from assigned queues?",
+    "Which order categories require explicit release approval?",
+    "Do changed work allocation or monitoring arrangements require employee consultation?"
+   ],
+   "research_questions": [
+    "How much duplicate notification exists after queue assignment?",
+    "Which exceptions genuinely require a supervisor rather than another configured release condition?"
+   ],
+   "new_work": [
+    "Maintain release conditions and departmental routing.",
+    "Investigate orders stuck between assignment and acceptance.",
+    "Review exception reasons after operational changes."
+   ],
+   "time_saved_pct": 80,
+   "speedup": 5.0
+  },
+  {
+   "uid": "43-4151.00:2681",
+   "short": "Update inventory records from product movements and resolve unsupported adjustments.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve recorded receipts, transfers, dispatches and returns.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "movement events"
+     ],
+     "outputs": [
+      "movement log"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Match movement references, quantities and units against current inventory records.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "movement log",
+      "inventory record"
+     ],
+     "outputs": [
+      "validated movements",
+      "inventory discrepancy"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Ask warehouse personnel to explain missing or inconsistent movement evidence.",
+     "actor": "order clerk",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "inventory discrepancy",
+      "movement log"
+     ],
+     "outputs": [
+      "discrepancy evidence"
+     ],
+     "handoff_to": "inventory controller",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Approve a correction where normal movement evidence does not support the change.",
+     "actor": "inventory controller",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "inventory discrepancy",
+      "discrepancy evidence"
+     ],
+     "outputs": [
+      "approved inventory correction"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "audit-and-controls",
+     "approver": "inventory controller"
+    },
+    {
+     "id": "s5",
+     "what": "Post validated movements and approved corrections to inventory.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "validated movements",
+      "approved inventory correction"
+     ],
+     "outputs": [
+      "updated inventory record"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Check that stock quantities agree with the corresponding financial inventory records.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "updated inventory record",
+      "financial inventory record"
+     ],
+     "outputs": [
+      "inventory reconciliation",
+      "inventory discrepancy"
+     ],
+     "handoff_to": "inventory controller",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure event-based stock posting in the {OPS_SYSTEM}, using unique movement references to prevent duplicate entries. A deterministic reconciliation compares quantities with the {ERP} and sends discrepancies to an exception queue. Unsupported corrections require inventory-controller approval before posting.",
+   "previous_blocker": "Missing movement references, inconsistent units and disconnected stock records made automatic posting unreliable.",
+   "enabler_now": "Existing stock-posting features and deterministic reconciliation cover the structured work. AI coding can speed mapping and validation development; no model is needed to calculate stock.",
+   "still_hard": "Physical movement may differ from recorded movement. Historical errors, bundles, returns and unit conversions need reliable evidence.",
+   "human_edge": "Establish what physically happened and distinguish a recording error from a real stock loss.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Prioritise same-day inventory discrepancies by their impact on open customer orders."
+   },
+   "altitude": "The clerk spends less time posting movements and more time gathering evidence for stock exceptions. They can prioritise investigations; authority to approve unsupported stock corrections does not change.",
+   "reach": [
+    {
+     "role": "sales representative",
+     "task": "Check stock confidence before promising a rush-order delivery.",
+     "learn": "Available-to-promise quantities, inventory holds and the distinction between recorded and verified stock."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "2-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Exact documents stock synchronisation alongside order management.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Reference-based duplicate checks, unit conversion and quantity reconciliation are deterministic operations.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Automating postings does not establish whether an unrecorded physical movement occurred.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Routine product movements already create structured events in the {OPS_SYSTEM}.",
+    "The financial inventory record is held separately in the {ERP}; a shared ledger would eliminate reconciliation.",
+    "Investigation and approval shares are workload averages across routine and exceptional movements.",
+    "Build ranges include access, stock-control validation, rollout and consultation assessment under national rules."
+   ],
+   "unknowns": [
+    "Are stock and financial inventory already maintained in one ledger?",
+    "Which movements still rely on paper evidence?",
+    "Are movement identifiers, units and reversal rules consistent?",
+    "Who may approve stock corrections and at what thresholds?"
+   ],
+   "research_questions": [
+    "Can existing event-posting settings eliminate manual adjustments before adding an integration?",
+    "Which discrepancy categories most often block customer orders?"
+   ],
+   "new_work": [
+    "Monitor failed, duplicate and out-of-sequence events.",
+    "Maintain item mappings, unit conversions and reversal rules.",
+    "Investigate reconciliation exceptions and retain correction evidence."
+   ],
+   "time_saved_pct": 70,
+   "speedup": 3.33
+  },
+  {
+   "uid": "43-4151.00:2682",
+   "short": "Collect order payments, record receipts and forward any physical tender for processing.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Send the customer an approved payment request with the order reference.",
+     "actor": "order clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "sales order",
+      "approved invoice"
+     ],
+     "outputs": [
+      "payment request"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check received funds against the payment request using settled bank transactions.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK",
+      "ERP"
+     ],
+     "inputs": [
+      "payment request",
+      "bank transaction"
+     ],
+     "outputs": [
+      "matched receipt",
+      "payment discrepancy"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Resolve ambiguous allocations, short payments or unidentified receipts.",
+     "actor": "finance team",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "BANK"
+     ],
+     "inputs": [
+      "payment discrepancy",
+      "approved invoice",
+      "bank transaction"
+     ],
+     "outputs": [
+      "approved receipt allocation",
+      "unresolved payment"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "finance team"
+    },
+    {
+     "id": "s4",
+     "what": "Record the receipt and allocate it to the order or invoice.",
+     "actor": "order clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "matched receipt",
+      "approved receipt allocation"
+     ],
+     "outputs": [
+      "posted receipt",
+      "payment status"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Send a receipt confirming the amount received and any remaining balance.",
+     "actor": "order clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "posted receipt",
+      "payment status"
+     ],
+     "outputs": [
+      "customer receipt"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Where accepted, hand physical tender and its custody record to finance for processing.",
+     "actor": "order clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "physical tender",
+      "custody record"
+     ],
+     "outputs": [
+      "custody receipt"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure the {ERP} to issue payment requests and receipts from approved invoice data, and connect settled {BANK} transactions for deterministic matching. Exact matches post automatically; ambiguous allocations require finance approval. Physical tender retains a recorded human custody handoff where it is still accepted.",
+   "previous_blocker": "Missing payment references, delayed bank imports and separate receipt records required repeated checks and rekeying.",
+   "enabler_now": "Configured receipt workflows and bank interfaces can cover routine collection without a model. AI coding can reduce the effort needed for mapping, duplicate checks and exception views.",
+   "still_hard": "Combined payments, partial settlements, unidentified senders and physical custody. Settlement and invoice allocation must remain distinct.",
+   "human_edge": "Resolve disputed balances fairly and establish who paid for which obligation when references are ambiguous.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Prioritise unresolved receipts before each dispatch cut-off to prevent avoidable prepaid-order holds."
+   },
+   "altitude": "The clerk handles payment exceptions and customer explanations instead of copying receipts between screens. They can prioritise payment investigations; finance retains authority over ambiguous allocations.",
+   "reach": [
+    {
+     "role": "new accounts clerk",
+     "task": "Help a first-time customer complete prepaid-order payment setup.",
+     "learn": "Customer identity checks, payment references, settlement timing and escalation routes."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Structured payment-reference matching, duplicate detection and receipt generation can use deterministic rules.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Electronic payment evidence does not replace physical custody where physical tender remains accepted.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The human-heavy prior overstates routine handling where bank settlement and invoice references are structured.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "GDPR applies where payment records contain personal data.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Electronic payment predominates in this illustrative European setting; physical tender is a small conditional branch.",
+    "Time shares measure staff effort, excluding customer payment time and passive waiting.",
+    "Automatic matching requires a unique reference, consistent currency and amount, and no conflicting allocation.",
+    "Customer receipts use approved templates and confirmed postings; no model sees payment credentials.",
+    "Build ranges include restricted bank access, finance validation, rollout and consultation assessment under national rules."
+   ],
+   "unknowns": [
+    "Which payment methods and physical instruments are actually accepted?",
+    "Does the {ERP} already provide bank matching and automatic receipts?",
+    "Which settlement events are authoritative for each payment method?",
+    "Who approves ambiguous allocations and payment-related order holds?"
+   ],
+   "research_questions": [
+    "What share of receipts can existing matching settings allocate uniquely?",
+    "Which payment exceptions cause the most avoidable dispatch delays?"
+   ],
+   "new_work": [
+    "Review unmatched receipts and conflicting allocations.",
+    "Monitor bank-import failures and duplicate receipt prevention.",
+    "Maintain matching rules, settlement mappings and receipt templates.",
+    "Retain physical custody records where needed."
+   ],
+   "time_saved_pct": 80,
+   "speedup": 5.0
+  }
+ ],
+ "role": {
+  "altitude": "The order clerk becomes an exception coordinator across order release, shipment recovery, inventory confidence and payment readiness. Routine records move automatically; authority over spending, unsupported stock corrections and ambiguous payment allocations stays with the relevant approvers.",
+  "reach": [
+   "Sales representatives: assess the customer impact of shipment and stock exceptions.",
+   "First-line sales supervisors: align dispatch priorities with operational capacity.",
+   "New accounts clerks: help first-time buyers complete prepaid-order setup."
+  ],
+  "skills_to_grow": [
+   "Trace an order across operational and financial records.",
+   "Distinguish confirmed events from estimates and missing evidence.",
+   "Diagnose reference, unit and allocation mismatches.",
+   "Negotiate recovery options and explain customer trade-offs.",
+   "Maintain exception rules and validate changes with process owners."
+  ],
+  "ambitious_version": "Run a daily order-readiness service that identifies stock, payment and dispatch blockers before customer promises fail, with named owners and evidence for each intervention."
+ },
+ "job_code": "43-4151.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 231,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "text(await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":2500}));\n"
+  ],
+  "job": {
+   "code": "43-4151.00",
+   "title": "Order Clerks",
+   "tasks": 19,
+   "function": "Sales and account management"
+  }
+ }
+}

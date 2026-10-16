@@ -1,0 +1,856 @@
+{
+ "role_id": "controller",
+ "tasks": [
+  {
+   "uid": "11-3031.01:8861",
+   "short": "Check and approve payment requests and invoices against policy, budget and mandates before payment runs.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive payment requests and invoices by mail and AFAS approval workflow",
+     "actor": "controller",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "supplier invoice",
+      "agency invoice",
+      "payment request"
+     ],
+     "outputs": [
+      "disbursement request"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Check budget, contract, PO, duplicate, IBAN change and signing mandate",
+     "actor": "controller",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "disbursement request",
+      "budget",
+      "mandate register",
+      "supplier master"
+     ],
+     "outputs": [
+      "check result"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Read supporting documents of non-PO requests for policy fit",
+     "actor": "controller",
+     "today_means": "document",
+     "systems": [
+      "AFAS Profit",
+      "Staffing agency portals",
+      "SharePoint"
+     ],
+     "inputs": [
+      "agency invoice",
+      "agency hours",
+      "expense policy"
+     ],
+     "outputs": [
+      "policy check note"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Invoice PDF, agency hours export and the policy section that applies",
+      "output": "Policy category, cited clause and a pass/flag with one-line reason",
+      "check": "Amounts and hours re-checked by code against AFAS and portal data; any flag or low confidence goes to the controller",
+      "stop": "One pass per document, two retries on invalid output, then route to manual review",
+      "why_not_simpler": "Non-PO requests and agency invoices arrive as free-text documents with varying layouts and descriptions."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Decide on flagged requests and approve above threshold",
+     "actor": "controller",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "check result",
+      "policy check note"
+     ],
+     "outputs": [
+      "approved disbursement"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Release SEPA payment batch in Rabobank with second signer",
+     "actor": "controller",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Rabobank"
+     ],
+     "inputs": [
+      "approved disbursement"
+     ],
+     "outputs": [
+      "payment batch"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "Configure the AFAS Profit invoice workflow so every request runs a deterministic rule set (budget line, contract or PO, duplicate, IBAN change against supplier master, mandate register) before it reaches anyone. Requests below threshold that pass all checks go straight to the payment batch; non-PO and agency invoices get a bounded model step that matches them to policy and portal hours, and only flags and high-value items land in the controller's queue. Payment release in Rabobank keeps dual signing.",
+   "previous_blocker": "Checks lived in the controller's head and an Excel mandate list; agency invoices and non-PO requests need reading, so everything went to one person.",
+   "enabler_now": "AFAS workflow and API make rule checks cheap to build with AI coding, and a small model step can read invoice documents reliably enough to sort clean from flagged.",
+   "still_hard": "Keeping the mandate register and thresholds current, and judging requests that fit no rule, such as one-off settlements or urgent supplier prepayments.",
+   "human_edge": "Deciding whether an unusual payment is right for the business and carrying the accountability for releasing company money.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily payment runs instead of weekly, with every request checked against the full rule set."
+   },
+   "altitude": "The controller stops ticking routine invoices and spends about an hour a week on flagged cases; they set the approval thresholds and own the mandate register.",
+   "reach": [
+    {
+     "role": "bookkeeper",
+     "task": "Matching agency invoices to portal hours",
+     "learn": "How the rule checks and flags work so they resolve mismatches before escalating."
+    },
+    {
+     "role": "collections",
+     "task": "Monitoring supplier and customer bank detail changes",
+     "learn": "Use the IBAN-change check as a fraud signal on both sides."
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "4-6",
+    "testing_rollout": "5-8",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Disbursement approval fits deterministic checks on budget, contract, duplicates and IBAN changes, with a person above a threshold.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Cash-related actions need mandatory human review and timestamped logs.",
+     "grade": "E3",
+     "source": "[S7]"
+    },
+    {
+     "claim": "AFAS Profit has configurable approval workflows for incoming invoices.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Most invoices arrive in AFAS via digital invoice processing or scan-and-recognise.",
+    "A written mandate and threshold matrix exists or can be written in a few days.",
+    "Rabobank dual signing stays in place."
+   ],
+   "unknowns": [
+    "Monthly volume of invoices and non-PO requests.",
+    "Current approval thresholds and who holds signing rights per site.",
+    "Whether the three agencies deliver hours data in a stable export."
+   ],
+   "research_questions": [
+    "What share of last quarter's invoices would pass all rule checks without a flag?",
+    "How many duplicate or IBAN-change incidents occurred in the last two years?",
+    "Can AFAS workflow call an external check service, or must checks run as a scheduled job?"
+   ],
+   "time_saved_pct": 70,
+   "speedup": 3.33
+  },
+  {
+   "uid": "11-3031.01:20168",
+   "short": "Watch cash position, reserves, tax and covenant deadlines daily so the company stays liquid and compliant.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Download bank statements and AFAS balances into Excel",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Rabobank",
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "bank statement",
+      "ledger balances"
+     ],
+     "outputs": [
+      "cash sheet"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 30,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Build daily cash position and 13-week cash view",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "cash sheet",
+      "open AP and AR",
+      "payroll calendar"
+     ],
+     "outputs": [
+      "cash position",
+      "cash forecast"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Check reserve levels, covenants and VAT and payroll tax deadlines",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "cash position",
+      "covenant terms",
+      "tax calendar"
+     ],
+     "outputs": [
+      "compliance alert"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Investigate unmatched bank lines and unusual movements",
+     "actor": "controller",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Rabobank"
+     ],
+     "inputs": [
+      "unmatched bank lines",
+      "open AP and AR"
+     ],
+     "outputs": [
+      "match proposal"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "reconcile",
+      "input": "Bank lines left after AFAS rule matching, with description text and open items",
+      "output": "Proposed match or category with reason",
+      "check": "Amounts must tie exactly in code; nothing posts until a person accepts",
+      "stop": "One proposal per line, max three candidates, else leave unmatched for manual work",
+      "why_not_simpler": "The remainder has free-text descriptions and partial references that fixed AFAS rules cannot match."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Write weekly cash note and escalate risks to finance director",
+     "actor": "controller",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Excel"
+     ],
+     "inputs": [
+      "cash position",
+      "compliance alert"
+     ],
+     "outputs": [
+      "cash note"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Cash dashboard figures and open alerts",
+      "output": "Half-page cash note",
+      "check": "Every figure in the note is pulled from the dashboard by code, the model writes only prose around it",
+      "stop": "One draft per week, controller edits and sends",
+      "why_not_simpler": "The commentary needs plain-language explanation of movements; a template alone reads poorly."
+     },
+     "authority": "draft",
+     "human_gate": true
+    }
+   ],
+   "design": "Replace the daily Excel cash sheet with a scheduled job on the governed data platform that loads Rabobank CAMT.053 statements and AFAS open items, and feeds a Power BI cash and 13-week dashboard. Deterministic rules raise Teams alerts for reserve floors, covenant ratios and VAT and loonheffing payment dates; a bounded model step proposes matches for bank lines AFAS rules leave unmatched and drafts the weekly cash note.",
+   "previous_blocker": "Bank data came as manual downloads and the cash forecast lived in one person's spreadsheet; building connectors was not worth it for a 10-person team.",
+   "enabler_now": "AI coding makes a CAMT.053 loader and AFAS connector a matter of days, and Power BI is already in place on an AFAS extract.",
+   "still_hard": "Forecasting seasonal flex labour costs and customer payment behaviour; a nightly extract still lags intraday movements.",
+   "human_edge": "Judging whether a dip is a timing issue or a real problem, and deciding when to warn the finance director or the bank.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A daily checked cash position with alerts, instead of a weekly spreadsheet."
+   },
+   "altitude": "The controller reads a dashboard each morning instead of building it; they set reserve floors and alert thresholds and decide escalations.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Rolling forecast",
+     "learn": "Use the 13-week cash view as the short end of the forecast."
+    },
+    {
+     "role": "bookkeeper",
+     "task": "Bank matching in AFAS",
+     "learn": "Review model match proposals for the unmatched remainder."
+    }
+   ],
+   "build_days": {
+    "coding": "6-10",
+    "integration": "5-8",
+    "testing_rollout": "5-7",
+    "consent_and_access": "3-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS bank matching uses fixed rules on reference, IBAN and invoice number.",
+     "grade": "E2",
+     "source": "[S10]"
+    },
+    {
+     "claim": "A model should draft and a deterministic tie-out decide; nothing posts until bank, AR and AP tie.",
+     "grade": "E3",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Cash monitoring fits deterministic software with a person above thresholds.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Rabobank delivers CAMT.053 files via its business API or file download.",
+    "A governed data platform or Azure environment is available for scheduled jobs.",
+    "Loan covenants are few and written in plain terms."
+   ],
+   "unknowns": [
+    "Which bank accounts and facilities exist beyond Rabobank.",
+    "Exact covenant terms and reporting frequency to the bank.",
+    "Share of bank lines left unmatched by AFAS today."
+   ],
+   "research_questions": [
+    "How many minutes a day does the controller spend on the cash sheet today?",
+    "What share of bank lines does AFAS fail to match each month?",
+    "Can Rabobank statements be pulled automatically under current contract and security policy?"
+   ],
+   "time_saved_pct": 89,
+   "speedup": 9.09
+  },
+  {
+   "uid": "11-3031.01:8870",
+   "short": "Assess when the company needs funding or has surplus cash, and recommend credit or deposit actions.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather forecast, capex plans and seasonal flex labour costs",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit",
+      "Power BI"
+     ],
+     "inputs": [
+      "cash forecast",
+      "capex plan",
+      "flex labour forecast"
+     ],
+     "outputs": [
+      "funding input set"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Model funding and surplus scenarios",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "funding input set",
+      "facility terms"
+     ],
+     "outputs": [
+      "funding scenarios"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Compare bank offers, facility terms and deposit rates",
+     "actor": "controller",
+     "today_means": "document",
+     "systems": [
+      "Outlook",
+      "Excel"
+     ],
+     "inputs": [
+      "bank offer",
+      "facility terms"
+     ],
+     "outputs": [
+      "offer comparison"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Bank offer letters and term sheets",
+      "output": "Table of rate, fees, tenor, covenants and conditions",
+      "check": "Controller checks each extracted value against the source page shown beside it",
+      "stop": "One extraction per document, flag missing fields rather than guess",
+      "why_not_simpler": "Offers come as differently formatted PDFs and letters."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Write recommendation memo to finance director",
+     "actor": "controller",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "PowerPoint"
+     ],
+     "inputs": [
+      "funding scenarios",
+      "offer comparison"
+     ],
+     "outputs": [
+      "funding recommendation"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Chosen scenario, comparison table and controller's notes",
+      "output": "Two-page memo draft",
+      "check": "Figures inserted by code from the model; controller rewrites reasoning and signs off",
+      "stop": "One draft, controller edits",
+      "why_not_simpler": "The memo argues a case in prose; a template covers only the figures."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Discuss recommendation with finance director and bank",
+     "actor": "controller",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "funding recommendation"
+     ],
+     "outputs": [
+      "funding decision"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "Build a deterministic scenario model in Power BI or Python on top of the 13-week cash view and AFAS data, with drivers for flex labour peaks, capex and payment terms. A bounded model step extracts terms from bank offers into a comparison table and drafts the recommendation memo, which the controller rewrites and owns.",
+   "previous_blocker": "Inputs were scattered over FP&A sheets and AFAS, and scenario models were rebuilt by hand each time.",
+   "enabler_now": "Once the cash data is on a platform, a scenario model is cheap to code; models extract terms from documents well enough for checked use.",
+   "still_hard": "Judging seasonality and customer risk, and reading the bank relationship; the decision stays with the finance director.",
+   "human_edge": "Weighing risk appetite, timing and the bank relationship, and arguing the case to the finance director.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A monthly funding and surplus check instead of ad hoc reviews when cash gets tight."
+   },
+   "altitude": "The controller spends time on choosing between scenarios instead of building them; they gain a standing monthly slot with the finance director on funding.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Seasonal flex labour forecast",
+     "learn": "Which drivers move the funding need most, so the forecast focuses there."
+    },
+    {
+     "role": "finance-director",
+     "task": "Bank relationship and facility negotiations",
+     "learn": "Use the offer comparison table in negotiations."
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "3-5",
+    "testing_rollout": "3-5",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Funding and advice to management fits a copilot at low autonomy; cash allocation stays human.",
+     "grade": "E3",
+     "source": "[S7]"
+    },
+    {
+     "claim": "Scenario models on cash data are standard deterministic software.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The cash dashboard from the monitoring task exists first.",
+    "The company has a credit facility with Rabobank and occasional surplus cash."
+   ],
+   "unknowns": [
+    "Size and terms of current credit facilities.",
+    "Treasury policy on where surplus cash may be placed.",
+    "How often funding decisions are actually taken today."
+   ],
+   "research_questions": [
+    "How many funding or deposit decisions were taken last year, and how long did each take to prepare?",
+    "Would a monthly scenario view have changed any of last year's decisions?",
+    "Does a written treasury policy exist that sets the decision rules?"
+   ],
+   "time_saved_pct": 62,
+   "speedup": 2.63
+  },
+  {
+   "uid": "11-3031.01:8865",
+   "short": "Run the yearly budget and steer planning and procurement across three sites and departments.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Set budget calendar and send templates to site and department heads",
+     "actor": "controller",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Excel",
+      "SharePoint"
+     ],
+     "inputs": [
+      "budget calendar",
+      "budget template"
+     ],
+     "outputs": [
+      "budget request"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 10,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Chase submissions and consolidate Excel files",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "Outlook"
+     ],
+     "inputs": [
+      "budget submission"
+     ],
+     "outputs": [
+      "consolidated budget"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Review submissions against prior year, drivers and targets",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "Power BI"
+     ],
+     "inputs": [
+      "consolidated budget",
+      "prior year actuals"
+     ],
+     "outputs": [
+      "budget review questions"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "dashboard",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "judge",
+      "input": "Budget lines with variance against prior year and drivers, plus submitter comments",
+      "output": "Flagged lines with draft questions for the submitter",
+      "check": "Variance thresholds are set in code; controller picks which questions go out",
+      "stop": "Only lines over threshold, one question each",
+      "why_not_simpler": "Variance flags are deterministic, but writing a sensible question needs reading the submitter's comment."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Hold budget review meetings with site and department heads",
+     "actor": "controller",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "budget review questions"
+     ],
+     "outputs": [
+      "agreed budget"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Load approved budget into AFAS",
+     "actor": "controller",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "agreed budget"
+     ],
+     "outputs": [
+      "AFAS budget"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Replace the e-mailed Excel templates with a small budget entry app on the data platform, with automated reminders by Teams and a consolidation that is always current. A Power BI view shows variance against prior year and drivers, a bounded model step drafts questions for flagged lines, and the approved budget loads into AFAS by API.",
+   "previous_blocker": "Every site and department used its own copy of the Excel template, so consolidation was manual and the version count high.",
+   "enabler_now": "A simple entry app and AFAS budget import are quick to build with AI coding, and Power BI already runs on AFAS data.",
+   "still_hard": "Getting site managers to plan on drivers instead of last year plus a percentage, and the negotiation itself.",
+   "human_edge": "Challenging and agreeing budgets with site and department heads, and balancing site wishes against company targets.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A quarterly budget reforecast with the sites, instead of one yearly budget round."
+   },
+   "altitude": "The controller stops chasing and merging files and spends the budget season in review conversations; they own the driver model and variance thresholds.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Forecast and driver modelling",
+     "learn": "Share one driver model for budget and forecast."
+    },
+    {
+     "role": "hrbp",
+     "task": "Headcount and flex labour planning",
+     "learn": "Enter headcount plans in the same app, linked to CAO wage tables."
+    }
+   ],
+   "build_days": {
+    "coding": "6-10",
+    "integration": "3-5",
+    "testing_rollout": "5-8",
+    "consent_and_access": "2-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Budget consolidation from templates is well served by entry apps and deterministic consolidation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Products draft and people approve is the current pattern for finance agents.",
+     "grade": "E2",
+     "source": "[S5]"
+    }
+   ],
+   "assumptions": [
+    "Budget owners per site and department are clear.",
+    "AFAS budget import via API or file is available in the current licence."
+   ],
+   "unknowns": [
+    "How many budget owners and template versions exist today.",
+    "Whether headcount budgets include personal salary data, which brings AVG scope.",
+    "Appetite of site managers for quarterly reforecasts."
+   ],
+   "research_questions": [
+    "How many hours did last year's budget round take for the controller and FP&A?",
+    "How many template versions and resubmissions circulated?",
+    "Would site managers use an entry app instead of Excel?"
+   ],
+   "time_saved_pct": 68,
+   "speedup": 3.17
+  }
+ ],
+ "role": {
+  "altitude": "The controller moves from preparing checks, cash sheets and budget files to designing the rules behind them: approval thresholds, mandate register, reserve floors, variance thresholds and the audit trail. Routine approvals and cash reporting run on the platform; the controller handles exceptions and decisions.",
+  "reach": [
+   "fpa: share one driver model for cash, budget and forecast",
+   "bookkeeper: review model proposals for unmatched bank lines and agency invoices",
+   "finance-director: get a monthly funding view and daily cash alerts"
+  ],
+  "skills_to_grow": [
+   "Writing rules and thresholds precisely enough to code",
+   "Reading and maintaining Power BI and data-platform jobs",
+   "Reviewing model drafts critically and keeping an audit trail",
+   "Treasury scenario analysis"
+  ],
+  "ambitious_version": "One governed finance data platform ties AFAS, Rabobank and the agency portals: daily payment runs with full rule checks, a daily cash position with alerts, a monthly funding review and quarterly budget reforecasts, all with logs the auditor can rebuild."
+ },
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 94,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

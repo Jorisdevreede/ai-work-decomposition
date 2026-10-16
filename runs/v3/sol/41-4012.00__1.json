@@ -1,0 +1,1205 @@
+{
+ "tasks": [
+  {
+   "uid": "41-4012.00:8113",
+   "short": "Answer buyer questions about products, prices, availability, uses and credit terms.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Clarify the buyer's question and intended use.",
+     "actor": "sales representative",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "customer question"
+     ],
+     "outputs": [
+      "clarified question"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check account prices, stock and approved credit terms in the {ERP}.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "clarified question",
+      "customer account",
+      "item master"
+     ],
+     "outputs": [
+      "commercial facts"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Find product uses, limitations and warranty guidance in approved documents.",
+     "actor": "sales representative",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "clarified question",
+      "product manual",
+      "warranty policy"
+     ],
+     "outputs": [
+      "product guidance"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Clarified question and retrieved passages from current approved documents.",
+      "output": "Relevant guidance with document version, passage citations and unresolved questions.",
+      "check": "Verify citations and document versions; reject unsupported statements and conflicting guidance.",
+      "stop": "At most two retrieval rounds and one extraction; missing or conflicting evidence goes to the representative.",
+      "why_not_simpler": "Product uses and limitations are often buried in prose. Structured facts use direct lookup."
+     },
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Explain the answer and resolve questions about the buyer's situation.",
+     "actor": "sales representative",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "clarified question",
+      "commercial facts",
+      "product guidance"
+     ],
+     "outputs": [
+      "explained answer"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 65,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Send written confirmation of the answer and supporting information.",
+     "actor": "sales representative",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "explained answer",
+      "commercial facts",
+      "product guidance"
+     ],
+     "outputs": [
+      "customer answer"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "sales representative"
+    },
+    {
+     "id": "s6",
+     "what": "Record the question, answer and follow-up in the {CRM}.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "clarified question",
+      "customer answer"
+     ],
+     "outputs": [
+      "interaction record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "account-to-renewal",
+     "approver": "none"
+    }
+   ],
+   "design": "An answer desk in the {CRM} retrieves account-specific commercial facts from the {ERP} and cited guidance from {DOCS}. Configured templates assemble confirmations for representative approval in {EMAIL}, then update the {CRM}; a bounded extraction loop handles prose manuals. A small {BI} view groups recorded questions to reveal recurring information gaps.",
+   "previous_blocker": "Account prices and stock sat apart from product documents. Keeping access permissions, document versions and answers aligned required integration and upkeep.",
+   "enabler_now": "Existing interfaces and templates handle factual lookup. AI-assisted coding reduces the effort of connecting them, while bounded extraction helps with prose manuals.",
+   "still_hard": "Fresh availability, account-specific terms, conflicting manuals and unusual product uses still need careful handling.",
+   "human_edge": "Recognise when a simple question hides a suitability concern, commercial objection or damaged relationship.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly decisions on which recurring product-information gaps to fix."
+   },
+   "altitude": "The representative spends less time searching and more time resolving uncertain uses and commercial exceptions. They can prioritise information improvements; pricing and credit authority remain unchanged.",
+   "reach": [
+    {
+     "role": "order clerk",
+     "task": "Check availability and explain order status.",
+     "learn": "Distinguish physical stock, available-to-promise stock and unconfirmed delivery estimates."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-25"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Record-based answers can use deterministic lookup; prose manuals may need bounded extraction.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Elfsquad connects product configuration with commercial systems, supporting adjacent product-information lookup.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "The documented chatbot fare dispute illustrates exposure from incorrect customer-facing answers.",
+     "grade": "E3",
+     "source": "[S14]"
+    },
+    {
+     "claim": "Customer-facing AI interaction requires disclosure under EU AI Act Article 50.",
+     "grade": "E2",
+     "source": "[S12]"
+    }
+   ],
+   "assumptions": [
+    "This is a typical mixed channel workflow; time shares and remaining time are planning estimates.",
+    "The bounded model output remains internal. Written confirmations use approved templates and a human release gate.",
+    "Structured question fields replace duplicate logging without assuming call recording.",
+    "GDPR applies to buyer and employee records. EU AI Act duties depend on deployment; national rules determine consultation requirements.",
+    "Effort ranges assume usable interfaces and include access, permissions, rollout and consultation where applicable."
+   ],
+   "unknowns": [
+    "Which account prices, credit terms and stock fields are authoritative and accessible?",
+    "Which manuals have owners, versions and approved translations?",
+    "Can the existing {CRM} configure templates, interaction capture and account-level permissions?",
+    "Would the proposed reporting introduce employee monitoring requiring national consultation?"
+   ],
+   "research_questions": [
+    "How often do questions require interpretation beyond approved documents?",
+    "What data freshness is needed before an availability answer becomes misleading?",
+    "Which question categories can use fixed templates without a model?"
+   ],
+   "new_work": [
+    "Review confirmations before sending.",
+    "Resolve conflicting documents and missing account facts.",
+    "Maintain document ownership, lookup mappings and templates.",
+    "Sample cited guidance and review recurring unanswered questions."
+   ],
+   "time_saved_pct": 63,
+   "speedup": 2.68
+  },
+  {
+   "uid": "41-4012.00:8114",
+   "short": "Recommend suitable products based on the buyer's needs, constraints and preferences.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Discuss intended use, budget, delivery needs and preferences with the buyer.",
+     "actor": "sales representative",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "customer question",
+      "customer brief"
+     ],
+     "outputs": [
+      "needs brief"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Review the buyer's previous purchases and recorded preferences in the {CRM}.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "needs brief",
+      "customer account",
+      "purchase history"
+     ],
+     "outputs": [
+      "buyer context"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "account-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Compare catalogue specifications and identify products meeting the stated constraints.",
+     "actor": "sales representative",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "needs brief",
+      "buyer context",
+      "product catalogue",
+      "product manual"
+     ],
+     "outputs": [
+      "product shortlist"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Choose a recommendation and identify trade-offs or unanswered suitability questions.",
+     "actor": "sales representative",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "needs brief",
+      "buyer context",
+      "product shortlist"
+     ],
+     "outputs": [
+      "product recommendation"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Explain the recommendation, demonstrate relevant features and discuss alternatives.",
+     "actor": "sales representative",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "product recommendation",
+      "product shortlist"
+     ],
+     "outputs": [
+      "buyer feedback",
+      "agreed product choice"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Record the recommendation, buyer feedback and next action in the {CRM}.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "needs brief",
+      "product recommendation",
+      "buyer feedback",
+      "agreed product choice"
+     ],
+     "outputs": [
+      "recommendation record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "account-to-renewal",
+     "approver": "sales representative"
+    }
+   ],
+   "design": "A structured needs form in the {CRM} feeds a deterministic comparison tool using approved catalogue attributes from {DOCS} and current price and availability from the {ERP}. It filters hard constraints, shows trade-offs and reruns when requirements change; the representative chooses and explains the recommendation. Selected products and structured feedback populate a reviewable {CRM} record.",
+   "previous_blocker": "Catalogue attributes were inconsistent, and buyer preferences lived in conversations. Building and maintaining a useful comparison tool required substantial manual mapping.",
+   "enabler_now": "AI-assisted coding makes a small comparison tool cheaper to build. Explicit product constraints and structured needs capture provide the underlying logic.",
+   "still_hard": "Incomplete specifications, unstated preferences, unfamiliar uses and competing priorities resist simple scoring.",
+   "human_edge": "Discover what the buyer values, challenge an unsuitable request and explain a trade-off credibly.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Reassess product fit during the discussion whenever budget or delivery requirements change."
+   },
+   "altitude": "The representative compares alternatives during the buyer discussion instead of researching them afterwards. They retain recommendation responsibility; no new commercial approval rights are assumed.",
+   "reach": [
+    {
+     "role": "sales engineer",
+     "task": "Validate compatibility and unusual product applications.",
+     "learn": "Separate hard exclusions from preferences and recognise when specialist validation is necessary."
+    }
+   ],
+   "build_days": {
+    "coding": "5-12",
+    "integration": "4-10",
+    "testing_rollout": "5-12",
+    "consent_and_access": "3-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Elfsquad supports rule-based product configuration connected to commercial systems.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Explicit constraints can narrow a shortlist without automating the buyer's preferences or the representative's judgement.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The proposed time reductions and build ranges are planning estimates, not measured outcomes.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Most recommendations concern established catalogue goods with identifiable constraints.",
+    "Automated filtering covers explicit requirements only; missing critical attributes trigger specialist review.",
+    "Existing configuration features are checked before building a comparison tool.",
+    "Structured notes are captured during the discussion; automatic recording or transcription is not assumed.",
+    "GDPR and applicable EU AI Act requirements apply. National rules determine consultation where employee data use changes.",
+    "Effort includes initial catalogue mapping, access, user trials and applicable consultation."
+   ],
+   "unknowns": [
+    "Are product specifications available as maintained structured attributes?",
+    "Does existing software already provide adequate configuration or comparison?",
+    "Which applications require specialist validation?",
+    "Are purchase history and account preferences accessible in the {CRM}?"
+   ],
+   "research_questions": [
+    "Which constraints eliminate unsuitable products reliably?",
+    "How often do experienced representatives reject a technically valid shortlist?",
+    "Which missing attributes cause the most manual research?"
+   ],
+   "new_work": [
+    "Maintain catalogue attributes and hard exclusions.",
+    "Investigate empty or unexpectedly broad shortlists.",
+    "Review generated recommendation records.",
+    "Check whether changing specifications invalidate existing comparison rules."
+   ],
+   "time_saved_pct": 42,
+   "speedup": 1.71
+  },
+  {
+   "uid": "41-4012.00:8116",
+   "short": "Prepare and explain quotes covering prices, terms, warranties and estimated delivery dates.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Clarify quantities, product choices, delivery requirements and requested terms with the buyer.",
+     "actor": "sales representative",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "quote request",
+      "recommendation record"
+     ],
+     "outputs": [
+      "quote requirements"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check account pricing, stock, lead times and existing credit terms in the {ERP}.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "quote requirements",
+      "customer account",
+      "item master"
+     ],
+     "outputs": [
+      "commercial facts"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Calculate line prices, discounts, freight and quote totals in a spreadsheet.",
+     "actor": "sales representative",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "quote requirements",
+      "commercial facts",
+      "pricing policy"
+     ],
+     "outputs": [
+      "quote calculation"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Select approved warranty and contract wording for the proposed sale.",
+     "actor": "sales representative",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "quote requirements",
+      "warranty policy",
+      "contract template"
+     ],
+     "outputs": [
+      "quote terms"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "contract-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Review and approve requested discounts outside the representative's authority.",
+     "actor": "sales manager",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "quote calculation",
+      "discount request",
+      "pricing policy"
+     ],
+     "outputs": [
+      "discount decision"
+     ],
+     "handoff_to": "sales representative",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "opportunity-to-order",
+     "approver": "sales manager"
+    },
+    {
+     "id": "s6",
+     "what": "Decide whether to approve requested credit terms outside existing account limits.",
+     "actor": "finance team",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "credit request",
+      "customer account",
+      "credit policy"
+     ],
+     "outputs": [
+      "credit decision"
+     ],
+     "handoff_to": "sales representative",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "finance team"
+    },
+    {
+     "id": "s7",
+     "what": "Assemble the quote document with approved prices, terms and delivery estimates.",
+     "actor": "sales representative",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "quote calculation",
+      "quote terms",
+      "discount decision",
+      "credit decision",
+      "commercial facts"
+     ],
+     "outputs": [
+      "draft quote"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s8",
+     "what": "Explain the proposed offer and negotiate requested changes with the buyer.",
+     "actor": "sales representative",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "draft quote",
+      "pricing policy"
+     ],
+     "outputs": [
+      "negotiated quote requirements"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s9",
+     "what": "Check the final quote and send it to the buyer.",
+     "actor": "sales representative",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "draft quote",
+      "negotiated quote requirements",
+      "discount decision",
+      "credit decision"
+     ],
+     "outputs": [
+      "sales quote"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "opportunity-to-order",
+     "approver": "sales representative"
+    }
+   ],
+   "design": "Configure quoting in the {CRM} or {ERP} with approved product rules, calculations and templates from {DOCS}; use a deterministic connector where existing links are insufficient. The {WORKFLOW} routes discount and credit exceptions to their authorised approvers, invalidates approvals after material changes and requires representative approval before {EMAIL} release. Price-version changes in the {ERP} flag affected open quotes in the {CRM} for repricing.",
+   "previous_blocker": "Prices, terms and approvals were maintained separately. Bespoke quoting logic and reliable links were costly to implement and keep aligned.",
+   "enabler_now": "Existing configuration handles much of the quoting logic. AI-assisted coding reduces the cost of connectors, validation and document assembly.",
+   "still_hard": "Negotiated exceptions, uncertain supply dates, inconsistent price data and non-standard contract language remain expensive.",
+   "human_edge": "Judge the commercial trade-off, negotiate credibly and avoid promises the business cannot fulfil.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Reprice affected open quotes when supplier price changes reach the {ERP}."
+   },
+   "altitude": "The representative spends less time calculating and assembling documents, and more time negotiating viable offers. Existing discount and credit limits remain in force; no new approval rights are assumed.",
+   "reach": [
+    {
+     "role": "sales manager",
+     "task": "Review discount exceptions and commercial exposure.",
+     "learn": "Explain margin, freight and payment-term effects when proposing a concession."
+    },
+    {
+     "role": "order clerk",
+     "task": "Convert an accepted quote into an accurate order.",
+     "learn": "Maintain item identifiers, quote versions and approval references through the handoff."
+    }
+   ],
+   "build_days": {
+    "coding": "4-10",
+    "integration": "7-15",
+    "testing_rollout": "7-15",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Elfsquad provides rule-based configuration and quoting linked to commercial systems.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "The ZARGES vendor case reports quoting time falling from about 15 minutes to 90 seconds.",
+     "grade": "E3",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Structured quoting calculations, clause selection and approval routing generally do not need a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The typical baseline uses the {ERP} for facts, with a spreadsheet bridging calculations and document preparation.",
+    "Approval steps are conditional; their time shares represent effort across the quote portfolio.",
+    "Negotiated changes repeat affected calculation and approval steps before release.",
+    "Only approved clause variants are selected automatically; non-standard terms require separate authorised review.",
+    "Unconfirmed delivery dates remain estimates. Existing account credit terms are retrieved without introducing automated credit scoring.",
+    "GDPR and applicable EU AI Act requirements apply. National rules govern consultation where relevant.",
+    "Effort assumes configurable quoting is available and includes access, approval testing and rollout."
+   ],
+   "unknowns": [
+    "What quoting configuration and integration features are already licensed?",
+    "Which discounts and terms can the representative approve?",
+    "Who approves non-standard contract wording?",
+    "Can the {ERP} distinguish confirmed delivery promises from estimates?",
+    "Are supplier price changes versioned against open quotes?"
+   ],
+   "research_questions": [
+    "Which quote variants account for most manual assembly?",
+    "How often do changes invalidate earlier approvals?",
+    "Which calculation discrepancies most often cause order-entry rework?"
+   ],
+   "new_work": [
+    "Maintain pricing rules, templates and approval thresholds.",
+    "Resolve missing prices and uncertain delivery dates.",
+    "Review exceptions and final quote release.",
+    "Review repricing alerts and decide whether to revise open offers.",
+    "Check that negotiated changes invalidate affected approvals."
+   ],
+   "time_saved_pct": 61,
+   "speedup": 2.58
+  },
+  {
+   "uid": "41-4012.00:8117",
+   "short": "Support buyers after a sale, resolve problems and coordinate agreed remedies.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Listen to the buyer's problem and clarify its impact and desired outcome.",
+     "actor": "sales representative",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "customer question",
+      "customer account"
+     ],
+     "outputs": [
+      "support needs"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 95,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "account-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Review the account history and link the issue to the relevant order.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "support needs",
+      "interaction record",
+      "sales quote",
+      "order reference"
+     ],
+     "outputs": [
+      "case brief"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Check product guidance, warranty coverage and relevant support procedures.",
+     "actor": "sales representative",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "case brief",
+      "product manual",
+      "warranty policy",
+      "support procedure"
+     ],
+     "outputs": [
+      "support guidance"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Case brief and current approved product, warranty and support documents.",
+      "output": "Cited procedures, possible exclusions and questions needing human assessment.",
+      "check": "Verify product and document versions, exact source passages and applicability dates; do not infer entitlement.",
+      "stop": "At most two retrieval rounds and one extraction; unresolved coverage or conflicting procedures go to the representative.",
+      "why_not_simpler": "Narrative fault descriptions and procedural documents require language matching; fixed identifiers use direct lookup."
+     },
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Send the issue and evidence to operations for investigation.",
+     "actor": "sales representative",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "case brief",
+      "support guidance",
+      "customer evidence"
+     ],
+     "outputs": [
+      "support request"
+     ],
+     "handoff_to": "operations team",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Investigate the issue and confirm feasible remedies and timing.",
+     "actor": "operations team",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "support request",
+      "order reference",
+      "customer evidence"
+     ],
+     "outputs": [
+      "remedy options"
+     ],
+     "handoff_to": "sales representative",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Discuss the options and agree a remedy or support plan with the buyer.",
+     "actor": "sales representative",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "support needs",
+      "support guidance",
+      "remedy options"
+     ],
+     "outputs": [
+      "remedy agreement"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 95,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Record agreed actions, owners and due dates in the {CRM}.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "case brief",
+      "remedy agreement"
+     ],
+     "outputs": [
+      "support case update"
+     ],
+     "handoff_to": "operations team",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "sales representative"
+    },
+    {
+     "id": "s8",
+     "what": "Send the agreed follow-up and check whether the issue is resolved.",
+     "actor": "sales representative",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "support case update",
+      "remedy agreement"
+     ],
+     "outputs": [
+      "customer follow-up",
+      "resolution status"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "account-to-renewal",
+     "approver": "sales representative"
+    }
+   ],
+   "design": "A linked case view in the {CRM} reads orders from the {ERP}, operational status from the {OPS_SYSTEM} and cited support guidance from {DOCS}. The {WORKFLOW} routes internal requests, tracks owners and deadlines, and prepares approved-template follow-ups for representative release through {EMAIL}. Confirmed delivery events also create first-use check-in tasks in the {CRM}, while investigation and remedy conversations remain human.",
+   "previous_blocker": "Case context was scattered across messages, account records and operational records. Follow-up depended on individual memory and manual chasing.",
+   "enabler_now": "Configured cases, event triggers and templates already cover much of the coordination. Cheaper integrations and bounded document extraction reduce preparation effort.",
+   "still_hard": "Physical faults, disputed responsibility, supplier dependencies and rebuilding trust still require people.",
+   "human_edge": "Understand the buyer's frustration, take credible responsibility and negotiate a remedy that both sides can accept.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Scheduled first-use support for first-time business buyers."
+   },
+   "altitude": "The representative spends less time reconstructing cases and chasing updates, with more time for difficult recovery conversations and planned support. Remedy and compensation authority remain unchanged.",
+   "reach": [
+    {
+     "role": "sales representative of services",
+     "task": "Plan post-sale check-ins and confirm that the buyer receives the intended benefit.",
+     "learn": "Use milestones and buyer outcomes to structure useful follow-up conversations."
+    },
+    {
+     "role": "sales manager",
+     "task": "Assess escalated complaints and proposed commercial remedies.",
+     "learn": "Present customer impact, feasible options and commercial consequences clearly."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "7-15",
+    "testing_rollout": "7-12",
+    "consent_and_access": "5-25"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Case linking, internal routing, deadlines and template follow-ups can use deterministic workflows.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Bounded extraction can prepare cited guidance while leaving entitlement and remedy decisions to people.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The digest contains no documented case measuring this complete post-sale support workflow.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline uses the {CRM} and internal messages for coordination; an existing {HELPDESK} should be configured instead if it already owns support cases.",
+    "The operations step covers investigation and feasible options, not every downstream repair, replacement or refund activity.",
+    "Structured remedy fields are confirmed by the representative; no automatic call recording is assumed.",
+    "Human conversations act within existing authority. Out-of-authority compensation requires the existing approval process before commitment.",
+    "GDPR and applicable EU AI Act requirements apply. National rules determine employee consultation and monitoring restrictions.",
+    "Effort includes case permissions, access, consultation where applicable, realistic exception trials and rollout."
+   ],
+   "unknowns": [
+    "Does the {CRM} or {HELPDESK} own the authoritative support case?",
+    "Can customer accounts, orders and operational incidents be linked reliably?",
+    "Who may authorise replacements, refunds and compensation?",
+    "Are delivery events and remedy completion updates reliable enough to trigger follow-up?",
+    "What access and national consultation requirements apply to shared case reporting?"
+   ],
+   "research_questions": [
+    "Which delays arise from missing context rather than physical investigation?",
+    "Which support procedures can be retrieved reliably by product and issue type?",
+    "When do first-time buyers benefit most from a first-use check-in?"
+   ],
+   "new_work": [
+    "Review case updates and customer follow-ups.",
+    "Resolve unmatched orders and contradictory support guidance.",
+    "Maintain routing, escalation paths and document versions.",
+    "Check overdue actions and delivery-trigger failures.",
+    "Conduct the new first-use check-ins and record their outcomes."
+   ],
+   "time_saved_pct": 37,
+   "speedup": 1.59
+  }
+ ],
+ "role": {
+  "altitude": "The week shifts from searching, calculating and chasing to buyer discovery, commercial negotiation and relationship recovery. Recommendation responsibility and existing approval limits remain; no additional pricing, credit or compensation rights are assumed.",
+  "reach": [
+   "Order clerk: improve the handoff from recommendation and quote to an accurate order.",
+   "Sales engineer: recognise compatibility constraints and escalate unusual uses with better evidence.",
+   "Sales manager: present clearer discount and remedy decisions with their commercial consequences.",
+   "Sales representative of services: structure useful post-sale check-ins around buyer outcomes."
+  ],
+  "skills_to_grow": [
+   "Turn buyer needs into explicit constraints without losing context.",
+   "Read pricing, availability and delivery data critically.",
+   "Explain product and commercial trade-offs.",
+   "Prepare concise exception requests for authorised approvers.",
+   "Evaluate cited guidance and recognise unsupported conclusions.",
+   "Use recurring questions and support cases to improve buyer information."
+  ],
+  "ambitious_version": "Offer smaller business buyers the same preparation and continuity as larger accounts: informed product comparisons, reliable quotes and scheduled first-use support. Expand through reusable rules, shared records and targeted human attention."
+ },
+ "job_code": "41-4012.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 212,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:5000});text(r.output);\n"
+  ],
+  "job": {
+   "code": "41-4012.00",
+   "title": "Sales Representatives, Wholesale and Manufacturing, Except Technical and Scientific Products",
+   "tasks": 18,
+   "function": "Sales and account management"
+  }
+ }
+}

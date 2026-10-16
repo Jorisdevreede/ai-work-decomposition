@@ -1,0 +1,807 @@
+{
+ "role_id": "accountant",
+ "role": {
+  "altitude": "The two accountants spend less time pulling AFAS reports into Excel and building tie-outs by hand. They spend more on writing the checks, mapping tables and thresholds that test every balance, and on the few variances, tax positions and estimates that need judgement. They sign off on the close and the annual file. They do not rebuild them.",
+  "reach": [
+   "Controller: own the month-close checklist and the audit file together, so audit adjustments fall.",
+   "FP&A Analyst: share one driver model for flex labour and revenue, so the forecast and the close use the same numbers.",
+   "Bookkeeper: feed the AP and AR exception rules (duplicates, IBAN changes, agency invoice mismatches) from what the balance review finds."
+  ],
+  "skills_to_grow": [
+   "Writing and testing reconciliation rules and tie-out checks in SQL or Python on the AFAS extract",
+   "Reviewing model-drafted variance explanations and spotting unstated assumptions",
+   "Dutch tax positions (VAT reverse charge, Vpb fiscal differences) explained in a form an auditor can rebuild",
+   "Preparing for e-invoicing and SBR filing to KVK"
+  ],
+  "ambitious_version": "Every balance sheet account is reconciled and checked every night, not once a month, against AFAS, Rabobank CAMT.053 and the agency portals. The accountants review only the breaks. The close drops from days to a sign-off. The year-end file arrives at the auditor already tied out, with each figure traced to its source."
+ },
+ "tasks": [
+  {
+   "uid": "13-2011.00:21534",
+   "short": "Monthly review of balance sheet and P&L balances in AFAS for odd movements before close sign-off.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export trial balance and subledger reports from AFAS into Excel",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "trial balance",
+      "subledger report"
+     ],
+     "outputs": [
+      "balance review workbook"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Compare balances to prior month, budget and account reconciliations",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "balance review workbook",
+      "budget",
+      "account reconciliation"
+     ],
+     "outputs": [
+      "variance list"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Investigate odd movements in journal lines, invoices and with bookkeepers",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "variance list",
+      "journal lines",
+      "supplier invoice"
+     ],
+     "outputs": [
+      "variance explanation"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 55,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "reconcile",
+      "input": "Variance above threshold plus the journal lines, descriptions and linked invoices behind it",
+      "output": "Draft explanation naming the journal lines that cause the movement",
+      "check": "Amounts of the cited lines must add up to the variance within a set tolerance; each line id must exist in AFAS",
+      "stop": "One draft and up to two retries per variance; if the tie-out fails it is marked 'unexplained' for the accountant",
+      "why_not_simpler": "Journal descriptions and invoice texts are free text; rules alone cannot name the cause of a movement"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Write review notes and sign off to the controller",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "Excel",
+      "SharePoint"
+     ],
+     "inputs": [
+      "variance explanation"
+     ],
+     "outputs": [
+      "balance review sign-off"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "A nightly Python job on a governed data platform reads AFAS trial balance and subledgers through GetConnectors. It compares every account with prior month, budget and its reconciliation, and feeds a Power BI review page that flags breaks above a threshold. A bounded model step drafts an explanation per flagged variance, tied out to journal lines. The accountant accepts or rewrites it, and the sign-off note is generated from the accepted explanations.",
+   "previous_blocker": "The review lived in Excel exports rebuilt each month. Explaining a movement needed someone to read journal texts and invoices.",
+   "enabler_now": "AI coding makes the AFAS extract and checks cheap to build. Models can read journal descriptions and draft explanations that a sum check can verify.",
+   "still_hard": "Judging whether a correct explanation is also acceptable, for example an accrual that is right in amount but wrong in period. Thresholds need tuning so the list stays short.",
+   "human_edge": "Knowing the business behind a number: a lost customer, a season peak in flex workers, a one-off claim. Deciding whether a movement is a booking error or a real event.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Balance review runs every night during the close, not once at month end, so errors are fixed while the period is still open."
+   },
+   "altitude": "The accountant opens a short break list each morning of the close, not a workbook. They gain the right to set and change variance thresholds per account together with the controller.",
+   "reach": [
+    {
+     "role": "controller",
+     "task": "Month-close sign-off",
+     "learn": "Which variances the controller always asks about, so they get a standing rule"
+    },
+    {
+     "role": "bookkeeper",
+     "task": "Posting purchase invoices",
+     "learn": "Which coding errors cause most balance breaks, to fix them at entry"
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "4-7",
+    "testing_rollout": "5-8",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Models beat experienced CPAs on month-end tasks that reward detail and file search, but not on client questions and tacit context",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Multi-step reasoning across files causes over half of top-model errors on accounting tasks",
+     "grade": "E3",
+     "source": "[S2]"
+    },
+    {
+     "claim": "A model that adds an unnoticed assumption makes a workpaper impossible to rebuild",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "AFAS GetConnectors expose ledger data for a scheduled extract",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The nightly AFAS extract for Power BI can be extended with journal lines and reconciliations",
+    "Account reconciliations are kept in a fixed format per account"
+   ],
+   "unknowns": [
+    "How many balance sheet accounts are reconciled monthly today",
+    "Whether a governed data platform exists beyond the Power BI extract",
+    "Who may approve threshold changes"
+   ],
+   "research_questions": [
+    "What share of last year's flagged variances could be explained from journal descriptions alone?",
+    "How many variances per close pass a threshold of, say, 5% and EUR 10,000?",
+    "Does the auditor accept a generated sign-off note with line references as evidence?"
+   ],
+   "time_saved_pct": 78,
+   "speedup": 4.6
+  },
+  {
+   "uid": "13-2011.00:21522",
+   "short": "Work out Noordhaven's VAT returns and corporate tax provision, including depreciation and fiscal differences.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pull VAT code totals and ledger balances from AFAS",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "VAT code report",
+      "trial balance"
+     ],
+     "outputs": [
+      "VAT draft return"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Reconcile VAT accounts to return; check reverse-charge, intra-EU and agency invoices",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit",
+      "Staffing agency portals"
+     ],
+     "inputs": [
+      "VAT draft return",
+      "supplier invoice",
+      "agency invoice"
+     ],
+     "outputs": [
+      "VAT reconciliation",
+      "VAT exception list"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Compute corporate tax provision: depreciation, fiscal differences, interest, deferred tax",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "trial balance",
+      "fixed asset register",
+      "prior tax return"
+     ],
+     "outputs": [
+      "tax provision workbook"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Check return with Jonas and adviser, then file with the tax office",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Outlook"
+     ],
+     "inputs": [
+      "VAT draft return",
+      "tax provision workbook"
+     ],
+     "outputs": [
+      "filed VAT return",
+      "corporate tax return"
+     ],
+     "handoff_to": "external",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "Configure the AFAS VAT return and Jonas checks in Profit. Add a scheduled Python job that tests every purchase and sales line for VAT code consistency: reverse charge on foreign suppliers, intra-EU sales, and agency invoices against portal amounts. Exceptions go into a short list. A generated provision workbook rolls fiscal depreciation and fiscal differences forward from the prior year. The accountant sets the estimates, and the controller approves them before anything is filed.",
+   "previous_blocker": "VAT checks were spot checks in Excel because testing every line by hand was too slow. Tax positions depend on judgement and carry legal risk.",
+   "enabler_now": "AFAS Jonas now assists with VAT and corporate tax returns in Profit. Rule tests over all lines are cheap to write with AI coding.",
+   "still_hard": "Estimates and positions such as deductibility, fiscal valuations and provisions. They must stay human-approved, and Jonas leaves responsibility with the user.",
+   "human_edge": "Choosing and defending a tax position, weighing risk with the adviser, and dealing with the Belastingdienst.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "VAT code checks run on every booked line each week, not once per return, so wrong codes are fixed before filing."
+   },
+   "altitude": "The accountant reviews an exception list and the positions, not raw totals. They gain the right to set the VAT test rules that bookkeepers' postings must pass.",
+   "reach": [
+    {
+     "role": "bookkeeper",
+     "task": "Coding purchase invoices",
+     "learn": "Which suppliers and agencies most often get the wrong VAT code"
+    },
+    {
+     "role": "controller",
+     "task": "Approving tax estimates",
+     "learn": "What documentation the controller and auditor need per position"
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "3-5",
+    "testing_rollout": "5-10",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS Jonas assists in VAT returns from 2026 and in corporate tax returns; the user stays responsible for the check",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Tax estimates belong on the mandatory human review list",
+     "grade": "E2",
+     "source": "[S7]"
+    },
+    {
+     "claim": "Intra-EU and reverse-charge e-invoicing rules are coming; domestic B2B from 1 July 2030, not yet law",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "No benchmark covers Dutch VAT",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Noordhaven files VAT itself through AFAS and uses an external adviser for the corporate tax return",
+    "Fixed asset register is in AFAS"
+   ],
+   "unknowns": [
+    "Profit version and whether Jonas tax features are licensed",
+    "VAT filing period (monthly or quarterly)",
+    "Role split with the external tax adviser"
+   ],
+   "research_questions": [
+    "How many VAT code corrections did last year's returns and audit find?",
+    "Do Jonas checks catch the reverse-charge cases Noordhaven sees on agency and foreign carrier invoices?",
+    "Will the adviser accept a generated provision workbook as their starting file?"
+   ],
+   "time_saved_pct": 62,
+   "speedup": 2.67
+  },
+  {
+   "uid": "13-2011.00:21532",
+   "short": "Prepare and check the annual report, monthly statements and notes from AFAS for controller and auditor.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect closing trial balance, adjusting entries and supporting schedules",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "SharePoint"
+     ],
+     "inputs": [
+      "trial balance",
+      "adjusting entry",
+      "account reconciliation"
+     ],
+     "outputs": [
+      "closing data set"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Map ledger accounts to statement lines and notes",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "closing data set",
+      "account mapping table"
+     ],
+     "outputs": [
+      "mapped statement data"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 5,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Build statements, note tables and tie-out checks",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "Word"
+     ],
+     "inputs": [
+      "mapped statement data"
+     ],
+     "outputs": [
+      "financial statements draft",
+      "tie-out report"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Draft notes text and analysis of financial condition",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "Word"
+     ],
+     "inputs": [
+      "financial statements draft",
+      "prior year report"
+     ],
+     "outputs": [
+      "notes draft"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Current and prior year note tables, prior year note text, key movements",
+      "output": "Updated note text with each figure as a placeholder linked to the table",
+      "check": "Every number in the text is rendered from the table, not typed by the model; a script rejects any free-typed figure",
+      "stop": "One draft per note, one retry; on failure the prior year text is carried over and marked for rewrite",
+      "why_not_simpler": "Rolling forward narrative text after changes needs reading and rewriting prose"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Answer controller and auditor questions; finalize for KVK filing",
+     "actor": "accountant",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "financial statements draft",
+      "auditor query"
+     ],
+     "outputs": [
+      "final annual report"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "Keep a maintained account-to-line mapping table in a small app on the data platform. A Python generator then builds the monthly and annual statements, note tables and a tie-out report straight from the AFAS closing data. A bounded model step rolls note text forward, and every number in it is linked to a table cell. The controller approves, the auditor gets the tie-out file, and filing to KVK via SBR goes through a separate tool or the auditor.",
+   "previous_blocker": "Mapping and note tables were rebuilt in Excel each year, and text and figures drifted apart. Building a generator for one annual report did not seem worth it.",
+   "enabler_now": "AI coding makes a statement generator a few days' work. Models can roll text forward when figures stay under code control.",
+   "still_hard": "Judgement items: provisions, impairments, classifications and disclosures under Dutch GAAP, which no benchmark tests. SBR filing to KVK is not covered by AFAS.",
+   "human_edge": "Deciding presentation and disclosure, and defending choices to the auditor and the Finance Director.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A monthly mini balance sheet and P&L pack in annual report format, with tie-out, for the Finance Director and site managers."
+   },
+   "altitude": "The accountant reviews generated statements and spends the freed hours on judgement items and auditor questions. They gain ownership of the mapping table and the tie-out rules.",
+   "reach": [
+    {
+     "role": "controller",
+     "task": "Audit file preparation",
+     "learn": "Which tie-outs the auditor asks for every year, so they are generated by default"
+    },
+    {
+     "role": "fpa",
+     "task": "Management reporting",
+     "learn": "Use the same mapping so management and statutory figures match"
+    }
+   ],
+   "build_days": {
+    "coding": "6-10",
+    "integration": "3-6",
+    "testing_rollout": "8-12",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Large companies file accounts with KVK via SBR from FY2025; AFAS cannot file this for them",
+     "grade": "E2",
+     "source": "[S10]"
+    },
+    {
+     "claim": "On 160 GAAP tasks the leading model meets 61.8% of criteria; judgement is the bottleneck",
+     "grade": "E3",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Workday's agent prepares entries for review, teams stay responsible",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Accountants using AI closed 7.5 days faster across 79 firms",
+     "grade": "E3",
+     "source": "[S3]"
+    }
+   ],
+   "assumptions": [
+    "Noordhaven counts as a large company for KVK filing",
+    "Statements are prepared in-house and audited externally"
+   ],
+   "unknowns": [
+    "Which tool or party files with KVK via SBR today",
+    "Whether monthly statements are formal or management-only",
+    "How many audit adjustments came from mapping or tie-out errors last year"
+   ],
+   "research_questions": [
+    "How many hours did last year's annual report take from trial balance to auditor-ready draft?",
+    "Does the auditor accept a generated tie-out report in place of the Excel file?",
+    "Can the account mapping be held stable across two years without manual fixes?"
+   ],
+   "time_saved_pct": 78,
+   "speedup": 4.49
+  },
+  {
+   "uid": "13-2011.00:21519",
+   "short": "Analyze cost and revenue trends, such as flex labour and customer revenue, to project figures and advise management.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather actuals, agency invoices and revenue by customer and site",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Staffing agency portals",
+      "Power BI"
+     ],
+     "inputs": [
+      "trial balance",
+      "agency invoice",
+      "sales ledger"
+     ],
+     "outputs": [
+      "analysis data set"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Build trend and cost driver analysis in Excel",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "analysis data set"
+     ],
+     "outputs": [
+      "trend analysis"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 10,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Project revenue and expenses for coming months",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "trend analysis",
+      "budget"
+     ],
+     "outputs": [
+      "projection"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Write advice memo with findings and options",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "PowerPoint"
+     ],
+     "inputs": [
+      "trend analysis",
+      "projection"
+     ],
+     "outputs": [
+      "advice memo"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Top driver movements and projection versus budget, as tables",
+      "output": "Draft commentary paragraphs per driver",
+      "check": "Figures are inserted from the tables; a script checks each claim's direction (up or down) against the data",
+      "stop": "One draft and one retry per section; otherwise the section stays as a table only",
+      "why_not_simpler": "Readable commentary is free text; templates read poorly once more than a few drivers move"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Discuss findings with controller and site managers",
+     "actor": "accountant",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "advice memo"
+     ],
+     "outputs": [
+      "management decision"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    }
+   ],
+   "design": "Extend the nightly AFAS extract with agency portal hours and invoices, and build Power BI pages for cost drivers: flex hours and rates per site, transport cost per order, revenue per customer. A Python job produces a driver-based baseline projection. A bounded model step drafts commentary with figures inserted from the tables. The accountant adjusts the projection and the memo, then advises in person.",
+   "previous_blocker": "Agency portal data never reached AFAS in usable form, so analyses were one-off Excel builds. Commentary was written from scratch each time.",
+   "enabler_now": "Portal exports and AFAS connectors can be joined cheaply with AI-built code. Models draft commentary well when figures are under code control.",
+   "still_hard": "Projections depend on business events: contracts won or lost, seasonal peaks, CAO wage rounds. The data does not contain these. Forecast errors only show later.",
+   "human_edge": "Knowing what is about to change in the business and turning numbers into advice site managers trust.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "A monthly flex labour cost view per site for the three site managers, who today get only total cost."
+   },
+   "altitude": "The accountant moves from building analyses to questioning them and advising managers. They gain a regular seat in site cost reviews.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Rolling forecast",
+     "learn": "Which drivers FP&A uses, so accountant projections feed the forecast directly"
+    },
+    {
+     "role": "hrbp",
+     "task": "Workforce planning with site managers",
+     "learn": "Planned flex volumes per season, an input the ledger cannot show"
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "5-10",
+    "testing_rollout": "5-8",
+    "consent_and_access": "3-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Leaving out client communication and tacit context is where models fall short in accounting work",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Commentary on budget against actual fits deterministic software plus a model step",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Accountants using AI closed faster and served more clients; most worry about errors",
+     "grade": "E3",
+     "source": "[S3]"
+    }
+   ],
+   "assumptions": [
+    "All three agency portals offer an export or API for hours and invoices",
+    "Site-level cost centres exist in AFAS"
+   ],
+   "unknowns": [
+    "Whether flex-worker hours data per person needs works council consent or a DPIA under AVG",
+    "Agency contract terms on data use",
+    "How the accountant and FP&A split forecasting work today"
+   ],
+   "research_questions": [
+    "Can the three agency portals deliver hours and invoices in a stable format each week?",
+    "How accurate was last year's flex cost projection, and what drove the misses?",
+    "Do site managers use a per-site cost view if it is offered?"
+   ],
+   "time_saved_pct": 68,
+   "speedup": 3.1
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 109,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

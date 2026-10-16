@@ -1,0 +1,763 @@
+{
+ "tasks": [
+  {
+   "uid": "43-4181.00:9764",
+   "short": "Help travellers prepare required travel documents and forms.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Clarify the journey and collect traveller details.",
+     "actor": "reservation agent",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "travel request"
+     ],
+     "outputs": [
+      "traveller details"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check official requirements for the traveller and itinerary.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "GOV_PORTAL",
+      "DOCS"
+     ],
+     "inputs": [
+      "traveller details",
+      "travel request",
+      "official requirements"
+     ],
+     "outputs": [
+      "document checklist"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "answer_desk",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "compliance-and-risk",
+     "approver": "reservation agent"
+    },
+    {
+     "id": "s3",
+     "what": "Inspect supplied documents and identify missing or inconsistent details.",
+     "actor": "reservation agent",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "traveller documents",
+      "document checklist",
+      "traveller details"
+     ],
+     "outputs": [
+      "document findings"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Traveller documents and the required field schema.",
+      "output": "Extracted fields, source locations and unreadable-field flags.",
+      "check": "Validate formats and cross-document consistency; show source snippets for human verification. Do not infer authenticity.",
+      "stop": "One extraction and one retry per document; unreadable or conflicting fields go to the reservation agent.",
+      "why_not_simpler": "Scans and document layouts vary; fixed field mapping cannot reliably read all supplied documents."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "reservation agent"
+    },
+    {
+     "id": "s4",
+     "what": "Copy verified details into the required travel forms.",
+     "actor": "reservation agent",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "traveller details",
+      "document findings",
+      "form templates"
+     ],
+     "outputs": [
+      "draft travel forms"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Explain missing items and resolve questions about completing the forms.",
+     "actor": "reservation agent",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "document findings",
+      "draft travel forms",
+      "document checklist"
+     ],
+     "outputs": [
+      "completed travel forms",
+      "outstanding document list"
+     ],
+     "handoff_to": "traveller",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Review the completed forms with the traveller and obtain required signatures.",
+     "actor": "traveller",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "completed travel forms"
+     ],
+     "outputs": [
+      "approved travel forms"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "traveller"
+    }
+   ],
+   "design": "A guided form in the {WORKFLOW} collects traveller details once, while a dated requirements table in the {DOCS} produces a checklist for agent review. A bounded extraction loop reads supplied documents; deterministic mappings generate forms in the {DOCS} after field verification. The traveller approves declarations and signatures, with submission kept separate from preparation.",
+   "previous_blocker": "Document formats vary, official requirements change, and forms often require repeated entry across disconnected channels.",
+   "enabler_now": "Existing forms and document tools cover much of the work. AI-assisted coding can reduce the cost of field mappings and validation, while bounded extraction handles varied scans.",
+   "still_hard": "Keeping requirements current, interpreting unusual circumstances and supporting official forms without stable interfaces remain expensive.",
+   "human_edge": "Explain uncertain requirements calmly, notice inconsistencies and recognise when the traveller needs an official authority or specialist.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A pre-departure document readiness review with a personalised missing-item list."
+   },
+   "altitude": "The week shifts from copying details to resolving document exceptions and offering readiness reviews. The agent gains no authority to determine entry eligibility or sign traveller declarations.",
+   "reach": [
+    {
+     "role": "correspondence clerk",
+     "task": "Prepare consistent missing-document requests.",
+     "learn": "Plain-language correspondence, approved wording and secure document handling."
+    }
+   ],
+   "build_days": {
+    "coding": "6-12",
+    "integration": "8-20",
+    "testing_rollout": "8-15",
+    "consent_and_access": "5-25"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Document extraction with validation and exception routing exists for order documents; travel-document performance needs separate testing.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Verified fields can populate fixed forms through deterministic mappings.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "GDPR requires a lawful basis, limited collection and appropriate protection for traveller documents.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "A mid-size travel business handles recurring document and form types.",
+    "The agent assists with preparation; official authorities determine entry eligibility.",
+    "Build estimates cover an initial set of forms and destinations, not worldwide coverage.",
+    "The means mix includes substantial face-to-face explanation and document inspection, consistent with the supplied priors."
+   ],
+   "unknowns": [
+    "Which forms, destinations and traveller categories dominate actual demand.",
+    "Whether official requirements can be accessed and reused reliably.",
+    "Which systems permit field-level access and document storage.",
+    "Accepted signature methods and the business's permitted advisory scope.",
+    "Retention periods, lawful bases and applicable national rules for employee consultation."
+   ],
+   "research_questions": [
+    "Which required fields can be mapped without interpreting legal eligibility?",
+    "How often do document layouts or official requirements change?",
+    "What extraction errors appear in representative scans and languages?"
+   ],
+   "new_work": [
+    "Verify extracted identity fields against their source documents.",
+    "Maintain requirements, source dates and form mappings.",
+    "Handle unreadable documents and ambiguous requirements.",
+    "Maintain access controls, deletion schedules and integration checks.",
+    "Complete employee consultation under national rules where applicable."
+   ],
+   "time_saved_pct": 52,
+   "speedup": 2.06
+  },
+  {
+   "uid": "43-4181.00:9759",
+   "short": "Help passengers who need assistance board or leave transport safely.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the assistance request in the reservation system {OTHER}.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "booking record",
+      "assistance request"
+     ],
+     "outputs": [
+      "assistance brief"
+     ],
+     "handoff_to": "assistance worker",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Meet the passenger and confirm their preferred assistance.",
+     "actor": "assistance worker",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "assistance brief",
+      "passenger preferences"
+     ],
+     "outputs": [
+      "confirmed assistance needs"
+     ],
+     "handoff_to": "assistance worker",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Assess the route, equipment and conditions before moving.",
+     "actor": "assistance worker",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "confirmed assistance needs",
+      "assistance brief",
+      "local safety procedure"
+     ],
+     "outputs": [
+      "assistance plan"
+     ],
+     "handoff_to": "assistance worker",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "assistance worker"
+    },
+    {
+     "id": "s4",
+     "what": "Coordinate the boarding or disembarking handover with transport staff.",
+     "actor": "assistance worker",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "assistance plan",
+      "departure status"
+     ],
+     "outputs": [
+      "handover agreement"
+     ],
+     "handoff_to": "transport staff",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "transport staff"
+    },
+    {
+     "id": "s5",
+     "what": "Assist the passenger physically and complete the agreed handover.",
+     "actor": "assistance worker",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "assistance plan",
+      "handover agreement"
+     ],
+     "outputs": [
+      "completed passenger assistance"
+     ],
+     "handoff_to": "transport staff",
+     "share_pct": 60,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Record completion and exceptions in the reservation system {OTHER}.",
+     "actor": "assistance worker",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "completed passenger assistance",
+      "assistance brief"
+     ],
+     "outputs": [
+      "assistance completion record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "assistance worker"
+    }
+   ],
+   "design": "Configure the reservation system {OTHER} to pass minimum necessary assistance details into a mobile queue in the {WORKFLOW}. Staff acknowledge handovers and confirm prefilled completion records, while missed acknowledgements trigger notifications. Passenger conversations, route checks and physical assistance remain with trained people.",
+   "previous_blocker": "Assistance details, departure changes and staff handovers sit in separate operational channels. Much of the task requires physical presence.",
+   "enabler_now": "Existing queues, forms and notifications can remove repeated coordination where interfaces are available. AI-assisted coding can make a small connector cheaper to build.",
+   "still_hard": "Live conditions, equipment availability, passenger comfort and reliable handovers require trained staff and local knowledge.",
+   "human_edge": "Respect the passenger's autonomy, adapt assistance in the moment and recognise unsafe conditions.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Most of the week and all safety decision rights stay the same. Staff spend slightly less time locating requests and recording completed assistance.",
+   "reach": [
+    {
+     "role": "office support supervisor",
+     "task": "Coordinate recovery when assistance handovers are missed.",
+     "learn": "Capacity planning, escalation thresholds and transport-provider responsibilities."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "5-12",
+    "testing_rollout": "6-12",
+    "consent_and_access": "5-25"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Structured requests, acknowledgements and completion records can use deterministic workflow automation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Software coordination does not replace physical assistance or on-site safety judgement.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Assistance records may reveal health information and require appropriate GDPR safeguards and processing conditions.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This task occurs at staffed transport locations rather than a booking-only office.",
+    "Staff have required training and equipment.",
+    "The future uses operational acknowledgements rather than employee performance scoring.",
+    "The decomposition keeps 85% of today's time in person, close to the supplied means prior."
+   ],
+   "unknowns": [
+    "Which reservation interfaces and existing assistance queues are available.",
+    "Who employs assistance workers and owns each handover.",
+    "Whether staff can use mobile devices throughout the location.",
+    "Which assistance details need retention and who may access them.",
+    "Applicable national rules for employee consultation and operational changes."
+   ],
+   "research_questions": [
+    "Can the existing system already configure request routing and acknowledgements?",
+    "Where do missed handovers actually occur?",
+    "What must the workflow do during connectivity loss or departure changes?"
+   ],
+   "new_work": [
+    "Handle unacknowledged requests and stale departure information.",
+    "Maintain routing rules, staff access and fallback procedures.",
+    "Review exception records without collecting unnecessary medical detail.",
+    "Check that workflow use does not distract staff during physical assistance.",
+    "Complete employee consultation under national rules where applicable."
+   ],
+   "time_saved_pct": 11,
+   "speedup": 1.12
+  },
+  {
+   "uid": "43-4181.00:9766",
+   "short": "Suggest travel options and provide useful guides, maps and information sources.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Ask about the traveller's destination, timing, interests and practical constraints.",
+     "actor": "reservation agent",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "travel request"
+     ],
+     "outputs": [
+      "travel preferences"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Find relevant guides, maps and current information in the {DOCS} and {CMS}.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS",
+      "CMS"
+     ],
+     "inputs": [
+      "travel preferences",
+      "approved travel resources"
+     ],
+     "outputs": [
+      "source shortlist"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Compare suitable options against the traveller's preferences.",
+     "actor": "reservation agent",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "travel preferences",
+      "source shortlist"
+     ],
+     "outputs": [
+      "travel suggestions"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "reservation agent"
+    },
+    {
+     "id": "s4",
+     "what": "Assemble selected suggestions, guides and maps for the traveller.",
+     "actor": "reservation agent",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "travel suggestions",
+      "source shortlist",
+      "travel preferences"
+     ],
+     "outputs": [
+      "personalised travel pack"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Explain the suggestions and answer the traveller's follow-up questions.",
+     "actor": "reservation agent",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "personalised travel pack"
+     ],
+     "outputs": [
+      "explained travel suggestions"
+     ],
+     "handoff_to": "traveller",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Send the selected information and links to the traveller.",
+     "actor": "reservation agent",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "personalised travel pack",
+      "traveller contact details"
+     ],
+     "outputs": [
+      "delivered travel pack"
+     ],
+     "handoff_to": "traveller",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    }
+   ],
+   "design": "Index approved resources from the {DOCS} and {CMS} in the {HELPDESK}, using destination tags, update dates and practical constraints. Deterministic filters prepare options for agent review, then an artefact generator assembles a personalised travel pack with source links and dates. The {WORKFLOW} sends the selected pack through the {EMAIL} after the conversation.",
+   "previous_blocker": "Useful information is scattered across guides and pages, with inconsistent tags and update dates. Agents repeatedly gather and assemble similar material.",
+   "enabler_now": "Existing knowledge search, forms and templates cover the main steps. AI-assisted coding can reduce the cost of connecting them and building preference filters.",
+   "still_hard": "Resource freshness, subjective preferences and reliable accessibility information need continuing attention. Dynamic availability needs a current source.",
+   "human_edge": "Understand unstated preferences and explain practical trade-offs, especially when published information is incomplete.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A personalised mobile travel pack combining suggestions, maps and dated source links."
+   },
+   "altitude": "The agent spends less time searching and assembling material and more time discussing suitable options. They can select and order approved resources; pricing, booking and policy rights do not change.",
+   "reach": [
+    {
+     "role": "information clerk",
+     "task": "Maintain shared destination directions and visitor information.",
+     "learn": "Source verification, accessible information design and resource tagging."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Knowledge-base answering with handover to a prefilled request is available today.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Tagged resources, deterministic filters and templates can assemble travel information without a model loop.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Support-assistant research found productivity gains, but does not establish a travel-information-specific saving.",
+     "grade": "E3",
+     "source": "[S8]"
+    }
+   ],
+   "assumptions": [
+    "The business has a manageable set of approved destinations and information sources.",
+    "Resources can be tagged and reused lawfully.",
+    "Routine preference capture can use a short form, with conversation available.",
+    "This decomposition assigns more time to resource retrieval and assembly than the in-person prior; local observation should test that choice.",
+    "The initial design uses no conversational AI and needs no autonomous agent."
+   ],
+   "unknowns": [
+    "Which sources staff currently trust and may redistribute.",
+    "Whether maps and guides support accessible mobile formats.",
+    "How often customers need live fares, availability or disruption information.",
+    "Actual demand by language and destination.",
+    "Who maintains resources and approves recommendation criteria.",
+    "Applicable access requirements and national employee consultation rules."
+   ],
+   "research_questions": [
+    "Can existing knowledge search meet retrieval needs after better tagging?",
+    "Which questions require judgement rather than a resource lookup?",
+    "Which source fields need expiry dates or live checks?",
+    "Can travellers use the resulting pack on their own devices?"
+   ],
+   "new_work": [
+    "Maintain resource tags, source dates and broken-link checks.",
+    "Review filtered suggestions against traveller constraints.",
+    "Remove expired or unreliable information.",
+    "Maintain pack templates and accessible formats.",
+    "Handle unusual requests and questions outside the approved resource set."
+   ],
+   "time_saved_pct": 70,
+   "speedup": 3.28
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts towards document exceptions and useful travel conversations, while physical passenger assistance changes little. Administrative preparation becomes faster; legal eligibility and transport safety authority remain with the responsible people.",
+  "reach": [
+   "Correspondence clerk: prepare clear document requests using approved wording.",
+   "Information clerk: maintain reliable destination resources and directions.",
+   "Office support supervisor: coordinate recovery from missed assistance handovers."
+  ],
+  "skills_to_grow": [
+   "Verify extracted fields against source documents.",
+   "Maintain dated requirements and information sources.",
+   "Recognise exceptions that need an official authority or specialist.",
+   "Use accessible communication and respect passenger preferences.",
+   "Handle workflow failures and protect traveller information."
+  ],
+  "ambitious_version": "Offer a joined pre-departure readiness service that combines document preparation and personalised travel packs, with trained staff handling sensitive questions and physical assistance."
+ },
+ "job_code": "43-4181.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 168,
+  "attempts": 1,
+  "checks": [
+   "43-4181.00:9766 s3: judgement step marked deterministic"
+  ],
+  "web": "off",
+  "tool_calls": [
+   "const r=await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3500});text(r.output)\n"
+  ],
+  "job": {
+   "code": "43-4181.00",
+   "title": "Reservation and Transportation Ticket Agents and Travel Clerks",
+   "tasks": 19,
+   "function": "Customer support"
+  }
+ }
+}

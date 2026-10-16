@@ -1,0 +1,668 @@
+{
+ "role_id": "controller",
+ "tasks": [
+  {
+   "uid": "11-3031.01:8860",
+   "short": "Prepare for and coordinate the year-end and internal audits: evidence, control tests, auditor queries, findings.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive auditor request list, assign items, chase owners by mail",
+     "actor": "controller",
+     "today_means": "email_chat",
+     "systems": [
+      "Microsoft 365 Outlook",
+      "Excel"
+     ],
+     "inputs": [
+      "auditor request list"
+     ],
+     "outputs": [
+      "audit request tracker"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Pull trial balance, ledger extracts, reconciliations and supporting documents",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "SharePoint"
+     ],
+     "inputs": [
+      "trial balance",
+      "ledger extract",
+      "balance sheet reconciliation"
+     ],
+     "outputs": [
+      "audit evidence folder"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Test controls and sample transactions: approvals, duplicates, IBAN changes, manual journals",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "ledger extract",
+      "payment batch",
+      "supplier master changes",
+      "journal entry log"
+     ],
+     "outputs": [
+      "control test results",
+      "exception list"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Answer auditor queries in mail and meetings with linked evidence",
+     "actor": "controller",
+     "today_means": "meeting_call",
+     "systems": [
+      "Microsoft 365 Outlook",
+      "Teams",
+      "SharePoint"
+     ],
+     "inputs": [
+      "auditor query",
+      "audit evidence folder"
+     ],
+     "outputs": [
+      "auditor query response"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "auditor query text plus the indexed audit evidence folder and control test results",
+      "output": "draft answer citing specific evidence files and ledger lines",
+      "check": "every cited file and amount must exist in the evidence index and tie to the AFAS extract; drafts without a citation are discarded",
+      "stop": "one draft per query, at most two retries; on failure the query goes to the controller unanswered",
+      "why_not_simpler": "auditor queries are free text and differ every year, so a fixed lookup cannot map them to evidence"
+     },
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Judge findings, agree adjustments, write management letter response",
+     "actor": "controller",
+     "today_means": "document",
+     "systems": [
+      "Microsoft 365 Word",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "auditor findings",
+      "exception list"
+     ],
+     "outputs": [
+      "audit adjustment journal",
+      "management letter response"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "A SharePoint list replaces the mailed request list: each auditor item has an owner, due date and Teams reminder. A scheduled Python job pulls AFAS data through GetConnectors into a dated evidence folder and runs full-population control tests (duplicate payments, supplier IBAN changes, journals posted by approvers, approval limits), feeding a Power BI exception page. A bounded model step drafts answers to auditor queries with citations to that folder; the controller sends them.",
+   "previous_blocker": "Evidence gathering meant manual AFAS exports per request and control tests were done on samples in Excel because full-population scripts took too long to build for a once-a-year job.",
+   "enabler_now": "AI-assisted coding makes small extract and test scripts on the AFAS connectors cheap to build and keep up to date, and models can now reliably map a free-text query to indexed evidence.",
+   "still_hard": "Deciding what an exception means, which findings are material, and negotiating adjustments with the auditor stay judgement work; the evidence index must stay complete or drafts go wrong.",
+   "human_edge": "The controller knows why a transaction looks odd (a one-off agency deal, a site move) and carries the relationship with the external auditor.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Run the full control test set every month instead of once at year-end, so issues are fixed before the auditor arrives."
+   },
+   "altitude": "Audit weeks shrink from chasing files to reviewing exceptions; the controller decides the monthly control test set and its thresholds.",
+   "reach": [
+    {
+     "role": "bookkeeper",
+     "task": "Changing supplier bank details in AFAS",
+     "learn": "Which IBAN-change patterns the control test flags and how to verify them by phone before the next payment batch."
+    },
+    {
+     "role": "accountant",
+     "task": "Balance sheet reconciliations at month-end",
+     "learn": "How the evidence folder expects reconciliations to be named and tied so they serve the audit without rework."
+    }
+   ],
+   "build_days": {
+    "coding": "6-10",
+    "integration": "4-7",
+    "testing_rollout": "4-6",
+    "consent_and_access": "3-6"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Close work fails on accounting judgement more than on retrieval, so findings and adjustments stay with the person.",
+     "grade": "E3",
+     "source": "[S2]"
+    },
+    {
+     "claim": "An estimate or answer the auditor cannot rebuild is a risk when prompts and outputs sit in personal accounts; drafts must be logged on the governed platform.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "AFAS bank matching runs on fixed rules on reference, IBAN and invoice number, so its unmatched remainder is a natural control-test input.",
+     "grade": "E2",
+     "source": "[S10]"
+    },
+    {
+     "claim": "Full-population duplicate and IBAN-change tests are standard deterministic analytics.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The external auditor accepts evidence shared through a SharePoint folder.",
+    "AFAS GetConnectors expose journal entries with user and timestamp."
+   ],
+   "unknowns": [
+    "Does Noordhaven run an internal audit function or only the statutory audit?",
+    "Which AFAS modules and connectors are licensed and who grants API access?",
+    "Does the works council see user-level journal tests as employee monitoring needing consent (WOR art. 27)?"
+   ],
+   "research_questions": [
+    "Which share of last year's auditor requests could have been answered from a standard AFAS extract?",
+    "How many control exceptions would a monthly full-population test have found, and how many were real issues?",
+    "Will the audit firm rely on Noordhaven's own control test output, or redo it anyway?"
+   ],
+   "time_saved_pct": 63,
+   "speedup": 2.68
+  },
+  {
+   "uid": "11-3031.01:8855",
+   "short": "Prepare the annual corporate tax (VPB) pack so the external tax adviser can complete and file the return.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pull final trial balance, fixed asset register and cost details",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "trial balance",
+      "fixed asset register",
+      "ledger extract"
+     ],
+     "outputs": [
+      "tax data extract"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Build commercial-to-fiscal reconciliation: non-deductible costs, fiscal depreciation, investment deductions",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "tax data extract",
+      "prior-year tax return"
+     ],
+     "outputs": [
+      "fiscal reconciliation"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "ledger lines on mixed accounts (representation, gifts, fines, car costs) with description and supplier",
+      "output": "proposed fiscal category per line (deductible, partly deductible, non-deductible, investment-deduction candidate) with a reason",
+      "check": "fixed GL-to-fiscal mapping handles clean accounts first; model output only on mixed accounts, totals must tie to the trial balance, low-confidence lines go to a review list",
+      "stop": "one pass per line, lines above a set amount or below confidence go to the controller; no retries beyond one",
+      "why_not_simpler": "mixed accounts hold free-text descriptions that a GL mapping cannot split into fiscal categories"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Assemble tax pack with supporting documents and notes",
+     "actor": "controller",
+     "today_means": "document",
+     "systems": [
+      "SharePoint",
+      "Microsoft 365 Word",
+      "Excel"
+     ],
+     "inputs": [
+      "fiscal reconciliation",
+      "lease contracts",
+      "investment invoices"
+     ],
+     "outputs": [
+      "tax pack"
+     ],
+     "handoff_to": "external",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Answer tax adviser questions and review the draft return",
+     "actor": "controller",
+     "today_means": "email_chat",
+     "systems": [
+      "Microsoft 365 Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "tax adviser query",
+      "draft tax return"
+     ],
+     "outputs": [
+      "tax adviser query response",
+      "reviewed draft return"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Approve the return for filing and book the tax position",
+     "actor": "controller",
+     "today_means": "document",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "reviewed draft return"
+     ],
+     "outputs": [
+      "filing approval",
+      "tax journal"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "A scheduled Python job on the governed data platform pulls the final AFAS trial balance, asset register and ledger lines, applies a maintained GL-to-fiscal mapping table and generates the fiscal reconciliation and tax pack in a fixed Excel and Word format on SharePoint. A bounded model step classifies only the lines on mixed accounts; the controller reviews those, answers the adviser and approves filing, which the adviser does with the Belastingdienst.",
+   "previous_blocker": "The work is yearly and small, so building a fiscal mapping and pack generator never paid off against a few days in Excel; mixed-account lines needed a person to read every description.",
+   "enabler_now": "AI coding makes a once-a-year generator cheap to build and maintain, and a model can pre-sort free-text ledger lines on mixed accounts with a tie-out check.",
+   "still_hard": "Fiscal choices (depreciation limits on buildings, investment deductions, provisions) need tax judgement and change with yearly rules; the adviser still owns the return.",
+   "human_edge": "The controller decides the tax positions to take, knows the business facts behind odd lines, and carries the accountability toward the Belastingdienst together with the adviser.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Produce a quarterly estimated fiscal reconciliation so the VPB provision and preliminary assessments are right during the year, not fixed in the annual return."
+   },
+   "altitude": "Tax season becomes a review of a generated pack and a short adviser session; the controller decides the fiscal mapping and which positions go to the adviser.",
+   "reach": [
+    {
+     "role": "bookkeeper",
+     "task": "Coding purchase invoices in AFAS",
+     "learn": "Which cost types (gifts, fines, representation) need their own GL account so the fiscal split is clean at source."
+    },
+    {
+     "role": "fpa",
+     "task": "Quarterly forecast",
+     "learn": "How the estimated tax charge from the quarterly fiscal reconciliation feeds the forecast's net profit and cash."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "2-4",
+    "testing_rollout": "3-5",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Tax estimates need mandatory human review and approval with timestamped logs.",
+     "grade": "E3",
+     "source": "[S7]"
+    },
+    {
+     "claim": "Products in the close space draft entries and leave review and approval to people.",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "Benchmarks are US GAAP; Dutch fiscal rules and returns are untested for models.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Large companies must file accounts with KVK via SBR from FY2025 and AFAS cannot do this for them, a related annual filing step outside this task.",
+     "grade": "E2",
+     "source": "[S11]"
+    }
+   ],
+   "assumptions": [
+    "An external tax adviser prepares and files the VPB return; Noordhaven prepares the data.",
+    "VAT returns are handled monthly by the accountants and are not part of this task."
+   ],
+   "unknowns": [
+    "Is Noordhaven part of a fiscal unity (fiscale eenheid) with other entities?",
+    "What format does the tax adviser want the pack in, and does their software accept a structured import?",
+    "How many ledger lines sit on mixed accounts each year?"
+   ],
+   "research_questions": [
+    "How many hours did the controller and adviser spend on last year's pack, split by gathering and judging?",
+    "What share of last year's fiscal adjustments came from mixed accounts a model would have had to classify?",
+    "Would the tax adviser lower their fee for a standard, tied-out pack?"
+   ],
+   "time_saved_pct": 66,
+   "speedup": 2.99
+  },
+  {
+   "uid": "11-3031.01:8875",
+   "short": "Decide capitalisation and depreciation of assets and advise on buying, leasing or selling trucks, forklifts and racking.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Review capex invoices and decide capitalise or expense and asset class",
+     "actor": "controller",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "purchase invoice",
+      "purchase order"
+     ],
+     "outputs": [
+      "capitalisation decision"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "invoice lines above the capitalisation threshold with supplier, description and cost centre",
+      "output": "proposed asset class and useful life with a reason, or 'expense'",
+      "check": "rules first (amount threshold, GL account, known suppliers); model only on the rest; proposals outside the asset class list are rejected",
+      "stop": "one pass per invoice; low confidence or above a set amount goes to the controller",
+      "why_not_simpler": "invoice descriptions for equipment, repairs and improvements are free text that rules alone cannot split"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Set useful lives, methods and residual values per asset class",
+     "actor": "controller",
+     "today_means": "document",
+     "systems": [
+      "AFAS Profit",
+      "SharePoint"
+     ],
+     "inputs": [
+      "depreciation policy",
+      "asset class list"
+     ],
+     "outputs": [
+      "asset class settings"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Run monthly depreciation and tie the asset register to the ledger",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "fixed asset register",
+      "trial balance"
+     ],
+     "outputs": [
+      "depreciation journal",
+      "asset tie-out"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Model lease versus buy versus dispose for fleet and warehouse equipment",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "fixed asset register",
+      "lease quote",
+      "maintenance costs",
+      "utilisation data"
+     ],
+     "outputs": [
+      "lease-buy analysis"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Advise management in a memo and meeting, agree the decision",
+     "actor": "controller",
+     "today_means": "meeting_call",
+     "systems": [
+      "Microsoft 365 Word",
+      "Teams"
+     ],
+     "inputs": [
+      "lease-buy analysis"
+     ],
+     "outputs": [
+      "investment advice memo"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    }
+   ],
+   "design": "AFAS fixed assets is configured with asset classes, default lives and an automatic monthly depreciation run, with a deterministic tie-out of register to ledger shown in Power BI. A rules-plus-model check proposes the asset class for new capex invoices for the controller to accept. A standard Python lease-buy-dispose model reads the register, maintenance costs and lease quotes and produces a comparison (NPV, cash, P&L effect under Dutch GAAP and fiscal depreciation) that the controller turns into advice.",
+   "previous_blocker": "Lease-buy questions came one by one, so each got a fresh Excel model; capex coding relied on the controller reading invoices because descriptions are inconsistent.",
+   "enabler_now": "A reusable model is now cheap to build with AI coding, and a bounded model step can pre-classify invoice descriptions with a fixed class list as the check.",
+   "still_hard": "Useful life of trucks and racking, residual values and the business case for a site depend on plans the data does not hold; impairment calls stay judgement.",
+   "human_edge": "The controller weighs operational plans, site strategy and risk with management, and owns the depreciation policy the auditor tests.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A standing fleet and equipment review twice a year for the three site managers, showing which forklifts and trucks to replace, lease or sell."
+   },
+   "altitude": "Less time on capex coding and one-off models; the controller decides the asset class policy and brings a regular replacement advice to site management.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Capex budget and forecast",
+     "learn": "How the lease-buy model's outcomes and planned depreciation feed the forecast so capex and P&L stay consistent."
+    },
+    {
+     "role": "bookkeeper",
+     "task": "Booking purchase invoices",
+     "learn": "Which invoice signals mark a capital item so it is routed to the asset proposal instead of expensed."
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "3-5",
+    "testing_rollout": "3-5",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Close products draft entries and flag outliers for review and approval, the same draft-then-approve pattern used for capex proposals.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Nothing should post until the tie-out checks pass; the model drafts and the tie-out decides.",
+     "grade": "E3",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Close tasks fail mainly on accounting judgement, which is where useful lives and impairment sit.",
+     "grade": "E3",
+     "source": "[S2]"
+    },
+    {
+     "claim": "AFAS Profit has a fixed assets module with automatic depreciation runs.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The AFAS fixed assets module is licensed or can be added.",
+    "Maintenance and utilisation data for trucks and forklifts exist in some system or file."
+   ],
+   "unknowns": [
+    "Is the fixed asset register kept in AFAS or in an Excel file today?",
+    "Where do maintenance costs and running hours of trucks and forklifts live?",
+    "How many lease-buy-dispose questions does management raise per year?"
+   ],
+   "research_questions": [
+    "How many capex invoices per year need a capitalisation decision, and how often was the first coding wrong?",
+    "Did last year's audit raise adjustments on fixed assets or depreciation?",
+    "Would site managers act on a twice-yearly replacement review, and what data would they trust?"
+   ],
+   "time_saved_pct": 57,
+   "speedup": 2.34
+  }
+ ],
+ "role": {
+  "altitude": "The controller moves from gathering and building files for audits, tax and assets to setting the rules: the control test set, the fiscal mapping, the asset class policy and the thresholds where a person must decide. Generated packs and drafts arrive tied out; the controller reviews exceptions and spends the freed time with auditors, the tax adviser and management.",
+  "reach": [
+   "Accountant: balance sheet reconciliations built so they serve the audit directly",
+   "Bookkeeper: invoice coding and IBAN changes that feed control tests and capex proposals",
+   "FP&A Analyst: forecast that takes tax charge and depreciation from the same generated sources",
+   "Finance Director: monthly control results as input for the risk and audit committee"
+  ],
+  "skills_to_grow": [
+   "Specifying rules and tie-out checks precisely enough for a data engineer or AI coding tool to build",
+   "Reading and maintaining simple Python or SQL jobs on AFAS connectors",
+   "Setting review thresholds and logging so the auditor can rebuild every model-drafted item",
+   "Dutch fiscal rules for logistics assets and investment deductions"
+  ],
+  "ambitious_version": "Audit evidence, control tests, the tax pack and the asset register run as monthly generated outputs on one governed platform, so the year-end audit and tax return become a review of what was already checked each month, cutting audit adjustments and days to close."
+ },
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 105,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

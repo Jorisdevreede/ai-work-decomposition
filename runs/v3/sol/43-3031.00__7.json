@@ -1,0 +1,1225 @@
+{
+ "tasks": [
+  {
+   "uid": "43-3031.00:2514",
+   "short": "Prepare purchase orders and employee expense reports, obtain approvals, and transfer approved records.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect purchase requests and chase missing supplier, quantity, cost-centre and delivery details.",
+     "actor": "accounting clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "purchase request"
+     ],
+     "outputs": [
+      "complete purchase request"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read supplier quotes and identify prices, quantities, delivery terms and reference numbers.",
+     "actor": "accounting clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "supplier quote",
+      "complete purchase request"
+     ],
+     "outputs": [
+      "quote details"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 12,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Supplier quote and complete purchase request.",
+      "output": "Quote details with source references and uncertainty flags.",
+      "check": "Validate supplier identity, currency, quantities and arithmetic; compare requested items; clerk confirms ambiguous terms.",
+      "stop": "One extraction and one validation retry per quote; missing or conflicting fields go to the clerk.",
+      "why_not_simpler": "Supplier quote layouts and delivery terms vary. Structured quotes bypass extraction."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "accounting clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Enter purchase-order lines, coding and delivery details in the {PROCUREMENT}.",
+     "actor": "accounting clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "complete purchase request",
+      "quote details",
+      "supplier master"
+     ],
+     "outputs": [
+      "draft purchase order"
+     ],
+     "handoff_to": "budget holder",
+     "share_pct": 18,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Approve the purchase commitment against budget, need and delegated authority.",
+     "actor": "budget holder",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "draft purchase order",
+      "approval policy",
+      "budget balance"
+     ],
+     "outputs": [
+      "approved purchase order"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "budget holder"
+    },
+    {
+     "id": "s5",
+     "what": "Send the approved purchase order to the supplier and retain its reference.",
+     "actor": "accounting clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "approved purchase order",
+      "supplier contact"
+     ],
+     "outputs": [
+      "issued purchase order"
+     ],
+     "handoff_to": "external",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Read employee receipts and supporting expense explanations.",
+     "actor": "accounting clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "expense receipt",
+      "expense explanation"
+     ],
+     "outputs": [
+      "expense details"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Expense receipt and employee expense explanation.",
+      "output": "Expense details with receipt references and missing-field flags.",
+      "check": "Check date, currency, totals and duplicate receipts; validate tax fields against configured rules.",
+      "stop": "One extraction and one retry per receipt; unreadable receipts and uncertain tax treatment go to the clerk.",
+      "why_not_simpler": "Receipt images and explanations vary. Structured card transactions use direct imports."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "expense-to-reimburse",
+     "approver": "accounting clerk"
+    },
+    {
+     "id": "s7",
+     "what": "Compile expense lines, attach receipts and apply policy and cost-centre codes in the {EXPENSE}.",
+     "actor": "accounting clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "EXPENSE"
+     ],
+     "inputs": [
+      "expense details",
+      "expense policy",
+      "cost-centre mapping"
+     ],
+     "outputs": [
+      "draft expense report",
+      "expense exceptions"
+     ],
+     "handoff_to": "line manager",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "expense-to-reimburse",
+     "approver": "none"
+    },
+    {
+     "id": "s8",
+     "what": "Approve business purpose and decide documented expense-policy exceptions.",
+     "actor": "line manager",
+     "today_means": "system_screen",
+     "systems": [
+      "EXPENSE"
+     ],
+     "inputs": [
+      "draft expense report",
+      "expense exceptions",
+      "expense policy"
+     ],
+     "outputs": [
+      "approved expense report"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 8,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "expense-to-reimburse",
+     "approver": "line manager"
+    },
+    {
+     "id": "s9",
+     "what": "Transfer approved expense reports to the {ERP} and check import totals.",
+     "actor": "accounting clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "EXPENSE",
+      "ERP"
+     ],
+     "inputs": [
+      "approved expense report"
+     ],
+     "outputs": [
+      "expense journal",
+      "import control total"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 7,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "expense-to-reimburse",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure intake, mandatory fields, approval routing and order generation in the {PROCUREMENT}, with receipt capture and policy checks in the {EXPENSE}. Bounded extraction loops handle variable documents; approved records pass to the {ERP} through a configured connector with duplicate protection and control totals. Supplier dispatch requires an approved, unchanged purchase order; payment release remains a separate action.",
+   "previous_blocker": "Variable documents, incomplete requests and disconnected approval records made setup and maintenance costly. Existing features were often available but incompletely configured.",
+   "enabler_now": "Current capture tools handle variable documents, while configuration and small connectors handle most routing and arithmetic. AI-assisted coding can reduce connector development effort without changing approval responsibilities.",
+   "still_hard": "Supplier master errors, mixed tax treatment and undocumented business purpose still require investigation. National expense and consultation rules vary.",
+   "human_edge": "People establish business purpose, challenge unnecessary commitments and decide justified policy exceptions.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Receipt-based expense submission support for field staff without regular desktop access."
+   },
+   "altitude": "The clerk spends less time retyping and more time resolving incomplete or disputed claims. With delegated authority, they can return incomplete submissions directly; spending and exception approvals stay with the relevant manager.",
+   "reach": [
+    {
+     "role": "budget analyst",
+     "task": "Review outstanding purchase commitments against remaining budgets.",
+     "learn": "Commitment accounting, budget ownership and the difference between ordered, received and invoiced spend."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-30"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Ramp documents a US case replacing manual quote-PDF entry into purchase orders; transfer to this setting needs validation.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "AFAS Profit documents invoice extraction and supplier identification; this supports document capture, not proven expense-receipt accuracy.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "The cited survey found substantial paper or email invoice approval, supporting mailbox handoffs as a plausible prior.",
+     "grade": "E2",
+     "source": "[S8]"
+    },
+    {
+     "claim": "Purchase-order generation, expense policy checks and approval routing generally use existing configuration.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The task covers preparation and approval routing, not payment release.",
+    "The {PROCUREMENT} and {EXPENSE} support configurable approvals and an existing {ERP} connector.",
+    "Time shares cover both purchase-order and expense-report work, including approval handoffs.",
+    "Build ranges are planning estimates for one entity and a limited document set; remaining-time estimates need a pilot.",
+    "GDPR applies to employee expense data. National rules may require consultation when processing or access arrangements change."
+   ],
+   "unknowns": [
+    "Actual volume split between purchase orders and expense reports.",
+    "Available connector licences and approved access scopes.",
+    "Share of structured quotes, card transactions and unreadable receipts.",
+    "Approval thresholds, tax jurisdictions and national consultation requirements."
+   ],
+   "research_questions": [
+    "Which intake and connector functions can be enabled without custom code?",
+    "Which receipt fields and quote terms fail validation on a representative sample?"
+   ],
+   "new_work": [
+    "Review uncertain document fields and tax exceptions.",
+    "Maintain supplier, cost-centre and approval mappings.",
+    "Investigate failed imports and duplicate dispatch attempts.",
+    "Periodically check capture quality and access permissions."
+   ],
+   "time_saved_pct": 74,
+   "speedup": 3.92
+  },
+  {
+   "uid": "43-3031.00:2504",
+   "short": "Prepare a trial balance, investigate discrepancies and produce an approved period snapshot.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Select the entity, period and ledger scope and run the {ERP} trial balance.",
+     "actor": "accounting clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "general ledger",
+      "reporting scope"
+     ],
+     "outputs": [
+      "trial balance"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Export balances and arrange the working trial balance in a {SPREADSHEET}.",
+     "actor": "accounting clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "ERP",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "trial balance",
+      "account mapping"
+     ],
+     "outputs": [
+      "working trial balance"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 20,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Check debit-credit equality, opening balances, control accounts and unusual account balances.",
+     "actor": "accounting clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "working trial balance",
+      "prior trial balance",
+      "subledger balances"
+     ],
+     "outputs": [
+      "balance exceptions"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Investigate exceptions with supporting records and propose accounting corrections.",
+     "actor": "accounting clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "balance exceptions",
+      "journal support"
+     ],
+     "outputs": [
+      "correction request",
+      "exception explanation"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve correction amounts, accounts, dates and supporting evidence.",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "correction request",
+      "journal support"
+     ],
+     "outputs": [
+      "approved correction"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 8,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "record-to-report",
+     "approver": "accountant"
+    },
+    {
+     "id": "s6",
+     "what": "Post approved corrections and rerun the trial balance in the {ERP}.",
+     "actor": "accounting clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "approved correction",
+      "general ledger"
+     ],
+     "outputs": [
+      "posted journal",
+      "trial balance"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 7,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Review unresolved items and approve the trial-balance snapshot for period reporting.",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "trial balance",
+      "exception explanation",
+      "balance exceptions"
+     ],
+     "outputs": [
+      "approved trial balance"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "record-to-report",
+     "approver": "accountant"
+    }
+   ],
+   "design": "Configure the {ERP} trial balance, comparison checks and correction approval workflow, removing the duplicate working file in the {SPREADSHEET}. Link exceptions to journals and supporting records in the {DOCS}, then regenerate a versioned snapshot after approved corrections. No model loop is needed for arithmetic, comparisons or posting approved journals.",
+   "previous_blocker": "Working files compensated for poorly configured reports and fragmented supporting evidence. Accounting policy and correction approval could not be replaced by arithmetic.",
+   "enabler_now": "Existing reporting and journal workflows cover most of the task. Configuration and small extensions are cheaper to implement and test with AI-assisted coding.",
+   "still_hard": "Balanced debits and credits do not prove correct classification, completeness or period allocation. Missing transactions and unsupported journals still need investigation.",
+   "human_edge": "The clerk traces discrepancies to real transactions; the accountant decides the accounting treatment and accepts unresolved items.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily escalation decisions for unreconciled control-account balances."
+   },
+   "altitude": "The clerk works from linked exceptions instead of rebuilding a workbook. With delegated escalation limits, they can seek correction earlier; journal approval and period sign-off remain with the accountant.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Prepare control-account reconciliations and explain unresolved differences.",
+     "learn": "Cut-off, accruals, suspense accounts and reconciliation evidence."
+    }
+   ],
+   "build_days": {
+    "coding": "1-3",
+    "integration": "1-4",
+    "testing_rollout": "3-6",
+    "consent_and_access": "2-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Trial-balance arithmetic, report scheduling and approved journal posting generally fit existing financial-system configuration.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Debit-credit equality cannot establish transaction completeness, correct classification or correct cut-off.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "A single {ERP} holds the entity's general ledger and relevant subledgers.",
+    "The working {SPREADSHEET} duplicates reporting functions rather than providing essential consolidation logic.",
+    "Correction and sign-off steps are conditional; shares represent average effort across reporting cycles.",
+    "Build and remaining-time ranges are estimates, not results from the digest.",
+    "GDPR applies to personal data in journal support; this design does not introduce employee monitoring."
+   ],
+   "unknowns": [
+    "Existing report, reconciliation and journal-approval capabilities.",
+    "Number of entities, currencies and separate ledgers.",
+    "Whether workbook adjustments are posted back to the ledger.",
+    "Actual exception rate and correction authority."
+   ],
+   "research_questions": [
+    "Can the existing report replace every essential working-file calculation?",
+    "Which control accounts can be checked automatically against authoritative subledger totals?"
+   ],
+   "new_work": [
+    "Maintain account mappings and exception thresholds.",
+    "Check scheduled reports for stale periods or incomplete imports.",
+    "Review unresolved exceptions and failed journal postings.",
+    "Verify that approved snapshots remain reproducible after later postings."
+   ],
+   "time_saved_pct": 69,
+   "speedup": 3.23
+  },
+  {
+   "uid": "43-3031.00:2492",
+   "short": "Compile financial and audit tables, reconcile them to source records, and distribute approved reports.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Extract cash, expenditure, receivables, payables and ledger reports from the {ERP}.",
+     "actor": "accounting clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "general ledger",
+      "receivables ledger",
+      "payables ledger",
+      "reporting scope"
+     ],
+     "outputs": [
+      "financial extracts"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Combine extracts and map accounts, periods and cost centres in a {SPREADSHEET}.",
+     "actor": "accounting clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "financial extracts",
+      "account mapping",
+      "cost-centre mapping"
+     ],
+     "outputs": [
+      "report dataset"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 22,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Reconcile report totals to ledger balances and investigate missing or duplicated rows.",
+     "actor": "accounting clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "ERP"
+     ],
+     "inputs": [
+      "report dataset",
+      "trial balance",
+      "financial extracts"
+     ],
+     "outputs": [
+      "validated report dataset",
+      "report exceptions"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "data-to-report",
+     "approver": "accounting clerk"
+    },
+    {
+     "id": "s4",
+     "what": "Populate financial tables and charts in the standard report document.",
+     "actor": "accounting clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "validated report dataset",
+      "report template"
+     ],
+     "outputs": [
+      "financial report tables"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Draft short explanations of material movements and unresolved reporting limitations.",
+     "actor": "accounting clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "financial report tables",
+      "report exceptions",
+      "approved variance explanations"
+     ],
+     "outputs": [
+      "draft report commentary"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Validated tables, report exceptions and approved variance explanations.",
+      "output": "Draft commentary with references to every figure and supplied explanation.",
+      "check": "Check every number against table cells; reject unsupported causes and omitted material exceptions.",
+      "stop": "One draft and one repair attempt per report; failed checks leave blank commentary for the clerk.",
+      "why_not_simpler": "Arithmetic is deterministic, but concise wording varies with the supplied explanations. Fixed sections use templates."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Review figures, commentary, limitations and recipient suitability before approving release.",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "financial report tables",
+      "draft report commentary",
+      "report exceptions",
+      "recipient list"
+     ],
+     "outputs": [
+      "approved report pack"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 8,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "record-to-report",
+     "approver": "accountant"
+    },
+    {
+     "id": "s7",
+     "what": "Distribute the approved report internally and archive its source version.",
+     "actor": "accounting clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "approved report pack",
+      "recipient list",
+      "report dataset"
+     ],
+     "outputs": [
+      "published report pack",
+      "report archive"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "Use scheduled {ERP} extracts and deterministic transformations on the {DATA_PLATFORM} to create reconciled datasets, then generate standard tables in the {DOCS} and views in the {BI}. A bounded loop drafts commentary only from validated figures and approved explanations. The {WORKFLOW} records release approval and distributes the approved version to authorised internal recipients.",
+   "previous_blocker": "Report definitions, mappings and source cut-offs lived in individual workbooks. Connecting them into a reproducible process required development and agreement on definitions.",
+   "enabler_now": "Scheduled exports, governed datasets and document templates are mature. AI-assisted coding lowers the cost of transformations and report generators; bounded drafting reduces writing effort.",
+   "still_hard": "Conflicting definitions, late postings and explaining why a result changed remain difficult. A numerically correct report can still mislead through scope or presentation.",
+   "human_edge": "People decide materiality, distinguish an observed movement from its cause and explain limitations to decision-makers.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly decisions on which overdue receivable groups need collector review."
+   },
+   "altitude": "The clerk spends more of the week testing definitions and investigating movements. With delegated thresholds, they can refer ageing exceptions to collectors; accountants retain report-release authority.",
+   "reach": [
+    {
+     "role": "business intelligence analyst",
+     "task": "Maintain a reconciled finance dataset and its report definitions.",
+     "learn": "Data modelling, source lineage, refresh controls and access rules."
+    },
+    {
+     "role": "budget analyst",
+     "task": "Investigate material expenditure movements by cost centre.",
+     "learn": "Variance analysis and how to obtain evidence for business explanations."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Structured financial extracts, account mappings, reconciliations and report templates support deterministic report generation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "A bounded drafting loop can use supplied explanations, but accounting interpretation still requires review.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Scope is recurring internal reporting, not statutory filing or an audit opinion.",
+    "Existing {ERP} reports are used directly where they already meet the requirement.",
+    "The baseline includes a short commentary section; otherwise s5 can be eliminated.",
+    "Build estimates cover one report family with agreed definitions; time savings require pilot measurement.",
+    "GDPR applies to personal data in reports. Access is aggregated where individual detail is unnecessary."
+   ],
+   "unknowns": [
+    "Number of reports, entities and source systems.",
+    "Which reports already run adequately in the {ERP} or {BI}.",
+    "Whether account and cost-centre definitions are agreed.",
+    "Permitted recipients, data granularity and refresh frequency."
+   ],
+   "research_questions": [
+    "Which manual reports can be retired or replaced by existing views?",
+    "Can every published total be traced to a frozen source extract?",
+    "Does commentary drafting save review time on representative reports?"
+   ],
+   "new_work": [
+    "Maintain report definitions, mappings and templates.",
+    "Handle failed refreshes and reconciliation exceptions.",
+    "Review commentary for unsupported explanations.",
+    "Audit recipient access and preserve reproducible report versions."
+   ],
+   "time_saved_pct": 89,
+   "speedup": 9.17
+  },
+  {
+   "uid": "43-3031.00:2511",
+   "short": "Maintain financial inventory records, reconcile stock movements and process approved adjustments.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve receipts, issues, returns and count records from the {OPS_SYSTEM}.",
+     "actor": "accounting clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "stock movement record",
+      "stock count record"
+     ],
+     "outputs": [
+      "inventory movement extract"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Record stock movements and their financial values in the {ERP}.",
+     "actor": "accounting clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "inventory movement extract",
+      "item master",
+      "valuation policy"
+     ],
+     "outputs": [
+      "inventory ledger"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Compare quantities and values across stock records, count results and the general ledger.",
+     "actor": "accounting clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "ERP",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "inventory ledger",
+      "stock count record",
+      "general ledger"
+     ],
+     "outputs": [
+      "inventory exceptions"
+     ],
+     "handoff_to": "warehouse team",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Recount disputed stock and check physical locations and condition.",
+     "actor": "warehouse team",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "inventory exceptions",
+      "count instruction"
+     ],
+     "outputs": [
+      "verified stock count",
+      "stock condition note"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Resolve timing, unit, damage and missing-movement differences with the warehouse team.",
+     "actor": "accounting clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "inventory exceptions",
+      "verified stock count",
+      "stock condition note",
+      "stock movement record"
+     ],
+     "outputs": [
+      "inventory adjustment request",
+      "exception explanation"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve stock adjustments or valuation changes against evidence and delegated limits.",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "inventory adjustment request",
+      "valuation policy",
+      "exception explanation"
+     ],
+     "outputs": [
+      "approved inventory adjustment"
+     ],
+     "handoff_to": "accounting clerk",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "record-to-report",
+     "approver": "accountant"
+    },
+    {
+     "id": "s7",
+     "what": "Post approved adjustments and retain the reconciled inventory record.",
+     "actor": "accounting clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "approved inventory adjustment",
+      "inventory ledger"
+     ],
+     "outputs": [
+      "inventory journal",
+      "reconciled inventory record"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "Connect movement records from the {OPS_SYSTEM} to the {ERP}, using unique transaction identifiers, unit mappings and the approved valuation policy. Deterministic reconciliations on the {DATA_PLATFORM} create an exception queue in the {WORKFLOW}; warehouse staff verify physical differences and accountants approve adjustments. Approved changes post once, with a linked audit trail.",
+   "previous_blocker": "Separate stock and finance records used inconsistent item identifiers, units and cut-offs. Physical discrepancies could not be resolved through a records interface.",
+   "enabler_now": "Existing movement exports and financial import interfaces support reliable synchronisation. AI-assisted coding reduces the effort of building mapping, replay and reconciliation controls.",
+   "still_hard": "Unrecorded physical movements, damaged goods, disputed counts and valuation judgement remain difficult. Integration cannot prove stock exists or is saleable.",
+   "human_edge": "Warehouse staff establish physical facts; the clerk resolves operational context and the accountant decides financial treatment.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly decisions on which stock variances need a targeted recount."
+   },
+   "altitude": "The clerk replaces duplicate posting with investigation of stock-to-ledger differences. With delegated thresholds, they can request targeted recounts; valuation and write-off authority remain with the accountant.",
+   "reach": [
+    {
+     "role": "cost estimator",
+     "task": "Assess how recurring scrap and unit-conversion differences affect standard costs.",
+     "learn": "Units of measure, standard costing, scrap treatment and evidence from operations."
+    },
+    {
+     "role": "accountant",
+     "task": "Prepare inventory-to-ledger reconciliations and support valuation adjustments.",
+     "learn": "Inventory valuation, cut-off and the distinction between quantity and value corrections."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "6-15",
+    "testing_rollout": "6-12",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Inventory movement imports, unit conversions and ledger reconciliations are structured deterministic processes.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Physical counts and condition checks cannot be established by synchronising accounting records alone.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This task applies to a company holding material physical inventory.",
+    "The baseline has separate operational and financial records; an already integrated installation needs configuration only.",
+    "Routine valuation follows an approved policy; discretionary write-offs require approval.",
+    "Shares average recurring record maintenance and conditional recounts, rather than requiring a recount for every movement.",
+    "Build and remaining-time estimates require validation against interfaces and exception samples.",
+    "GDPR applies where records identify staff; individual performance monitoring is outside this design."
+   ],
+   "unknowns": [
+    "Whether stock movements already post automatically to the {ERP}.",
+    "Item identifiers, units, valuation methods and cut-off conventions.",
+    "Availability of immutable movement identifiers and correction events.",
+    "Count frequency, discrepancy rate and adjustment authority."
+   ],
+   "research_questions": [
+    "Can source movements be replayed without duplicate financial postings?",
+    "Which differences reflect timing rather than genuine stock loss?",
+    "Can existing inventory configuration replace the proposed custom integration?"
+   ],
+   "new_work": [
+    "Maintain item and unit mappings.",
+    "Monitor missing, duplicate and out-of-order movement events.",
+    "Investigate stock-to-ledger exceptions and arrange recounts.",
+    "Check approved adjustments and reconciliation evidence."
+   ],
+   "time_saved_pct": 68,
+   "speedup": 3.12
+  }
+ ],
+ "role": {
+  "altitude": "The week shifts from rekeying and assembling files toward resolving exceptions, checking evidence and preparing decisions. New rights require explicit delegation: the clerk can request missing evidence, escalate control failures and initiate recounts within agreed limits.",
+  "reach": [
+   "Accountant: prepare reconciliations and evidence-backed correction requests.",
+   "Budget analyst: analyse purchase commitments and expenditure movements.",
+   "Business intelligence analyst: maintain reproducible finance datasets.",
+   "Cost estimator: investigate recurring stock and unit-cost differences."
+  ],
+  "skills_to_grow": [
+   "Financial-system configuration and approval controls.",
+   "Reconciliations, cut-off and audit evidence.",
+   "Data mappings, interface controls and duplicate prevention.",
+   "Reviewing extracted fields and source-linked commentary.",
+   "GDPR, applicable national rules and AI literacy for bounded model use."
+  ],
+  "ambitious_version": "Become the finance team's first-line exception analyst, connecting purchasing, expenses, ledger reporting and stock records into timely, evidence-backed escalation decisions."
+ },
+ "job_code": "43-3031.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 201,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3500});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-3031.00",
+   "title": "Bookkeeping, Accounting, and Auditing Clerks",
+   "tasks": 28,
+   "function": "Finance"
+  }
+ }
+}

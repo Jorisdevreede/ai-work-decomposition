@@ -1,0 +1,823 @@
+{
+ "role_id": "fpa",
+ "tasks": [
+  {
+   "uid": "13-2031.00:3401",
+   "short": "Each month, compare cost-centre and site budgets with actuals in Excel to find trends that change what budgets need.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export GL actuals and budget per cost centre from AFAS",
+     "actor": "fpa",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "GL actuals export",
+      "budget version"
+     ],
+     "outputs": [
+      "actuals vs budget sheet"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Add drivers: flex hours, FTE, overtime, volumes per site",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Staffing agency portals",
+      "Excel"
+     ],
+     "inputs": [
+      "agency hours export",
+      "headcount export",
+      "actuals vs budget sheet"
+     ],
+     "outputs": [
+      "driver table"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Compute run rates, variances and trend lines per site and account",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "Power BI"
+     ],
+     "inputs": [
+      "driver table",
+      "actuals vs budget sheet"
+     ],
+     "outputs": [
+      "trend dashboard"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Interpret trends and write the trend note with causes",
+     "actor": "fpa",
+     "today_means": "document",
+     "systems": [
+      "Excel",
+      "Word"
+     ],
+     "inputs": [
+      "trend dashboard"
+     ],
+     "outputs": [
+      "trend note"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Top variances and driver movements over threshold, with prior notes",
+      "output": "Draft trend note: per variance a likely driver with the figures it rests on",
+      "check": "Every number in the draft must match the dashboard query; unsupported claims are dropped by code",
+      "stop": "One pass per variance, max two retries; if figures do not tie, the variance is listed without text",
+      "why_not_simpler": "Linking a number to a plausible business cause and writing it readably needs free text; a template gives only the arithmetic."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Discuss trends with site managers and controller",
+     "actor": "fpa",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "trend note"
+     ],
+     "outputs": [
+      "agreed budget adjustments"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    }
+   ],
+   "design": "A scheduled Python job reads AFAS GL, headcount and the agency hours files every night into a governed store next to the existing Power BI extract and computes drivers and trends. A Power BI trend page per site replaces the Excel sheet that ties AFAS and the agency portals. A bounded model step drafts the trend note from flagged variances, and the analyst edits it.",
+   "previous_blocker": "Agency hours sit in three portals and cost-centre mapping lives in analysts' Excel, so nobody built a stable feed; writing causes needed a person.",
+   "enabler_now": "AI coding makes the AFAS connector and agency-file parsers a days-long job, and models can draft variance text checked against the numbers.",
+   "still_hard": "Agreeing driver definitions (what counts as flex, overtime, volume) across three sites; agency file formats change without notice.",
+   "human_edge": "Knowing that a Venlo cost jump is a new client start-up and not waste comes from talking to site managers.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A monthly rolling forecast per site, rebuilt from drivers each month instead of once a year."
+   },
+   "altitude": "The analyst spends the week on causes and site conversations, not on building sheets, and owns the driver definitions used in the forecast.",
+   "reach": [
+    {
+     "role": "people-analyst",
+     "task": "Headcount and flex-worker reporting from AFAS and agency portals",
+     "learn": "How FTE and flex hours are defined so finance and HR drivers match."
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "5-10",
+    "testing_rollout": "5-8",
+    "consent_and_access": "3-6"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Finance executives found AI most useful in budgeting (+42) and variance analysis (+28), least where judgement is the work.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Copilot in Power BI summarises reports but misreads unprepared data and is not supported in Dutch.",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "Speed without defined drivers and clean data makes existing errors harder to catch.",
+     "grade": "E3",
+     "source": "[S4]"
+    },
+    {
+     "claim": "AFAS Profit exposes GL and HR data through GetConnectors.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Budgets are held in AFAS or in an Excel file that can be loaded nightly.",
+    "Agency portals offer hours exports as files."
+   ],
+   "unknowns": [
+    "Is there a governed data platform beyond the Power BI extract?",
+    "Which Power BI capacity (Fabric F2+ or Premium) is licensed?",
+    "Do agency portals offer an API or only CSV/PDF?"
+   ],
+   "research_questions": [
+    "Can the three agencies deliver hours per cost centre in a stable file each week?",
+    "Do the two analysts and the controller agree on five to eight drivers per site?",
+    "Would site managers act on a monthly trend note, or only on the annual budget?"
+   ],
+   "time_saved_pct": 75,
+   "speedup": 4.0
+  },
+  {
+   "uid": "13-2031.00:3402",
+   "short": "Check cost-centre budget submissions for missing lines, arithmetic errors and breaches of budget rules before consolidation.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect budget templates from site and department managers by mail",
+     "actor": "fpa",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Excel",
+      "SharePoint"
+     ],
+     "inputs": [
+      "budget template"
+     ],
+     "outputs": [
+      "budget submission"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 15,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Check completeness, sums and account mapping",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "budget submission",
+      "chart of accounts"
+     ],
+     "outputs": [
+      "check report"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Check against budget rules: CAO increases, FTE plan, agency rates",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit",
+      "SharePoint"
+     ],
+     "inputs": [
+      "budget submission",
+      "budget guidelines",
+      "CAO wage table",
+      "agency rate card"
+     ],
+     "outputs": [
+      "check report"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Free-text justifications for lines that break a coded rule",
+      "output": "Label: justified, needs evidence, or breach, with the quoted reason",
+      "check": "Only lines flagged by deterministic rules are sent; analyst confirms every 'justified' label",
+      "stop": "One call per flagged line; unclear text defaults to 'needs evidence'",
+      "why_not_simpler": "Rules catch the number; whether the manager's explanation is acceptable is in free text."
+     },
+     "authority": "read",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Send queries to budget owners and chase answers",
+     "actor": "fpa",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "check report"
+     ],
+     "outputs": [
+      "budget query"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Sign off checked budget for consolidation",
+     "actor": "fpa",
+     "today_means": "document",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "check report",
+      "budget submission"
+     ],
+     "outputs": [
+      "approved budget submission"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Replace mailed Excel templates with a locked SharePoint/Power Apps budget form per cost centre. A Python rule engine checks sums, mapping, CAO wage tables, FTE against the HR plan and agency rate cards, and a small model step sorts the free-text justifications for flagged lines. Queries go out as drafted notifications that the analyst releases, and a status dashboard shows which owners are done.",
+   "previous_blocker": "Rules lived in the analysts' heads and in a guideline PDF, and submissions came in as differently edited Excel files.",
+   "enabler_now": "AI coding makes writing the rules as code and building a form cheap; models can read justifications.",
+   "still_hard": "Writing down the budget rules completely and keeping them current each year; managers who still mail their own sheets.",
+   "human_edge": "Deciding when a breach is acceptable because a site has a real business reason, and pushing back on padding.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Run the same checks on every quarterly reforecast, not only the annual budget."
+   },
+   "altitude": "The analyst handles exceptions and signs off; they gain ownership of the coded budget rulebook used by every submission.",
+   "reach": [
+    {
+     "role": "cnb",
+     "task": "Annual CAO wage increase and benefits cost assumptions",
+     "learn": "How CAO steps and allowances turn into personnel cost per FTE."
+    }
+   ],
+   "build_days": {
+    "coding": "6-10",
+    "integration": "3-6",
+    "testing_rollout": "5-10",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Agents flag records that do not tie and do variance arithmetic; people decide which source wins.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Data quality is the top barrier to AI in finance (40.4%).",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Workpapers built in personal chatbots cannot be rebuilt for the auditor.",
+     "grade": "E3",
+     "source": "[S6]"
+    }
+   ],
+   "assumptions": [
+    "A written budget guideline exists that can be turned into rules.",
+    "Headcount plans are checked at cost-centre level, not by named person, limiting GDPR exposure."
+   ],
+   "unknowns": [
+    "How many cost centres submit budgets, and how often reforecasts happen?",
+    "Are agency rate cards available in a structured form?",
+    "Does the OR need to see a tool that checks managers' budget plans?"
+   ],
+   "research_questions": [
+    "What share of last year's queries would coded rules have caught?",
+    "Will site managers accept a fixed form instead of their own Excel?",
+    "Can the rule set be kept by the analysts without a developer?"
+   ],
+   "time_saved_pct": 73,
+   "speedup": 3.7
+  },
+  {
+   "uid": "13-2031.00:3399",
+   "short": "Summarise budget position for capex and spend requests and recommend approval or rejection to the finance director.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive request with quote or business case by mail",
+     "actor": "fpa",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook"
+     ],
+     "inputs": [
+      "funds request",
+      "supplier quote"
+     ],
+     "outputs": [
+      "funds request"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 10,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Look up remaining budget, commitments and prior spend",
+     "actor": "fpa",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "funds request",
+      "GL actuals export",
+      "budget version"
+     ],
+     "outputs": [
+      "budget position"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Build payback and budget-impact calculation in Excel",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "budget position",
+      "supplier quote"
+     ],
+     "outputs": [
+      "request summary"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Write recommendation memo with options",
+     "actor": "fpa",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "Outlook"
+     ],
+     "inputs": [
+      "request summary",
+      "funds request"
+     ],
+     "outputs": [
+      "recommendation memo"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Request summary, business case text, budget position",
+      "output": "Memo draft with approve, defer and reject options and their budget effect",
+      "check": "Figures are filled in by code from the summary; the model writes only the text; analyst edits and picks the recommendation",
+      "stop": "One draft, one revision on request; if the business case is missing, the memo lists what to ask for",
+      "why_not_simpler": "Business cases are free text of varying quality; a fixed template cannot summarise the argument."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Present recommendation; finance director decides",
+     "actor": "fpa",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "recommendation memo"
+     ],
+     "outputs": [
+      "funds decision"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": true
+    }
+   ],
+   "design": "A Power Automate request form on SharePoint replaces mailed requests and starts a flow that pulls budget position from the nightly AFAS extract. Code fills a standard request summary and payback sheet; a bounded model step drafts the memo with options, and the analyst edits it before it goes to the finance director, who decides.",
+   "previous_blocker": "Requests arrived in any format and the budget position had to be assembled by hand each time.",
+   "enabler_now": "Form-plus-flow is configurable in Microsoft 365, AI coding speeds the AFAS lookup, and models draft memo text from a business case.",
+   "still_hard": "Commitments (signed but not invoiced orders) may not be visible in AFAS; payback assumptions are often weak.",
+   "human_edge": "Judging whether a site's case for a new forklift fleet or extra flex capacity is sound, and saying no to a manager.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A request tracker that shows every site manager the status and budget effect of their pending requests."
+   },
+   "altitude": "The analyst becomes the adviser on requests rather than the person assembling them; they set the payback and evidence standards for business cases.",
+   "reach": [
+    {
+     "role": "finance-director",
+     "task": "Capital allocation and board budget approval",
+     "learn": "Which criteria the board weighs beyond payback, such as client contracts and safety."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "3-6",
+    "testing_rollout": "4-6",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Agents draft commentary; people allocate capital and face the board.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "AI is least successful on finance tasks that demand human judgement.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Power Automate and SharePoint forms can route approval requests.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Funds requests above a threshold go to the finance director.",
+    "Purchase commitments can be read from AFAS or a purchase log."
+   ],
+   "unknowns": [
+    "How many funds requests per month, and what approval thresholds apply?",
+    "Are commitments recorded in AFAS before invoicing?",
+    "Who decides below the finance director's threshold?"
+   ],
+   "research_questions": [
+    "How long does a request wait today from mail to decision?",
+    "Would drafted options change the finance director's decisions or only speed them?",
+    "Do site managers fill in a structured business case if the form requires it?"
+   ],
+   "time_saved_pct": 67,
+   "speedup": 3.03
+  },
+  {
+   "uid": "13-2031.00:3397",
+   "short": "Tie cost-centre and site budgets to the company budget and contingency reserve, and process budget transfers.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export budget versions for cost centres, sites and company",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "budget version"
+     ],
+     "outputs": [
+      "budget hierarchy sheet"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Map cost-centre lines to site and company totals",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "budget hierarchy sheet",
+      "cost-centre hierarchy"
+     ],
+     "outputs": [
+      "mapped budget"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Reconcile totals and find breaks against the board budget",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "mapped budget",
+      "board budget"
+     ],
+     "outputs": [
+      "budget break list"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Process transfers between cost centres and contingency draws",
+     "actor": "fpa",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "budget transfer request",
+      "budget break list"
+     ],
+     "outputs": [
+      "budget transfer"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Explain breaks and decide which version is right",
+     "actor": "fpa",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams",
+      "Excel"
+     ],
+     "inputs": [
+      "budget break list"
+     ],
+     "outputs": [
+      "agreed budget version"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Configure the cost-centre hierarchy once in AFAS and let a scheduled Python job reconcile cost-centre, site and company budgets to the board budget each night, posting breaks to a Power BI page and a Teams notice. A small Power Apps register handles transfers and contingency draws with controller approval and writes the approved change back as a budget mutation.",
+   "previous_blocker": "The hierarchy and the contingency pot lived in Excel, and transfers were agreed by mail with no register.",
+   "enabler_now": "AI coding makes the reconciliation job and a simple transfer register cheap to build and test.",
+   "still_hard": "Keeping one source of truth when sites keep side budgets in Excel; reorganisations that change the hierarchy mid-year.",
+   "human_edge": "Deciding which version wins when site and company figures differ, and when a contingency draw is justified.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A live view of contingency left per site, checked weekly instead of at quarter end."
+   },
+   "altitude": "Little reconciling work remains; the analyst owns the hierarchy and the rules for transfers and contingency use.",
+   "reach": [
+    {
+     "role": "controller",
+     "task": "Month-end close and budget loads in AFAS",
+     "learn": "How budget mutations are posted and audited in AFAS."
+    }
+   ],
+   "build_days": {
+    "coding": "4-6",
+    "integration": "3-6",
+    "testing_rollout": "3-6",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Agents flag records that do not tie; people decide which source wins.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Clean data and defined structures come before automation pays off.",
+     "grade": "E3",
+     "source": "[S4]"
+    },
+    {
+     "claim": "AFAS Profit supports cost-centre hierarchies and budget entries.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Noordhaven holds a contingency reserve in its budget.",
+    "Budgets can be loaded into AFAS per cost centre."
+   ],
+   "unknowns": [
+    "Are budgets held in AFAS or only in Excel?",
+    "Is there a formal contingency reserve and who may release it?",
+    "How many budget transfers occur per year?"
+   ],
+   "research_questions": [
+    "How many breaks did last year's budget versions have, and what caused them?",
+    "Can AFAS hold all budget versions so Excel is not needed?",
+    "Does the controller accept a register in Power Apps as audit evidence?"
+   ],
+   "time_saved_pct": 84,
+   "speedup": 6.06
+  }
+ ],
+ "role": {
+  "altitude": "The FP&A analysts stop assembling budgets in Excel and spend the week on causes, site conversations and recommendations. They own the driver definitions, the budget rulebook and the forecast rules.",
+  "reach": [
+   "people-analyst: headcount and flex-worker drivers",
+   "controller: month close and budget loads in AFAS",
+   "finance-director: capital allocation and board reporting",
+   "cnb: CAO wage cost assumptions"
+  ],
+  "skills_to_grow": [
+   "Defining drivers and writing budget rules as code with a developer",
+   "Reading and testing Python jobs and Power BI semantic models",
+   "Checking model-drafted commentary against source figures",
+   "Explaining forecasts to site managers and the board"
+  ],
+  "ambitious_version": "A monthly rolling driver-based forecast for each of Rotterdam, Tilburg and Venlo, with flex labour and volume scenarios, fed nightly from AFAS and the agency portals and trusted enough to shorten the close and the budget round."
+ },
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 91,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

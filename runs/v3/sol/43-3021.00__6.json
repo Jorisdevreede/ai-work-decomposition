@@ -1,0 +1,1174 @@
+{
+ "tasks": [
+  {
+   "uid": "43-3021.00:23251",
+   "short": "Reconcile bank statements with payment records and cleared cheque evidence where cheques remain.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Download bank movements for the reconciliation period.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK"
+     ],
+     "inputs": [
+      "reconciliation period"
+     ],
+     "outputs": [
+      "bank statement"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Retrieve payment postings and available cleared cheque references.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "BANK",
+      "DOCS"
+     ],
+     "inputs": [
+      "bank statement",
+      "payment register",
+      "cleared cheque evidence"
+     ],
+     "outputs": [
+      "reconciliation records"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Compare references and amounts, separating timing differences from unmatched movements.",
+     "actor": "billing clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "reconciliation records"
+     ],
+     "outputs": [
+      "reconciliation schedule",
+      "reconciliation exceptions"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Investigate missing evidence, duplicate postings and unexplained amounts.",
+     "actor": "billing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "reconciliation exceptions",
+      "cleared cheque evidence"
+     ],
+     "outputs": [
+      "exception findings",
+      "proposed correction"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 65,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Review reconciliation evidence and authorise corrections.",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "ERP"
+     ],
+     "inputs": [
+      "reconciliation schedule",
+      "exception findings",
+      "proposed correction"
+     ],
+     "outputs": [
+      "approved reconciliation",
+      "approved correction"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "audit-and-controls",
+     "approver": "accountant"
+    },
+    {
+     "id": "s6",
+     "what": "Post authorised corrections and file the reconciliation evidence.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "approved correction",
+      "approved reconciliation"
+     ],
+     "outputs": [
+      "correction posting",
+      "reconciliation archive"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure matching in the {ERP}, using a {BANK} feed and a small {DATA_PLATFORM} connector for missing payment references. A {WORKFLOW} queue holds exceptions and correction approvals; only the exact approved correction is posted, with evidence retained in {DOCS}.",
+   "previous_blocker": "Disconnected exports and missing references left a spreadsheet between bank records and accounting records.",
+   "enabler_now": "Existing matching rules handle clean records. AI-assisted coding can shorten connector development, but access and testing still take time.",
+   "still_hard": "Unreadable cheque images, partial payments and unexplained differences need investigation. GDPR requires controlled access and appropriate retention.",
+   "human_edge": "The clerk distinguishes a timing difference from an accounting error and finds evidence across teams.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily prioritisation of unresolved bank reconciliation exceptions"
+   },
+   "altitude": "The clerk spends less time comparing rows and more time clearing unexplained movements. With delegated limits, they can prioritise investigations each day; the accountant retains correction approval.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Prepare bank reconciliation evidence for period close",
+     "learn": "Cut-off rules, clearing accounts and evidence required for correcting journals"
+    },
+    {
+     "role": "treasurer",
+     "task": "Identify unexplained cash movements",
+     "learn": "Bank value dates, settlement timing and cash reporting"
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-10",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-7"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS Profit can match bank lines by reference, IBAN or invoice number and send misses to a person.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Structured matching and approved journal posting can use deterministic rules; cheque images may remain exceptions.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The time shares, remaining effort and build ranges are planning estimates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Bank reconciliation is common; cancelled cheque handling is a conditional legacy branch in European companies.",
+    "The baseline uses a spreadsheet to bridge bank and accounting records.",
+    "Structured references cover routine matches; image-only evidence goes to a person.",
+    "Build ranges cover one bank connection and one accounting entity.",
+    "Normal billing automation does not introduce employee monitoring. Any consultation requirement depends on national rules and the actual change."
+   ],
+   "unknowns": [
+    "Whether cheques are used and cleared cheque evidence is available",
+    "Existing matching features, bank interfaces and access rights",
+    "Actual exception volumes, task time and approval limits",
+    "Required retention periods and employee consultation arrangements"
+   ],
+   "research_questions": [
+    "Which bank statement formats expose stable transaction and cheque references?",
+    "Can configured matching prevent ambiguous and duplicate matches before marking records reconciled?"
+   ],
+   "new_work": [
+    "Review ambiguous matches and missing evidence",
+    "Maintain reference mappings and matching tolerances",
+    "Monitor feed completeness and failed imports",
+    "Check that posted corrections match their approved versions"
+   ],
+   "time_saved_pct": 84,
+   "speedup": 6.25
+  },
+  {
+   "uid": "43-3021.00:23247",
+   "short": "Route customer statements to approved electronic, postal or counter delivery channels.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Select prepared customer statements for the dispatch batch.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "customer statements",
+      "dispatch schedule"
+     ],
+     "outputs": [
+      "statement batch"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check recipient details and recorded delivery preferences.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "CRM"
+     ],
+     "inputs": [
+      "statement batch",
+      "customer contact record",
+      "delivery preference"
+     ],
+     "outputs": [
+      "validated routing list",
+      "delivery exceptions"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Resolve missing addresses, conflicting preferences and uncertain recipients.",
+     "actor": "billing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CRM"
+     ],
+     "inputs": [
+      "delivery exceptions",
+      "customer contact record"
+     ],
+     "outputs": [
+      "approved routing correction"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "billing supervisor"
+    },
+    {
+     "id": "s4",
+     "what": "Prepare electronic queues, postal bundles or counter collection packs.",
+     "actor": "billing clerk",
+     "today_means": "document",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "statement batch",
+      "validated routing list",
+      "approved routing correction"
+     ],
+     "outputs": [
+      "statement dispatch pack"
+     ],
+     "handoff_to": "dispatch team",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Send statements to verified electronic recipients.",
+     "actor": "billing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "statement dispatch pack"
+     ],
+     "outputs": [
+      "electronic dispatch record"
+     ],
+     "handoff_to": "external",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Mail physical statements or hand collection packs to identified customers.",
+     "actor": "dispatch team",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "statement dispatch pack"
+     ],
+     "outputs": [
+      "physical dispatch record"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Record dispatch completion and flag failed delivery.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "EMAIL"
+     ],
+     "inputs": [
+      "electronic dispatch record",
+      "physical dispatch record"
+     ],
+     "outputs": [
+      "statement delivery log",
+      "delivery exceptions"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure statement routing in the {ERP} using verified contacts and delivery preferences from the {CRM}. A {WORKFLOW} queue holds uncertain recipients, prepares physical dispatch packs and records delivery failures; routine electronic statements leave through {EMAIL}.",
+   "previous_blocker": "Contact details, preferences and dispatch records were maintained separately. Physical preparation obscured which routing work could be automated.",
+   "enabler_now": "Existing statement queues, templates and routing rules can cover most preparation. Small connectors can synchronise verified preferences.",
+   "still_hard": "Physical handling remains where customers require it. Wrong-recipient disclosure requires careful identity and routing controls under GDPR.",
+   "human_edge": "The clerk resolves uncertain recipient authority and helps customers who need another delivery channel.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The clerk handles failed deliveries and uncertain recipients instead of sorting every statement. No new decision rights are assumed.",
+   "reach": [
+    {
+     "role": "bill and account collector",
+     "task": "Resolve statement delivery failures before collection contact",
+     "learn": "Delivery evidence, customer contact verification and the difference between delivery failure and non-payment"
+    }
+   ],
+   "build_days": {
+    "coding": "1-4",
+    "integration": "2-6",
+    "testing_rollout": "3-6",
+    "consent_and_access": "1-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Configured queues can route prepared statements using structured recipient and channel records.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Routing and preparation can be automated even when physical delivery remains human.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The time shares, remaining effort and build ranges are planning estimates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Prepared statements already exist; this task covers routing and dispatch.",
+    "The baseline includes electronic and physical delivery. Counter collection applies only where offered.",
+    "Routine electronic dispatch is authorised by existing policy and uses verified recipient records.",
+    "The human-class prior understates gains in routing and preparation; physical handling remains human.",
+    "GDPR applies to customer records. Consultation depends on national rules if the change affects employees."
+   ],
+   "unknowns": [
+    "Actual channel mix and whether counter delivery exists",
+    "How recipient authority and delivery preferences are verified",
+    "Existing dispatch features and contact synchronisation",
+    "Physical handling volumes, delivery costs and employee consultation requirements"
+   ],
+   "research_questions": [
+    "Can existing routing rules bind each statement to its customer identifier and verified destination?",
+    "Which delivery failure signals can be captured without treating successful sending as confirmed receipt?"
+   ],
+   "new_work": [
+    "Review uncertain recipients and returned statements",
+    "Maintain channel preferences and routing rules",
+    "Monitor failed sends and incomplete physical dispatch logs",
+    "Check document-to-recipient pairing after template changes"
+   ],
+   "time_saved_pct": 81,
+   "speedup": 5.26
+  },
+  {
+   "uid": "43-3021.00:23266",
+   "short": "Correct mistaken cheque returns, arrange return or retrieval, and explain account adjustments.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Register the reported cheque return error.",
+     "actor": "billing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "customer error report"
+     ],
+     "outputs": [
+      "payment correction case"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Gather cheque details, bank status, correspondence and account postings.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK",
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "payment correction case",
+      "payment register",
+      "cheque record"
+     ],
+     "outputs": [
+      "payment case evidence"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Compare payment evidence and calculate the proposed account correction.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "payment case evidence"
+     ],
+     "outputs": [
+      "proposed correction",
+      "remedy options"
+     ],
+     "handoff_to": "billing supervisor",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Approve the correction and decide whether to return or retrieve the cheque.",
+     "actor": "billing supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "payment case evidence",
+      "proposed correction",
+      "remedy options"
+     ],
+     "outputs": [
+      "approved correction",
+      "approved cheque instruction"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "complaint-to-resolution",
+     "approver": "billing supervisor"
+    },
+    {
+     "id": "s5",
+     "what": "Post the authorised adjustment to the customer account.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "approved correction"
+     ],
+     "outputs": [
+      "correction posting"
+     ],
+     "handoff_to": "dispatch team",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Arrange the authorised physical return or retrieval and record custody.",
+     "actor": "dispatch team",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "approved cheque instruction",
+      "cheque record"
+     ],
+     "outputs": [
+      "cheque custody record"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Prepare an explanation of the error, adjustment and next action.",
+     "actor": "billing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "ERP"
+     ],
+     "inputs": [
+      "payment case evidence",
+      "correction posting",
+      "cheque custody record"
+     ],
+     "outputs": [
+      "customer explanation draft"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Approved case facts, posted adjustment, custody status and an explanation template",
+      "output": "A customer explanation draft with references to supporting records",
+      "check": "Validate every amount, date and status against the records; the clerk checks wording before sending.",
+      "stop": "One draft and at most one repair, with a 2,000-token total budget. Missing facts use a manual template.",
+      "why_not_simpler": "Case histories and customer questions vary in free text. Arithmetic and posting remain deterministic."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s8",
+     "what": "Answer the customer, confirm next steps and handle disputed facts.",
+     "actor": "billing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "customer explanation draft",
+      "customer error report"
+     ],
+     "outputs": [
+      "customer response",
+      "unresolved dispute"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "complaint-to-resolution",
+     "approver": "billing clerk"
+    },
+    {
+     "id": "s9",
+     "what": "Update the case with the response, custody outcome and unresolved issues.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "customer response",
+      "cheque custody record",
+      "unresolved dispute"
+     ],
+     "outputs": [
+      "payment correction case"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    }
+   ],
+   "design": "Use a case record in the {ERP} and a {WORKFLOW} queue to collect {BANK} evidence, calculate corrections and capture approval of the exact posting and cheque instruction. A bounded drafting loop prepares explanations from approved facts in {DOCS}; the clerk sends the response and people handle physical custody.",
+   "previous_blocker": "Rare cases cross bank records, correspondence, accounting corrections and physical custody. Their small volume rarely justified a separate application.",
+   "enabler_now": "Configured case records and approval flows can reuse existing infrastructure. A bounded model loop can draft explanations without deciding the remedy.",
+   "still_hard": "Actual cheque recovery, disputed ownership and incomplete custody evidence remain difficult. GDPR, national cheque rules and authorisation limits govern handling; AI Act literacy applies to model use.",
+   "human_edge": "The clerk earns cooperation, resolves disputed facts and explains a financial error without making unsupported promises.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The clerk spends less time assembling evidence and writing explanations, and more time resolving disputed cases. No new adjustment or settlement authority is assumed.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Prepare evidence for a customer account correction",
+     "learn": "Reversal journals, suspense balances and prevention of duplicate refunds"
+    },
+    {
+     "role": "fraud examiner",
+     "task": "Escalate suspicious cheque custody discrepancies",
+     "learn": "Evidence preservation, custody records and escalation thresholds"
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "4-10",
+    "testing_rollout": "5-9",
+    "consent_and_access": "2-7"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Case records can join evidence, authorised corrections and custody outcomes without automating remedy decisions.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "A bounded loop can draft record-grounded explanations while a person controls external responses.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The time shares, remaining effort and build ranges are planning estimates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This is a conditional legacy task. Many mid-size European companies have no customer cheque return process.",
+    "The shares describe a case where this task exists, rather than a typical share of the whole job.",
+    "A supervisor can approve corrections within delegated limits; larger cases escalate.",
+    "Automatic posting consumes the exact approved correction and prevents duplicate execution.",
+    "The drafting loop is used only if reusable templates cannot handle the observed case variety.",
+    "Consultation requirements depend on national rules and any change to employee working arrangements."
+   ],
+   "unknowns": [
+    "Whether cheque returns occur and whether their volume justifies a build",
+    "Who holds cheque custody and who can authorise account adjustments",
+    "Available bank status data and existing case features",
+    "Customer authentication, retention rules and employee consultation requirements"
+   ],
+   "research_questions": [
+    "Can the existing case system preserve approval history and custody evidence without a custom application?",
+    "Do evaluated drafts preserve uncertain facts and avoid inventing recovery dates or promises?",
+    "Which national rules govern cheque return and retrieval in the operating countries?"
+   ],
+   "new_work": [
+    "Review drafted explanations and unsupported statements",
+    "Resolve missing custody evidence",
+    "Maintain correction templates and approval limits",
+    "Monitor duplicate-posting controls and connector failures",
+    "Evaluate whether rare cases still justify the drafting loop"
+   ],
+   "time_saved_pct": 64,
+   "speedup": 2.76
+  },
+  {
+   "uid": "43-3021.00:23237",
+   "short": "Record cheque stop requests, obtain authorisation and confirm the bank's response.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Record the stop-payment request and its stated reason.",
+     "actor": "billing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "stop-payment request",
+      "cheque record"
+     ],
+     "outputs": [
+      "stop-payment case"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Verify requester authority, cheque identity and current payment status.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "BANK"
+     ],
+     "inputs": [
+      "stop-payment case",
+      "cheque record",
+      "authority register"
+     ],
+     "outputs": [
+      "verified stop-payment details",
+      "stop-payment exceptions"
+     ],
+     "handoff_to": "treasury approver",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Assess the reason and authorise or reject the stop instruction.",
+     "actor": "treasury approver",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "verified stop-payment details",
+      "stop-payment exceptions"
+     ],
+     "outputs": [
+      "stop-payment decision",
+      "approved stop instruction"
+     ],
+     "handoff_to": "authorised bank operator",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "treasury-and-cash",
+     "approver": "treasury approver"
+    },
+    {
+     "id": "s4",
+     "what": "Submit the approved stop instruction through the bank's authorised procedure.",
+     "actor": "authorised bank operator",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK"
+     ],
+     "inputs": [
+      "approved stop instruction"
+     ],
+     "outputs": [
+      "bank stop submission"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "treasury approver"
+    },
+    {
+     "id": "s5",
+     "what": "Record the bank's acceptance, rejection or pending status.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK",
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "bank stop submission",
+      "bank stop acknowledgement"
+     ],
+     "outputs": [
+      "stop-payment status",
+      "bank acknowledgement archive"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Notify affected finance staff and flag unresolved or rejected stops.",
+     "actor": "billing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "stop-payment status",
+      "stop-payment decision"
+     ],
+     "outputs": [
+      "internal stop notice",
+      "stop-payment follow-up"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure a stop-payment form and approval queue in {WORKFLOW}, using cheque details from the {ERP} and status evidence from the {BANK}. An authorised person submits the bank instruction, then records the acknowledgement; {WORKFLOW} updates the internal register and notifies the finance team.",
+   "previous_blocker": "Requests arrived as loose messages, while bank authority and payment status remained in separate records. An internal notice could be confused with a completed bank stop.",
+   "enabler_now": "Structured forms, approval records and automatic notifications can remove repeated copying. They do not depend on a new bank write interface.",
+   "still_hard": "A cheque may clear before the bank acts, and an acknowledgement may only confirm receipt. Bank procedures, GDPR and national cheque rules still apply.",
+   "human_edge": "The treasury approver weighs the reason, consequences and urgency; the bank operator verifies the exact instruction.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The clerk spends less time copying instructions and chasing acknowledgements. The treasury approver and authorised bank operator retain their existing decision rights.",
+   "reach": [
+    {
+     "role": "treasurer",
+     "task": "Track pending and rejected stop-payment instructions",
+     "learn": "Bank cut-offs, acknowledgement states and authorised bank procedures"
+    },
+    {
+     "role": "compliance officer",
+     "task": "Check evidence of stop-payment authorisation",
+     "learn": "Segregation of duties, approval traceability and national cheque rules"
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "2-5",
+    "testing_rollout": "3-6",
+    "consent_and_access": "2-6"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Structured requests, approval queues and notifications can reduce copying while bank submission remains human.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "An internal stop notice does not itself stop a bank payment; submission and bank outcome require separate records.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The time shares, remaining effort and build ranges are planning estimates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This is a conditional cheque process, not a routine task in every European company.",
+    "The bank accepts stop instructions through an authorised procedure; no write API is assumed.",
+    "Prepared instructions assist bank entry, while submission remains manual.",
+    "The approval in the case authorises the exact bank action; any required bank dual approval also remains.",
+    "Existing cheque identifiers support lookup; stale or missing status requires a person.",
+    "Employee consultation depends on national rules and the working arrangements affected."
+   ],
+   "unknowns": [
+    "Whether cheque stops occur and how urgent they are",
+    "The bank's procedure, fees, cut-offs and acknowledgement meanings",
+    "Required signatories and approval thresholds",
+    "Available cheque status data and access rights",
+    "Applicable employee consultation and retention requirements"
+   ],
+   "research_questions": [
+    "What bank evidence distinguishes a received instruction from an effective stop?",
+    "Can the configured workflow escalate pending cases before the relevant bank cut-off?",
+    "Which national rules govern stop instructions in the operating countries?"
+   ],
+   "new_work": [
+    "Review stale payment status and mismatched identifiers",
+    "Follow up pending or rejected bank instructions",
+    "Maintain signatory lists and approval limits",
+    "Reconcile internal stop notices with bank outcomes",
+    "Update procedures when bank cut-offs or channels change"
+   ],
+   "time_saved_pct": 51,
+   "speedup": 2.03
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts from copying and comparing records toward payment exceptions, delivery failures and evidence quality. Routine preparation becomes automatic; financial corrections and sensitive bank actions retain explicit approval.",
+  "reach": [
+   "Accountants: prepare close evidence and supported correction journals",
+   "Treasurers: track unexplained cash movements and pending bank instructions",
+   "Bill and account collectors: resolve delivery failures before collection contact",
+   "Compliance officers: assemble traceable approval and custody records"
+  ],
+  "skills_to_grow": [
+   "Reconciliation rules and exception investigation",
+   "Customer identity and delivery verification",
+   "Correction journals and segregation of duties",
+   "Bank status interpretation and payment cut-offs",
+   "Review of record-grounded drafts",
+   "GDPR data handling and AI Act literacy"
+  ],
+  "ambitious_version": "Become a payment exception specialist who prioritises unresolved movements daily and supplies reliable evidence to accounting and treasury. Validate cheque volumes first; where these legacy tasks are absent, remove their procedures and avoid building dedicated tools."
+ },
+ "job_code": "43-3021.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 213,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"sed -n '1,180p' /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3500}); text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-3021.00",
+   "title": "Billing and Posting Clerks",
+   "tasks": 26,
+   "function": "Finance"
+  }
+ }
+}

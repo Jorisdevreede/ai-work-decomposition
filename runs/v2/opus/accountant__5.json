@@ -1,0 +1,833 @@
+{
+ "role_id": "accountant",
+ "role": {
+  "altitude": "The two accountants stop copying AFAS exports into Excel and checking rows by hand. They own the tie-outs, control tests and projection drivers that run every night. They review the exceptions and draft commentary those jobs produce. They gain the right to decide which tests run and which thresholds raise a finding, with the Controller signing off.",
+  "reach": [
+   "Controller: month-close sign-off and the audit file, so tie-outs and control tests match what the external auditor asks for",
+   "FP&A Analyst: forecast drivers and reforecasts, so accounting projections and the plan share one set of drivers",
+   "Payroll Specialist: wage tax return (loonaangifte) and WW premium settings in AFAS, so payroll checks catch errors before filing",
+   "Bookkeeper: AP vendor master and payment batches, so control exceptions go back as fixes, not as audit findings"
+  ],
+  "skills_to_grow": [
+   "Writing and testing SQL or Python checks against the AFAS extract on the data platform",
+   "Designing control tests with thresholds and a false-positive budget",
+   "Checking model-drafted commentary and extractions against the source, and rejecting claims the source does not support",
+   "Dutch payroll tax and chain liability rules (WW premium differentiation, NEN 4400-1, G-account) at rule level",
+   "Explaining exceptions to budget holders and the works council in plain terms"
+  ],
+  "ambitious_version": "Finance runs a continuous control and close monitor. Every AFAS posting, payroll run and agency invoice goes through tie-outs and fraud tests overnight. The accountants spend the close reviewing a short exception list and writing advice for the site managers in Rotterdam, Tilburg and Venlo. That should cut days to close and audit adjustments."
+ },
+ "tasks": [
+  {
+   "uid": "13-2011.00:21519",
+   "short": "Analyse cost and revenue trends and commitments in Excel to project income and expenses and advise management.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export GL, open items and contract data from AFAS into Excel",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "GL extract",
+      "open items list"
+     ],
+     "outputs": [
+      "analysis dataset"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Map to sites and cost centres, build trend tables and charts",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "Power BI"
+     ],
+     "inputs": [
+      "analysis dataset"
+     ],
+     "outputs": [
+      "trend dashboard"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Read leases, agency and customer contracts for commitments and end dates",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "SharePoint",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "contract document",
+      "contract register"
+     ],
+     "outputs": [
+      "commitment schedule"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "contract PDF or Word file from SharePoint",
+      "output": "rows with counterparty, amount, indexation, start, end, notice period, page reference",
+      "check": "each field must quote a page reference; amounts are tied to AFAS AP or AR history for that counterparty; mismatches over 5% go to review",
+      "stop": "one pass per contract plus one retry on a failed check; after that the contract goes to the accountant marked unread",
+      "why_not_simpler": "contract terms are free text in varied templates; no field in AFAS holds indexation or notice periods"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Run driver-based projection of revenue and expenses for coming months",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "trend dashboard",
+      "commitment schedule"
+     ],
+     "outputs": [
+      "cost and revenue projection"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Write advice memo and discuss it with Controller and FP&A",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "Teams"
+     ],
+     "inputs": [
+      "cost and revenue projection"
+     ],
+     "outputs": [
+      "advice memo"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "projection, trend tables and last month's memo",
+      "output": "first draft of the movements section, each claim linked to a figure",
+      "check": "every number in the draft is matched against the projection table by script; unmatched numbers block the draft",
+      "stop": "two drafts at most; otherwise the accountant writes from the tables",
+      "why_not_simpler": "a template can list numbers but cannot explain which movement matters and why in prose"
+     },
+     "authority": "draft",
+     "human_gate": true
+    }
+   ],
+   "design": "A nightly job on the governed data platform reads the AFAS GL and open items through the AFAS API. It writes a Power BI trend model per site and a driver-based projection in Python. A bounded model loop pulls commitments from SharePoint contracts into a schedule the accountant confirms, and drafts the movement section of the memo, which the accountant rewrites into advice.",
+   "previous_blocker": "Contract commitments sat in free-text documents and the projection lived in personal Excel files, so automating either needed costly custom development.",
+   "enabler_now": "AI coding makes the AFAS-to-platform pipeline and projection code a matter of days. Models can pull contract fields with page references well enough to check them.",
+   "still_hard": "Judging which trends will hold (season peaks, losing a customer, agency rates) and turning that into advice the business trusts. Projection errors cost money and are only seen later.",
+   "human_edge": "Knowing the business behind the numbers: which customer is wobbling, which site manager is optimistic. Standing behind the advice in front of the Finance Director.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A monthly rolling cost and commitment outlook per site instead of an ad hoc analysis a few times a year"
+   },
+   "altitude": "The accountant stops building the dataset and spends the time testing assumptions with site managers and FP&A. They gain ownership of the projection drivers.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Rolling forecast and scenario planning",
+     "learn": "How FP&A drivers and seasonal flex volumes are set, so the accounting projection uses the same assumptions"
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "3-5",
+    "testing_rollout": "4-6",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AI does well on detailed file-search and instruction-following month-end tasks, but client communication and tacit context were left out of the test",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Multi-step reasoning across files is the main failure mode, so each projection step is kept as checked code",
+     "grade": "E3",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Firms using AI closed books 7.5 days faster",
+     "grade": "E3",
+     "source": "[S3]"
+    },
+    {
+     "claim": "Driver-based projection in Python on an AFAS extract is standard practice",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The AFAS extract that feeds Power BI can be reused on the data platform",
+    "Major contracts are stored in SharePoint, not only on paper",
+    "FP&A keeps its own forecast; this is the accounting view of commitments"
+   ],
+   "unknowns": [
+    "How many contracts with material commitments exist, and where they are stored",
+    "Whether management actually uses the current analyses for decisions",
+    "Whether a governed data platform already exists or must be set up"
+   ],
+   "research_questions": [
+    "Of the last five analyses, how many hours went to data prep compared with interpretation?",
+    "Does contract extraction reach at least 95% field accuracy on 30 Noordhaven leases and agency contracts?",
+    "Do FP&A and the Controller accept one shared driver set, or do they need separate views?"
+   ],
+   "time_saved_pct": 77,
+   "speedup": 4.4
+  },
+  {
+   "uid": "13-2011.00:21507",
+   "short": "Pull transaction data and test for weak controls, duplicates, waste, fraud and policy breaches.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pull payments, vendor master changes, journals and user rights from AFAS and Rabobank",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Rabobank",
+      "Excel"
+     ],
+     "inputs": [
+      "payment batch",
+      "vendor master log",
+      "journal entries",
+      "user rights list"
+     ],
+     "outputs": [
+      "control test dataset"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Run tests: duplicates, IBAN changes, segregation of duties, odd postings",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "control test dataset"
+     ],
+     "outputs": [
+      "exception list"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Check each exception against invoices, agency hours and approvals",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "AFAS Profit",
+      "Staffing agency portals",
+      "Outlook"
+     ],
+     "inputs": [
+      "exception list",
+      "agency invoice",
+      "purchase invoice"
+     ],
+     "outputs": [
+      "triaged exception list"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "one exception with its linked invoice scan, approval trail and agency hours record",
+      "output": "label (explained, needs follow-up, suspicious) with the document lines that support it",
+      "check": "label 'explained' is only accepted when the cited document line matches amount and party by script; anything else goes to the accountant",
+      "stop": "one pass per exception, no retries; low confidence goes straight to the accountant",
+      "why_not_simpler": "supporting evidence is in scanned invoices and free-text approvals that rules cannot read"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Ask staff and bookkeepers about open cases and decide findings",
+     "actor": "accountant",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "triaged exception list"
+     ],
+     "outputs": [
+      "control finding"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Write findings report with recommended control fixes",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "Word"
+     ],
+     "inputs": [
+      "control finding"
+     ],
+     "outputs": [
+      "control findings report"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "confirmed findings with amounts and evidence links",
+      "output": "report sections per finding: condition, cause, risk, fix",
+      "check": "accountant reads every section; script checks each amount and count against the findings table",
+      "stop": "one draft per finding; rewrite by hand if rejected",
+      "why_not_simpler": "findings need plain-language explanation of risk and cause that a template cannot give"
+     },
+     "authority": "draft",
+     "human_gate": true
+    }
+   ],
+   "design": "Scheduled SQL and Python tests on the data platform run weekly over every AFAS payment, vendor master change, journal and Rabobank CAMT.053 statement. The results go to a Power BI exception dashboard with Teams notifications. A bounded model loop triages exceptions against the scanned invoices and agency hours, and drafts the findings. Interviews and findings stay with the accountant and the Controller.",
+   "previous_blocker": "Tests ran as samples in Excel because full-population testing needed scripting skills and data access Finance did not have. Matching to scanned documents was manual.",
+   "enabler_now": "AI coding writes and maintains the test suite quickly. Models can read invoice scans and approval mails to triage, with a script checking every claimed match.",
+   "still_hard": "Telling fraud from sloppy process, tuning thresholds so the list stays short, and handling people with care when a finding points at a colleague.",
+   "human_edge": "Asking the right person the right question, reading reactions, and deciding whether something is an error, a control gap or fraud.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly full-population control testing of all payments and vendor changes instead of yearly samples"
+   },
+   "altitude": "The accountant moves from collecting samples to owning the test library and the follow-up of a short weekly exception list. They gain the right to propose control changes to the Controller.",
+   "reach": [
+    {
+     "role": "bookkeeper",
+     "task": "Vendor master maintenance and payment batch preparation",
+     "learn": "Where IBAN changes and duplicate invoices enter, so the test points at the step that should block them"
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "3-5",
+    "testing_rollout": "5-8",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Full-population deterministic tests (duplicates, segregation of duties, IBAN changes) are the recommended pattern, with model-written findings at lower autonomy",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Unnoticed model assumptions make workpapers impossible to rebuild, so evidence links are required",
+     "grade": "E3",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Multi-step reasoning across files is where models fail most",
+     "grade": "E3",
+     "source": "[S2]"
+    }
+   ],
+   "assumptions": [
+    "AFAS logs vendor master changes with user and timestamp",
+    "Rabobank statements are available as CAMT.053",
+    "Purchase invoices are scanned and linked in AFAS"
+   ],
+   "unknowns": [
+    "Whether the works council sees tests on user activity as a personnel monitoring system needing consent (WOR art. 27)",
+    "Who at Noordhaven is allowed to see suspected fraud cases",
+    "What the external auditor currently tests and would rely on"
+   ],
+   "research_questions": [
+    "Running the tests over last year's data, how many exceptions come up per week, and what share are real?",
+    "Does the AFAS audit log hold enough detail for segregation-of-duties and IBAN-change tests?",
+    "Will the auditor rely on the automated tests to cut their sample sizes?"
+   ],
+   "time_saved_pct": 73,
+   "speedup": 3.7
+  },
+  {
+   "uid": "13-2011.00:21531",
+   "short": "Maintain budgets and prepare periodic budget-versus-actual reports per site and cost centre.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export actuals from AFAS and paste them into the budget workbook",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "GL extract",
+      "budget workbook"
+     ],
+     "outputs": [
+      "actuals by cost centre"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 30,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Map accounts and reconcile workbook totals to the GL",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "actuals by cost centre"
+     ],
+     "outputs": [
+      "tie-out check"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Build variance report per site and cost centre",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "Power BI"
+     ],
+     "inputs": [
+      "actuals by cost centre",
+      "budget"
+     ],
+     "outputs": [
+      "budget vs actual report"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Chase budget holders by mail and write variance explanations",
+     "actor": "accountant",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Excel"
+     ],
+     "inputs": [
+      "budget vs actual report"
+     ],
+     "outputs": [
+      "variance commentary"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "notification",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "variances over threshold, top journal lines behind each, and the budget holder's reply",
+      "output": "one or two sentences per variance with the driver named",
+      "check": "script confirms every amount and line cited exists in the GL; accountant approves before publishing",
+      "stop": "one draft per variance; no reply from the budget holder after two reminders marks it unexplained",
+      "why_not_simpler": "replies from budget holders are free text and must be turned into consistent commentary"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Update budget and reforecast with FP&A when assumptions change",
+     "actor": "accountant",
+     "today_means": "meeting_call",
+     "systems": [
+      "Excel",
+      "Teams"
+     ],
+     "inputs": [
+      "variance commentary"
+     ],
+     "outputs": [
+      "budget"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Load the budget into AFAS budget tables and extend the existing Power BI finance model with a budget-versus-actual page per site and cost centre, refreshed nightly with an automated GL tie-out. A small workflow sends variances above threshold to budget holders by Teams. A bounded model loop turns their replies and the journal lines into draft commentary the accountant approves.",
+   "previous_blocker": "The budget lived in a separate workbook, and nobody had time to build the mapping and the Power BI model. Explanations depended on chasing mail.",
+   "enabler_now": "Power BI already runs on the nightly AFAS extract, so this is mostly configuration. AI coding speeds up the mapping and tie-out scripts, and a model can draft commentary from replies.",
+   "still_hard": "Getting budget holders to answer, and deciding which variances signal a real change in the business rather than timing.",
+   "human_edge": "Knowing which variance matters and challenging a site manager's explanation.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Site and warehouse managers in Rotterdam, Tilburg and Venlo get a self-service monthly budget view with commentary"
+   },
+   "altitude": "The accountant stops building the report and spends the time on the few variances that matter and on reforecasts with FP&A.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Reforecast and budget cycle",
+     "learn": "How budget phasing is set, so variances from timing are filtered out before they are chased"
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "2-4",
+    "testing_rollout": "3-5",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Budget-versus-actual is best served by deterministic software plus model-written commentary at autonomy 3",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Power BI on a nightly AFAS extract is already in place at Noordhaven",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "AFAS Profit budget functionality is licensed or can be added",
+    "Cost centre structure is stable within the year",
+    "Budget holders have Power BI access or can get it"
+   ],
+   "unknowns": [
+    "How many budget holders and cost centres there are",
+    "Whether the budget is held in AFAS today or only in Excel",
+    "How often the report goes out today and to whom"
+   ],
+   "research_questions": [
+    "How many hours per month go to the current budget-versus-actual pack?",
+    "Do site managers actually open a Power BI page if they get one?",
+    "What share of variances over threshold turn out to be timing only?"
+   ],
+   "time_saved_pct": 85,
+   "speedup": 6.67
+  },
+  {
+   "uid": "13-2011.00:21524",
+   "short": "Audit payroll and personnel records for correct premiums, wage tax, insurance and chain liability compliance.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pull payroll journals, wage tax returns and contract data from AFAS",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "payroll journal",
+      "loonaangifte",
+      "employee contract data"
+     ],
+     "outputs": [
+      "payroll audit dataset"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Check WW premium category, 30% overtime rule, Zvw and WGA/ZW premiums",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "payroll audit dataset"
+     ],
+     "outputs": [
+      "payroll exception list"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Reconcile payroll journal to GL and wage tax payment",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Rabobank"
+     ],
+     "inputs": [
+      "payroll journal",
+      "bank statement"
+     ],
+     "outputs": [
+      "tie-out check"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Check agencies' NEN 4400-1 status, G-account payments and hours against invoices",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "Staffing agency portals",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "agency invoice",
+      "agency hours"
+     ],
+     "outputs": [
+      "chain liability check"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Review exceptions with Payroll and decide corrections or a supplementary return",
+     "actor": "accountant",
+     "today_means": "meeting_call",
+     "systems": [
+      "AFAS Profit",
+      "Teams"
+     ],
+     "inputs": [
+      "payroll exception list",
+      "chain liability check"
+     ],
+     "outputs": [
+      "payroll correction"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "A monthly Python job on the data platform reads payroll journals, wage tax returns and contract fields from AFAS, then applies coded rules: WW low or high premium per contract, the 30% overtime recalculation, and Zvw and sector premiums. It reconciles the results to the GL and the Rabobank payment. A second rule set checks agency invoices against portal hours, NEN 4400-1 registration and G-account splits. Exceptions go to a restricted Power BI page; corrections and any supplementary return stay with the Payroll Specialist and the accountant.",
+   "previous_blocker": "Premium rules change yearly and the data is special-category personal data, so checks stayed as annual samples in Excel run by one person.",
+   "enabler_now": "The rules are fixed and written down, and AI coding makes it cheap to write them as tests and update them each January. AFAS and the agency portals provide exports or APIs.",
+   "still_hard": "Edge cases in contracts (on-call, mixed hours), access control over BSN and absence data, and corrections that go to the tax office and cannot be undone.",
+   "human_edge": "Deciding whether a deviation is an error to correct with the Belastingdienst, and agreeing it with Payroll and the Controller.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Every monthly payroll run checked for WW premium category and chain liability before the wage tax return is filed"
+   },
+   "altitude": "The accountant moves from yearly sample audits to reviewing a monthly exception list, and owns the premium rule set together with the Payroll Specialist.",
+   "reach": [
+    {
+     "role": "payroll",
+     "task": "Preparing and filing the monthly loonaangifte",
+     "learn": "Which AFAS contract fields drive premium codes, so the check catches errors before filing"
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "3-6",
+    "testing_rollout": "5-8",
+    "consent_and_access": "10-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Payroll checks over every transaction fit deterministic software at autonomy 4, with interviews kept human",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Tax estimates belong on the mandatory human review list",
+     "grade": "E3",
+     "source": "[S7]"
+    },
+    {
+     "claim": "Dutch WW premium differentiation and chain liability rules are rule-based and published",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Contract type and hours are recorded reliably in AFAS",
+    "Agency portals provide hours and invoice exports",
+    "No model is needed at run time; all checks are coded rules"
+   ],
+   "unknowns": [
+    "Whether the works council must consent to a new system processing personnel data (WOR art. 27) and what the DPIA under AVG concludes",
+    "Whether agencies are paid partly through a G-account today",
+    "Who may see payroll exceptions with BSN and absence data"
+   ],
+   "research_questions": [
+    "How many WW premium or overtime-rule errors would last year's data have shown?",
+    "Can AFAS contract fields support the 30% overtime rule check without manual lookup?",
+    "Do all three agencies provide machine-readable hours and NEN 4400-1 proof?"
+   ],
+   "time_saved_pct": 85,
+   "speedup": 6.67
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 120,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

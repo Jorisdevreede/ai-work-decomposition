@@ -1,0 +1,832 @@
+{
+ "role_id": "people-analyst",
+ "tasks": [
+  {
+   "uid": "15-2051.01:16146",
+   "short": "Gather outside labour-market, wage, absence and agency-rate data into Excel for HR benchmarks.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Find and download CBS, UWV and sector figures, check CAO wage table updates",
+     "actor": "people-analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "public statistics",
+      "CAO wage table"
+     ],
+     "outputs": [
+      "raw benchmark files"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Copy, clean and align figures to Noordhaven sites and job groups",
+     "actor": "people-analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "raw benchmark files"
+     ],
+     "outputs": [
+      "benchmark table"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Read purchased salary surveys and sector PDFs, extract the needed numbers",
+     "actor": "people-analyst",
+     "today_means": "document",
+     "systems": [
+      "SharePoint",
+      "Excel"
+     ],
+     "inputs": [
+      "salary survey report",
+      "sector report"
+     ],
+     "outputs": [
+      "benchmark table"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "PDF report pages",
+      "output": "rows of figure, unit, period, group, source page",
+      "check": "Schema validation, unit and range checks, analyst spot-checks each new report against the page cited",
+      "stop": "One pass per report, two retries on schema failure; unreadable tables go to the analyst",
+      "why_not_simpler": "Report layouts differ per publisher and year, so fixed parsers break"
+     },
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Check plausibility, note caveats and comparability limits",
+     "actor": "people-analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "benchmark table"
+     ],
+     "outputs": [
+      "benchmark notes"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Store in SharePoint and tell HRBPs and C&B what changed",
+     "actor": "people-analyst",
+     "today_means": "email_chat",
+     "systems": [
+      "SharePoint",
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "benchmark table",
+      "benchmark notes"
+     ],
+     "outputs": [
+      "benchmark update notice"
+     ],
+     "handoff_to": "cnb",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    }
+   ],
+   "design": "A scheduled Python job on the governed data platform pulls CBS StatLine and UWV open data monthly into one benchmark table with source and date, and a small extraction loop adds figures from purchased PDF reports with a page reference. A Power BI benchmark page sits next to the AFAS-based HR dashboards, and a Teams message lists what changed.",
+   "previous_blocker": "Sources are scattered and few; a one-person team copied by hand because building parsers for each publisher did not pay off.",
+   "enabler_now": "AI coding makes small connectors cheap to write and maintain, and a model can read varied PDF tables into a fixed schema with a check.",
+   "still_hard": "Purchased reports have licence limits and differing definitions (job groups, absence measures), so comparability stays a judgement.",
+   "human_edge": "Knowing which outside figure is really comparable to a Venlo warehouse shift worker, and saying when it is not.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Monthly instead of yearly check of Noordhaven warehouse wages and agency rates against the regional market, feeding C&B and flex-pool decisions."
+   },
+   "altitude": "The analyst stops copying numbers and spends the time on comparability notes; they decide which sources enter the benchmark table.",
+   "reach": [
+    {
+     "role": "cnb",
+     "task": "Annual salary benchmarking against CAO scales",
+     "learn": "How survey job levels map to CAO function groups"
+    },
+    {
+     "role": "fpa",
+     "task": "Flex labour cost forecast",
+     "learn": "How agency rates and seasonal volumes drive the forecast"
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "2-3",
+    "testing_rollout": "2-3",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Public statistics such as CBS StatLine are available through an open data API",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Trend data rarely shows cause; keep caveats such as 'does not establish how much AI caused'",
+     "grade": "E3",
+     "source": "[S8]"
+    }
+   ],
+   "assumptions": [
+    "Benchmarks use public or purchased data only, no personal data, so no works-council consent is needed for this step",
+    "A governed data platform or Fabric workspace is available next to Power BI"
+   ],
+   "unknowns": [
+    "Which purchased salary surveys Noordhaven subscribes to and their licence terms",
+    "Whether the three agencies share rate cards in a usable format"
+   ],
+   "research_questions": [
+    "Which five outside figures did HRBPs and C&B actually use in the last year?",
+    "Does the purchased survey licence allow storing its figures in an internal table?",
+    "How often do CBS and UWV tables change structure, breaking the job?"
+   ],
+   "time_saved_pct": 86,
+   "speedup": 7.14
+  },
+  {
+   "uid": "15-2051.01:16143",
+   "short": "Tell managers and HR about new reports, dashboard changes and metric definitions, and answer how-to questions.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect what changed in dashboards, measures and the AFAS extract",
+     "actor": "people-analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "Power BI"
+     ],
+     "inputs": [
+      "semantic model",
+      "change log"
+     ],
+     "outputs": [
+      "change list"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Write release note or newsletter for managers and HR",
+     "actor": "people-analyst",
+     "today_means": "document",
+     "systems": [
+      "Outlook",
+      "SharePoint"
+     ],
+     "inputs": [
+      "change list",
+      "metric definitions"
+     ],
+     "outputs": [
+      "release note"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "change list and metric definitions",
+      "output": "plain-language release note per audience",
+      "check": "Analyst reads before sending; every metric named must exist in the definitions list",
+      "stop": "One draft plus one revision; if checks fail the analyst writes it",
+      "why_not_simpler": "A template fills facts but cannot explain a changed definition in plain words for site managers"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Answer manager questions on how to read reports and definitions",
+     "actor": "people-analyst",
+     "today_means": "email_chat",
+     "systems": [
+      "Teams",
+      "Outlook",
+      "Power BI"
+     ],
+     "inputs": [
+      "manager question",
+      "metric definitions"
+     ],
+     "outputs": [
+      "answer"
+     ],
+     "handoff_to": "external",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Post via Teams and mail to managers on three sites",
+     "actor": "people-analyst",
+     "today_means": "email_chat",
+     "systems": [
+      "Teams",
+      "Outlook"
+     ],
+     "inputs": [
+      "release note"
+     ],
+     "outputs": [
+      "release notice"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Give short demos to HRBPs and site managers",
+     "actor": "people-analyst",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "release note"
+     ],
+     "outputs": [
+      "demo session"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    }
+   ],
+   "design": "A script reads the Power BI semantic model and deployment history to build a change list, and a bounded loop drafts the release note the analyst approves before a scheduled Teams post. How-to questions go to Copilot in Power BI on the prepared HR model with verified answers and row-level security, labelled as AI, with misses routed to the analyst.",
+   "previous_blocker": "Change tracking was manual and questions came by mail one at a time; chat over data needed a well-prepared model and capacity licences.",
+   "enabler_now": "Copilot in Power BI answers questions on a prepared semantic model, and model metadata can be read by script to list changes.",
+   "still_hard": "Copilot misreads unprepared models and Dutch chat is not officially supported, so the model needs synonyms, descriptions and verified answers in English or tested Dutch.",
+   "human_edge": "Explaining to a sceptical site manager why the absence figure changed, and noticing who did not understand.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Shift leads on the three warehouse sites get answers on onboarding and verzuim figures for their teams without going through an HRBP."
+   },
+   "altitude": "The analyst owns the metric definitions and verified answers that managers query, instead of writing each answer.",
+   "reach": [
+    {
+     "role": "hrbp",
+     "task": "Explaining HR figures in management team meetings",
+     "learn": "Which questions managers really ask, to seed verified answers"
+    },
+    {
+     "role": "ld",
+     "task": "Communicating mandatory certificate status",
+     "learn": "How Studytube completion data reaches managers"
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "3-5",
+    "testing_rollout": "5-8",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Copilot in Power BI answers questions on a semantic model and can misinterpret data without a prepared model; non-English chat not officially supported; needs F2+ or Premium",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Faster access to information does not by itself lead to better decisions",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "Chatbots must disclose they are AI",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "A works council has consent right on systems that process personal data or can observe performance",
+     "grade": "E3",
+     "source": "[S11]"
+    }
+   ],
+   "assumptions": [
+    "Row-level security and a minimum group size are set before managers get chat access",
+    "Release notes contain definitions, not personal data"
+   ],
+   "unknowns": [
+    "Whether Noordhaven has Fabric F2+ or Premium capacity",
+    "Whether the OR has already consented to the HR dashboards and if a chat layer changes that"
+   ],
+   "research_questions": [
+    "What share of manager mails to the analyst are how-to or definition questions?",
+    "Does Copilot answer correctly on 30 real past questions against the prepared HR model?",
+    "Do shift leads accept English-only chat, or is Dutch a must?"
+   ],
+   "time_saved_pct": 72,
+   "speedup": 3.51
+  },
+  {
+   "uid": "15-2051.01:16142",
+   "short": "Write specifications for HR reports and dashboards: purpose, measures, sources, filters and access.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Take the request from HRBP, HR Director or Finance in a meeting",
+     "actor": "people-analyst",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams",
+      "Outlook"
+     ],
+     "inputs": [
+      "report request"
+     ],
+     "outputs": [
+      "intake notes"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Write the spec document from a Word template",
+     "actor": "people-analyst",
+     "today_means": "document",
+     "systems": [
+      "SharePoint"
+     ],
+     "inputs": [
+      "intake notes",
+      "spec template"
+     ],
+     "outputs": [
+      "report specification"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "intake notes or meeting transcript and existing metric definitions",
+      "output": "filled spec template with open questions flagged",
+      "check": "Every measure must map to an existing definition or be marked new; analyst approves",
+      "stop": "One draft, one revision; gaps listed as questions to the requester",
+      "why_not_simpler": "Intake notes are free text; a form alone does not turn a vague request into measures"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Define measures and write DAX formulas",
+     "actor": "people-analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "Power BI"
+     ],
+     "inputs": [
+      "report specification",
+      "semantic model"
+     ],
+     "outputs": [
+      "measure definitions"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Document source fields and lineage from the AFAS extract",
+     "actor": "people-analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit",
+      "Power BI"
+     ],
+     "inputs": [
+      "semantic model",
+      "AFAS extract"
+     ],
+     "outputs": [
+      "data dictionary"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Set access, minimum group size and check OR and privacy rules",
+     "actor": "people-analyst",
+     "today_means": "document",
+     "systems": [
+      "Power BI",
+      "SharePoint"
+     ],
+     "inputs": [
+      "report specification"
+     ],
+     "outputs": [
+      "access and privacy note"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    }
+   ],
+   "design": "A script reads the Power BI semantic model (field names, measures, descriptions) and writes a data dictionary to SharePoint on each deployment; a bounded loop turns intake notes into a spec draft on the standard template, and Copilot in Power BI drafts DAX that the analyst tests. Access and privacy sections stay the analyst's call, signed off by the HR Director.",
+   "previous_blocker": "Specs and dictionaries were hand-written because tooling to read model metadata and write prose was not worth building for one analyst.",
+   "enabler_now": "Model metadata is scriptable, Copilot writes DAX, and a model can fill a template from meeting notes with gaps flagged.",
+   "still_hard": "Getting requesters to say what decision the report serves, and deciding which views count as monitoring under WOR 27(1)(l).",
+   "human_edge": "Pushing back on a request that would let managers watch individual absence, and finding the real question behind the ask.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A living HR metric catalogue on SharePoint that HRBPs, Finance and Copilot all use as the one source of definitions."
+   },
+   "altitude": "The analyst moves from typing specs to approving them and owns the access and privacy decision per report.",
+   "reach": [
+    {
+     "role": "controller",
+     "task": "Defining headcount and FTE for finance reporting",
+     "learn": "Where finance and HR headcount definitions differ"
+    },
+    {
+     "role": "hr-admin",
+     "task": "Entering contracts and absence in AFAS",
+     "learn": "Which AFAS fields are reliably filled"
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "2-3",
+    "testing_rollout": "2-4",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Copilot in Power BI writes DAX and works best on a prepared model",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Absence data is health data; recording sick-leave causes led to a fine",
+     "grade": "E3",
+     "source": "[S13][S14]"
+    },
+    {
+     "claim": "Works council consent applies to facilities able to observe performance, judged by capability",
+     "grade": "E3",
+     "source": "[S11]"
+    }
+   ],
+   "assumptions": [
+    "The HR dashboards are built in Power BI Desktop with a shared semantic model",
+    "Specs live in SharePoint"
+   ],
+   "unknowns": [
+    "How many new report requests arrive per month",
+    "Whether a spec template already exists"
+   ],
+   "research_questions": [
+    "Does a generated data dictionary match the analyst's manual one on the current HR model?",
+    "How many past specs had to be reworked because the request was unclear?",
+    "Does the OR want to see specs for new HR reports before go-live?"
+   ],
+   "time_saved_pct": 53,
+   "speedup": 2.13
+  },
+  {
+   "uid": "15-2051.01:16149",
+   "short": "Combine HR metrics and outside trends into a short analysis with recommendations for HR leadership.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pull time to hire, 90-day retention, verzuim and flex figures",
+     "actor": "people-analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "Power BI",
+      "AFAS Profit",
+      "Recruitee"
+     ],
+     "inputs": [
+      "HR dashboard",
+      "benchmark table"
+     ],
+     "outputs": [
+      "metric extract"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Compare to prior periods, sites and benchmarks; find notable changes",
+     "actor": "people-analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "metric extract",
+      "benchmark table"
+     ],
+     "outputs": [
+      "variance list"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Write the narrative with caveats",
+     "actor": "people-analyst",
+     "today_means": "document",
+     "systems": [
+      "Outlook",
+      "SharePoint"
+     ],
+     "inputs": [
+      "variance list",
+      "benchmark notes"
+     ],
+     "outputs": [
+      "trend brief draft"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "variance list with numbers, definitions and source notes",
+      "output": "one-page brief citing each figure",
+      "check": "Script checks every number in the text against the variance list; no group under minimum size; no absence causes",
+      "stop": "Two attempts; on failure the analyst writes from the variance list",
+      "why_not_simpler": "Plain templates cannot rank and explain several changes in readable prose"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Decide what it means and draft recommendations",
+     "actor": "people-analyst",
+     "today_means": "document",
+     "systems": [
+      "SharePoint"
+     ],
+     "inputs": [
+      "trend brief draft"
+     ],
+     "outputs": [
+      "recommendation"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Present to HR Director and HRBPs, discuss actions",
+     "actor": "people-analyst",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "recommendation"
+     ],
+     "outputs": [
+      "agreed actions"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    }
+   ],
+   "design": "Fixed variance rules on the Power BI HR model flag changes by site and month in 90-day retention, time to hire and verzuim rate against prior periods and the benchmark table. A bounded loop drafts a cited one-page brief that a script checks number by number; the analyst writes the recommendation and presents it.",
+   "previous_blocker": "Variance hunting lived in Excel and writing took hours; generated text could not be trusted to keep numbers right.",
+   "enabler_now": "Variance rules are quick to code, and a model draft can be checked mechanically against the source numbers.",
+   "still_hard": "Cause is rarely visible in the data; small site groups give noisy rates, and absence must stay at rate and duration level.",
+   "human_edge": "Linking a retention dip in Tilburg to a known shift-pattern change and judging what HR can actually change.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A monthly site-level 90-day retention and verzuim brief for the HR Director instead of a quarterly deck."
+   },
+   "altitude": "The analyst spends time on interpretation and recommendations and gets a standing slot in the HR management meeting.",
+   "reach": [
+    {
+     "role": "hrbp",
+     "task": "Site action plans on retention and absence",
+     "learn": "What actions sites have tried and with what result"
+    },
+    {
+     "role": "fpa",
+     "task": "Monthly variance commentary",
+     "learn": "Finance's approach to explaining variances and materiality"
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "2-4",
+    "testing_rollout": "3-5",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Trend data does not show how much a factor caused a change; keep such caveats",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "Verzuim analytics must use rates and durations, never causes",
+     "grade": "E3",
+     "source": "[S13][S14]"
+    },
+    {
+     "claim": "Retention or absence analysis on personal data needs works council consent",
+     "grade": "E3",
+     "source": "[S11][S12]"
+    }
+   ],
+   "assumptions": [
+    "Briefs show site and team totals above a minimum group size, no individuals",
+    "No individual risk scores are produced"
+   ],
+   "unknowns": [
+    "Current minimum group size rule, if any",
+    "Whether the OR consent for HR dashboards covers monthly retention and verzuim briefs"
+   ],
+   "research_questions": [
+    "Which past recommendations led to action, and what data drove them?",
+    "Does the number check catch all errors in 20 generated briefs?",
+    "Is a monthly cadence useful to the HR Director or noise?"
+   ],
+   "time_saved_pct": 60,
+   "speedup": 2.47
+  }
+ ],
+ "role": {
+  "altitude": "From producing reports and copying data to owning the HR metric layer: definitions, benchmark sources, verified answers, access rules and the monthly brief that managers and Copilot rely on.",
+  "reach": [
+   "Compensation and Benefits: market benchmarks mapped to CAO function groups",
+   "HR Business Partner: site action plans on retention and verzuim",
+   "FP&A: flex labour cost and variance commentary",
+   "HR Administrator: AFAS data quality at source"
+  ],
+  "skills_to_grow": [
+   "Semantic model design for Copilot (descriptions, synonyms, verified answers)",
+   "Python and data-platform jobs for scheduled pulls and checks",
+   "Privacy and works-council framing of HR analytics (AVG Art. 9, WOR 27, EU AI Act)",
+   "Writing short recommendations for leadership"
+  ],
+  "ambitious_version": "One governed HR metric layer on Power BI that shift leads, HRBPs and Finance query directly, a monthly site-level brief on 90-day retention and verzuim, and a works-council-agreed rulebook for what HR data may be shown to whom."
+ },
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 89,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

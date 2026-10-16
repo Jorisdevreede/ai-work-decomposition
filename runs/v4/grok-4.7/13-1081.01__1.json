@@ -1,0 +1,1034 @@
+{
+ "job_code": "13-1081.01",
+ "tasks": [
+  {
+   "uid": "13-1081.01:19997",
+   "short": "Find logistics cost and process opportunities.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pull lane cost and volume into one table.",
+     "actor": "logistics analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "ERP",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "shipment extract"
+     ],
+     "outputs": [
+      "lane cost table"
+     ],
+     "handoff_to": "s2",
+     "share_pct": 18,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "plan-to-forecast",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Rank lanes whose unit cost beats the agreed rate.",
+     "actor": "logistics analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "BI"
+     ],
+     "inputs": [
+      "lane cost table",
+      "contracted rate"
+     ],
+     "outputs": [
+      "ranked lanes"
+     ],
+     "handoff_to": "s3",
+     "share_pct": 22,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Judge which process improvement opportunities are real.",
+     "actor": "logistics analyst",
+     "today_means": "document",
+     "systems": [
+      "BI"
+     ],
+     "inputs": [
+      "ranked lanes"
+     ],
+     "outputs": [
+      "kept opportunities"
+     ],
+     "handoff_to": "s4",
+     "share_pct": 28,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "strategy-and-planning",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Check the opportunity note before it is sent.",
+     "actor": "logistics analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "kept opportunities"
+     ],
+     "outputs": [
+      "opportunity note"
+     ],
+     "handoff_to": "s5",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Send the opportunity note once the analyst has checked it.",
+     "actor": "logistics analyst",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "opportunity note"
+     ],
+     "outputs": [
+      "sent opportunity note"
+     ],
+     "handoff_to": "",
+     "share_pct": 12,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "meetings-and-calendar",
+     "approver": "logistics analyst",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "A scheduled extract on {ERP} builds the lane cost table in {BI}. The analyst keeps only the opportunities the floor can actually change. {EMAIL} sends the note after that check.",
+   "previous_blocker": "Lane costs lived in a private spreadsheet, so a high unit cost and a real constraint looked the same.",
+   "enabler_now": "Shipment cost and the contracted rate now sit in fields a view can rank.",
+   "still_hard": "A cheap lane can still be the wrong lane when the dock or the customer window cannot move.",
+   "human_edge": "The analyst has stood on that dock and knows which saving the site will refuse.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Revisit the worst lanes every month instead of once a year."
+   },
+   "altitude": "The week still includes saying no to a saving that breaks the floor. The ranking itself is no longer typed.",
+   "reach": [
+    {
+     "role": "Transport planner",
+     "task": "Reprice a lane the analyst has kept",
+     "learn": "Which cost fields must be present before a lane is ranked"
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "4-7",
+    "testing_rollout": "3-5",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Comparing a lane cost with a contracted rate is a table check. A floor walk is not.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "Focal role is the logistics analyst. Boundary: from shipment cost to a checked opportunity note. Changing the contract is a different task.",
+    "Test the existing {ERP} and {BI} views before any custom extract.",
+    "Structured fields are lane id, unit cost, volume and contracted rate. The shipment extract produces them. Fallback: a lane with no rate is listed as missing, not as a saving.",
+    "EU data-protection rules apply. A study of named people needs works-council consent where national rules require it."
+   ],
+   "unknowns": [
+    "Which lanes the customer will allow the analyst to reopen."
+   ],
+   "research_questions": [
+    "How often a ranked lane is rejected because the rate file is stale."
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Judging which ranked lanes are real opportunities",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 15.2,
+      "counted_step_ids": [
+       "s3",
+       "s4"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Keep the contracted-rate map aligned with the current agreements",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5",
+     "approved_version": "opportunity note the analyst checked",
+     "approval_step_id": "s4",
+     "approver": "logistics analyst"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 16,
+    "high": 34,
+    "basis": "A complete rate file saves the ranking and the send. The judgement stays. The low case is a month of lanes with no contracted rate."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 60.8,
+   "incremental_hours_per_100_baseline_hours": 4,
+   "time_saved_pct": 56.8,
+   "speedup": 2.314815,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-1081.01:15876",
+   "short": "Interpret logistics data across the chain.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pull forecasting and inventory figures for the lanes.",
+     "actor": "logistics analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "forecast file",
+      "inventory snapshot"
+     ],
+     "outputs": [
+      "forecast pack"
+     ],
+     "handoff_to": "s2",
+     "share_pct": 16,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "plan-to-forecast",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Sum transportation cost against the forecast volume.",
+     "actor": "logistics analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "BI"
+     ],
+     "inputs": [
+      "forecast pack"
+     ],
+     "outputs": [
+      "transport cost"
+     ],
+     "handoff_to": "s3",
+     "share_pct": 14,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Flag procurement lines that miss the inventory plan.",
+     "actor": "logistics analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "forecast pack",
+      "purchase lines"
+     ],
+     "outputs": [
+      "procurement flags"
+     ],
+     "handoff_to": "s4",
+     "share_pct": 12,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Interpret warehousing and manufacturing exceptions.",
+     "actor": "logistics analyst",
+     "today_means": "meeting_call",
+     "systems": [
+      "BI"
+     ],
+     "inputs": [
+      "transport cost",
+      "procurement flags"
+     ],
+     "outputs": [
+      "interpretation"
+     ],
+     "handoff_to": "s5",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "strategy-and-planning",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Check the logistics interpretation before it is filed.",
+     "actor": "logistics analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "interpretation"
+     ],
+     "outputs": [
+      "interpretation note"
+     ],
+     "handoff_to": "s6",
+     "share_pct": 16,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6",
+     "what": "File the interpretation on the planning record.",
+     "actor": "logistics analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "interpretation note"
+     ],
+     "outputs": [
+      "filed interpretation"
+     ],
+     "handoff_to": "",
+     "share_pct": 12,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "plan-to-forecast",
+     "approver": "logistics analyst",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "Forecast, inventory and purchase lines are read from {ERP} into {BI}. The analyst interprets the exceptions. The note is filed only after that check.",
+   "previous_blocker": "Each function kept its own extract, so transportation and warehousing were explained in different meetings.",
+   "enabler_now": "Those extracts now share a lane id and a week.",
+   "still_hard": "A number can be right and still misread the reason a warehouse missed the plan.",
+   "human_edge": "The analyst can tell a forecast error from a dock that was already full.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Read the same lane across forecast, stock and freight each week."
+   },
+   "altitude": "Interpretation of the exception stays. Pulling the four extracts does not.",
+   "reach": [
+    {
+     "role": "Demand planner",
+     "task": "Correct a forecast the interpretation has questioned",
+     "learn": "Which forecast fields the logistics note relies on"
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "5-8",
+    "testing_rollout": "3-6",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Comparing a lane cost with a contracted rate is a table check. A floor walk is not.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "Focal role is the logistics analyst. Boundary: from the weekly extracts to a filed interpretation. Changing the forecast is the planner's task.",
+    "Test the existing {ERP} and {BI} views before any custom extract.",
+    "Structured fields are lane id, week, forecast quantity, inventory quantity, purchase-line status and transport cost. Each source system produces its own field. Fallback: a missing week is shown as a gap.",
+    "EU data-protection rules apply. A study of named people needs works-council consent where national rules require it."
+   ],
+   "unknowns": [
+    "Whether manufacturing exceptions are visible in the same week as the freight."
+   ],
+   "research_questions": [
+    "How often the interpretation changes the planner's next forecast."
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Interpreting warehousing and manufacturing exceptions",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 15.4,
+      "counted_step_ids": [
+       "s4",
+       "s5"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Keep the lane-id map across forecast, stock and freight",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 5
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s6",
+     "approved_version": "interpretation note the analyst checked",
+     "approval_step_id": "s5",
+     "approver": "logistics analyst"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 14,
+    "high": 30,
+    "basis": "A week with complete extracts saves the sums and the filing. The interpretation stays. The low case is a week whose forecast and stock do not share a lane id."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 60.2,
+   "incremental_hours_per_100_baseline_hours": 5,
+   "time_saved_pct": 55.2,
+   "speedup": 2.232143,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-1081.01:19999",
+   "short": "Design strategies for production facilities.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read production volumes and the facility constraints.",
+     "actor": "logistics analyst",
+     "today_means": "document",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "volume file",
+      "constraint note"
+     ],
+     "outputs": [
+      "volume pack"
+     ],
+     "handoff_to": "s2",
+     "share_pct": 14,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "plan-to-forecast",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Walk the production facilities the design must fit.",
+     "actor": "logistics analyst",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "volume pack"
+     ],
+     "outputs": [
+      "facility notes"
+     ],
+     "handoff_to": "s3",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "facilities-and-workplace",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Sketch lane flows from the volume table.",
+     "actor": "logistics analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "BI"
+     ],
+     "inputs": [
+      "volume pack"
+     ],
+     "outputs": [
+      "flow sketch"
+     ],
+     "handoff_to": "s4",
+     "share_pct": 14,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Choose conceptual designs for those production facilities.",
+     "actor": "logistics analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "facility notes",
+      "flow sketch"
+     ],
+     "outputs": [
+      "chosen design"
+     ],
+     "handoff_to": "s5",
+     "share_pct": 24,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Check the logistic strategies against the walk.",
+     "actor": "logistics analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "chosen design",
+      "facility notes"
+     ],
+     "outputs": [
+      "strategy note"
+     ],
+     "handoff_to": "s6",
+     "share_pct": 16,
+     "fate": "person_reviews",
+     "remaining_pct": 55,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "strategy-and-planning",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6",
+     "what": "Issue the conceptual design to the project file.",
+     "actor": "logistics analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "PROJECT"
+     ],
+     "inputs": [
+      "strategy note"
+     ],
+     "outputs": [
+      "issued design"
+     ],
+     "handoff_to": "",
+     "share_pct": 12,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "project-intake-to-delivery",
+     "approver": "logistics analyst",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "Volumes come from {ERP}. The analyst walks the facilities and chooses the conceptual design. {PROJECT} receives the design only after the walk is in the note.",
+   "previous_blocker": "Designs were drawn from last year's volume sheet without a current walk.",
+   "enabler_now": "The volume file and a short constraint list can be prepared before the walk.",
+   "still_hard": "A drawing that ignores a column, a door or a neighbour is not a design.",
+   "human_edge": "The analyst sees the constraint the volume file does not name.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The walk and the choice of design stay. The flow sketch from the volume table does not.",
+   "reach": [
+    {
+     "role": "Facilities engineer",
+     "task": "Turn the conceptual design into a buildable layout",
+     "learn": "Which constraints the walk recorded and which it did not"
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "3-6",
+    "testing_rollout": "4-7",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Comparing a lane cost with a contracted rate is a table check. A floor walk is not.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "Focal role is the logistics analyst. Boundary: from volumes and a walk to an issued conceptual design. Detailed engineering is out of scope.",
+    "Test the existing {ERP} and {BI} views before any custom extract.",
+    "Structured fields are facility id, weekly volume, constraint type and source. The volume file produces the quantities. Fallback: a constraint seen only on the walk is typed by the analyst and marked unverified.",
+    "EU data-protection rules apply. A study of named people needs works-council consent where national rules require it."
+   ],
+   "unknowns": [
+    "Whether the facilities may be walked before the design is requested."
+   ],
+   "research_questions": [
+    "How often a walk overturns the flow sketch."
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Choosing the design after the facility walk",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 13.1,
+      "counted_step_ids": [
+       "s4",
+       "s5"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Keep the constraint types aligned with the sites in scope",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 3
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s6",
+     "approved_version": "strategy note checked against the walk",
+     "approval_step_id": "s5",
+     "approver": "logistics analyst"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 12,
+    "high": 26,
+    "basis": "Known volumes save the sketch and the filing. The walk and the design choice stay. The low case is a facility the analyst has not walked."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 46.6,
+   "incremental_hours_per_100_baseline_hours": 3,
+   "time_saved_pct": 43.6,
+   "speedup": 1.77305,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-1081.01:15875",
+   "short": "Run logistics studies from floor times.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Time the floor flow for the logistics studies.",
+     "actor": "logistics analyst",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "study brief"
+     ],
+     "outputs": [
+      "floor times"
+     ],
+     "handoff_to": "s2",
+     "share_pct": 28,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "facilities-and-workplace",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Compute rate and network cost from the floor times.",
+     "actor": "logistics analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "floor times",
+      "rate card"
+     ],
+     "outputs": [
+      "rate result"
+     ],
+     "handoff_to": "s3",
+     "share_pct": 22,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Judge which analyses hold once the floor times are in.",
+     "actor": "logistics analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "rate result",
+      "floor times"
+     ],
+     "outputs": [
+      "kept analyses"
+     ],
+     "handoff_to": "s4",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "strategy-and-planning",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Write the study note from the kept analyses.",
+     "actor": "logistics analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "kept analyses"
+     ],
+     "outputs": [
+      "study note"
+     ],
+     "handoff_to": "",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "The analyst times the flow in person. {SPREADSHEET} computes the rate and the network cost from those times. The study note keeps only the analyses the times support.",
+   "previous_blocker": "Studies were rebuilt in a spreadsheet from memory of the floor.",
+   "enabler_now": "A rate card and a timed sample can be calculated without retyping.",
+   "still_hard": "A time study of named people is monitoring, and a short sample can misread a shift.",
+   "human_edge": "The analyst knows when the timed hour was not a normal hour.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Timing the floor and judging the analyses stay. The arithmetic does not.",
+   "reach": [
+    {
+     "role": "Warehouse supervisor",
+     "task": "Explain a slow step the study timed",
+     "learn": "Which shifts were timed and which were not"
+    }
+   ],
+   "build_days": {
+    "coding": "1-3",
+    "integration": "2-4",
+    "testing_rollout": "2-4",
+    "consent_and_access": "5-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Comparing a lane cost with a contracted rate is a table check. A floor walk is not.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "Focal role is the logistics analyst. Boundary: from a timed sample to a study note. Redesigning the floor is a different task.",
+    "Test the existing {ERP} and {BI} views before any custom extract.",
+    "Structured fields are step id, observed minutes, sample size and rate. The analyst enters the times. Fallback: a step not timed is omitted, not given an average.",
+    "EU data-protection rules apply. A study of named people needs works-council consent where national rules require it."
+   ],
+   "unknowns": [
+    "Whether timing named people is allowed on this site, and for which shifts."
+   ],
+   "research_questions": [
+    "How large a sample the supervisor will accept before a change."
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Judging which analyses the floor times support",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 15.8,
+      "counted_step_ids": [
+       "s3",
+       "s4"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Keep the rate card matched to the steps being timed",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 3
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 10,
+    "high": 22,
+    "basis": "A clean rate card saves the arithmetic. The timing and the judgement stay. The low case is a shift that was not a normal hour. No other role's time is in this task."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 37.0,
+   "incremental_hours_per_100_baseline_hours": 3,
+   "time_saved_pct": 34.0,
+   "speedup": 1.515152,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "Floor walks, interviews and the choice of which saving is real stay with the analyst. Standard lane costs and indicator refreshes leave the spreadsheet.",
+  "reach": [
+   "Warehouse supervisors, on which floor facts a flow study needs.",
+   "Transport planners, on which rate fields a lane comparison needs."
+  ],
+  "skills_to_grow": [
+   "Marking a missing rate instead of filling it.",
+   "Separating a floor constraint from a model result."
+  ],
+  "ambitious_version": "A lane exception arrives with its cost, its floor note and the name of the person who may change the plan."
+ },
+ "_meta": {
+  "model": "grok-4.7",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "13-1081.01",
+   "title": "Logistics Engineers",
+   "tasks": 30,
+   "function": "Business operations"
+  },
+  "digest": "research/digests-minor/13-1.md",
+  "digest_sha256": "7a4c995306b30639d3fcfade08c36bfbbcf664eb9b7dc402d15055b4861b2737",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-15T14:53:21"
+ }
+}

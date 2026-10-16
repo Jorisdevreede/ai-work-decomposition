@@ -1,0 +1,1057 @@
+{
+ "tasks": [
+  {
+   "uid": "43-4171.00:744",
+   "short": "Answer calls, provide information, connect callers, take messages and pass appointment requests.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Answer the call and establish the caller's purpose and urgency.",
+     "actor": "receptionist",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "incoming call"
+     ],
+     "outputs": [
+      "caller need"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Find the relevant employee, department or published information.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM",
+      "DOCS"
+     ],
+     "inputs": [
+      "caller need",
+      "staff directory",
+      "approved information"
+     ],
+     "outputs": [
+      "routing options",
+      "answer references"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Give an answer where approved information covers the question.",
+     "actor": "receptionist",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "caller need",
+      "answer references"
+     ],
+     "outputs": [
+      "caller answer"
+     ],
+     "handoff_to": "external",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Receptionist-entered question and approved, disclosure-filtered answer references.",
+      "output": "Short suggested answer with supporting references.",
+      "check": "Require a reference for each factual claim. The receptionist checks relevance before speaking.",
+      "stop": "One draft and one correction maximum. Missing support or ambiguity returns the question to the receptionist.",
+      "why_not_simpler": "Exact lookup handles fixed questions; varied wording sometimes needs a short synthesis."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "receptionist"
+    },
+    {
+     "id": "s4",
+     "what": "Check the recipient and transfer calls requiring another employee.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "caller need",
+      "routing options"
+     ],
+     "outputs": [
+      "transferred call"
+     ],
+     "handoff_to": "receiving employee",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "receptionist"
+    },
+    {
+     "id": "s5",
+     "what": "Write and send a callback message when the recipient is unavailable.",
+     "actor": "receptionist",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CHAT"
+     ],
+     "inputs": [
+      "caller need",
+      "callback details"
+     ],
+     "outputs": [
+      "callback message"
+     ],
+     "handoff_to": "receiving employee",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Receptionist notes, confirmed callback details and selected recipient.",
+      "output": "Structured callback message.",
+      "check": "Preserve confirmed names and numbers exactly. Require recipient and callback details before sending.",
+      "stop": "One draft maximum. Incomplete details return to the receptionist; structured notes bypass the model.",
+      "why_not_simpler": "A template covers structured messages; free notes sometimes need concise rewriting."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "receptionist"
+    },
+    {
+     "id": "s6",
+     "what": "Pass appointment requirements into the booking process.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "caller need",
+      "appointment request"
+     ],
+     "outputs": [
+      "booking requirements"
+     ],
+     "handoff_to": "receptionist",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "meetings-and-calendar",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure directory lookup and approved routing in the {TELEPHONY}, using a restricted directory from the {HCM} and information from the {DOCS}. A small panel in the {WORKFLOW} offers referenced answer drafts and callback messages for receptionist approval, then passes booking requirements to the {CALENDAR}. Calls continue with a person; no call recording is required.",
+   "previous_blocker": "Basic routing already existed. Stale directories, scattered information and repeated message entry left much of the work manual.",
+   "enabler_now": "Existing routing features and interfaces can handle the structured work. AI-assisted coding reduces the effort of building a small connecting panel; bounded drafting handles variable wording.",
+   "still_hard": "Identifying distressed callers, detecting misleading requests and finding the right person when responsibilities overlap.",
+   "human_edge": "The receptionist hears urgency, builds trust and decides when a caller needs personal attention.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A tracked callback service for callers who cannot reach the right employee."
+   },
+   "altitude": "Less time goes to searching and typing. The receptionist can prioritise unresolved callbacks within agreed service rules; disclosure and escalation limits still apply.",
+   "reach": [
+    {
+     "role": "switchboard operator",
+     "task": "Manage overflow routing during busy periods.",
+     "learn": "Queue settings, availability states and transfer failure handling."
+    },
+    {
+     "role": "customer service representative",
+     "task": "Follow up unresolved information requests.",
+     "learn": "Case ownership, response commitments and clear handover notes."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "4-8",
+    "testing_rollout": "4-7",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Knowledge-based answers with handover are available today; this supports the answer-panel component.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Voice and other customer-service integrations are available today; local routing still needs validation.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Human support assistants have improved issue throughput in a documented study; reception gains cannot be inferred directly.",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "Step shares, remaining effort and build ranges are planning estimates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline is a staffed reception desk using the {TELEPHONY}, a staff directory and internal messages.",
+    "Answering, transfer, message-taking and booking handoff are alternative call branches; shares cover the overall task mix.",
+    "The {HCM} exposes only reception-approved directory fields.",
+    "Booking execution is covered in task 43-4171.00:751; its savings must not be counted again here.",
+    "GDPR applies to caller details. Access and retention are limited to the callback purpose.",
+    "If caller-facing AI is later introduced, EU AI Act disclosure requirements apply; that extension is outside this design.",
+    "Consultation requirements depend on national rules and any change to employee monitoring."
+   ],
+   "unknowns": [
+    "Which routing and directory features are already licensed?",
+    "Which questions reception may answer and which staff details it may disclose.",
+    "Actual call branches, volumes, languages and transfer failures.",
+    "Whether employee consultation is required under applicable national rules.",
+    "Who may prioritise callbacks and who must close them."
+   ],
+   "research_questions": [
+    "Can the {TELEPHONY} expose directory lookup and approved transfers without custom call control?",
+    "Can supported answers be retrieved accurately without recording or transcribing calls?"
+   ],
+   "new_work": [
+    "Review suggested answers and callback messages.",
+    "Maintain directory mappings and approved answer references.",
+    "Handle failed transfers and overdue callbacks.",
+    "Check access logs and delete expired callback details."
+   ],
+   "time_saved_pct": 55,
+   "speedup": 2.21
+  },
+  {
+   "uid": "43-4171.00:747",
+   "short": "Welcome visitors, confirm their destination, arrange admission and direct or escort them.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Welcome the visitor and establish their purpose and assistance needs.",
+     "actor": "receptionist",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "visitor arrival"
+     ],
+     "outputs": [
+      "visit details",
+      "assistance needs"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check the expected-visitor record in the visitor-management {OTHER}.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "CALENDAR"
+     ],
+     "inputs": [
+      "visit details",
+      "appointment record"
+     ],
+     "outputs": [
+      "visitor match"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Notify the host that the visitor has arrived.",
+     "actor": "receptionist",
+     "today_means": "email_chat",
+     "systems": [
+      "CHAT",
+      "EMAIL"
+     ],
+     "inputs": [
+      "visit details",
+      "visitor match"
+     ],
+     "outputs": [
+      "arrival notification"
+     ],
+     "handoff_to": "host",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Confirm willingness to receive the visitor and any escort arrangements.",
+     "actor": "host",
+     "today_means": "email_chat",
+     "systems": [
+      "CHAT",
+      "EMAIL"
+     ],
+     "inputs": [
+      "arrival notification"
+     ],
+     "outputs": [
+      "host clearance"
+     ],
+     "handoff_to": "receptionist",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "facilities-and-workplace",
+     "approver": "host"
+    },
+    {
+     "id": "s5",
+     "what": "Apply admission rules and issue an authorised visitor badge.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "visitor match",
+      "host clearance",
+      "admission rules"
+     ],
+     "outputs": [
+      "visitor badge",
+      "visitor record"
+     ],
+     "handoff_to": "visitor",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "facilities-and-workplace",
+     "approver": "receptionist"
+    },
+    {
+     "id": "s6",
+     "what": "Explain the route or escort the visitor to the agreed destination.",
+     "actor": "receptionist",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "host clearance",
+      "site directions",
+      "assistance needs"
+     ],
+     "outputs": [
+      "visitor handover"
+     ],
+     "handoff_to": "host",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure expected-visitor matching in the visitor-management {OTHER}, using approved appointment fields from the {CALENDAR}. Arrival notifications and host acknowledgements flow through the {WORKFLOW} and {CHAT}; badge fields are prefilled after receptionist approval. The receptionist keeps the welcome, admission judgement and physical escort.",
+   "previous_blocker": "Visitor tools often handled registration but left host contact and appointment details disconnected. Human presence was essential, which obscured the smaller paperwork opportunity.",
+   "enabler_now": "Existing visitor-management features can connect pre-registration, notifications and badge printing. Simple integration work is cheaper to build and maintain.",
+   "still_hard": "Unexpected visitors, unavailable hosts, accessibility needs and situations requiring security judgement.",
+   "human_edge": "A person notices confusion, welcomes visitors respectfully and adapts assistance to the situation.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Prearranged accessible arrivals with a confirmed route and named escort."
+   },
+   "altitude": "The desk spends less time searching and chasing hosts, leaving more attention for arrivals. No additional security decision rights are assumed.",
+   "reach": [
+    {
+     "role": "office administration supervisor",
+     "task": "Plan reception and escort coverage for busy arrival periods.",
+     "learn": "Arrival forecasting, accessible routes and escalation arrangements."
+    }
+   ],
+   "build_days": {
+    "coding": "1-3",
+    "integration": "2-5",
+    "testing_rollout": "3-5",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Configured pre-registration, host notifications and badge prefilling are established visitor-management patterns.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The proposed design needs no model loop; identity and admission exceptions remain human decisions.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Step shares, remaining effort and build ranges are planning estimates, including host effort.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline has a visitor-management {OTHER}; a paper-based site would need a different integration estimate.",
+    "Host acknowledgement is required for the baseline visit type.",
+    "The {CALENDAR} supplies visit metadata without exposing meeting contents.",
+    "Visitor matching uses booking references or confirmed details, without biometric recognition.",
+    "GDPR applies to visitor records; national rules determine any employee consultation requirement.",
+    "Receptionist time estimates exclude walking by a separate escort."
+   ],
+   "unknowns": [
+    "Existing visitor-management capabilities and interfaces.",
+    "Admission rules, badge permissions and security escalation roles.",
+    "Which visits need host acknowledgement or an escort.",
+    "Accessible routes and available assistance.",
+    "Visitor retention periods and consultation requirements under national rules."
+   ],
+   "research_questions": [
+    "Can existing configuration replace separate arrival messages and repeated visitor entry?",
+    "Can a host acknowledge arrival without revealing their detailed availability?"
+   ],
+   "new_work": [
+    "Correct unmatched or duplicate visitor records.",
+    "Maintain host contacts, route information and badge templates.",
+    "Handle unanswered arrival notifications.",
+    "Review retention settings and failed badge printing."
+   ],
+   "time_saved_pct": 31,
+   "speedup": 1.45
+  },
+  {
+   "uid": "43-4171.00:745",
+   "short": "Collect service payments, record them, issue receipts and check daily totals.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Find the service charge and confirm the amount due in the {ERP}.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "service reference",
+      "service charge"
+     ],
+     "outputs": [
+      "payment request"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Explain the charge and resolve questions before payment.",
+     "actor": "receptionist",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "payment request"
+     ],
+     "outputs": [
+      "confirmed charge"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Take the authorised payment through the card-payment {OTHER}.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "confirmed charge",
+      "customer payment authorisation"
+     ],
+     "outputs": [
+      "payment result"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "customer"
+    },
+    {
+     "id": "s4",
+     "what": "Record the successful payment against the service reference in the {ERP}.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "payment result",
+      "service reference"
+     ],
+     "outputs": [
+      "payment posting"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Generate and give the customer a receipt.",
+     "actor": "receptionist",
+     "today_means": "document",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "payment posting"
+     ],
+     "outputs": [
+      "payment receipt"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Compare daily receipts with settlement totals and report discrepancies using the {SPREADSHEET}.",
+     "actor": "receptionist",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "ERP",
+      "BANK"
+     ],
+     "inputs": [
+      "payment posting",
+      "settlement report"
+     ],
+     "outputs": [
+      "daily payment reconciliation",
+      "payment exceptions"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "receptionist"
+    }
+   ],
+   "design": "Configure a service-reference checkout linking the {ERP} to the card-payment {OTHER}; the customer authorises the charge. A deterministic integration verifies successful payment events, prevents duplicate postings and triggers receipts from the {ERP}. A scheduled job in the {DATA_PLATFORM} matches postings to settlement data from the {BANK} and sends exceptions to the finance team.",
+   "previous_blocker": "Payment acceptance was already electronic, but terminal results, service records and settlement reports were separate. Duplicate entry and reconciliation survived between them.",
+   "enabler_now": "Payment references, supported event interfaces and existing receipt templates allow deterministic processing. AI-assisted coding makes the connecting and exception-handling code cheaper to produce.",
+   "still_hard": "Cash, disputed charges, refunds, partial payments and settlement differences need separate handling. Reliable financial integration requires careful testing.",
+   "human_edge": "The receptionist explains unexpected charges and helps customers with failed payments without making unauthorised concessions.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Same-day receipt correction support with finance-approved accounting changes."
+   },
+   "altitude": "Routine collection and entry largely disappear from the receptionist's week. The receptionist handles payment difficulties and receipt queries; refund and accounting adjustment rights do not change.",
+   "reach": [
+    {
+     "role": "customer service representative",
+     "task": "Resolve payment-status and receipt enquiries.",
+     "learn": "Payment states, settlement timing and escalation to the finance team."
+    },
+    {
+     "role": "office administration supervisor",
+     "task": "Investigate recurring reception payment exceptions.",
+     "learn": "Reconciliation controls and separation of payment and adjustment permissions."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Automatic charge routing exists in hospitality software; this is component evidence, not proof of this reception integration.",
+     "grade": "E2",
+     "source": "[S7]"
+    },
+    {
+     "claim": "Reference matching, duplicate prevention and receipt generation are deterministic financial-processing patterns.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Structured payment work offers substantial automation despite the supplied human classification.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Step shares, remaining effort and build ranges are planning estimates for an electronic-payment baseline.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This task applies where reception collects service payments; many office receptions do not.",
+    "The baseline mainly uses card payments and a short daily reconciliation in the {SPREADSHEET}.",
+    "Amounts come from approved service charges, without discretionary pricing.",
+    "The customer approval gate concerns payment authorisation; remaining_pct measures staff time, not customer time.",
+    "Existing payment processing is retained; the integration does not store card credentials.",
+    "GDPR applies to payer details. Access approval and consultation under national rules are included where required."
+   ],
+   "unknowns": [
+    "Whether reception collects payments and which payment methods are used.",
+    "Whether service references survive through payment and settlement.",
+    "Existing checkout, receipt and reconciliation capabilities.",
+    "Treatment of fees, refunds, deposits, tax and partial settlement.",
+    "Who may approve corrections and how financial controls are divided."
+   ],
+   "research_questions": [
+    "Can existing configuration remove separate payment entry before custom integration is built?",
+    "Do payment events support verified status, retries and duplicate prevention?",
+    "Can settlement differences be explained by explicit rules rather than free-text interpretation?"
+   ],
+   "new_work": [
+    "Review unmatched payments and settlement differences.",
+    "Handle failed payment events and integration retries.",
+    "Maintain charge mappings and receipt templates.",
+    "Check duplicate-prevention controls after interface changes.",
+    "Route corrections and refunds to authorised finance staff."
+   ],
+   "time_saved_pct": 90,
+   "speedup": 10.53
+  },
+  {
+   "uid": "43-4171.00:751",
+   "short": "Arrange appointments, resolve scheduling conflicts and keep calendars current.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the appointment request and collect missing booking requirements.",
+     "actor": "receptionist",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "appointment request"
+     ],
+     "outputs": [
+      "booking requirements"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "meetings-and-calendar",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check employee availability, appointment duration and any room constraints in the {CALENDAR}.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "booking requirements",
+      "booking rules",
+      "calendar availability"
+     ],
+     "outputs": [
+      "available slots"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "meetings-and-calendar",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Send suggested times and chase a reply.",
+     "actor": "receptionist",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "available slots"
+     ],
+     "outputs": [
+      "time proposals"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 20,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "meetings-and-calendar",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Agree a suitable time and resolve clashes or unusual requirements.",
+     "actor": "receptionist",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "time proposals",
+      "booking requirements",
+      "booking rules"
+     ],
+     "outputs": [
+      "agreed appointment"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 30,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "meetings-and-calendar",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Create or update the appointment and reserve required resources in the {CALENDAR}.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "agreed appointment",
+      "booking requirements"
+     ],
+     "outputs": [
+      "appointment record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "meetings-and-calendar",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Send confirmation, directions and any later appointment changes.",
+     "actor": "receptionist",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CALENDAR"
+     ],
+     "inputs": [
+      "appointment record",
+      "site directions"
+     ],
+     "outputs": [
+      "appointment confirmation"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "meetings-and-calendar",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure a booking form and live availability in the {CALENDAR}, with explicit duration, resource, buffer and cancellation rules. Customers select permitted slots directly, removing proposal-and-chase messages; confirmations and changes use the {EMAIL}. The {WORKFLOW} routes conflicts and requests outside the rules to the receptionist.",
+   "previous_blocker": "Shared calendars showed availability but did not always expose safe bookable slots. Incomplete requests and informal exceptions kept the receptionist in the middle.",
+   "enabler_now": "Configured booking forms, availability checks and notifications handle the main flow without a model. Small deterministic connectors can cover resource rules missing from existing configuration.",
+   "still_hard": "Conflicting priorities, calendars that do not reflect real availability and appointments requiring special arrangements.",
+   "human_edge": "The receptionist negotiates workable alternatives when a valid request does not fit the published slots.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "An opt-in cancellation waitlist for customers seeking an earlier appointment."
+   },
+   "altitude": "The receptionist mainly handles exceptions and helps people who cannot use self-service. Within delegated booking rules, they can offer alternative resources or times; overriding another employee's commitments still needs permission.",
+   "reach": [
+    {
+     "role": "reservation clerk",
+     "task": "Manage cancellations and short-notice availability.",
+     "learn": "Capacity rules, waitlist ordering and expiring slot offers."
+    },
+    {
+     "role": "office administration supervisor",
+     "task": "Adjust appointment capacity to recurring demand.",
+     "learn": "Aggregate demand analysis and resource scheduling."
+    }
+   ],
+   "build_days": {
+    "coding": "0-3",
+    "integration": "1-4",
+    "testing_rollout": "3-6",
+    "consent_and_access": "2-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Structured appointment booking, availability checks and confirmations can usually be configured without model reasoning.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Direct slot selection removes proposal-and-chase work rather than merely drafting it faster.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Step shares, remaining effort and build ranges assume routine office or service appointments.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Appointment types have stable durations and explicit booking permissions.",
+    "The baseline uses the {CALENDAR}, with requests and time proposals passing through the {EMAIL}.",
+    "After the change, customer slot selection supplies the agreed appointment; staff handle exceptions only.",
+    "People without suitable digital access retain a receptionist-assisted route.",
+    "No model reads appointment reasons or assigns priority.",
+    "GDPR applies to appointment details. National rules govern consultation where employee availability or working arrangements are affected.",
+    "A cancellation waitlist would use opt-in participation and explicit ordering rules."
+   ],
+   "unknowns": [
+    "Existing booking features and licences in the {CALENDAR}.",
+    "Which appointment types can be booked without employee approval.",
+    "Whether room and employee availability are reliable.",
+    "Actual exception rates and assisted-booking needs.",
+    "Permitted delegation, retention settings and consultation requirements under national rules."
+   ],
+   "research_questions": [
+    "Can existing booking configuration enforce every routine resource constraint?",
+    "Does booking recheck availability before committing and prevent simultaneous reservations?",
+    "Can cancellation and rescheduling update all resources without duplicate notifications?"
+   ],
+   "new_work": [
+    "Maintain appointment types, buffers and resource rules.",
+    "Handle conflicts and assisted bookings.",
+    "Check failed confirmations and calendar synchronisation.",
+    "Review aggregate unused capacity and booking exceptions.",
+    "Maintain waitlist consent and ordering if the new service is introduced."
+   ],
+   "time_saved_pct": 96,
+   "speedup": 22.22
+  }
+ ],
+ "role": {
+  "altitude": "The receptionist spends more time welcoming people, understanding unusual requests and resolving failed handovers. Proposed decision rights cover callback priority and scheduling alternatives within agreed limits; security admission, financial adjustments and employee commitments retain their existing approval boundaries.",
+  "reach": [
+   "Customer service representative: take ownership of unresolved enquiries through closure.",
+   "Switchboard operator: manage overflow queues and routing failures.",
+   "Office administration supervisor: plan reception coverage and appointment capacity.",
+   "Reservation clerk: manage cancellations and an opt-in waitlist."
+  ],
+  "skills_to_grow": [
+   "Maintain clear, approved information and directory entries.",
+   "Recognise uncertainty and check drafted answers against references.",
+   "Handle distressed visitors, accessibility needs and difficult conversations.",
+   "Understand payment states and reconciliation exceptions.",
+   "Configure booking rules and diagnose failed handovers.",
+   "Apply purpose-limited access and retention to caller and visitor details."
+  ],
+  "ambitious_version": "Run a joined-up arrival and enquiry service: visitors know where to go, callers receive tracked callbacks, customers obtain correct receipts and cancelled appointments reach an opt-in waitlist. Use aggregate service failures to improve handovers without monitoring individual employee behaviour."
+ },
+ "job_code": "43-4171.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 173,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r=await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":2500});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-4171.00",
+   "title": "Receptionists and Information Clerks",
+   "tasks": 18,
+   "function": "Customer support"
+  }
+ }
+}

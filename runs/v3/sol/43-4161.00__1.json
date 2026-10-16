@@ -1,0 +1,1277 @@
+{
+ "tasks": [
+  {
+   "uid": "43-4161.00:18572",
+   "short": "Check, resolve and file personnel documents across employment, recruitment, training, performance and leave cases.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Inspect personnel documents and identify the case type.",
+     "actor": "HR assistant",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "personnel document",
+      "case checklist"
+     ],
+     "outputs": [
+      "classified case packet"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Personnel document and allowed case types.",
+      "output": "Proposed case type, required fields and source passages.",
+      "check": "Validate field formats, employee identifier and source passages; flag missing or conflicting information.",
+      "stop": "One extraction and one repair attempt per document; unresolved fields go to the HR assistant.",
+      "why_not_simpler": "Externally supplied documents vary in layout and wording. Structured submissions bypass the loop."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compare case details with the employee record and required evidence.",
+     "actor": "HR assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "classified case packet",
+      "employee record",
+      "case checklist"
+     ],
+     "outputs": [
+      "validation result"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Request missing documents or corrections from the employee or manager.",
+     "actor": "HR assistant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "validation result",
+      "case checklist"
+     ],
+     "outputs": [
+      "correction request",
+      "corrected case packet"
+     ],
+     "handoff_to": "employee",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Resolve disputed classifications, leave evidence or sensitive case interpretations.",
+     "actor": "HR specialist",
+     "today_means": "meeting_call",
+     "systems": [],
+     "inputs": [
+      "corrected case packet",
+      "validation result",
+      "personnel policy"
+     ],
+     "outputs": [
+      "approved case outcome"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "employee-lifecycle",
+     "approver": "HR specialist"
+    },
+    {
+     "id": "s5",
+     "what": "Register the approved case outcome in the personnel record.",
+     "actor": "HR assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "approved case outcome",
+      "employee record"
+     ],
+     "outputs": [
+      "updated case record"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "File supporting documents with access restrictions and retention labels.",
+     "actor": "HR assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "personnel document",
+      "updated case record",
+      "retention schedule"
+     ],
+     "outputs": [
+      "filed personnel document"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Update the separate personnel case tracker.",
+     "actor": "HR assistant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "updated case record",
+      "filed personnel document"
+     ],
+     "outputs": [
+      "case tracker"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure case forms, checklists, reminders and approved outcome recording in the {HCM}, with restricted filing in the {DOCS}. A bounded extraction loop proposes fields from variable documents; deterministic checks and an exception queue support review before use. Case status comes from the {HCM}, replacing the separate {SPREADSHEET} tracker.",
+   "previous_blocker": "Document variation, inconsistent identifiers and unclear approval routes made reliable filing expensive. Existing configuration often covered only part of the process.",
+   "enabler_now": "Existing forms and permissions handle routine cases. AI-assisted coding can reduce adapter development effort, while bounded extraction handles variable documents without deciding employment outcomes.",
+   "still_hard": "Disputed facts, access to grievance records, conflicting policies and effective dates still need careful handling. Extracting a statement does not establish its truth.",
+   "human_edge": "Recognise when apparently complete paperwork conceals a dispute, coercion or an unresolved employment question.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A personnel case readiness check before a manager submits a change."
+   },
+   "altitude": "The week shifts from filing and chasing to resolving incomplete cases and helping managers prepare sound submissions. The assistant can return incomplete packets under agreed criteria; employment decisions remain with authorised roles.",
+   "reach": [
+    {
+     "role": "Human Resources Specialist",
+     "task": "Prepare a case chronology for a disputed leave or classification request.",
+     "learn": "Evidence provenance, policy interpretation and escalation thresholds."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-25"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Employee self-service and configured HR change workflows are available today.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Bounded document extraction, validation and exception routing are established patterns; HR-specific accuracy needs testing.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "GDPR Article 22 requires assessment when automation makes decisions with legal or similarly significant effects.",
+     "grade": "E2",
+     "source": "[S11]"
+    },
+    {
+     "claim": "Time shares, remaining effort and build ranges are planning estimates, not measured HR case results.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Routine cases skip the exception decision; shares represent a blended workload.",
+    "Personnel case processing and employee field updates share intake components; savings must not be added twice.",
+    "Access restrictions, data minimisation and retention rules apply under GDPR.",
+    "Build ranges cover one initial deployment using reusable case templates and customer-specific configuration.",
+    "Consent and access estimates include national consultation requirements where applicable; elapsed time may be longer."
+   ],
+   "unknowns": [
+    "Which document types dominate the workload?",
+    "Which case approvals and retention schedules are already configured?",
+    "Can the existing systems enforce separate access for grievances and health-related records?",
+    "How much work is duplicated in a separate case tracker?"
+   ],
+   "research_questions": [
+    "Which retention and employee consultation requirements apply under relevant national rules?",
+    "What extraction error rate is acceptable for each document class?"
+   ],
+   "new_work": [
+    "Review extracted fields and ambiguous employee matches.",
+    "Maintain case checklists, access groups and retention labels.",
+    "Resolve failed filing operations and monitor overdue exceptions."
+   ],
+   "time_saved_pct": 70,
+   "speedup": 3.39
+  },
+  {
+   "uid": "43-4161.00:2689",
+   "short": "Update employee data from approved changes, payroll outputs, operational records and supervisory reports.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read employee and manager requests for personnel data changes.",
+     "actor": "HR assistant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "employee change request"
+     ],
+     "outputs": [
+      "change intake"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Retrieve approved earnings data for personnel record updates.",
+     "actor": "HR assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL"
+     ],
+     "inputs": [
+      "employee identifier",
+      "approved earnings data"
+     ],
+     "outputs": [
+      "earnings extract"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Retrieve attributable production or sales totals where personnel records require them.",
+     "actor": "HR assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "employee identifier",
+      "approved production data"
+     ],
+     "outputs": [
+      "production extract"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Match employee identifiers, reporting periods and effective dates in the update workbook.",
+     "actor": "HR assistant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "change intake",
+      "earnings extract",
+      "production extract",
+      "employee register"
+     ],
+     "outputs": [
+      "validated change set",
+      "data exception list"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Enter approved address, absence and other routine employee field changes.",
+     "actor": "HR assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "validated change set",
+      "employee record"
+     ],
+     "outputs": [
+      "updated employee record"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Attach the approved supervisory report to the employee performance record.",
+     "actor": "HR assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "TALENT"
+     ],
+     "inputs": [
+      "approved supervisory report",
+      "employee identifier"
+     ],
+     "outputs": [
+      "linked supervisory report"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "performance-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Record the authorised termination date and reason.",
+     "actor": "HR assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "approved termination instruction",
+      "employee record"
+     ],
+     "outputs": [
+      "termination record"
+     ],
+     "handoff_to": "HR specialist",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "offboarding",
+     "approver": "HR specialist"
+    },
+    {
+     "id": "s8",
+     "what": "Check saved fields against the approved change set.",
+     "actor": "HR assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "validated change set",
+      "updated employee record",
+      "termination record"
+     ],
+     "outputs": [
+      "update reconciliation"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s9",
+     "what": "Confirm completion to the authorised requester.",
+     "actor": "HR assistant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "update reconciliation",
+      "change intake"
+     ],
+     "outputs": [
+      "change confirmation"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure authenticated change forms and field ownership in the {HCM}; use deterministic adapters for required data from the {PAYROLL} and {OPS_SYSTEM}. Match identifiers and effective dates before writing, preserve source references, and link approved reports in the {TALENT}. Reconcile writes automatically and gate termination activation with the HR specialist.",
+   "previous_blocker": "Separate identifiers, effective dates and batch exports made copying easier than maintaining reliable interfaces. Unclear field ownership encouraged duplicate records.",
+   "enabler_now": "Configured self-service handles routine changes, and reusable adapters can enforce matching, validation and replay protection. AI-assisted coding can shorten implementation without introducing a model into record updates.",
+   "still_hard": "Retroactive corrections, rehires, multiple contracts and termination reversals complicate effective dating. Some earnings and production fields may have no valid reason to be duplicated.",
+   "human_edge": "Resolve conflicting authoritative sources and recognise when a routine-looking update could wrongly affect employment or pay.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A daily correction queue for conflicting employee effective dates."
+   },
+   "altitude": "The assistant spends more time resolving source conflicts and less time copying values. They can request corrections from source owners under agreed rules; they gain no authority to change pay or decide termination.",
+   "reach": [
+    {
+     "role": "Payroll and Timekeeping Clerk",
+     "task": "Investigate employee master-data differences before a pay run.",
+     "learn": "Effective dating, payroll cutoffs and correction versus reversal."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "6-15",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Configured HR self-service changes can flow into payroll.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Identifier matching, effective-date checks and write reconciliation can use deterministic code.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The proposed workflow records authorised outcomes rather than making termination or performance decisions.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Time shares, remaining effort and delivery ranges are estimates requiring local validation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Source retrieval steps apply only to employee groups needing those fields.",
+    "Earnings are copied from approved results; the assistant does not calculate payroll.",
+    "The example company uses the {OPS_SYSTEM} for attributable output; other companies may use the {CRM}.",
+    "The structured-data prior supports deterministic updates; system screens receive more weight than the supplied document-time prior.",
+    "Routine changes use authenticated requests and existing approvals where required.",
+    "Unnecessary duplicate fields should be removed after confirming recordkeeping needs.",
+    "National consultation requirements and access provisioning are included where applicable."
+   ],
+   "unknowns": [
+    "Which employee fields must legally and operationally be retained?",
+    "Which system is authoritative for each field?",
+    "Are reliable employee identifiers and effective-dated interfaces available?",
+    "Do termination updates trigger account removal or other downstream actions?",
+    "How often do retroactive corrections and rehires occur?"
+   ],
+   "research_questions": [
+    "Which national recordkeeping duties require earnings or production data in personnel records?",
+    "Which adapter patterns safely handle multiple concurrent employment contracts?"
+   ],
+   "new_work": [
+    "Resolve identifier, period and effective-date exceptions.",
+    "Maintain source ownership and field mappings.",
+    "Check interface failures, duplicate events and unauthorised field changes.",
+    "Review termination activation and downstream reconciliation."
+   ],
+   "time_saved_pct": 92,
+   "speedup": 12.9
+  },
+  {
+   "uid": "43-4161.00:2687",
+   "short": "Explain personnel policies, benefits and procedures to employees and applicants.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the question and establish its topic and audience.",
+     "actor": "HR assistant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "personnel question"
+     ],
+     "outputs": [
+      "question intake"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Find the current policy, benefit terms and applicable procedure.",
+     "actor": "HR assistant",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "question intake",
+      "personnel policy",
+      "benefit terms"
+     ],
+     "outputs": [
+      "policy source pack"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Check relevant employment facts for an authenticated employee.",
+     "actor": "HR assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "question intake",
+      "employee record"
+     ],
+     "outputs": [
+      "permitted employment context"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Write and send a routine policy explanation.",
+     "actor": "HR assistant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "question intake",
+      "policy source pack",
+      "permitted employment context"
+     ],
+     "outputs": [
+      "policy explanation"
+     ],
+     "handoff_to": "employee or applicant",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Question, current approved sources and minimum permitted employment context.",
+      "output": "Plain-language explanation with source references and unresolved points.",
+      "check": "Require valid source references, matching policy dates and audience permissions; the HR assistant checks meaning before sending.",
+      "stop": "One draft and one revision; missing or conflicting sources produce a referral rather than an answer.",
+      "why_not_simpler": "Templates cover common questions, but varied questions need a short explanation combining several policy passages."
+     },
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "HR assistant"
+    },
+    {
+     "id": "s5",
+     "what": "Discuss sensitive circumstances and check that the person understands their options.",
+     "actor": "HR assistant",
+     "today_means": "meeting_call",
+     "systems": [],
+     "inputs": [
+      "personnel question",
+      "policy source pack",
+      "policy explanation"
+     ],
+     "outputs": [
+      "conversation outcome"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Refer unresolved interpretations or exception requests to the HR specialist.",
+     "actor": "HR assistant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "conversation outcome",
+      "policy source pack"
+     ],
+     "outputs": [
+      "policy referral"
+     ],
+     "handoff_to": "HR specialist",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Record the answer, referral and follow-up status.",
+     "actor": "HR assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK"
+     ],
+     "inputs": [
+      "policy explanation",
+      "conversation outcome",
+      "policy referral"
+     ],
+     "outputs": [
+      "question record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    }
+   ],
+   "design": "Use a topic form in the {HELPDESK}, a versioned policy index in the {DOCS} and permission-limited context from the {HCM}. Approved templates handle standard questions; a bounded loop drafts explanations for review before sending through the {EMAIL}. Sensitive conversations remain human, while referrals and case records follow configured workflows.",
+   "previous_blocker": "Policies were scattered, versions were unclear and answers depended on individual knowledge. Searching faster alone did not ensure the correct policy applied.",
+   "enabler_now": "Versioned retrieval, reusable answer templates and bounded drafting can prepare an explanation with traceable sources. Existing request workflows handle routing and follow-up.",
+   "still_hard": "Conflicting agreements, unusual personal circumstances and exceptions require interpretation. A technically correct answer can still be poorly understood or distressing.",
+   "human_edge": "Notice hesitation, explain practical consequences and help someone ask the question they were reluctant to raise.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "An asynchronous policy question service for employees working outside office hours."
+   },
+   "altitude": "The assistant spends less time searching and more time explaining choices and resolving unclear cases. They can publish reviewed routine explanations within their remit; they cannot grant policy exceptions.",
+   "reach": [
+    {
+     "role": "Human Resources Specialist",
+     "task": "Turn recurring policy questions into clearer employee guidance.",
+     "learn": "Policy interpretation, accessible writing and distinguishing explanation from individual advice."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-8",
+    "testing_rollout": "5-10",
+    "consent_and_access": "4-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "HR policy answering from collective agreement material is offered today.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Knowledge-based answering with a prefilled request when no answer is available is offered today.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Direct AI interaction requires the applicable transparency disclosure.",
+     "grade": "E2",
+     "source": "[S18]"
+    },
+    {
+     "claim": "The proposed time savings and service design are estimates; support-centre case results do not establish HR outcomes.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Shares blend routine written answers, conversations and referrals; each question need not follow every branch.",
+    "A topic form replaces routine intake sorting; unclassified questions enter the human queue.",
+    "Applicants receive public policy information without access to employee records.",
+    "The first deployment reviews generated explanations before sending.",
+    "GDPR access and minimisation requirements apply; national employment rules affect interpretation.",
+    "A direct employee-facing AI interface would disclose that it uses AI."
+   ],
+   "unknowns": [
+    "Who approves policy versions and resolves conflicting guidance?",
+    "Which agreements and employee groups require different answers?",
+    "How many questions need personal context or a conversation?",
+    "Can employees outside office hours access an authenticated request channel?"
+   ],
+   "research_questions": [
+    "How should answer evaluation measure omission of exceptions and misleading simplification?",
+    "Which national rules constrain individual benefit or employment advice?"
+   ],
+   "new_work": [
+    "Review generated explanations and maintain approved answer templates.",
+    "Withdraw superseded policies from retrieval.",
+    "Inspect unanswered questions and referral delays.",
+    "Test permissions and source references after policy changes."
+   ],
+   "time_saved_pct": 70,
+   "speedup": 3.33
+  },
+  {
+   "uid": "43-4161.00:2702",
+   "short": "Support benefit enrolments and occupational injury claims through checks, submissions, reconciliation and employee assistance.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Inspect benefit elections or administrative occupational injury claim forms.",
+     "actor": "HR assistant",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "benefit election",
+      "injury claim notice",
+      "scheme checklist"
+     ],
+     "outputs": [
+      "benefit request"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check employment facts, submission deadlines and required administrative evidence.",
+     "actor": "HR assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "benefit request",
+      "employee record",
+      "benefit terms",
+      "scheme checklist"
+     ],
+     "outputs": [
+      "benefit validation result"
+     ],
+     "handoff_to": "benefits specialist",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Resolve discretionary enrolments, disputed coverage or ambiguous claim requirements.",
+     "actor": "benefits specialist",
+     "today_means": "meeting_call",
+     "systems": [],
+     "inputs": [
+      "benefit validation result",
+      "benefit terms",
+      "benefit request"
+     ],
+     "outputs": [
+      "approved benefit instruction"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "employee-lifecycle",
+     "approver": "benefits specialist"
+    },
+    {
+     "id": "s4",
+     "what": "Prepare the provider submission using approved administrative information.",
+     "actor": "HR assistant",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "approved benefit instruction",
+      "benefit request",
+      "provider template"
+     ],
+     "outputs": [
+      "provider submission"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Submit the enrolment or administrative claim to the provider.",
+     "actor": "HR assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "provider submission"
+     ],
+     "outputs": [
+      "provider acknowledgement"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "benefits specialist"
+    },
+    {
+     "id": "s6",
+     "what": "Record approved contribution changes for payroll processing.",
+     "actor": "HR assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL"
+     ],
+     "inputs": [
+      "approved benefit instruction",
+      "provider acknowledgement"
+     ],
+     "outputs": [
+      "benefit contribution instruction"
+     ],
+     "handoff_to": "payroll team",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Reconcile pending requests, provider acknowledgements and contribution instructions.",
+     "actor": "HR assistant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "benefit request",
+      "provider acknowledgement",
+      "benefit contribution instruction"
+     ],
+     "outputs": [
+      "benefit reconciliation",
+      "benefit exception list"
+     ],
+     "handoff_to": "HR assistant",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s8",
+     "what": "Discuss missing acknowledgements or disputed administrative details with the provider.",
+     "actor": "HR assistant",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "benefit exception list",
+      "provider submission"
+     ],
+     "outputs": [
+      "provider follow-up outcome"
+     ],
+     "handoff_to": "external",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s9",
+     "what": "Send the employee a factual status update and next steps.",
+     "actor": "HR assistant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "provider acknowledgement",
+      "provider follow-up outcome",
+      "approved benefit instruction"
+     ],
+     "outputs": [
+      "benefit status notice"
+     ],
+     "handoff_to": "employee",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure structured requests in the {HCM} and deadline checks in the {WORKFLOW}; generate provider forms from approved fields in the {DOCS}. A deterministic adapter submits through the {PARTNER_PORTAL} after approval and sends authorised contribution instructions to the {PAYROLL}. Reconciliation and factual status notices replace the separate {SPREADSHEET} tracker, while coverage disputes remain with people.",
+   "previous_blocker": "Provider-specific forms, submission routes and payroll cutoffs fragmented administration. Claim status often depended on manual follow-up.",
+   "enabler_now": "Structured capture, template generation and reusable adapters cover much of the work without a model. AI-assisted coding can reduce the cost of provider-specific mappings and reconciliation.",
+   "still_hard": "Providers may lack supported interfaces. Coverage disputes, retroactive elections and occupational injury procedures depend on scheme terms and national rules.",
+   "human_edge": "Help an injured or worried employee navigate the process without presenting an administrative check as a coverage decision.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A deadline rescue service for incomplete benefit enrolments."
+   },
+   "altitude": "The assistant follows up on cases at risk of missing deadlines and supports employees through exceptions. They can prioritise administrative rescue work; they gain no authority to adjudicate claims or change coverage.",
+   "reach": [
+    {
+     "role": "Compensation, Benefits, and Job Analysis Specialist",
+     "task": "Investigate a contribution or enrolment mismatch between employer and provider records.",
+     "learn": "Scheme eligibility, contribution effective dates and provider escalation routes."
+    }
+   ],
+   "build_days": {
+    "coding": "4-9",
+    "integration": "7-18",
+    "testing_rollout": "6-12",
+    "consent_and_access": "7-30"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "HR self-service changes flowing to payroll demonstrate part of the proposed administrative pattern.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "The digest does not establish end-to-end benefit or occupational injury claim automation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Structured forms, deterministic validation and template generation can prepare administrative submissions without adjudicating claims.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "GDPR requires appropriate grounds and safeguards for processing health-related information.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Build ranges and remaining effort are estimates conditional on provider access.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Occupational injury administration follows the relevant national scheme; a US workers' compensation process is not assumed.",
+    "Shares blend benefit enrolments and administrative injury claims; not every case needs every branch.",
+    "Medical evidence goes directly to the authorised provider or designated restricted service where appropriate.",
+    "Generic HR case records contain only necessary administrative information.",
+    "A supported provider interface or accepted structured submission route exists for the estimated integration.",
+    "The contribution instruction enters existing payroll controls and does not execute a pay run.",
+    "Access and consultation estimates include national requirements where applicable."
+   ],
+   "unknowns": [
+    "Which benefit schemes, providers and national injury processes apply?",
+    "Which provider interfaces or batch submissions are available?",
+    "Who may approve submissions and discretionary enrolments?",
+    "Where is medical evidence currently stored and who may access it?",
+    "Which payroll cutoffs and provider acknowledgement delays cause failures?"
+   ],
+   "research_questions": [
+    "Which national occupational injury reporting deadlines and consultation duties apply?",
+    "Which lawful grounds and safeguards cover each health-related data flow?",
+    "Which provider submission methods support reliable acknowledgement and duplicate prevention?"
+   ],
+   "new_work": [
+    "Review provider submissions before release.",
+    "Maintain scheme rules, templates, deadlines and contribution mappings.",
+    "Investigate missing acknowledgements and contribution mismatches.",
+    "Review restricted access and remove unnecessary sensitive information."
+   ],
+   "time_saved_pct": 68,
+   "speedup": 3.08
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts toward resolving record conflicts, preparing sound cases and explaining procedures. Administrative correction rights can expand within agreed limits; employment, benefit and claim decisions stay with authorised decision-makers.",
+  "reach": [
+   "Human Resources Specialists: prepare evidence-based case chronologies and clearer policy guidance.",
+   "Payroll and Timekeeping Clerks: investigate effective-date and employee master-data mismatches.",
+   "Compensation, Benefits, and Job Analysis Specialists: reconcile provider enrolments and contribution instructions."
+  ],
+  "skills_to_grow": [
+   "Effective dating, source ownership and record reconciliation.",
+   "Privacy-aware document handling and permission design.",
+   "Reviewing extracted fields and source-backed explanations.",
+   "Policy interpretation, employee communication and escalation.",
+   "Maintaining workflow rules and investigating integration failures."
+  ],
+  "ambitious_version": "Provide a personnel administration readiness service that catches incomplete cases, conflicting dates and approaching benefit deadlines before they harm employees. Reusable templates provide a head start across employers, with local policies, access and national rules configured for each deployment."
+ },
+ "job_code": "43-4161.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 181,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3500});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-4161.00",
+   "title": "Human Resources Assistants, Except Payroll and Timekeeping",
+   "tasks": 19,
+   "function": "HR"
+  }
+ }
+}

@@ -1,0 +1,992 @@
+{
+ "job_code": "43-4121.00",
+ "tasks": [
+  {
+   "uid": "43-4121.00:2648",
+   "short": "Inspect returned books and compute fines",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Inspect returned books for condition and due-date status",
+     "actor": "library assistant",
+     "today_means": "in_person",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "returned book"
+     ],
+     "outputs": [
+      "condition note"
+     ],
+     "handoff_to": "none",
+     "share_pct": 50,
+     "fate": "person_does",
+     "remaining_pct": 95,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Compute applicable fines from the stored due date and rate",
+     "actor": "system",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "due date",
+      "return date",
+      "rate row"
+     ],
+     "outputs": [
+      "fine amount"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Review the fine amount against the returned book",
+     "actor": "library assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "fine amount",
+      "condition note"
+     ],
+     "outputs": [
+      "accepted fine"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 55,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "record-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Post the accepted fine on the patron record",
+     "actor": "system",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "accepted fine"
+     ],
+     "outputs": [
+      "posted fine"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "library assistant",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "The assistant inspects the returned book. {DOCS} computes a fine from the stored due date, the return date, and the rate row. The assistant accepts or waives that amount, and only the accepted amount is posted. A missing date or rate stays blank and no fine is posted.",
+   "previous_blocker": "The assistant looked up the due date and re-did the arithmetic on each return.",
+   "enabler_now": "Due date, return date, and rate are stored fields, so the arithmetic is a subtraction and a table.",
+   "still_hard": "Seeing damage, and deciding a waiver, stay with the assistant.",
+   "human_edge": "The assistant waives a fine when the condition or the story does not match the amount.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "An ordinary overdue return shows its fine while the patron is still at the desk."
+   },
+   "altitude": "Inspection stays. The assistant decides the fine instead of re-doing the sum.",
+   "reach": [
+    {
+     "role": "librarian",
+     "task": "Set the fine rate and the waiver cases",
+     "learn": "Which damage is a fine and which is a waiver."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "1-3",
+    "testing_rollout": "2-3",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A due date and a rate row can compute a fine. A missing date or rate leaves the amount blank.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "A fine is a charge on a named patron. The assistant accepts the amount before it is posted. The design does not decide a waiver.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The work starts with a returned book and ends with a condition note and, where the assistant accepts it, a posted fine.",
+    "A loan row has item identifier, patron identifier, due date, and return date. The rate row has day band and amount, maintained by a librarian. A missing date or rate is left blank.",
+    "The post uses the amount accepted in the review. Inspection time is not reduced by the arithmetic."
+   ],
+   "unknowns": [
+    "Which waivers the librarian allows the desk to grant."
+   ],
+   "research_questions": [
+    "How many returns had a blank due date, and how many fines did the assistant waive?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Inspecting returned books for condition is already in the assistant's step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s1"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Correct a rate row after a librarian changes the fine band.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "fine amount the assistant accepted for this return",
+     "approval_step_id": "s3",
+     "approver": "library assistant"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 14.6,
+    "high": 27.5,
+    "basis": "Low: due dates are often missing, so the assistant still computes by hand. High: dates and rates are present, and inspection plus the waiver decision remain. The range stays under the net."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 41.5,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 40.5,
+   "speedup": 1.680672,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "43-4121.00:2650",
+   "short": "Maintain item records and file catalog cards",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "File catalog cards according to the system used",
+     "actor": "library assistant",
+     "today_means": "in_person",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "catalog card"
+     ],
+     "outputs": [
+      "filed card"
+     ],
+     "handoff_to": "none",
+     "share_pct": 44,
+     "fate": "person_does",
+     "remaining_pct": 94,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Maintain records of items received and stored",
+     "actor": "library assistant",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "receipt note"
+     ],
+     "outputs": [
+      "receipt record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 28,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "crud_app",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Assemble issued and returned counts from stored loan events",
+     "actor": "system",
+     "today_means": "system_screen",
+     "systems": [
+      "DATA_PLATFORM"
+     ],
+     "inputs": [
+      "loan event"
+     ],
+     "outputs": [
+      "count draft"
+     ],
+     "handoff_to": "none",
+     "share_pct": 12,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Review the issued and returned counts",
+     "actor": "library assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "DATA_PLATFORM"
+     ],
+     "inputs": [
+      "count draft"
+     ],
+     "outputs": [
+      "accepted counts"
+     ],
+     "handoff_to": "none",
+     "share_pct": 8,
+     "fate": "person_reviews",
+     "remaining_pct": 55,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "record-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Write the accepted record of issued and returned items",
+     "actor": "system",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "accepted counts"
+     ],
+     "outputs": [
+      "item record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 8,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "library assistant",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "The assistant files catalog cards by the system in use and maintains the record of items received and stored. {DATA_PLATFORM} totals issued and returned counts from loan events already stored. The assistant reviews those counts, and {DOCS} writes only the accepted record. A missing event date stays out of the total.",
+   "previous_blocker": "The assistant copied issued and returned totals off the day sheet by hand.",
+   "enabler_now": "Loan events already carry item and date, so the total is a count.",
+   "still_hard": "Filing cards, and noticing a receipt the day sheet never had, stay manual.",
+   "human_edge": "The assistant holds back a count that does not match the cards just filed.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Card filing stays. Issued and returned totals are written only after the assistant accepts them.",
+   "reach": [
+    {
+     "role": "librarian",
+     "task": "Choose the catalog system the cards follow",
+     "learn": "Which heading the system uses when two cards could fit."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "2-3",
+    "testing_rollout": "1-3",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Stored loan events can be counted. A missing date is left out. Filing cards stays manual.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "The work starts with a card or a receipt and ends with a filed card and, where accepted, an updated count record.",
+    "A loan event has item identifier, issued or returned flag, and date, entered at the desk. A receipt row has item identifier and stored location, entered by the assistant. A blank date is not counted.",
+    "The write uses the counts accepted in the review. Time the circulation log already spends storing an event is not the assistant's saving."
+   ],
+   "unknowns": [
+    "Whether the library still files physical catalog cards."
+   ],
+   "research_questions": [
+    "How often did the assistant reject the count because a receipt was not on the events?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Filing catalog cards is already in the assistant's step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s1"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Correct a receipt row the assistant added and the count must include.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5",
+     "approved_version": "issued and returned counts the assistant accepted",
+     "approval_step_id": "s4",
+     "approver": "library assistant"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 13.1,
+    "high": 24.8,
+    "basis": "Low: loan events are incomplete, so the assistant still totals by hand. High: events are complete, and card filing plus the review remain. The range stays under the net."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 37.44,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 36.44,
+   "speedup": 1.573317,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "43-4121.00:18770",
+   "short": "Do clerical work and mail material out",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Perform clerical activities, answering phones and sorting mail",
+     "actor": "library assistant",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY",
+      "EMAIL"
+     ],
+     "inputs": [
+      "call",
+      "incoming mail"
+     ],
+     "outputs": [
+      "sorted mail"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 96,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Do filing, photocopying, typing, and word processing",
+     "actor": "library assistant",
+     "today_means": "in_person",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "source page"
+     ],
+     "outputs": [
+      "typed page"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Draft the outgoing material from the stored note",
+     "actor": "system",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "stored note"
+     ],
+     "outputs": [
+      "draft material"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Review the material before it is mailed",
+     "actor": "library assistant",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft material"
+     ],
+     "outputs": [
+      "accepted material"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Complete the mailing of the approved material",
+     "actor": "system",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "accepted material"
+     ],
+     "outputs": [
+      "sent material"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "library assistant",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "The assistant answers phones, sorts mail, files, photocopies, and types. {DOCS} drafts outgoing material from a stored note with its fields filled. The assistant reviews it, and {EMAIL} sends only that accepted version. A missing address or a missing note stays blank and nothing is mailed.",
+   "previous_blocker": "The same note was retyped into each outgoing item.",
+   "enabler_now": "The note's fields are stored, so the outgoing text can be filled and stopped when an address is blank.",
+   "still_hard": "The phone, the photocopy, and the mail sort stay physical.",
+   "human_edge": "The assistant will not mail a note that names the wrong person.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Clerical handling stays. Outgoing material leaves only in the version the assistant accepted.",
+   "reach": [
+    {
+     "role": "librarian",
+     "task": "Supply the note that should be mailed",
+     "learn": "Which notes are ready to send and which are still a draft."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "2-3",
+    "testing_rollout": "1-3",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A stored note can fill outgoing material, and a missing address stops the send.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "Mailed material can name a person. The assistant accepts the text before it is sent. The design does not score callers.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The work starts with a call, a piece of mail, or a note, and ends with filing, a photocopy, or a sent item.",
+    "A note row has addressee, subject, and body fields, entered by the librarian or the assistant. A blank addressee is not invented.",
+    "The mailing uses the version accepted in the review. Phone time and photocopying are not part of the send."
+   ],
+   "unknowns": [
+    "Which outgoing notes are allowed to leave the library."
+   ],
+   "research_questions": [
+    "How many drafts stopped on a blank address, and how many were mailed?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Answering phones and sorting mail is already in the assistant's step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s1"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Correct an addressee on a note the assistant has not yet accepted.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5",
+     "approved_version": "outgoing material the assistant accepted",
+     "approval_step_id": "s4",
+     "approver": "library assistant"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 12.2,
+    "high": 23.1,
+    "basis": "Low: most of the day is phones, filing, and photocopying, and notes are incomplete. High: complete notes are mailed after review, and the phone and photocopy remain. The range stays under the net."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 34.9,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 33.9,
+   "speedup": 1.512859,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "43-4121.00:2655",
+   "short": "Register patrons and issue borrower cards",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Register new patrons and the identification they show",
+     "actor": "library assistant",
+     "today_means": "in_person",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "identification"
+     ],
+     "outputs": [
+      "entered registration"
+     ],
+     "handoff_to": "patron",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "crud_app",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Assemble the borrower record from the registered fields",
+     "actor": "system",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "entered registration"
+     ],
+     "outputs": [
+      "draft borrower record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Review the borrower record before the card is issued",
+     "actor": "library assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft borrower record"
+     ],
+     "outputs": [
+      "accepted borrower record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Record the permit to borrow books and other materials",
+     "actor": "system",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "accepted borrower record"
+     ],
+     "outputs": [
+      "borrow permit"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "library assistant",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
+     "id": "s5",
+     "what": "Issue the borrower identification cards in person",
+     "actor": "library assistant",
+     "today_means": "in_person",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "borrow permit"
+     ],
+     "outputs": [
+      "handed card"
+     ],
+     "handoff_to": "patron",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 95,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "The assistant registers the patron from the identification they show. {DOCS} assembles the borrower record and records the permit to borrow only after the assistant accepts that version. The assistant then hands over the identification card. A missing name or identification number stays blank and no permit is recorded.",
+   "previous_blocker": "The assistant copied the identification onto a card and into a book.",
+   "enabler_now": "The same fields can fill the record once, and a blank required field can stop the permit.",
+   "still_hard": "Checking the identification, and handing the card to the person, stay at the desk.",
+   "human_edge": "The assistant refuses a registration when the identification does not match the person.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A patron with complete identification can be registered while they wait, and an incomplete one is not given a card."
+   },
+   "altitude": "The assistant still checks the person. The permit is recorded only after that check.",
+   "reach": [
+    {
+     "role": "librarian",
+     "task": "Decide a registration the desk will not complete",
+     "learn": "Which identification the library accepts."
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "2-4",
+    "testing_rollout": "2-3",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Entered identification fields can fill a borrower record and stop when a required field is blank.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "A borrower record is personal data. The assistant accepts it before the permit is recorded. The design does not score patrons.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The work starts when a new patron arrives and ends when the card is handed over or the assistant refuses.",
+    "The assistant enters name, address, and identification number from the document shown. A blank required field is not invented.",
+    "The permit write uses the record accepted in the review. Handing over the card stays with the assistant."
+   ],
+   "unknowns": [
+    "Which identification documents the library accepts."
+   ],
+   "research_questions": [
+    "How many registrations stopped on a blank field, and how many cards were handed over?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Handing the borrower identification card to the patron is already in the assistant's step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s5"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Correct a registration field before the assistant has accepted the record.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "borrower record the assistant accepted",
+     "approval_step_id": "s3",
+     "approver": "library assistant"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 16.3,
+    "high": 30.8,
+    "basis": "Low: identification is often incomplete, so the assistant still copies it by hand. High: complete registrations are recorded after review, and the card is still handed over in person. The range stays under the net."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 46.25,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 45.25,
+   "speedup": 1.826484,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "The assistant still meets patrons, shelves items, and handles cash. A record, notice, invoice, or order is written or sent only after the assistant accepts that version.",
+  "reach": [
+   "A librarian receives the question the assistant could not answer from the desk.",
+   "A finance colleague receives only an invoice the assistant has accepted."
+  ],
+  "skills_to_grow": [
+   "Stop when a required field is blank.",
+   "Accept or refuse the exact version before a send or a write.",
+   "Keep shelving, cash, and patron conversations in their own hands."
+  ],
+  "ambitious_version": "Every item on loan has a location and a due date the desk can trust, and the assistant still decides the exception."
+ },
+ "_meta": {
+  "model": "grok-4.7",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "43-4121.00",
+   "title": "Library Assistants, Clerical",
+   "tasks": 32,
+   "function": "Office and operations"
+  },
+  "digest": "research/digests-minor/43-4.md",
+  "digest_sha256": "d7cf5b90f15bc24803bebb0fa6bb96f2a517e8d2a085cf55b488bd73b2c0f880",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-15T17:48:56"
+ }
+}

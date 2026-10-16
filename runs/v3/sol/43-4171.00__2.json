@@ -1,0 +1,1001 @@
+{
+ "tasks": [
+  {
+   "uid": "43-4171.00:750",
+   "short": "Send requested information and documents to customers through the appropriate channel.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the request and identify the recipient, requested documents and delivery channel.",
+     "actor": "receptionist",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "information request"
+     ],
+     "outputs": [
+      "document request"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Information request and approved document catalogue.",
+      "output": "Requested document identifiers, recipient and delivery channel.",
+      "check": "Validate identifiers against the catalogue; preserve the supplied address without guessing.",
+      "stop": "One extraction and one repair attempt; route missing or ambiguous details to the receptionist.",
+      "why_not_simpler": "A structured request form handles new requests; existing free-text requests still need interpretation."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Find the current approved documents in the {DOCS}.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "document request",
+      "document catalogue"
+     ],
+     "outputs": [
+      "selected documents"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Prepare the covering message and document bundle.",
+     "actor": "receptionist",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "document request",
+      "selected documents",
+      "message template"
+     ],
+     "outputs": [
+      "delivery bundle"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Check recipient details, document versions and disclosure permissions.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "delivery bundle",
+      "disclosure rules"
+     ],
+     "outputs": [
+      "checked delivery bundle"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "judgement_step",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Send the documents through {EMAIL}, or arrange the requested physical delivery.",
+     "actor": "receptionist",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "checked delivery bundle"
+     ],
+     "outputs": [
+      "sent documents"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "receptionist"
+    },
+    {
+     "id": "s6",
+     "what": "Record dispatch and follow up failed deliveries.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK",
+      "EMAIL"
+     ],
+     "inputs": [
+      "sent documents",
+      "delivery status"
+     ],
+     "outputs": [
+      "dispatch record",
+      "delivery exception"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    }
+   ],
+   "design": "A request form in the {WORKFLOW} selects approved versions from the {DOCS} and generates a delivery bundle; a bounded extraction loop handles free-text requests from the {EMAIL}. Deterministic checks flag recipient and disclosure problems, the receptionist approves dispatch, and the {HELPDESK} records delivery failures.",
+   "previous_blocker": "Document versions, recipient details and dispatch records sit in separate places. Small volumes made bespoke integration difficult to justify.",
+   "enabler_now": "Existing templates, document metadata and delivery connectors cover most of the work. AI-assisted coding reduces the effort of connecting them; free-text extraction needs only a small bounded loop.",
+   "still_hard": "Restricted documents need reliable recipient verification. Postal and fax destinations, missing permissions and inaccessible files still create exceptions.",
+   "human_edge": "Recognising when a technically correct bundle would confuse the recipient, disclose too much or fail their accessibility needs.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Accessible pre-visit information packs tailored to the visitor's stated needs."
+   },
+   "altitude": "The receptionist spends less time finding attachments and recording dispatch. They can assemble approved information packs, while document owners retain publication and disclosure authority.",
+   "reach": [
+    {
+     "role": "correspondence clerk",
+     "task": "Prepare accessible standard correspondence.",
+     "learn": "Document accessibility, approved templates and channel-specific delivery requirements."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-8",
+    "testing_rollout": "3-6",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Template assembly, version selection and dispatch logging can use deterministic rules.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "TOPdesk Robin can turn an unanswered knowledge request into a pre-filled request.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Rossum demonstrates document extraction with validation and exception routing; this is adjacent evidence, not a reception dispatch case.",
+     "grade": "E2",
+     "source": "[S4]"
+    }
+   ],
+   "assumptions": [
+    "Most requests concern existing approved documents, rather than newly authored advice.",
+    "The representative route is electronic; physical delivery remains an exception.",
+    "Time shares and remaining effort are planning estimates, not measured results.",
+    "EU GDPR applies to recipient data and document disclosure."
+   ],
+   "unknowns": [
+    "Whether approved versions and disclosure categories are maintained in the {DOCS}.",
+    "Which delivery channels remain mandatory and how often physical handling occurs.",
+    "Whether the receptionist has authority to release each document category.",
+    "Which connectors and service accounts are available."
+   ],
+   "research_questions": [
+    "Which existing {DOCS} and {WORKFLOW} configuration covers version selection and dispatch without custom code?",
+    "Which delivery methods provide accessible files and usable failure notifications?"
+   ],
+   "new_work": [
+    "Review extracted request details and flagged disclosure issues.",
+    "Maintain document mappings and covering-message templates.",
+    "Resolve failed deliveries and connector failures.",
+    "Check that withdrawn documents cannot enter new delivery bundles."
+   ],
+   "time_saved_pct": 84,
+   "speedup": 6.06
+  },
+  {
+   "uid": "43-4171.00:748",
+   "short": "Hear complaints, agree appropriate remedies and coordinate follow-through.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Listen to the complaint, clarify the problem and establish the desired outcome.",
+     "actor": "receptionist",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "customer complaint"
+     ],
+     "outputs": [
+      "complaint account"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Retrieve relevant case history and service commitments from the {HELPDESK} and {CRM}.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK",
+      "CRM"
+     ],
+     "inputs": [
+      "complaint account",
+      "customer reference"
+     ],
+     "outputs": [
+      "complaint context"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Assess the complaint against policy and choose a proposed remedy.",
+     "actor": "receptionist",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "complaint account",
+      "complaint context",
+      "remedy policy"
+     ],
+     "outputs": [
+      "proposed remedy"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Complaint account, retrieved context and approved remedy policy.",
+      "output": "A factual brief and policy-linked remedy options.",
+      "check": "Require source references; validate limits with code; the receptionist judges suitability.",
+      "stop": "One draft and one repair attempt; missing evidence or conflicting policy goes to a person.",
+      "why_not_simpler": "Rules can enforce remedy limits but cannot reliably connect every free-text complaint to relevant policy."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Obtain approval for remedies beyond the receptionist's delegated authority.",
+     "actor": "office support supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "proposed remedy",
+      "remedy policy"
+     ],
+     "outputs": [
+      "remedy decision"
+     ],
+     "handoff_to": "receptionist",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "complaint-to-resolution",
+     "approver": "office support supervisor"
+    },
+    {
+     "id": "s5",
+     "what": "Explain the remedy or escalation and agree the next action with the customer.",
+     "actor": "receptionist",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "proposed remedy",
+      "remedy decision"
+     ],
+     "outputs": [
+      "resolution agreement"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Record the agreement and assign follow-up in the {HELPDESK}.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK"
+     ],
+     "inputs": [
+      "complaint account",
+      "resolution agreement"
+     ],
+     "outputs": [
+      "complaint record",
+      "follow-up task"
+     ],
+     "handoff_to": "customer service representative",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Receptionist's brief notes and the confirmed resolution agreement.",
+      "output": "Complaint record and proposed follow-up fields.",
+      "check": "Receptionist confirms facts and commitments; required fields and owner identifiers are validated.",
+      "stop": "One draft and one correction; save manually if agreement or ownership remains unclear.",
+      "why_not_simpler": "Free-text notes need concise synthesis; assignment and reminders use fixed rules."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "complaint-to-resolution",
+     "approver": "receptionist"
+    }
+   ],
+   "design": "A case view joins authorised history from the {HELPDESK} and {CRM}, with deterministic remedy limits and a bounded loop that prepares policy-linked options. People hear the complaint and decide the remedy; the {WORKFLOW} routes approval exceptions, and reviewed notes create follow-up tasks in the {HELPDESK}.",
+   "previous_blocker": "Preparation and paperwork were bundled with a conversation that depends on trust. Case history and policy were difficult to consult while listening.",
+   "enabler_now": "A shared case view, configured approval routing and short draft-generation loops can remove preparation work without replacing the conversation.",
+   "still_hard": "A plausible account can be incomplete or disputed. Fair remedies, distressed visitors and commitments involving other departments still require human judgement.",
+   "human_edge": "De-escalating tension, recognising unfair treatment and negotiating a remedy the customer can accept.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A weekly decision on one recurring visitor access problem supported by complaint records."
+   },
+   "altitude": "The receptionist spends more of each case listening and resolving it, with less searching and typing. A supervisor can delegate a specific remedy band after reviewing outcomes; the tool itself grants no additional authority.",
+   "reach": [
+    {
+     "role": "customer service representative",
+     "task": "Coordinate a complaint that crosses departments.",
+     "learn": "Case ownership, remedy limits and how to confirm that promised actions actually happened."
+    },
+    {
+     "role": "office support supervisor",
+     "task": "Choose a service improvement from recurring complaints.",
+     "learn": "Root-cause analysis and how to distinguish repeated symptoms from a shared cause."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "A study of 5,179 support agents found 14% more issues resolved per hour with an assistant; this does not establish reception complaint outcomes.",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "Zendesk supports customer-question handling with integrated records and actions.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Complaint listening and remedy negotiation require context and interpersonal judgement.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The representative complaint starts at the desk; telephone and written complaints use equivalent handoffs.",
+    "Approval effort is averaged across complaints, including those that need no supervisor.",
+    "The design uses brief human notes rather than routine recording or emotion analysis.",
+    "EU GDPR applies; employee consultation and monitoring requirements depend on national rules.",
+    "Time shares and remaining effort are planning estimates, not measured results."
+   ],
+   "unknowns": [
+    "Which remedies receptionists may authorise and which role approves exceptions.",
+    "Whether customer identities can be matched safely across the {CRM} and {HELPDESK}.",
+    "How follow-up ownership and resolution are currently tracked.",
+    "Which national rules and employee consultation requirements apply."
+   ],
+   "research_questions": [
+    "Which complaint categories benefit from preparation assistance without delaying the conversation?",
+    "How should a pilot measure accepted remedies, repeat contacts and unsupported draft claims?"
+   ],
+   "new_work": [
+    "Review draft case notes and policy-linked options.",
+    "Resolve missing identities, conflicting records and unassigned follow-up.",
+    "Maintain remedy limits, escalation routes and policy references.",
+    "Sample records for inaccurate commitments and unnecessary personal detail."
+   ],
+   "time_saved_pct": 30,
+   "speedup": 1.43
+  },
+  {
+   "uid": "43-4171.00:749",
+   "short": "File reception records, keep them accurate and manage their retention.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect documents and attachments that need filing.",
+     "actor": "receptionist",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "incoming document",
+      "case reference"
+     ],
+     "outputs": [
+      "filing bundle"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Identify the record category, case reference and access restrictions.",
+     "actor": "receptionist",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "filing bundle",
+      "filing rules"
+     ],
+     "outputs": [
+      "record metadata"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "crud_app",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Documents without reliable metadata and the approved filing taxonomy.",
+      "output": "Proposed category and case reference, with supporting text.",
+      "check": "Validate categories and references against allowed values; never infer broader access permissions.",
+      "stop": "One classification and one repair attempt; ambiguous documents enter a restricted review queue.",
+      "why_not_simpler": "Source metadata and fixed rules handle structured records; miscellaneous correspondence lacks dependable identifiers."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Copy document details into a separate reception filing register in the {SPREADSHEET}.",
+     "actor": "receptionist",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "record metadata"
+     ],
+     "outputs": [
+      "filing register"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Save documents and metadata in the correct location in the {DOCS}.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "filing bundle",
+      "record metadata"
+     ],
+     "outputs": [
+      "filed record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Review duplicates, corrections and records due for retention action.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "filed record",
+      "retention schedule",
+      "record exception"
+     ],
+     "outputs": [
+      "record maintenance decision"
+     ],
+     "handoff_to": "records administrator",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "records administrator"
+    }
+   ],
+   "design": "Configured capture writes source documents and validated metadata into the {DOCS}, whose search and views replace the separate {SPREADSHEET} register. Deterministic rules handle known document types, a bounded classification loop proposes metadata for exceptions, and the {WORKFLOW} routes uncertain records and retention actions for review.",
+   "previous_blocker": "Filing conventions lived in people's habits, and a separate register compensated for weak search. Mixed correspondence lacked consistent metadata.",
+   "enabler_now": "Existing document libraries provide metadata, permissions, versioning and retention features. Small integrations and bounded classification can connect incoming material to those features.",
+   "still_hard": "Historic duplicates, uncertain ownership and inconsistent retention rules require cleanup. A document's text alone cannot establish its correct access permissions or legal retention period.",
+   "human_edge": "Recognising records whose context, sensitivity or continuing business value makes routine classification unsafe.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Temporary reception cover staff receive a searchable, permission-limited reception record view."
+   },
+   "altitude": "The receptionist handles a short exception queue instead of repeated copying and folder navigation. They can correct routine metadata within an agreed scope; access policy and disposal decisions stay with the records administrator.",
+   "reach": [
+    {
+     "role": "computer user support specialist",
+     "task": "Diagnose failed document capture or missing access.",
+     "learn": "Permission inheritance, connector logs and how to reproduce a failed capture."
+    },
+    {
+     "role": "office support supervisor",
+     "task": "Arrange reliable reception cover.",
+     "learn": "Which records cover staff need and how to test their access without exposing unrelated information."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "3-7",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Configured document libraries can maintain metadata, versions, permissions and retention workflows.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "AFAS demonstrates structured self-service changes flowing into downstream employee records; this is adjacent evidence for write-once records.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Rossum supports document capture, validation and exception routing; reception filing needs its own taxonomy and checks.",
+     "grade": "E2",
+     "source": "[S4]"
+    }
+   ],
+   "assumptions": [
+    "The representative desk keeps a small separate register alongside the {DOCS}; this is not universal.",
+    "Physical originals are retained where required; scanning does not automatically permit disposal.",
+    "EU GDPR requires appropriate access, data minimisation and justified retention.",
+    "Employee consultation follows national rules where the change introduces relevant monitoring.",
+    "Time shares and remaining effort are planning estimates, not measured results."
+   ],
+   "unknowns": [
+    "Whether a separate register exists and what unique information it holds.",
+    "Which record categories, retention schedules and legal holds apply.",
+    "Whether the {DOCS} supports the required metadata and retention controls.",
+    "How much historic material needs migration or physical handling.",
+    "Who may approve disposal and access changes."
+   ],
+   "research_questions": [
+    "Which existing {DOCS} features can replace the register without a custom records application?",
+    "Which incoming document types can be classified entirely from trustworthy source metadata?"
+   ],
+   "new_work": [
+    "Review ambiguous categories and missing case references.",
+    "Maintain filing rules and mappings when document types change.",
+    "Monitor failed captures, duplicates and permission exceptions.",
+    "Approve retention actions and verify that legal holds prevent disposal."
+   ],
+   "time_saved_pct": 86,
+   "speedup": 7.27
+  },
+  {
+   "uid": "43-4171.00:753",
+   "short": "Explain where people and departments are located and what services the organisation provides.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Ask what the visitor needs and clarify the destination or service.",
+     "actor": "receptionist",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "visitor inquiry"
+     ],
+     "outputs": [
+      "clarified inquiry"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Look up approved department locations, contact routes and service descriptions in the {DOCS}.",
+     "actor": "receptionist",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "clarified inquiry",
+      "public directory",
+      "service catalogue"
+     ],
+     "outputs": [
+      "matched information"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Confirm unclear or outdated information with the relevant department through {CHAT}.",
+     "actor": "receptionist",
+     "today_means": "email_chat",
+     "systems": [
+      "CHAT"
+     ],
+     "inputs": [
+      "clarified inquiry",
+      "matched information"
+     ],
+     "outputs": [
+      "confirmed information"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Explain the service or route, adapting the answer to the visitor's needs.",
+     "actor": "receptionist",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "clarified inquiry",
+      "matched information",
+      "confirmed information"
+     ],
+     "outputs": [
+      "visitor answer"
+     ],
+     "handoff_to": "external",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 45,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Visitor question and current, public-approved directory or service entries.",
+      "output": "A plain-language answer with source references and approved directions.",
+      "check": "Allow only current public sources; check destinations and links; disclose automated assistance.",
+      "stop": "One retrieval and one answer attempt; unsupported, ambiguous or access-sensitive questions go to reception.",
+      "why_not_simpler": "Search and fixed route cards handle common questions; varied wording and service explanations need bounded synthesis."
+     },
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Contact the host when the visitor needs an escort or further assistance.",
+     "actor": "receptionist",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "visitor answer",
+      "host contact",
+      "assistance request"
+     ],
+     "outputs": [
+      "visitor handoff"
+     ],
+     "handoff_to": "host",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    }
+   ],
+   "design": "A public directory and service catalogue in the {DOCS} feed searchable pages in the {CMS}, with fixed route cards for common destinations. A bounded answer loop handles varied questions using only approved public entries and hands uncertain cases to reception; the {WORKFLOW} routes stale entries and host notifications.",
+   "previous_blocker": "Information changed across departments without a reliable public directory. Receptionists supplied the missing context and knew which internal details should remain private.",
+   "enabler_now": "Structured directories, content ownership and existing search cover most inquiries. A small grounded answer loop can explain approved information without accessing the whole employee directory.",
+   "still_hard": "Live availability, temporary building changes and visitors who need personal assistance remain difficult. Internal employee records must not become a public search index.",
+   "human_edge": "Noticing confusion, mobility or language needs and arranging a respectful handoff when directions alone are insufficient.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "An after-hours public wayfinding and service-information desk on the {CMS}."
+   },
+   "altitude": "Routine questions shift to self-service, leaving the receptionist more time for visitors who need help. They can flag and propose directory corrections; department owners approve substantive service changes.",
+   "reach": [
+    {
+     "role": "customer service representative",
+     "task": "Maintain answers to recurring public service questions.",
+     "learn": "Knowledge article structure, source ownership and accessible plain-language explanations."
+    },
+    {
+     "role": "switchboard operator",
+     "task": "Route callers using the same approved contact directory.",
+     "learn": "Department routing, fallback contacts and which contact details may be disclosed."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-8",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "TOPdesk Robin answers from a knowledge base and creates a pre-filled request when it cannot answer.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Anglia Ruskin University reportedly handled 75% of chats with TOPdesk; this vendor case does not establish reception-wide savings.",
+     "grade": "E3",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Zendesk offers automated answers across chat, email and voice.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Public directories and fixed route cards can answer common location questions without a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "A useful share of inquiries concerns stable, public information.",
+    "Remaining human time reflects some routine inquiries moving to self-service; personal assistance remains available.",
+    "EU GDPR applies to directory data, and automated conversations must meet applicable EU AI Act disclosure requirements.",
+    "National rules determine any employee consultation needed for directory publication or changed work practices.",
+    "Time shares and remaining effort are planning estimates, not measured results."
+   ],
+   "unknowns": [
+    "Which employee details, locations and contact routes are approved for public disclosure.",
+    "Whether each department has an accountable directory and service-content owner.",
+    "Which languages, accessibility needs and after-hours channels visitors require.",
+    "How often questions involve security-sensitive areas or live availability.",
+    "Whether a public directory already exists."
+   ],
+   "research_questions": [
+    "What proportion of common inquiries can fixed search results and route cards resolve?",
+    "Which accessibility checks and fallback routes are needed for unattended use?",
+    "How can source freshness and unsupported answers be tested before launch?"
+   ],
+   "new_work": [
+    "Maintain public directory entries, maps and service descriptions.",
+    "Review unanswered questions and unsupported answer samples.",
+    "Handle stale-source alerts and temporary route changes.",
+    "Test accessibility, language quality and handoff availability."
+   ],
+   "time_saved_pct": 56,
+   "speedup": 2.29
+  }
+ ],
+ "role": {
+  "altitude": "The week shifts from searching, copying and routine directions toward visitor assistance, complaint resolution and exception handling. Additional authority is limited to explicitly delegated remedies and record corrections; broader decisions remain with the responsible roles.",
+  "reach": [
+   "Customer service representative: coordinate complaints and verify follow-through.",
+   "Correspondence clerk: prepare accessible information packs.",
+   "Computer user support specialist: diagnose capture and permission failures.",
+   "Office support supervisor: use recurring visitor problems to choose service improvements."
+  ],
+  "skills_to_grow": [
+   "Complaint de-escalation and remedy negotiation.",
+   "Accessible communication and document preparation.",
+   "Knowledge-source maintenance and public disclosure boundaries.",
+   "Record classification, retention and permission basics.",
+   "Checking generated text against source records.",
+   "Diagnosing workflow exceptions and failed handoffs."
+  ],
+  "ambitious_version": "Reception becomes an accessible visitor-support service spanning pre-visit information, after-hours public guidance and coordinated complaint follow-through. Receptionists use recurring problems to propose concrete service improvements, supported by reliable records and clear delegated authority."
+ },
+ "job_code": "43-4171.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 140,
+  "attempts": 1,
+  "checks": [
+   "43-4171.00:750 s4: judgement step marked deterministic"
+  ],
+  "web": "off",
+  "tool_calls": [
+   "text(await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3000}));\n"
+  ],
+  "job": {
+   "code": "43-4171.00",
+   "title": "Receptionists and Information Clerks",
+   "tasks": 18,
+   "function": "Customer support"
+  }
+ }
+}

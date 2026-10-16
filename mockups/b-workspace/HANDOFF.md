@@ -1,0 +1,11 @@
+# MOCKUP-b handoff
+
+Workspace B is complete as a static HTML/CSS/JS prototype with all eight required screens and three end-to-end modules: card sorting, Confidence ladder and Bet up. Entry: http://localhost:8790/mockups/b-workspace/index.html. CLICK.md has the ten-step review script. All implementation and evidence live in this folder.
+
+Latest lead update is incorporated: eight standalone North Star team modules in source order, format tags, separate eight-part Guide workshop bundle, and illustrative HR metric with four inputs on Overview and Team twin. Confidence ladder and Bet up now run end to end, updating actual goal/twin/opportunity/plan views. Mock figures use the supplied gross baseline.
+
+Browser check: check.cjs exercises setup, persistence, opportunities, plan trace, module library, card sorting, both North Star flows, mobile receipt destination focus/scroll and mobile panels/resizing. Eleven interaction groups pass with a clean console. All 36 captures are refreshed at 1440 and 390 pixels with no horizontal overflow. CHECKS.json records the completed run at 2026-10-15 09:49:46 UTC.
+
+Original prototype and North Star extension received finish-review ship. The extension’s two material findings were fixed in one batch: correct exercise format tags in the side panel and receipt links that scroll/focus the changed opportunity or initiative, including stopped pilots. PRODUCT.md, DESIGN.md and the validated design sidecar describe the finished scope. The requested MOCKUP-b completion line was appended to fleet/STATUS.md at 11:40 CEST. No git commit requested. Write boundary: this folder, plus that completion append.
+
+Judge follow-up complete: the requested top three fixes are implemented. Visible task-trace/O*NET codes are removed; approach labels use sentence case. The eight North Star modules have plain names and numeric durations, with four source-unstated durations explicitly proposed. Every opportunity shows effort range and actual approach counts; the legend is beside desktop steps and immediately before mobile steps. Browser assertions cover those changes and all original flows. Bounded finish review returned SHIP with no material findings. Design documentation and its validated sidecar are synchronized. The requested line starting MOCKUP-b fixes was appended to fleet/STATUS.md at 11:51 CEST.

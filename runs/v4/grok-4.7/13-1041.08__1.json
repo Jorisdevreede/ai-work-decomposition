@@ -1,0 +1,897 @@
+{
+ "job_code": "13-1041.08",
+ "tasks": [
+  {
+   "uid": "13-1041.08:15936",
+   "short": "Pay duties and taxes on shipments",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open duty notices for the shipments",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "shipment id"
+     ],
+     "outputs": [
+      "duty notice"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "treasury-and-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Check taxes against the duty notice",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "duty notice"
+     ],
+     "outputs": [
+      "checked amount"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 55,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Arrange payment of duties on the shipments",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK"
+     ],
+     "inputs": [
+      "checked amount"
+     ],
+     "outputs": [
+      "payment record"
+     ],
+     "handoff_to": "external",
+     "share_pct": 60,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "treasury-and-cash",
+     "approver": "customs broker",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "The duty notice for a shipment id is opened from {ERP} and {GOV_PORTAL}. The broker checks the taxes and arranges payment in {BANK}. A notice that does not match the shipment is not paid.",
+   "previous_blocker": "The amount lived in a notice and a mail trail, so the payment waited on someone to re-key it.",
+   "enabler_now": "The notice is tied to the shipment id, so the broker sees the figure without re-keying it.",
+   "still_hard": "The authority's account details and a short payment still need the broker.",
+   "human_edge": "The broker decides that this notice is the one to pay.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The broker sees every duty notice before any money moves.",
+   "reach": [
+    {
+     "role": "finance manager",
+     "task": "Reconcile the payment",
+     "learn": "Which shipment the payment settled."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "3-5",
+    "testing_rollout": "2-3",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Paying a published duty is a checked figure plus a person who releases the money. The source pack says duty and tax figures are configured from a public tariff and contracted rates, and that a classification is taken from a stored binding decision only when one matches, with the broker signing the code.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The source pack says a solely automated decision with a significant effect on a person needs a human review. A duty figure here is a stored rate times a stored value, and the broker signs before a filing, a payment, or a quote leaves. Other countries differ.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The work starts when a duty notice arrives for a shipment and ends when the broker has arranged that payment.",
+    "The notice has shipment id, tax lines, and amount, produced by the customs authority. A notice that is only a scan is read by the broker.",
+    "Time a system already spends running is not counted as the broker's effort.",
+    "A missing rate, code, or document is not invented. The broker does that part.",
+    "The incremental hour updates the record when its source row changes."
+   ],
+   "unknowns": [
+    "Whether the authority accepts the payment reference the same day."
+   ],
+   "research_questions": [
+    "Which notices are still waiting because the shipment id was missing?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The checking time is already in the broker's step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Update the opened record when its source row changes.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3",
+     "approved_version": "payment the broker arranged for that shipment",
+     "approval_step_id": "s3",
+     "approver": "customs broker"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 12.3,
+    "high": 23.3,
+    "basis": "The saving is the re-keying of a notice that already names the shipment. Finding the right account and releasing the money stay with the broker."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 35.25,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 34.25,
+   "speedup": 1.520913,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-1041.08:15941",
+   "short": "Classify goods in the tariff coding system",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open the goods description on the invoice",
+     "actor": "customs broker",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "ERP"
+     ],
+     "inputs": [
+      "invoice id"
+     ],
+     "outputs": [
+      "goods lines"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "tax-and-filing",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Match goods to a stored tariff decision",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "goods lines"
+     ],
+     "outputs": [
+      "matched code or a stop"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "none",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "Copy a tariff code only when a stored binding decision matches the goods id.",
+      "input": "Goods id and the stored decision register.",
+      "output": "The stored code, or a stop.",
+      "check": "The code equals the stored decision for that goods id.",
+      "stop": "Stop when no stored decision matches the goods id.",
+      "why_not_simpler": "A code with no stored decision cannot be checked against a source."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "tax-and-filing",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Classify goods in the tariff coding system",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "matched code or a stop"
+     ],
+     "outputs": [
+      "signed code"
+     ],
+     "handoff_to": "none",
+     "share_pct": 45,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "tax-and-filing",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "File the tariff code the broker signed",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "signed code"
+     ],
+     "outputs": [
+      "filed code"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "tax-and-filing",
+     "approver": "customs broker",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "Each goods id is looked up in {GOV_PORTAL} for a stored binding decision. A match can be copied. If none matches, the broker classifies in the coding system and signs before {GOV_PORTAL} receives the code.",
+   "previous_blocker": "The code was chosen from memory and a paper tariff, with nothing tying it to a decision id.",
+   "enabler_now": "Stored decisions can be searched by goods id, so a match is a copy and a miss is visible.",
+   "still_hard": "A new product with no decision still needs the broker's classification.",
+   "human_edge": "The broker signs the code that will be filed.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A known goods id gets its stored code the day the invoice arrives, and a new goods id still waits for the broker."
+   },
+   "altitude": "The broker sees which lines copied a decision and which ones they classified.",
+   "reach": [
+    {
+     "role": "client",
+     "task": "Confirm the goods description",
+     "learn": "Which code was filed for the line."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-9",
+    "testing_rollout": "3-5",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Classification is a lookup of a stored decision, and the broker signs every code that is filed. The source pack says duty and tax figures are configured from a public tariff and contracted rates, and that a classification is taken from a stored binding decision only when one matches, with the broker signing the code.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The source pack says a solely automated decision with a significant effect on a person needs a human review. A duty figure here is a stored rate times a stored value, and the broker signs before a filing, a payment, or a quote leaves. Other countries differ.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The work starts when an invoice line has a goods id and ends when the signed code is filed.",
+    "A goods line has goods id, description, and invoice id, produced by the client. A line with no goods id is classified by the broker.",
+    "Time a system already spends running is not counted as the broker's effort.",
+    "A missing rate, code, or document is not invented. The broker does that part.",
+    "The incremental hour updates the record when its source row changes."
+   ],
+   "unknowns": [
+    "How often a goods id already has a binding decision."
+   ],
+   "research_questions": [
+    "Which lines stopped because no decision matched?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The checking time is already in the broker's step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Update the opened record when its source row changes.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "tariff code the broker signed for those goods",
+     "approval_step_id": "s3",
+     "approver": "customs broker"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 19.6,
+    "high": 37.1,
+    "basis": "The saving counts only lines whose goods id matches a stored decision. A new description is classified by the broker, and the signature stays."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 56.5,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 54.5,
+   "speedup": 2.197802,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-1041.08:15946",
+   "short": "Clear goods through customs for clients",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open the customs entry for the clients",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "entry id"
+     ],
+     "outputs": [
+      "entry status"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "tax-and-filing",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Clear goods through customs for the clients",
+     "actor": "customs broker",
+     "today_means": "in_person",
+     "systems": [
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "entry status"
+     ],
+     "outputs": [
+      "clearance notes"
+     ],
+     "handoff_to": "external",
+     "share_pct": 55,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "tax-and-filing",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Note destinations the clearance did not reach",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "clearance notes"
+     ],
+     "outputs": [
+      "open destinations"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 55,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "tax-and-filing",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Send the clearance the broker accepted",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "open destinations"
+     ],
+     "outputs": [
+      "clearance record"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "tax-and-filing",
+     "approver": "customs broker",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "The entry status is opened in {GOV_PORTAL} from the shipment in {ERP}. The broker clears the goods with the authority. Only a clearance the broker has accepted is sent on, and destinations still open stay on the entry.",
+   "previous_blocker": "Status sat in calls and a mailbox, so nobody could see which destination was still held.",
+   "enabler_now": "The entry id carries the latest status, so the broker starts from the hold rather than a retold story.",
+   "still_hard": "An official can still hold the goods, and the broker has to answer that hold in person.",
+   "human_edge": "The broker accepts the clearance before it is sent.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A held entry is visible the morning it is held, and the broker still clears it."
+   },
+   "altitude": "The broker sees which destinations are still short of a clearance.",
+   "reach": [
+    {
+     "role": "client",
+     "task": "Receive the goods",
+     "learn": "Which destination is still held."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-7",
+    "testing_rollout": "2-4",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Clearance is a status plus a person who deals with the hold. The source pack says duty and tax figures are configured from a public tariff and contracted rates, and that a classification is taken from a stored binding decision only when one matches, with the broker signing the code.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The source pack says a solely automated decision with a significant effect on a person needs a human review. A duty figure here is a stored rate times a stored value, and the broker signs before a filing, a payment, or a quote leaves. Other countries differ.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The work starts when an entry is waiting for clearance and ends when the broker has accepted that clearance.",
+    "The entry has entry id, client id, and destination ids, produced by the shipment file. A destination with no id is handled by the broker.",
+    "Time a system already spends running is not counted as the broker's effort.",
+    "A missing rate, code, or document is not invented. The broker does that part.",
+    "The incremental hour updates the record when its source row changes."
+   ],
+   "unknowns": [
+    "How often an official hold needs a visit rather than a status reply."
+   ],
+   "research_questions": [
+    "Which entries are still held after the broker's note?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The checking time is already in the broker's step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s2"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Update the opened record when its source row changes.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "clearance the broker accepted for that entry",
+     "approval_step_id": "s3",
+     "approver": "customs broker"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 16.8,
+    "high": 31.8,
+    "basis": "The saving is looking up a status that is already on the entry. The conversation with the authority, and the acceptance, stay with the broker."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 47.75,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 46.75,
+   "speedup": 1.877934,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-1041.08:15945",
+   "short": "Prepare import and export customs documentation",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open the import file and the regulations",
+     "actor": "customs broker",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "shipment id"
+     ],
+     "outputs": [
+      "required papers"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Prepare import documentation from stored fields",
+     "actor": "customs broker",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "required papers"
+     ],
+     "outputs": [
+      "draft papers"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "Fill an import or export paper only from stored document fields.",
+      "input": "Shipment id and the stored document fields.",
+      "output": "A draft paper, or a stop.",
+      "check": "Every filled line equals a stored field for that shipment.",
+      "stop": "Stop when a required field is missing.",
+      "why_not_simpler": "A paper that invents a missing field cannot be filed."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Process export documentation still missing fields",
+     "actor": "customs broker",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft papers"
+     ],
+     "outputs": [
+      "checked papers"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Release the customs papers the broker checked",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "checked papers"
+     ],
+     "outputs": [
+      "released papers"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "customs broker",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "Required papers are listed from the shipment in {DOCS}. A draft is filled only from stored fields. The broker processes anything still missing and checks the papers before they go to {GOV_PORTAL}.",
+   "previous_blocker": "Papers were assembled by hand from mail attachments, and a missing certificate showed up late.",
+   "enabler_now": "The required-paper list and the stored fields sit on the shipment, so a gap is visible before drafting.",
+   "still_hard": "A certificate that has not arrived cannot be invented, and the broker still checks the set.",
+   "human_edge": "The broker checks the papers against the regulations before release.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A complete shipment gets its draft the day the fields are stored, and a gap still waits."
+   },
+   "altitude": "The broker sees which papers were copied and which fields were missing.",
+   "reach": [
+    {
+     "role": "client",
+     "task": "Supply a missing certificate",
+     "learn": "Which paper is still short a field."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "4-8",
+    "testing_rollout": "3-5",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Documentation is a form filled from stored fields, and the broker checks it before it leaves. The source pack says duty and tax figures are configured from a public tariff and contracted rates, and that a classification is taken from a stored binding decision only when one matches, with the broker signing the code.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The source pack says a solely automated decision with a significant effect on a person needs a human review. A duty figure here is a stored rate times a stored value, and the broker signs before a filing, a payment, or a quote leaves. Other countries differ.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The work starts when a shipment needs import or export papers and ends when the broker has checked those papers.",
+    "A paper field has shipment id, document type, and value, produced by the client or the carrier. A missing value stops the draft.",
+    "Time a system already spends running is not counted as the broker's effort.",
+    "A missing rate, code, or document is not invented. The broker does that part.",
+    "The incremental hour updates the record when its source row changes."
+   ],
+   "unknowns": [
+    "Which document types are still received as scans rather than fields."
+   ],
+   "research_questions": [
+    "Which shipments stopped because a required field was empty?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The checking time is already in the broker's step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Update the opened record when its source row changes.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "papers the broker checked for that shipment",
+     "approval_step_id": "s3",
+     "approver": "customs broker"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 21.4,
+    "high": 40.5,
+    "basis": "The saving counts papers whose fields are already stored. A scan or a gap is processed by the broker, and the check stays."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 61.5,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 59.5,
+   "speedup": 2.469136,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "Duty is a stored rate. The broker signs the tariff code and the papers, and arranges the payment. Clearance of a hold stays with the broker.",
+  "reach": [
+   "A client sees the code that was filed.",
+   "A finance manager sees which shipment was paid."
+  ],
+  "skills_to_grow": [
+   "Do not invent a tariff code.",
+   "Do not file papers that were not checked."
+  ],
+  "ambitious_version": "A known goods id is coded the day the invoice arrives, and the broker still signs it."
+ },
+ "_meta": {
+  "model": "grok-4.7",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "13-1041.08",
+   "title": "Customs Brokers",
+   "tasks": 23,
+   "function": "Business operations"
+  },
+  "digest": "research/digests-minor/13-1.md",
+  "digest_sha256": "7a4c995306b30639d3fcfade08c36bfbbcf664eb9b7dc402d15055b4861b2737",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-15T15:43:20"
+ }
+}

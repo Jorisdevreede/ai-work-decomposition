@@ -1,0 +1,633 @@
+{
+ "role_id": "payroll",
+ "role": {
+  "altitude": "The Payroll Specialist stops retyping and reconciling by hand. Instead they own the pre-run and post-run checks, approve exceptions and sign off what goes out to the Belastingdienst, pension funds and UWV. Their measure becomes first-time-right pay runs and corrections per run, not hours spent closing the month.",
+  "reach": [
+   "Compensation and Benefits Specialist: CAO wage-table changes and the pay-transparency job scheme in AFAS, so retro increases come from a single source.",
+   "Accountant: the payroll-to-general-ledger reconciliation and the loonheffingen payment, so one reconciliation serves both teams.",
+   "HR Administrator: contract and mutation entry in AFAS, so errors are stopped at intake rather than corrected afterwards.",
+   "People Analytics and HRIS Analyst: the AFAS extract and Power BI, to publish run-quality metrics."
+  ],
+  "skills_to_grow": [
+   "Writing and testing explicit payroll check rules (AFAS mutations, CAO variants, flex workers)",
+   "Reading AFAS connector data and simple Python or SQL job output",
+   "Pay transparency law (EU 2023/970) and gender pay gap reporting",
+   "Explaining AVG and AI Act duties to the works council"
+  ],
+  "ambitious_version": "Every pay run goes through a library of explicit checks before AFAS finalises it, owned by the specialist and covering both CAOs and the agency flex workers. Each exception comes with a plain explanation, and a monthly run-quality report goes to the Controller. The specialist also prepares Noordhaven's first gender pay gap report over 2027 pay from the same data."
+ },
+ "tasks": [
+  {
+   "uid": "43-3051.00:2521",
+   "short": "Work out, enter and explain back-pay or corrections for earlier errors and back-dated CAO raises in AFAS.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive correction or back-dated raise request by mail from HR",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook"
+     ],
+     "inputs": [
+      "correction request",
+      "CAO wage table"
+     ],
+     "outputs": [
+      "correction case"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Calculate difference per past period in Excel",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "correction case",
+      "payslip history"
+     ],
+     "outputs": [
+      "retro calculation"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Enter back-dated mutations in AFAS, often in bulk after CAO raise",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "retro calculation",
+      "CAO wage table"
+     ],
+     "outputs": [
+      "wage mutation"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Check test run results against expected difference",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "test payroll run",
+      "retro calculation"
+     ],
+     "outputs": [
+      "exception list"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "judge",
+      "input": "Rule exceptions (gross moved beyond tolerance, below minimum wage, pension stopped) with the employee's mutation history and the correction case text",
+      "output": "One plain-language explanation per exception with a likely cause, marked 'expected' or 'check'",
+      "check": "Explanation must cite only mutation lines and amounts that exist in the AFAS data; amounts are recomputed by code, never taken from the model",
+      "stop": "One pass per exception, max two retries; on failure the exception is shown without explanation",
+      "why_not_simpler": "The rules find the exceptions, but matching them to the free-text reason in the request needs reading text."
+     },
+     "authority": "read",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Inform employee and record reason in dossier",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "approved correction"
+     ],
+     "outputs": [
+      "employee notice",
+      "correction record"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Correction requests come in through an AFAS Profit workflow instead of mail. A back-dated CAO raise is loaded once from the wage table through the AFAS UpdateConnector, and AFAS's own retro calculation handles the periods. A scheduled check job compares the test run with the expected difference and attaches a short model-written explanation to each exception. The specialist approves, and the system sends a templated notice to the employee.",
+   "previous_blocker": "Requests came in by free-form mail, and bulk CAO raises across two CAOs were cheaper to work out in Excel than to script against AFAS.",
+   "enabler_now": "AI coding makes a small connector script and a rule-check job cheap to build. AFAS already does the retro calculation and keeps wage-component history [S5].",
+   "still_hard": "Corrections that cross tax years or touch pension and benefits, and errors whose cause is unclear, still need the specialist to investigate.",
+   "human_edge": "Deciding whether a correction is right, and agreeing on recovery of an overpayment with an employee in a way that is fair and lawful.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A monthly 'corrections per run' report to HR and the Controller that traces each correction back to its intake error."
+   },
+   "altitude": "Instead of rebuilding calculations in Excel, the specialist approves corrections and decides how overpayments are recovered, within agreed limits.",
+   "reach": [
+    {
+     "role": "hr-admin",
+     "task": "Entering contract and wage mutations in AFAS",
+     "learn": "Which intake errors cause most corrections, so fields can be validated at entry."
+    },
+    {
+     "role": "cnb",
+     "task": "Maintaining CAO wage tables",
+     "learn": "How table changes and their effective dates feed retro runs."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "3-5",
+    "testing_rollout": "5-8",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Payroll calculation stays deterministic; production checks flag gross moves, stopped pension, double net to leavers, below minimum wage.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Workday's Payroll Agent will audit retroactive adjustments and flag items outside defined parameters, with payroll checking.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "AFAS Profit shows wage-component history and approves payroll lines automatically after a human approval.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "AFAS Profit handles back-dated wage changes in its retro calculation and offers UpdateConnectors for bulk mutations.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "AFAS retro calculation (terugwerkende kracht) is licensed and in use.",
+    "Corrections are tens per month, peaking after CAO raises."
+   ],
+   "unknowns": [
+    "How many corrections per month, and their causes.",
+    "Whether AFAS connectors are open to a governed data platform.",
+    "Overpayment recovery policy agreed with the works council."
+   ],
+   "research_questions": [
+    "How many of last year's corrections came from intake errors versus late information?",
+    "Can the AFAS retro run handle both CAOs and the flex workers without manual overrides?",
+    "What share of check exceptions turn out to be expected changes (false alarms)?"
+   ],
+   "time_saved_pct": 82,
+   "speedup": 5.56
+  },
+  {
+   "uid": "43-3051.00:23954",
+   "short": "Prepare, check and file the monthly loonaangifte to the Belastingdienst and arrange payment of loonheffingen.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Finalise pay period in AFAS after run approval",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "approved payroll run"
+     ],
+     "outputs": [
+      "closed pay period"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Reconcile payroll journal, tax return totals and ledger in Excel",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "payroll journal",
+      "loonaangifte draft",
+      "GL extract"
+     ],
+     "outputs": [
+      "payroll reconciliation"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Generate loonaangifte in AFAS and fix validation errors",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "closed pay period"
+     ],
+     "outputs": [
+      "loonaangifte"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Submit through Digipoort and process the response message",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "loonaangifte"
+     ],
+     "outputs": [
+      "filing receipt"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Handle correction messages and prepare loonheffingen payment",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Rabobank"
+     ],
+     "inputs": [
+      "filing receipt",
+      "correction request"
+     ],
+     "outputs": [
+      "correction message",
+      "payment batch"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "Configure AFAS Profit to generate and file the loonaangifte through Digipoort, with one click to approve. The Excel reconciliation is replaced by a scheduled job on the AFAS extract that ties journal, return and ledger, sends breaks to the specialist and feeds a Power BI page the Accountant also uses. The job prepares the payment batch for the bookkeeper to release in Rabobank.",
+   "previous_blocker": "Filing itself was already done in software. The reconciliation stayed in Excel because nobody owned a shared payroll-to-ledger check.",
+   "enabler_now": "A nightly AFAS extract and Power BI already exist, and AI coding makes a reconciliation job cheap. A model is not needed for this task.",
+   "still_hard": "Correction messages for earlier periods, and differences that come from manual ledger entries, still need investigation.",
+   "human_edge": "Signing off a filing to the tax authority and deciding how to correct a past period are the specialist's accountable acts.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Reconcile payroll to the ledger daily during close instead of once after filing, so breaks are caught before submission."
+   },
+   "altitude": "Close takes less of the specialist's time. They approve the filing on a reconciled dashboard and handle only the breaks.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Month-end ledger close for wage accounts",
+     "learn": "Which journal mappings cause most breaks."
+    },
+    {
+     "role": "bookkeeper",
+     "task": "Releasing payment batches in Rabobank",
+     "learn": "Timing and four-eyes rules for tax payments."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-5",
+    "testing_rollout": "5-10",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Filings and reconciliations belong to deterministic software, not model work.",
+     "grade": "E3",
+     "source": "[S2]"
+    },
+    {
+     "claim": "AFAS Profit produces the loonaangifte and submits it to the Belastingdienst through Digipoort.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "AFAS already submits the loonaangifte directly; manual steps are checks and corrections.",
+    "The nightly AFAS extract includes payroll journal lines."
+   ],
+   "unknowns": [
+    "How many correction messages Noordhaven files per year and why.",
+    "Whether the nightly extract holds return-level totals.",
+    "Who releases the loonheffingen payment today."
+   ],
+   "research_questions": [
+    "How many hours does the reconciliation take each month, and how many breaks does it find?",
+    "Does the AFAS extract contain enough detail to reconcile at the level of each wage component?",
+    "Would the Accountant use a shared reconciliation page in place of their own sheet?"
+   ],
+   "time_saved_pct": 68,
+   "speedup": 3.17
+  },
+  {
+   "uid": "43-3051.00:2527",
+   "short": "Complete, check and send pension, UWV and insurance forms, and record them for employees.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect forms and supporting documents from mail and portals",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "SharePoint"
+     ],
+     "inputs": [
+      "benefit form",
+      "supporting document"
+     ],
+     "outputs": [
+      "benefit case"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Incoming PDF or mailed form (pension fund request, UWV form, insurer letter)",
+      "output": "Form type, employee number, dates and amounts as structured fields",
+      "check": "Employee number and dates are matched against AFAS; fields that do not match or are missing go to the specialist",
+      "stop": "One extraction per document, one retry; unreadable documents go to the manual queue",
+      "why_not_simpler": "Forms arrive in different formats from several funds and agencies; there is no single structured feed."
+     },
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Check form data against AFAS salary, hours and employment dates",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "benefit case",
+      "employee record"
+     ],
+     "outputs": [
+      "checked benefit case"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Fill in and send pension fund, UWV or insurer forms",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "pension fund portal",
+      "UWV portal"
+     ],
+     "inputs": [
+      "checked benefit case"
+     ],
+     "outputs": [
+      "submitted benefit form"
+     ],
+     "handoff_to": "external",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Answer queries from fund, UWV or employee",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook"
+     ],
+     "inputs": [
+      "fund query"
+     ],
+     "outputs": [
+      "query answer"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "File form and record outcome in AFAS dossier",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "submitted benefit form"
+     ],
+     "outputs": [
+      "dossier record"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    }
+   ],
+   "design": "An AFAS Profit workflow takes in benefit forms. A bounded extraction step reads incoming documents into fields, and deterministic code checks them against AFAS records. Periodic pension data goes out through AFAS's standard pension interface (UPA) wherever the fund supports it. The specialist approves each external submission, and filing in the dossier happens automatically.",
+   "previous_blocker": "Inputs were mixed paper and PDF forms from several funds and agencies, so reading them could not be automated cheaply.",
+   "enabler_now": "Document extraction with a bounded model step is now reliable enough when every field is checked against AFAS. Building the workflow is cheap with AI coding.",
+   "still_hard": "Health-related data is special-category data under the AVG, and reading the personnel file needs works council consent. Unusual cases such as WIA and partial disability still need expert handling.",
+   "human_edge": "Explaining pension or disability consequences to an employee, and judging unusual cases with a fund or UWV.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Send seasonal flex workers who move onto Noordhaven contracts a pension enrolment check in their first week."
+   },
+   "altitude": "Less retyping. The specialist approves submissions and spends their time on the unusual cases and on employee questions.",
+   "reach": [
+    {
+     "role": "hrbp",
+     "task": "Absence cases under Wet verbetering poortwachter",
+     "learn": "Which UWV forms and deadlines come from absence cases, so they start on time."
+    },
+    {
+     "role": "cnb",
+     "task": "Pension and insurance scheme administration",
+     "learn": "Scheme rules for each CAO that the checks should encode."
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "4-8",
+    "testing_rollout": "5-10",
+    "consent_and_access": "10-25"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "PayCaptain's assistant found more than £500,000 in unclaimed employee benefits.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "A tool that reads the personnel file needs works council consent under WOR 27(1)(k).",
+     "grade": "E3",
+     "source": "[S10]"
+    },
+    {
+     "claim": "Rule-based decisions affecting people need a route to human review.",
+     "grade": "E3",
+     "source": "[S11]"
+    },
+    {
+     "claim": "AFAS supports the UPA pension data interface to Dutch pension funds.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The specialist handles pension, UWV and insurer forms, not the HR Business Partners.",
+    "Most volume is pension changes and employment statements."
+   ],
+   "unknowns": [
+    "Which pension funds Noordhaven uses under each CAO, and whether they accept UPA.",
+    "Monthly volume of each form type.",
+    "Where health data is stored today, and who may access it."
+   ],
+   "research_questions": [
+    "What share of forms arrive in a structured format compared with PDF or paper?",
+    "Do Noordhaven's pension funds accept UPA directly from AFAS?",
+    "Will the works council consent to document extraction on personnel files, and under what conditions?",
+    "How often do the extracted fields disagree with AFAS on a sample of past forms?"
+   ],
+   "time_saved_pct": 75,
+   "speedup": 4.0
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 91,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

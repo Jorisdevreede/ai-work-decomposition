@@ -1,0 +1,1211 @@
+{
+ "tasks": [
+  {
+   "uid": "13-2011.00:21515",
+   "short": "Calculate, approve and post adjusting journal entries for the financial close.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve balances, prior journals and open items from the {ERP}.",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "close calendar",
+      "ledger balances",
+      "prior journals"
+     ],
+     "outputs": [
+      "adjustment population"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read supporting invoices, contracts and schedules in the {DOCS}.",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "adjustment population",
+      "supplier invoice",
+      "supplier contract",
+      "accrual schedule"
+     ],
+     "outputs": [
+      "adjustment evidence"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Selected supporting documents and required adjustment fields.",
+      "output": "Amounts, dates and relevant clauses with source references.",
+      "check": "Validate identifiers, dates and totals; review clauses and uncertain fields against source pages.",
+      "stop": "One extraction and one repair per document; missing evidence or mismatches return to the accountant.",
+      "why_not_simpler": "Existing structured fields do not capture relevant terms in varied supporting documents."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Calculate accruals, prepayments and corrections in the {SPREADSHEET}.",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "adjustment population",
+      "adjustment evidence",
+      "accounting policy"
+     ],
+     "outputs": [
+      "adjustment calculation"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Decide accounting treatment and document estimates in the {DOCS}.",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "adjustment calculation",
+      "adjustment evidence",
+      "accounting policy"
+     ],
+     "outputs": [
+      "proposed journal",
+      "accounting judgement"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Review evidence and approve the proposed journal in the {ERP}.",
+     "actor": "controller",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "proposed journal",
+      "adjustment calculation",
+      "accounting judgement"
+     ],
+     "outputs": [
+      "approved journal"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "controller"
+    },
+    {
+     "id": "s6",
+     "what": "Post the approved journal and retain its evidence link in the {ERP}.",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "approved journal",
+      "adjustment evidence"
+     ],
+     "outputs": [
+      "posted journal",
+      "journal audit trail"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "A scheduled integration joins balances from the {ERP} to evidence in the {DOCS}; a bounded extraction loop reads unstructured supporting terms. Deterministic calculations create balanced journal drafts, while accountants decide estimates and treatment. Approval in the {ERP} releases posting of the exact approved version, with duplicate checks and an evidence trail.",
+   "previous_blocker": "Recurring journal functions already cover some entries. Varied evidence, judgement-heavy estimates and disconnected calculation files leave the rest manual.",
+   "enabler_now": "Existing approval functions and structured exports handle much of the work. AI-assisted coding makes calculation adapters and evidence links cheaper to build; bounded extraction handles varied documents.",
+   "still_hard": "Uncertain estimates, disputed cutoff dates, incomplete evidence and inconsistent account mappings. Posting permissions and approval separation still require careful setup.",
+   "human_edge": "Deciding whether an estimate faithfully reflects the business, and challenging unsupported assumptions.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly accrual sufficiency review before month-end"
+   },
+   "altitude": "The accountant spends less time rebuilding schedules and more time investigating estimate changes. They can propose weekly accrual updates; posting authority remains subject to delegated limits and controller approval.",
+   "reach": [
+    {
+     "role": "budget analyst",
+     "task": "Update expenditure forecasts using current accrual estimates.",
+     "learn": "Forecast timing, commitment coverage and the difference between accruals and cash payments."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Recurring journals, balancing checks and approval workflows can use deterministic configuration and code.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The digest reports an incorrect cash-waterfall result in an Excel-agent benchmark; model arithmetic needs independent checks.",
+     "grade": "E2",
+     "source": "[S10]"
+    }
+   ],
+   "assumptions": [
+    "Time shares, remaining time and build ranges are planning estimates, not measured customer results.",
+    "The task mixes routine adjustments with judgement-heavy estimates; nearly complete automation is therefore too optimistic.",
+    "The {ERP} supports journal imports and approval controls; configuration is preferred where available.",
+    "GDPR and EU AI Act applicability are assessed for the actual use. National rules govern any required employee consultation.",
+    "Consultation and access ranges cover a limited pilot; a formal consent process may take longer."
+   ],
+   "unknowns": [
+    "Applicable accounting framework, materiality and delegated posting limits.",
+    "Available {ERP} interfaces and recurring-journal configuration.",
+    "Share of adjustments requiring new estimates rather than established calculations.",
+    "Evidence quality, personal-data content and required national consultation."
+   ],
+   "research_questions": [
+    "Which adjustment families already have complete rules and reliable structured inputs?",
+    "Can the approved journal version be locked through posting and reversal?",
+    "What extraction accuracy is achieved on representative supporting documents?"
+   ],
+   "new_work": [
+    "Review extracted terms and resolve missing evidence.",
+    "Maintain calculation rules and account mappings.",
+    "Monitor duplicate prevention, failed imports and approval permissions.",
+    "Check estimate drift during the weekly accrual review."
+   ],
+   "time_saved_pct": 65,
+   "speedup": 2.84
+  },
+  {
+   "uid": "13-2011.00:21508",
+   "short": "Inspect accounting records and systems, assess controls and recommend improvements.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Agree inspection scope and key risks with the controller.",
+     "actor": "auditor",
+     "today_means": "meeting_call",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "prior findings",
+      "accounting policy",
+      "process changes"
+     ],
+     "outputs": [
+      "inspection scope"
+     ],
+     "handoff_to": "auditor",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Retrieve ledger populations, configuration and approval records from the {ERP}.",
+     "actor": "auditor",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "inspection scope",
+      "ledger balances",
+      "journal audit trail"
+     ],
+     "outputs": [
+      "inspection population",
+      "system configuration"
+     ],
+     "handoff_to": "auditor",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Collect current policies and process descriptions from the {DOCS}.",
+     "actor": "auditor",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "inspection scope",
+      "accounting policy",
+      "process description"
+     ],
+     "outputs": [
+      "inspection evidence"
+     ],
+     "handoff_to": "auditor",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Test reconciliations, approvals and posting patterns in the {SPREADSHEET}.",
+     "actor": "auditor",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "inspection population",
+      "system configuration",
+      "inspection evidence",
+      "control test plan"
+     ],
+     "outputs": [
+      "control test results"
+     ],
+     "handoff_to": "auditor",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Assess accounting treatment, control effectiveness and process efficiency in the {DOCS}.",
+     "actor": "auditor",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "control test results",
+      "inspection evidence",
+      "accounting policy"
+     ],
+     "outputs": [
+      "provisional findings"
+     ],
+     "handoff_to": "process owner",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Discuss exceptions and practical causes with the process owner.",
+     "actor": "auditor",
+     "today_means": "meeting_call",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "provisional findings",
+      "control test results"
+     ],
+     "outputs": [
+      "finding clarification",
+      "management response"
+     ],
+     "handoff_to": "auditor",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Record supported findings and recommended improvements in the {DOCS}.",
+     "actor": "auditor",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "provisional findings",
+      "finding clarification",
+      "management response",
+      "control test results"
+     ],
+     "outputs": [
+      "audit findings"
+     ],
+     "handoff_to": "auditor",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Auditor conclusions, test results and process-owner explanations.",
+      "output": "Structured finding drafts with condition, criterion, cause, effect and evidence references.",
+      "check": "Auditor verifies source support, wording, severity and separation of fact from inference.",
+      "stop": "One draft and one revision per finding; unsupported assertions return to the auditor.",
+      "why_not_simpler": "Finding narratives combine varied explanations and conclusions that fixed templates cannot fully express."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "auditor"
+    }
+   ],
+   "design": "Read-only integrations from the {ERP} feed deterministic control tests on the {DATA_PLATFORM} and an exception view in the {BI}. Evidence in the {DOCS} stays linked to each test, while auditors assess effectiveness and discuss causes. A bounded drafting loop prepares findings for auditor approval in a records app on the {WORKFLOW}.",
+   "previous_blocker": "Tests depend on inconsistent exports and scattered evidence. Control effectiveness also requires business context that simple exception rules cannot establish.",
+   "enabler_now": "Reusable data adapters and test libraries are cheaper to implement with AI-assisted coding. Existing records and dashboard functions can preserve evidence and show repeat exceptions.",
+   "still_hard": "Incomplete audit trails, undocumented workarounds and distinguishing justified exceptions from weak controls. Automated coverage does not establish operating effectiveness by itself.",
+   "human_edge": "Choosing relevant tests, recognising misleading evidence and judging whether controls work in practice.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Monthly accounting control health review"
+   },
+   "altitude": "The auditor spends more time investigating recurring weaknesses and less time assembling test files. They can recommend earlier remediation priorities; process changes still require the controller's authority.",
+   "reach": [
+    {
+     "role": "business intelligence analyst",
+     "task": "Build reliable control indicators from financial transaction data.",
+     "learn": "Data lineage, denominator selection, refresh timing and false-positive measurement."
+    },
+    {
+     "role": "compliance officer",
+     "task": "Track whether control remediation addresses the underlying requirement.",
+     "learn": "Control obligations, evidence retention and escalation criteria."
+    }
+   ],
+   "build_days": {
+    "coding": "7-15",
+    "integration": "5-15",
+    "testing_rollout": "8-15",
+    "consent_and_access": "5-25"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "DataSnipper supports evidence extraction and tests of details with team review and sign-off.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Baker Tilly Netherlands reported 40–50% test-of-details time savings; this is a vendor-reported case.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "Assessing control effectiveness and accounting acceptability requires professional judgement beyond exception detection.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Time shares, remaining time and build ranges are estimates for a limited inspection scope.",
+    "The auditor is independent of the activities being evaluated where the engagement requires independence.",
+    "The design tests financial controls and does not infer employee misconduct from an exception.",
+    "GDPR and EU AI Act applicability are assessed. National rules may require consultation before introducing employee monitoring.",
+    "The Netherlands requires works council consent for relevant employee-monitoring arrangements; other national rules vary.",
+    "Formal consultation may exceed the stated pilot access range."
+   ],
+   "unknowns": [
+    "Internal inspection or external assurance mandate and independence requirements.",
+    "Availability and completeness of approval logs and configuration exports.",
+    "Current control catalogue and accepted exception criteria.",
+    "Whether proposed tests constitute employee monitoring under applicable national rules."
+   ],
+   "research_questions": [
+    "Which controls can be tested reproducibly from available transaction fields?",
+    "How will population completeness and extraction accuracy be demonstrated?",
+    "Which recurring exceptions warrant investigation rather than another notification?"
+   ],
+   "new_work": [
+    "Maintain test definitions and documented exception criteria.",
+    "Validate extraction completeness and changed source fields.",
+    "Investigate false positives and missing evidence.",
+    "Review drafted findings and refresh the monthly control review."
+   ],
+   "time_saved_pct": 54,
+   "speedup": 2.17
+  },
+  {
+   "uid": "13-2011.00:21505",
+   "short": "Turn audit evidence and conclusions into a reviewed report with management responses.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Assemble findings, workpapers and evidence references from the {DOCS}.",
+     "actor": "auditor",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "audit findings",
+      "control test results",
+      "inspection scope",
+      "inspection evidence"
+     ],
+     "outputs": [
+      "report evidence pack"
+     ],
+     "handoff_to": "auditor",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Write the report narrative, findings and recommendations in the {DOCS}.",
+     "actor": "auditor",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "report evidence pack",
+      "report template"
+     ],
+     "outputs": [
+      "draft audit report"
+     ],
+     "handoff_to": "auditor",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Approved findings, linked workpapers, scope and report template.",
+      "output": "Report draft with source-linked figures and conclusions.",
+      "check": "Validate figures against workpapers; auditor checks completeness, wording and evidence support.",
+      "stop": "One draft and one revision per section; missing support leaves a flagged gap for the auditor.",
+      "why_not_simpler": "The report must explain varied evidence and context in prose beyond fixed finding fields."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Challenge severity, scope limitations and recommendations in the draft report.",
+     "actor": "auditor",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft audit report",
+      "report evidence pack"
+     ],
+     "outputs": [
+      "reviewed audit draft"
+     ],
+     "handoff_to": "auditor",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Send reviewed findings to process owners for responses through the {EMAIL}.",
+     "actor": "auditor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "reviewed audit draft",
+      "response request"
+     ],
+     "outputs": [
+      "management response request"
+     ],
+     "handoff_to": "process owner",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "auditor"
+    },
+    {
+     "id": "s5",
+     "what": "Provide factual corrections, responses and remediation commitments through the {EMAIL}.",
+     "actor": "process owner",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "management response request"
+     ],
+     "outputs": [
+      "management response",
+      "remediation commitment"
+     ],
+     "handoff_to": "audit manager",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Review the completed report and authorise its release in the {DOCS}.",
+     "actor": "audit manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "reviewed audit draft",
+      "management response",
+      "remediation commitment",
+      "report evidence pack"
+     ],
+     "outputs": [
+      "approved audit report",
+      "release authorisation"
+     ],
+     "handoff_to": "auditor",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 80,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "audit-and-controls",
+     "approver": "audit manager"
+    },
+    {
+     "id": "s7",
+     "what": "Distribute the approved report to authorised recipients through the {EMAIL}.",
+     "actor": "auditor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "approved audit report",
+      "release authorisation",
+      "recipient list"
+     ],
+     "outputs": [
+      "issued audit report",
+      "distribution record"
+     ],
+     "handoff_to": "external",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    }
+   ],
+   "design": "A records app on the {WORKFLOW} assembles approved findings and evidence from the {DOCS}, then a bounded loop drafts report sections with source references. The same flow collects management responses and creates remediation tasks in the {PROJECT}. The audit manager approves release of a locked version before the {EMAIL} distributes it to the authorised recipient list.",
+   "previous_blocker": "Findings, workpapers and responses are often separate files or message threads. Templates handle layout, but report reasoning and tone vary by engagement.",
+   "enabler_now": "Versioned records and deterministic assembly remove repeated copying. Bounded drafting can turn supported findings into prose while preserving evidence references.",
+   "still_hard": "Materiality, contested findings, misleading wording and conclusions that exceed the evidence. External assurance reports may require prescribed language and additional professional review.",
+   "human_edge": "Standing behind conclusions, handling disagreement and making recommendations that management can realistically implement.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Remediation effectiveness follow-up brief"
+   },
+   "altitude": "The auditor spends less time formatting reports and chasing response versions. They can propose follow-up tests when remediation is claimed complete; the audit manager retains report-release authority.",
+   "reach": [
+    {
+     "role": "compliance officer",
+     "task": "Assess whether completed remediation has reduced the identified control risk.",
+     "learn": "Evidence of operating effectiveness, action closure standards and residual-risk assessment."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "3-8",
+    "testing_rollout": "5-12",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Source-linked report assembly and bounded narrative drafting are feasible patterns, with professional review retained.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "DataSnipper supports evidence work with team review and sign-off; this supports evidence preparation, not autonomous report conclusions.",
+     "grade": "E2",
+     "source": "[S1]"
+    }
+   ],
+   "assumptions": [
+    "Time shares, remaining time and build ranges are estimates for a recurring report format.",
+    "Management-response time is included because the complete workflow crosses roles.",
+    "External distribution applies to external engagements; internal reports use an internal recipient list.",
+    "A generated draft cannot change an approved finding's severity or conclusion without auditor review.",
+    "GDPR and EU AI Act applicability are assessed; national rules govern any required employee consultation.",
+    "Access and consultation estimates cover a pilot rather than guaranteed completion of formal proceedings."
+   ],
+   "unknowns": [
+    "Required reporting standards, prescribed wording and signing authority.",
+    "Current finding register, evidence versioning and report templates.",
+    "Authorised recipients and confidentiality restrictions.",
+    "Whether professional or contractual rules restrict model processing of engagement evidence."
+   ],
+   "research_questions": [
+    "Can every report figure and conclusion be traced to a stable workpaper version?",
+    "Which report sections can be filled deterministically from finding fields?",
+    "How often do reviewers find unsupported language or altered conclusions in representative drafts?"
+   ],
+   "new_work": [
+    "Review draft language and verify evidence references.",
+    "Maintain report templates and bounded drafting instructions.",
+    "Resolve conflicting responses and changed findings.",
+    "Maintain recipient lists, release controls and remediation follow-up tasks."
+   ],
+   "time_saved_pct": 50,
+   "speedup": 2.0
+  },
+  {
+   "uid": "13-2011.00:21532",
+   "short": "Prepare and verify financial statements, explain financial condition and support planning.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve the closed trial balance and comparative balances from the {ERP}.",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "close calendar",
+      "posted journal",
+      "ledger balances"
+     ],
+     "outputs": [
+      "trial balance",
+      "comparative balances"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Collect supporting schedules and disclosure information from the {DOCS}.",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "accrual schedule",
+      "accounting judgement",
+      "disclosure checklist",
+      "supporting schedules"
+     ],
+     "outputs": [
+      "statement evidence pack"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Reconcile balances, verify totals and investigate differences in the {SPREADSHEET}.",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "trial balance",
+      "comparative balances",
+      "statement evidence pack"
+     ],
+     "outputs": [
+      "reconciliation results",
+      "statement exceptions"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Map accounts and prepare statement schedules in the {SPREADSHEET}.",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "trial balance",
+      "reconciliation results",
+      "statement mapping"
+     ],
+     "outputs": [
+      "statement schedules"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Populate financial statements and recurring disclosure tables in the {DOCS}.",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "statement schedules",
+      "statement evidence pack",
+      "statement template"
+     ],
+     "outputs": [
+      "draft financial statements"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Assess estimates, disclosure completeness and going concern; write judgement notes in the {DOCS}.",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft financial statements",
+      "statement exceptions",
+      "accounting policy",
+      "forecast pack"
+     ],
+     "outputs": [
+      "reviewed financial statements",
+      "accounting judgement"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Analyse trends, ratios and planning implications using the {BI}.",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "BI"
+     ],
+     "inputs": [
+      "reviewed financial statements",
+      "comparative balances",
+      "forecast pack"
+     ],
+     "outputs": [
+      "financial condition brief"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 55,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s8",
+     "what": "Review statements and obtain required management approval for release through the {DOCS}.",
+     "actor": "controller",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "reviewed financial statements",
+      "financial condition brief",
+      "accounting judgement"
+     ],
+     "outputs": [
+      "approved financial statements",
+      "release authorisation"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 7,
+     "fate": "person_reviews",
+     "remaining_pct": 85,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "authorised management signatory"
+    },
+    {
+     "id": "s9",
+     "what": "Send approved statements to authorised external recipients through the {EMAIL}.",
+     "actor": "accountant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "approved financial statements",
+      "release authorisation",
+      "recipient list"
+     ],
+     "outputs": [
+      "issued financial statements",
+      "distribution record"
+     ],
+     "handoff_to": "external",
+     "share_pct": 3,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "Versioned balances from the {ERP} feed deterministic reconciliations, account mappings and statement generation on the {DATA_PLATFORM}, with outputs in the {DOCS}. The {BI} calculates trends and ratios while accountants resolve exceptions and assess disclosures and estimates. Approval on the {WORKFLOW} locks the release version before the {EMAIL} distributes it.",
+   "previous_blocker": "Mapping tables, supporting schedules and statement drafts are maintained separately. Changes propagate manually, and disclosure judgements cannot be reduced to arithmetic.",
+   "enabler_now": "Existing reporting configuration handles standard layouts and ratios. AI-assisted coding reduces the effort to connect source balances, reusable checks and versioned statement templates.",
+   "still_hard": "Consolidation adjustments, changing accounting policies, going concern and incomplete disclosure evidence. Statutory formats and management approval duties vary under national rules.",
+   "human_edge": "Interpreting financial condition, challenging estimates and deciding whether statements present a faithful account of the business.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Monthly liquidity stress review using reconciled financial results"
+   },
+   "altitude": "The accountant spends less time moving figures between schedules and more time explaining liquidity and estimate changes. They can propose earlier forecast revisions; financing decisions and statutory approval remain with authorised management.",
+   "reach": [
+    {
+     "role": "treasurer",
+     "task": "Assess liquidity under delayed receipts and higher operating payments.",
+     "learn": "Cash timing, financing headroom and covenant definitions."
+    },
+    {
+     "role": "budget analyst",
+     "task": "Revise forecasts using reconciled actual results and identified trends.",
+     "learn": "Driver-based forecasting, seasonality and separating one-off changes from recurring movements."
+    }
+   ],
+   "build_days": {
+    "coding": "7-15",
+    "integration": "5-15",
+    "testing_rollout": "8-20",
+    "consent_and_access": "4-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Baker Tilly Netherlands reported statement tick-and-tie falling from eight to two hours; this is a vendor-reported case.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "Deterministic mappings, arithmetic checks and templates can prepare statement figures; judgement remains necessary for estimates and disclosures.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The digest's Excel-agent benchmark illustrates why financial calculations need independent tie-outs.",
+     "grade": "E2",
+     "source": "[S10]"
+    }
+   ],
+   "assumptions": [
+    "Time shares, remaining time and build ranges are estimates for one entity or a simple reporting group.",
+    "Financial statement preparation and independent assurance remain separate responsibilities.",
+    "Available {BI} reporting is used today; some companies instead analyse ratios in the {SPREADSHEET}.",
+    "Mappings and recurring tables are structured enough that no model loop is needed for numerical generation.",
+    "GDPR and EU AI Act applicability are assessed. National rules determine statutory approval and any required employee consultation.",
+    "Formal consultation, complex consolidation or statutory filing integration may exceed these ranges."
+   ],
+   "unknowns": [
+    "Accounting framework, entity structure and consolidation complexity.",
+    "Existing reporting configuration and stability of account mappings.",
+    "Required disclosures, statutory formats and management signatories.",
+    "Availability of forecast data, source evidence and approved external recipient lists."
+   ],
+   "research_questions": [
+    "Which statement tables can existing {ERP} reporting already produce?",
+    "Can every published figure be traced to a frozen balance and approved mapping version?",
+    "Which judgement areas routinely delay completion or require additional management evidence?"
+   ],
+   "new_work": [
+    "Maintain mappings, statement templates and disclosure checklists.",
+    "Resolve reconciliation exceptions and missing supporting schedules.",
+    "Validate source snapshots, comparatives and generated statement versions.",
+    "Prepare liquidity stress scenarios and review their business assumptions."
+   ],
+   "time_saved_pct": 65,
+   "speedup": 2.88
+  }
+ ],
+ "role": {
+  "altitude": "The week shifts from assembling evidence and moving figures toward investigating exceptions, challenging estimates and advising on control and liquidity risks. New decision rights require explicit delegation; professional judgement, independence and signing duties remain with the appropriate people.",
+  "reach": [
+   "Budget analysts: connect reconciled results and accrual changes to forecast drivers.",
+   "Treasurers: translate accounting results into cash timing and financing headroom.",
+   "Compliance officers: test whether remediation reduces the underlying control risk.",
+   "Business intelligence analysts: build traceable financial indicators with reliable populations."
+  ],
+  "skills_to_grow": [
+   "Specify deterministic accounting rules and meaningful exception thresholds.",
+   "Validate data lineage, population completeness and numerical tie-outs.",
+   "Review source-linked model drafts and recognise unsupported conclusions.",
+   "Explain estimates, control weaknesses and liquidity implications clearly.",
+   "Design approval permissions, version controls and auditable release processes."
+  ],
+  "ambitious_version": "Provide an earlier financial assurance and planning service: weekly accrual reviews, monthly control health reviews and monthly liquidity stress reviews. Build it from reconciled records and explicit escalation limits, with accountants and auditors retaining their distinct professional responsibilities."
+ },
+ "job_code": "13-2011.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 219,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "text(await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3500}));\n"
+  ],
+  "job": {
+   "code": "13-2011.00",
+   "title": "Accountants and Auditors",
+   "tasks": 30,
+   "function": "Finance"
+  }
+ }
+}

@@ -1,0 +1,834 @@
+{
+ "role_id": "hr-admin",
+ "role": {
+  "altitude": "The two HR Administrators stop retyping mail and forms into AFAS. Their week becomes exception queues, dossier quality checks and keeping the rules up to date: CAO scales, contract chain rules, mandatory certificates and document checklists. They gain the right to propose and change validation rules and templates, with HR Director sign-off.",
+  "reach": [
+   "Payroll Specialist: learn the month-close cut-off and which changes affect pay, so exception rules fire before payroll runs.",
+   "Recruiter: learn the Recruitee stage model and knockout questions, so a hire flows into AFAS without being typed in again.",
+   "People Analytics and HRIS Analyst: learn the AFAS data model and the nightly extract, to co-own the validation job and the dossier-completeness dashboard.",
+   "Learning and Development Specialist: learn the Studytube certificate rules (forklift, VCA, food safety), so a new hire's or transfer's mandatory courses start from the AFAS event."
+  ],
+  "skills_to_grow": [
+   "Writing validation rules and document checklists that code can run",
+   "AFAS Profit workflows, InSite/Pocket self-service and connector configuration",
+   "Reviewing model extractions and spotting systematic errors",
+   "AVG/GDPR basics for special-category data and records of processing",
+   "Preparing a works council (OR) consent request for an HR system change"
+  ],
+  "ambitious_version": "A 'dossier complete on day one' service: every hire, transfer and exit at all three sites runs as one AFAS workflow fed by Recruitee. Document intake is read into fields, CAO and contract-chain checks run in code, and a daily exception list goes to the administrators. They report dossier completeness and days per personnel action to the HR Director each month, which feeds the North Star input 'onboarding completed in week one'."
+ },
+ "tasks": [
+  {
+   "uid": "43-4161.00:18572",
+   "short": "Receive, check and file personnel documents (contracts, evaluations, leave, certificates, grievances) in the AFAS dossier.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect documents arriving by Outlook, Teams, paper and AFAS Pocket",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "signed contract",
+      "evaluation form",
+      "leave request",
+      "certificate scan"
+     ],
+     "outputs": [
+      "document intake queue"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Read document, identify type, check completeness and signatures",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "AFAS Profit",
+      "SharePoint"
+     ],
+     "inputs": [
+      "document intake queue",
+      "document checklist"
+     ],
+     "outputs": [
+      "classified document",
+      "missing-item list"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify and extract",
+      "input": "scanned or PDF document (no medical documents)",
+      "output": "document type, employee number, key fields, signature present yes/no",
+      "check": "Fields validated in code against AFAS: employee exists, dates plausible, field formats; checklist per document type",
+      "stop": "One pass plus one retry; low confidence or failed validation goes to the exceptions queue for the administrator",
+      "why_not_simpler": "Documents arrive as free-form scans and PDFs from managers and agencies; templates are not used consistently, so fixed parsing breaks."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Key fields into AFAS and file document in the digital dossier",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "classified document"
+     ],
+     "outputs": [
+      "dossier update"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Chase managers and employees for missing or unsigned items",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook"
+     ],
+     "inputs": [
+      "missing-item list"
+     ],
+     "outputs": [
+      "reminder"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 10,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Handle grievances and medical-related leave files with restricted access",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "grievance file",
+      "leave of absence case"
+     ],
+     "outputs": [
+      "restricted dossier entry"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    }
+   ],
+   "design": "One intake mailbox and the AFAS Pocket upload feed a document queue. AFAS Jonas, or a small extraction step on the governed data platform, reads each non-medical document into dossier fields; code checks them against AFAS and a checklist per document type, and the administrator approves or fixes from an exceptions queue. Scheduled reminders chase missing items; grievance and medical files bypass the model entirely.",
+   "previous_blocker": "Documents arrive in free form from many senders, and reading them needed a person. Rule-based OCR could not cope with mixed layouts and handwriting.",
+   "enabler_now": "Document-to-field extraction is now in AFAS Profit 8 (Jonas) and in general models, and validation code is quick to write with AI coding tools.",
+   "still_hard": "Grievances and medical leave need human handling and strict access. Extraction error rates on Dutch scans are unknown, and a wrong dossier field can carry into payroll or a legal dispute.",
+   "human_edge": "Judging whether a grievance or evaluation is complete and fair, and handling sensitive files discreetly with the employee and HRBP.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A weekly dossier-completeness report per site and manager, with missing signed contracts and expired certificates listed by name."
+   },
+   "altitude": "The administrator spends time on the exceptions queue and sensitive files instead of filing. They own the document checklist per type and decide when a dossier counts as complete.",
+   "reach": [
+    {
+     "role": "ld",
+     "task": "Tracking mandatory certificates in Studytube",
+     "learn": "Which certificate scans count as valid proof, so intake can link them to Studytube completions."
+    },
+    {
+     "role": "hrbp",
+     "task": "Handling grievances and performance evaluations",
+     "learn": "What a complete evaluation or grievance file must contain for a later dismissal or appeal."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "5-8",
+    "testing_rollout": "5-10",
+    "consent_and_access": "10-30"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS Profit 8 Jonas reads documents into dossier fields and new hires submit data in the Pocket app before day one.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Personal data processing in a new HR system needs works council consent under WOR art. 27(1)(k).",
+     "grade": "E3",
+     "source": "[S12]"
+    },
+    {
+     "claim": "Health data is special-category under GDPR Art. 9 and should stay out of model prompts.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Noordhaven runs or can move to AFAS Profit 8 with Jonas licensed.",
+    "Most document volume is contracts, evaluations, leave requests and certificates, not medical files.",
+    "AFAS digital dossier is already the system of record."
+   ],
+   "unknowns": [
+    "Monthly volume of documents per type and per site.",
+    "How many documents still arrive on paper from the warehouses.",
+    "Whether Jonas is included in the current AFAS licence and where it processes data."
+   ],
+   "research_questions": [
+    "What share of incoming documents does Jonas classify and extract correctly on a sample of 200 Noordhaven documents?",
+    "How many hours per week do the two administrators spend on filing versus chasing today?",
+    "Will the works council accept automatic document reading if medical documents are excluded and access is logged?"
+   ],
+   "time_saved_pct": 75,
+   "speedup": 4.0
+  },
+  {
+   "uid": "43-4161.00:2689",
+   "short": "Type employee changes (address, earnings, absence, production, performance notes, exit dates and reasons) into AFAS.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather change requests from mail, forms and manager messages",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams",
+      "Excel"
+     ],
+     "inputs": [
+      "change request",
+      "absence report",
+      "exit notice"
+     ],
+     "outputs": [
+      "change list"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 25,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Type personal data, absence and earnings changes into AFAS",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "change list"
+     ],
+     "outputs": [
+      "employee record update"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 35,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Copy production and performance figures from site Excel sheets",
+     "actor": "hr-admin",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "SharePoint",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "site production sheet",
+      "supervisor report"
+     ],
+     "outputs": [
+      "employee record update"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Check records before payroll cut-off and correct errors",
+     "actor": "hr-admin",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel",
+      "Power BI"
+     ],
+     "inputs": [
+      "employee record update",
+      "payroll cut-off calendar"
+     ],
+     "outputs": [
+      "data exception list",
+      "corrected record"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Record exit date and reason code for terminations",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "exit notice"
+     ],
+     "outputs": [
+      "termination record"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Employees change their own address and bank details in AFAS InSite/Pocket, managers report absence and exits in AFAS workflows with mandatory reason codes, so typing disappears. A scheduled Python job on the governed data platform loads site production figures into AFAS and runs validation rules before each payroll cut-off; breaks appear on a Power BI exception page and in a daily mail to the administrator.",
+   "previous_blocker": "Self-service was not switched on or trusted, and site sheets differ per location, so retyping was the safe default.",
+   "enabler_now": "AFAS self-service and workflows are standard configuration; AI coding makes the import job and validation rules a matter of days, not a project.",
+   "still_hard": "Getting 750 shift workers to use self-service; harmonising three sites' production sheets; agreeing which production data may be stored per employee at all.",
+   "human_edge": "Deciding what a wrong or odd record means and talking to the manager or employee to fix it.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Run the data-quality check every day instead of once before month close, so payroll starts from a clean file."
+   },
+   "altitude": "The administrator no longer types changes; they handle the daily exception list and decide on corrections before payroll. They set the validation rules with the Payroll Specialist.",
+   "reach": [
+    {
+     "role": "payroll",
+     "task": "Month close of payroll",
+     "learn": "Which record errors cause payroll corrections, to turn them into validation rules."
+    },
+    {
+     "role": "people-analyst",
+     "task": "Maintaining the nightly AFAS extract for Power BI",
+     "learn": "How the extract is built, to add the exception page without a second data copy."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-10",
+    "testing_rollout": "10-15",
+    "consent_and_access": "10-30"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "New hires submit their own data in the AFAS Pocket app before day one.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Storing production or performance figures per employee can count as observing behaviour, which needs works council consent under WOR art. 27(1)(l).",
+     "grade": "E3",
+     "source": "[S12]"
+    },
+    {
+     "claim": "Validation of structured HR records needs no model at run time.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "AFAS InSite or Pocket is available to all employees, including warehouse staff without a company laptop.",
+    "Site production figures exist in Excel on SharePoint in a stable layout per site."
+   ],
+   "unknowns": [
+    "How many record changes per month arrive by mail versus forms.",
+    "Whether production data per employee is stored in AFAS today and on what legal basis.",
+    "Payroll correction count per month caused by HR data errors."
+   ],
+   "research_questions": [
+    "What share of address and bank changes would warehouse staff make themselves in a two-month pilot at one site?",
+    "How many payroll corrections in the past year trace back to a late or wrong HR record?",
+    "Does the works council agree to production figures per employee being stored in AFAS?"
+   ],
+   "time_saved_pct": 90,
+   "speedup": 10.0
+  },
+  {
+   "uid": "13-1071.00:18866",
+   "short": "Process hires, exits, leave, transfers and promotions in AFAS, with contract letters and notifications.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive event request from Recruitee, HRBP or manager",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Recruitee"
+     ],
+     "inputs": [
+      "offer accepted",
+      "transfer request",
+      "promotion request"
+     ],
+     "outputs": [
+      "personnel action request"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Check CAO scale, contract chain, notice period and approvals",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "AFAS Profit",
+      "SharePoint"
+     ],
+     "inputs": [
+      "personnel action request",
+      "CAO salary scale",
+      "contract history"
+     ],
+     "outputs": [
+      "checked personnel action"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Enter contract, function, salary and cost centre change in AFAS",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "checked personnel action"
+     ],
+     "outputs": [
+      "employment record change"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Draft contract or letter from SharePoint template and send for signature",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "SharePoint",
+      "Word",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "employment record change",
+      "contract template"
+     ],
+     "outputs": [
+      "employment contract",
+      "confirmation letter"
+     ],
+     "handoff_to": "external",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Notify payroll, IT, site lead and L&D of the change",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams",
+      "Studytube"
+     ],
+     "inputs": [
+      "employment record change"
+     ],
+     "outputs": [
+      "change notification",
+      "course enrolment"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    }
+   ],
+   "design": "A Recruitee-to-AFAS connector and an AFAS manager form start every personnel action as one AFAS workflow. Deterministic checks (CAO scale, ketenregeling, notice period, approvals present) run in code, the change is prepared in AFAS for one-click approval, the contract is merged from the SharePoint template, and notifications and Studytube enrolments go out automatically.",
+   "previous_blocker": "Recruitee, AFAS, SharePoint templates and Studytube were never connected, and CAO rules lived in people's heads and PDFs.",
+   "enabler_now": "Both Recruitee and AFAS have APIs and AI coding makes connectors and rule code cheap; the CAO rules can be written down once and tested.",
+   "still_hard": "Writing the CAO and warehouse-CAO rules completely, including exceptions; keeping templates current with CAO changes; non-standard deals agreed by managers.",
+   "human_edge": "Spotting deals that do not fit the rules and agreeing them with the HRBP; approving changes that affect pay and contract status.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A same-day contract: an accepted offer in Recruitee becomes a signed-ready contract and AFAS record within one working day."
+   },
+   "altitude": "The administrator approves prepared changes and handles rule breaks instead of typing. They own the CAO rule table with the Compensation and Benefits Specialist.",
+   "reach": [
+    {
+     "role": "cnb",
+     "task": "Maintaining salary scales and CAO changes",
+     "learn": "How scale rules are encoded, so a CAO update changes one table, not templates by hand."
+    },
+    {
+     "role": "recruiter",
+     "task": "Making offers in Recruitee",
+     "learn": "Which offer fields AFAS needs, so offers are complete at the source."
+    }
+   ],
+   "build_days": {
+    "coding": "8-15",
+    "integration": "8-12",
+    "testing_rollout": "10-15",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "An agent acting on a rules base maintained by experts, grounded in strict workflows, drafts contracts and sends them for signature (US law only).",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Dutch contract chain rules and CAO scales are fixed rules that code can check.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Recruitee and AFAS API access can be granted to the governed data platform.",
+    "Contract templates on SharePoint are few enough to merge from structured fields."
+   ],
+   "unknowns": [
+    "Number of personnel actions per month by type.",
+    "Whether an e-signature tool is in use.",
+    "How often managers agree terms outside the CAO."
+   ],
+   "research_questions": [
+    "How many personnel actions per month fail a CAO or contract-chain rule today, and how are they caught?",
+    "Can 90% of contracts be generated from fields without free-text edits?",
+    "Does the Recruitee-AFAS connector create a complete employee record without manual fixes in a test of 20 hires?"
+   ],
+   "time_saved_pct": 86,
+   "speedup": 6.9
+  },
+  {
+   "uid": "43-4161.00:2690",
+   "short": "Review incoming job applications for hard requirements and eligibility before the recruiter decides.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open new applications and CVs in Recruitee",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "Recruitee"
+     ],
+     "inputs": [
+      "application",
+      "CV"
+     ],
+     "outputs": [
+      "application queue"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Check hard requirements: work permit, licence C/CE, code 95, forklift, shifts",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "Recruitee"
+     ],
+     "inputs": [
+      "application",
+      "certificate scan",
+      "knockout answers"
+     ],
+     "outputs": [
+      "eligibility check"
+     ],
+     "handoff_to": "recruiter",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "uploaded licence, code 95 or certificate scan",
+      "output": "document type, category, expiry date",
+      "check": "Expiry date in the future and category matches the vacancy rule; result shown next to the scan, never a ranking or score",
+      "stop": "One pass; unreadable or low confidence leaves the field empty for the administrator",
+      "why_not_simpler": "Knockout questions cover self-declared facts, but proof arrives as photos of licences and certificates in varying formats."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Read CV, judge fit and write a short note for recruiter",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "Recruitee"
+     ],
+     "inputs": [
+      "CV",
+      "vacancy profile",
+      "scorecard"
+     ],
+     "outputs": [
+      "screening note"
+     ],
+     "handoff_to": "recruiter",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Move candidate stage and send invite or rejection mail",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "Recruitee",
+      "Outlook"
+     ],
+     "inputs": [
+      "screening note"
+     ],
+     "outputs": [
+      "candidate stage update",
+      "candidate mail"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Answer recruiter and manager questions on application status",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "candidate stage update"
+     ],
+     "outputs": [
+      "status answer"
+     ],
+     "handoff_to": "recruiter",
+     "share_pct": 10,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    }
+   ],
+   "design": "Recruitee is configured with knockout questions per vacancy type, a structured scorecard and stage-triggered mail templates; managers see status in a Recruitee pipeline view. A small bounded step reads uploaded licences and certificates into type and expiry fields shown next to the scan. The fit judgement and every reject decision stay with a person, keeping Noordhaven outside automated candidate selection.",
+   "previous_blocker": "Proof documents are photos and scans, and screening rules per vacancy were never written down, so everything was read by hand.",
+   "enabler_now": "Recruitee knockout questions and templates are standard; document extraction for licences is reliable enough to pre-fill fields for review.",
+   "still_hard": "Fit judgement for warehouse and driver roles stays human. From 2 December 2027 any tool that screens or ranks applicants is high-risk under the AI Act, so scope must stay at fact extraction.",
+   "human_edge": "Judging motivation, gaps and fit for shift work, and treating every applicant fairly.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Give every applicant an eligibility answer within one working day in peak season, when flex and seasonal hiring spikes."
+   },
+   "altitude": "The administrator spends time on fit judgement and candidate contact, not opening files and checking dates. Nothing changes in decision rights: the recruiter still decides.",
+   "reach": [
+    {
+     "role": "recruiter",
+     "task": "Setting vacancy requirements and running interviews",
+     "learn": "Which requirements are hard rules and which are judgement, to write knockout questions per vacancy type."
+    },
+    {
+     "role": "ld",
+     "task": "Planning forklift and VCA courses",
+     "learn": "Which missing certificates can be trained after hire, so candidates are not rejected for them."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "2-4",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Screening applicants is high-risk under AI Act Annex III 4(a) from 2 December 2027.",
+     "grade": "E3",
+     "source": "[S11]"
+    },
+    {
+     "claim": "A rejection letter can be automated but the decision cannot rest solely on automated processing.",
+     "grade": "E3",
+     "source": "[S13]"
+    },
+    {
+     "claim": "Applicant evaluation fits a copilot pattern at autonomy 2 or below.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Recruitee knockout questions and mail templates are available in Noordhaven's plan.",
+    "Most vacancies have clear hard requirements (licence, certificates, shift availability)."
+   ],
+   "unknowns": [
+    "Applications per month and the share rejected on hard requirements.",
+    "Whether candidates upload licence and certificate scans today.",
+    "Whether recruiters already use a scorecard."
+   ],
+   "research_questions": [
+    "What share of rejections in the past year were on hard requirements that knockout questions could catch?",
+    "How accurate is licence and code 95 expiry extraction on 100 real candidate uploads?",
+    "Does legal review confirm that fact extraction without ranking stays outside Annex III 4(a)?"
+   ],
+   "time_saved_pct": 62,
+   "speedup": 2.67
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 177,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

@@ -1,0 +1,1075 @@
+{
+ "tasks": [
+  {
+   "uid": "43-5071.00:20276",
+   "short": "Inspect shipment contents, compare them with shipment records, and record acceptance or discrepancies.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve expected items, quantities and references from the {OPS_SYSTEM}.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "shipment reference",
+      "purchase order",
+      "shipping order"
+     ],
+     "outputs": [
+      "expected shipment"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read the packing list and identify shipment references and declared contents.",
+     "actor": "shipping clerk",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "packing list",
+      "expected shipment"
+     ],
+     "outputs": [
+      "declared contents"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "integration",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Packing list and expected shipment references.",
+      "output": "Declared item codes, quantities, units and shipment reference, with source locations.",
+      "check": "Validate units and identifiers; match item codes against the item master; flag missing fields.",
+      "stop": "One extraction and one correction attempt per document; unresolved fields go to the shipping clerk.",
+      "why_not_simpler": "External packing lists vary in layout and include free-text item descriptions; use direct imports where available."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Count items, check identifiers and inspect visible condition at the receiving area.",
+     "actor": "shipping clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "shipment",
+      "expected shipment",
+      "declared contents"
+     ],
+     "outputs": [
+      "observed contents",
+      "condition observations"
+     ],
+     "handoff_to": "none",
+     "share_pct": 45,
+     "fate": "person_does",
+     "remaining_pct": 95,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Compare observed contents with expected and declared quantities in the {OPS_SYSTEM}.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "expected shipment",
+      "declared contents",
+      "observed contents",
+      "condition observations"
+     ],
+     "outputs": [
+      "shipment comparison",
+      "discrepancy record"
+     ],
+     "handoff_to": "inventory supervisor",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Decide acceptance, quarantine or further inspection for shipment discrepancies.",
+     "actor": "inventory supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "shipment comparison",
+      "discrepancy record",
+      "acceptance rules"
+     ],
+     "outputs": [
+      "shipment disposition"
+     ],
+     "handoff_to": "shipping clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "inventory supervisor"
+    },
+    {
+     "id": "s6",
+     "what": "Confirm accepted quantities and post the receipt in the {OPS_SYSTEM}.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "shipment comparison",
+      "shipment disposition"
+     ],
+     "outputs": [
+      "receipt record",
+      "accepted shipment"
+     ],
+     "handoff_to": "warehouse team",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "shipping clerk"
+    }
+   ],
+   "design": "Configure the {OPS_SYSTEM} to load expected shipments, capture observed quantities and calculate differences. A bounded reader extracts unfamiliar packing lists into draft fields, while the clerk inspects the goods and confirms receipt. Disputed stock stays on hold until the inventory supervisor records a disposition.",
+   "previous_blocker": "Physical observations and supplier documents arrive separately, and item codes or units do not always match.",
+   "enabler_now": "Existing receiving controls can handle structured matching. AI-assisted coding reduces the effort of connecting document extraction and validation.",
+   "still_hard": "Hidden damage, mixed cartons, missing identifiers and unreliable item masters still require physical checks and investigation.",
+   "human_edge": "The clerk notices damage, suspicious packaging and practical handling problems that shipment records cannot establish.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Same-shift triage of recurring supplier quantity discrepancies"
+   },
+   "altitude": "The clerk spends less time comparing records and more time investigating mismatches. With explicit delegation, they can prioritise recounts and inspections; stock acceptance limits remain with the inventory supervisor.",
+   "reach": [
+    {
+     "role": "logistics analyst",
+     "task": "Investigate recurring supplier shipment discrepancies.",
+     "learn": "Normalise units, distinguish receiving errors from supplier errors, and compare discrepancy patterns."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Integrated warehouse and transport records are available in existing software.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Document extraction into transport order fields is available today; receiving accuracy still needs separate validation.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Physical inspection remains substantial; step shares, remaining time and build ranges are planning estimates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline is inbound receiving; outbound checks use the same matching pattern within order-to-cash.",
+    "The {OPS_SYSTEM} supports receiving records and configurable discrepancy controls.",
+    "The build covers one site and common document layouts, without new inspection hardware.",
+    "Physical counting takes more time than the document-heavy prior suggests.",
+    "GDPR applies to personal data. Access setup and any consultation under national rules are included in the access range."
+   ],
+   "unknowns": [
+    "Item identifier quality, unit conversions and barcode coverage.",
+    "Actual inspection time and frequency of damaged or disputed shipments.",
+    "Available interfaces, acceptance tolerances and delegated stock authority.",
+    "Whether employee-linked scanning changes require consultation under national rules."
+   ],
+   "research_questions": [
+    "Can existing receiving configuration perform matching without custom code?",
+    "How reliably can representative packing lists be extracted and matched to physical item identifiers?"
+   ],
+   "new_work": [
+    "Review uncertain document fields and resolve unmatched item codes.",
+    "Maintain unit conversions and acceptance tolerances.",
+    "Investigate interface failures and audit receipt corrections."
+   ],
+   "time_saved_pct": 45,
+   "speedup": 1.81
+  },
+  {
+   "uid": "43-5071.00:4742",
+   "short": "Replenish shipping supplies, obtain purchasing approval, and store delivered stock.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check available packing supplies at storage locations.",
+     "actor": "shipping clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "packing supplies",
+      "stock record"
+     ],
+     "outputs": [
+      "supply count"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Calculate replenishment quantities using a supply tracker in the {SPREADSHEET}.",
+     "actor": "shipping clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "supply count",
+      "dispatch plan",
+      "supplier lead times",
+      "reorder rules"
+     ],
+     "outputs": [
+      "replenishment proposal"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Enter a supply requisition into the {PROCUREMENT}.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "replenishment proposal",
+      "supplier catalogue"
+     ],
+     "outputs": [
+      "supply requisition"
+     ],
+     "handoff_to": "buyer",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Approve quantities, supplier and spending in the {PROCUREMENT}.",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "supply requisition",
+      "supplier catalogue",
+      "spending limits"
+     ],
+     "outputs": [
+      "approved purchase order"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "buyer"
+    },
+    {
+     "id": "s5",
+     "what": "Release the approved purchase order to the supplier through the {PROCUREMENT}.",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "approved purchase order"
+     ],
+     "outputs": [
+      "released purchase order"
+     ],
+     "handoff_to": "external",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Move accepted supplies into designated storage locations.",
+     "actor": "shipping clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "accepted shipment",
+      "storage plan"
+     ],
+     "outputs": [
+      "stored supplies"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Update quantities and storage locations in the {OPS_SYSTEM}.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "stored supplies",
+      "receipt record"
+     ],
+     "outputs": [
+      "stock record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "shipping clerk"
+    }
+   ],
+   "design": "Configure supply stock, reorder points and location scans in the {OPS_SYSTEM}, replacing the separate tracker in the {SPREADSHEET}. Connect replenishment proposals to approval and order release in the {PROCUREMENT}. People still check physical stock, approve spending and put supplies away.",
+   "previous_blocker": "Low-value supplies often sit outside disciplined stock recording, so replenishment depends on visual checks and a separate tracker.",
+   "enabler_now": "Standard stock and purchasing rules can cover the calculation. Small integrations and scan forms are cheaper to build and maintain with AI-assisted coding.",
+   "still_hard": "Unrecorded consumption, supplier substitutions and limited storage space undermine automatic replenishment.",
+   "human_edge": "The clerk recognises unusable supplies and practical storage constraints, and anticipates unusual packaging needs.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly review of packaging reorder thresholds against upcoming dispatch demand"
+   },
+   "altitude": "The clerk replaces repeated requisition entry with stock checks and shortage prevention. They can recommend threshold changes; supplier selection and spending authority require explicit delegation.",
+   "reach": [
+    {
+     "role": "supply chain manager",
+     "task": "Set packaging stock buffers for seasonal dispatch demand.",
+     "learn": "Use lead-time variation, consumption rates and storage capacity to propose stock buffers."
+    }
+   ],
+   "build_days": {
+    "coding": "1-4",
+    "integration": "3-8",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Reorder calculations, purchasing approvals and stock updates can use deterministic rules.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Physical storage remains manual in this scope; no robotics or automatic physical counting is assumed.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Time shares and build ranges are estimates for a limited supply catalogue at one site.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "A separate supply tracker bridges physical stock and the {PROCUREMENT} today.",
+    "Existing stock configuration can represent packaging supplies.",
+    "Purchase orders are released only after the buyer approves their quantities and terms.",
+    "GDPR applies to personal data. Access and any employee consultation under national rules are included in the access range."
+   ],
+   "unknowns": [
+    "Whether supply consumption is recorded today.",
+    "Available stock and purchasing interfaces and existing software entitlements.",
+    "Minimum order quantities, lead-time reliability and storage limits.",
+    "Applicable national consultation requirements for employee-linked scans."
+   ],
+   "research_questions": [
+    "Can existing replenishment configuration replace the tracker without a new application?",
+    "Which supplies need physical counts because consumption records are incomplete?"
+   ],
+   "new_work": [
+    "Maintain reorder thresholds, supplier pack sizes and lead times.",
+    "Review proposed quantities when demand or storage capacity changes.",
+    "Resolve duplicate orders, failed releases and unrecorded consumption."
+   ],
+   "time_saved_pct": 44,
+   "speedup": 1.79
+  },
+  {
+   "uid": "43-5071.00:4737",
+   "short": "Prepare, check and release work orders, consignment notes and shipping instructions.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve order, address, item and routing details from the {OPS_SYSTEM}.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "shipping order",
+      "item master",
+      "customer master"
+     ],
+     "outputs": [
+      "dispatch data"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read routing changes and special instructions in the {EMAIL}.",
+     "actor": "shipping clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "routing message",
+      "dispatch data"
+     ],
+     "outputs": [
+      "routing instructions"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "integration",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Routing message and referenced shipping order.",
+      "output": "Proposed routing fields and special instructions, each linked to its source passage.",
+      "check": "Check order reference, sender authority, address format and conflicts with approved dispatch data.",
+      "stop": "One extraction and one correction attempt; ambiguous or conflicting instructions go to the clerk.",
+      "why_not_simpler": "Unstructured routing messages contain exceptions that fixed field mappings cannot reliably interpret."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Populate shipping document templates held in the {DOCS}.",
+     "actor": "shipping clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "dispatch data",
+      "routing instructions",
+      "shipping templates"
+     ],
+     "outputs": [
+      "draft shipping packet"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Check document quantities, addresses and references against the {OPS_SYSTEM}.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "DOCS"
+     ],
+     "inputs": [
+      "draft shipping packet",
+      "dispatch data",
+      "document rules"
+     ],
+     "outputs": [
+      "document validation"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve document release after resolving special instructions and validation failures.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "draft shipping packet",
+      "document validation",
+      "routing instructions"
+     ],
+     "outputs": [
+      "approved shipping packet"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "shipping clerk"
+    },
+    {
+     "id": "s6",
+     "what": "Send approved documents through the {EMAIL} and file the released version in the {DOCS}.",
+     "actor": "shipping clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "approved shipping packet",
+      "recipient list"
+     ],
+     "outputs": [
+      "released shipping packet",
+      "delivery log"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Use one validated dispatch record in the {OPS_SYSTEM} to populate versioned shipping templates from the {DOCS}. A bounded reader proposes fields from routing messages in the {EMAIL}; deterministic checks flag missing data and conflicting instructions. Clerk approval releases the packet to approved recipients and preserves the issued version.",
+   "previous_blocker": "Clerks repeatedly copy the same fields into different templates, while routing changes arrive outside the order record.",
+   "enabler_now": "Existing document generators handle standard forms. Bounded extraction and inexpensive integration can bring free-text changes into the same validation path.",
+   "still_hard": "Route-specific document requirements, signatures, special cargo and paper acceptance vary. Template generation alone does not establish legal validity.",
+   "human_edge": "The clerk resolves contradictory instructions and recognises when cargo or routing needs specialist review.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Self-service retrieval of approved dispatch document packs for customer service"
+   },
+   "altitude": "The clerk reviews exceptions and release decisions instead of assembling each packet. They can maintain approved operational templates within delegated limits; legal terms and transport commitments stay with authorised roles.",
+   "reach": [
+    {
+     "role": "logistics analyst",
+     "task": "Analyse dispatch delays caused by missing or corrected documents.",
+     "learn": "Classify document failures and connect release timestamps to shipment milestones."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "2-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Electronic consignment notes can be created and signed inside a transport system.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Transport order fields can be extracted from documents today.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Some international routes may still require paper consignment documentation.",
+     "grade": "E2",
+     "source": "[S13]"
+    },
+    {
+     "claim": "The proposed review time and build ranges are estimates, not measured outcomes from these sources.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The pilot covers standard shipping documents, excluding customs classification and specialist cargo certification.",
+    "The {OPS_SYSTEM} provides a usable document generator or template facility.",
+    "Recipient addresses come from approved records, not model-generated suggestions.",
+    "GDPR applies to addresses and contact details. Access and applicable consultation under national rules are included in the access range."
+   ],
+   "unknowns": [
+    "Required document types, languages, signatures and route-specific paper requirements.",
+    "Frequency of routing changes outside the {OPS_SYSTEM}.",
+    "Available document-generation features and interfaces.",
+    "Who may approve document release and template changes."
+   ],
+   "research_questions": [
+    "Which templates can existing software generate without custom code?",
+    "Which fields and routing changes require explicit confirmation before document release?",
+    "Which destinations and counterparties accept the proposed digital documents?"
+   ],
+   "new_work": [
+    "Review extracted routing changes and resolve validation failures.",
+    "Maintain templates, recipient rules and route requirements.",
+    "Monitor delivery failures and preserve corrected document versions."
+   ],
+   "time_saved_pct": 92,
+   "speedup": 12.9
+  },
+  {
+   "uid": "43-5071.00:20277",
+   "short": "Select packaging, pack and seal goods, then weigh, label and confirm parcels for dispatch.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the shipping order and packing instructions in the {OPS_SYSTEM}.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "shipping order",
+      "packing rules"
+     ],
+     "outputs": [
+      "packing instructions"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Select a carton, cushioning and other packing materials.",
+     "actor": "shipping clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "picked goods",
+      "packing instructions",
+      "stored supplies"
+     ],
+     "outputs": [
+      "selected packaging"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Pack goods, add cushioning and seal the parcel using suitable tools.",
+     "actor": "shipping clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "picked goods",
+      "selected packaging",
+      "packing instructions"
+     ],
+     "outputs": [
+      "sealed parcel"
+     ],
+     "handoff_to": "none",
+     "share_pct": 45,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Weigh and measure the sealed parcel.",
+     "actor": "shipping clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "sealed parcel"
+     ],
+     "outputs": [
+      "parcel measurements"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Enter parcel details and print a shipping label through the {PARTNER_PORTAL}.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "shipping order",
+      "parcel measurements",
+      "approved service"
+     ],
+     "outputs": [
+      "shipping label",
+      "postage record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "shipping clerk"
+    },
+    {
+     "id": "s6",
+     "what": "Affix the shipping label and any required handling labels.",
+     "actor": "shipping clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "sealed parcel",
+      "shipping label",
+      "packing instructions"
+     ],
+     "outputs": [
+      "labelled parcel"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Confirm the parcel is ready for dispatch in the {OPS_SYSTEM}.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "labelled parcel",
+      "shipping order",
+      "postage record"
+     ],
+     "outputs": [
+      "packed shipment record"
+     ],
+     "handoff_to": "dispatch team",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "shipping clerk"
+    }
+   ],
+   "design": "Configure the {OPS_SYSTEM} to present packing instructions automatically when the clerk scans an order. A deterministic integration passes approved parcel details to the {PARTNER_PORTAL} and prints labels after the clerk confirms any postage charge. A final parcel scan checks the label against the order and records readiness for dispatch.",
+   "previous_blocker": "Packing is physical work, while disconnected order screens, carrier entry and printers add avoidable handling around it.",
+   "enabler_now": "Scan-triggered instructions and carrier interfaces can remove repeated entry. AI-assisted coding makes the small integration easier to build; it does not automate packing.",
+   "still_hard": "Fragile, irregular or mixed goods need hands-on packing judgement. Reliable measurement capture also depends on compatible equipment.",
+   "human_edge": "The clerk judges protection, stability, seal quality and whether the finished parcel can withstand handling.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The clerk has fewer screen interruptions but still spends most of the week packing and handling parcels. No additional decision rights are assumed.",
+   "reach": [
+    {
+     "role": "quality control systems manager",
+     "task": "Investigate packaging failures and update packing standards.",
+     "learn": "Record damage patterns, compare packaging choices and run controlled packing trials."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-9",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Order-linked packing instructions, label generation and label-to-order checks can use deterministic software.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The digest provides no case demonstrating automation of this task's physical packing work.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The physical share remains dominant; time shares and build ranges are planning estimates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The scope covers software and existing packing equipment, without robotic packing or label application.",
+    "A carrier interface is available behind the {PARTNER_PORTAL}.",
+    "The clerk may approve routine postage charges within an existing spending limit.",
+    "Parcel measurements remain manually captured unless compatible equipment already exists.",
+    "GDPR applies to shipping addresses. Access and consultation under national rules, where applicable, are included in the access range."
+   ],
+   "unknowns": [
+    "Carrier interface availability, label formats and postage charging behaviour.",
+    "Printer, scanner and scale compatibility.",
+    "Goods mix, special handling requirements and actual screen time.",
+    "Whether scan logging changes require employee consultation under national rules."
+   ],
+   "research_questions": [
+    "Can existing shipping configuration already generate labels from order and parcel data?",
+    "Can the current equipment capture measurements without manual transcription?",
+    "Which label mismatches can be blocked before a parcel reaches dispatch?"
+   ],
+   "new_work": [
+    "Maintain packing rules, service mappings and label templates.",
+    "Resolve printer failures, duplicate postage and rejected carrier requests.",
+    "Review mismatched scans and update packing instructions after damage investigations."
+   ],
+   "time_saved_pct": 24,
+   "speedup": 1.31
+  }
+ ],
+ "role": {
+  "altitude": "The role remains grounded in inspecting and handling goods. Less copying and record comparison creates room for discrepancy investigation, packaging improvement and shortage prevention; broader acceptance or spending authority needs explicit delegation.",
+  "reach": [
+   "Logistics analyst: investigate recurring shipment discrepancies and document delays.",
+   "Supply chain manager: propose packaging stock buffers using demand and lead-time evidence.",
+   "Quality control systems manager: investigate packaging failures and test revised packing standards."
+  ],
+  "skills_to_grow": [
+   "Item identifiers, unit conversions and stock accuracy.",
+   "Exception investigation and evidence-based escalation.",
+   "Reorder calculations and supplier lead-time analysis.",
+   "Packing standards and damage analysis.",
+   "Document validation, access controls and interface monitoring."
+  ],
+  "ambitious_version": "An inventory and dispatch exception coordinator who detects recurring supplier errors, proposes packaging stock changes and improves packing standards, while retaining hands-on checks and working within delegated acceptance and spending limits."
+ },
+ "job_code": "43-5071.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 197,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3000});text(r.output)\n"
+  ],
+  "job": {
+   "code": "43-5071.00",
+   "title": "Shipping, Receiving, and Inventory Clerks",
+   "tasks": 11,
+   "function": "Office and operations"
+  }
+ }
+}

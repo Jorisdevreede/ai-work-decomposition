@@ -1,0 +1,967 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task graph · Noordhaven Logistics</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* the build rungs: no model in teal (light, dark, bright), the bounded loop gold, the agent red, manual grey */
+  .r-eliminate { --rc: var(--teal-100); --rt: var(--teal-dark); }
+  .r-configure { --rc: var(--teal-dark); --rt: var(--on-dark); }
+  .r-deterministic { --rc: var(--teal-bright); --rt: var(--teal-dark); }
+  .r-deterministic_plus_loop { --rc: var(--gold); --rt: var(--teal-dark); }
+  .r-agent { --rc: var(--danger); --rt: var(--on-dark); }
+  .r-stays_manual { --rc: var(--input-line); --rt: var(--ink); }
+
+  .tg-scope { display: flex; flex-direction: column; gap: 6px; min-width: 300px; }
+  .tg-scope-row { display: flex; gap: 8px; }
+  .tg-reload { background: var(--ground); border: 1px solid var(--line); }
+  .tg-reload:hover { background: var(--ground-50); }
+  .tg-jump { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 0; }
+  .tg-jump a { padding: 1px 10px; border: 1px solid var(--line); border-radius: var(--pill); font-size: 13px; line-height: 22px; color: var(--ink-700); }
+  .tg-jump a:hover { border-color: var(--teal); color: var(--teal); text-decoration: none; }
+  .tg-sec { margin-top: 40px; scroll-margin-top: calc(var(--nav-h) + 16px); }
+  .tg-sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+  .tg-sec-head h2 { font-size: 21px; line-height: 29px; font-weight: 550; }
+  .tg-sec-head p { margin: 0; font-size: 14px; line-height: 22px; color: var(--ink-muted); max-width: 70ch; }
+  .tg-sec > .tg-lead { font-size: 15px; line-height: 23px; max-width: 80ch; }
+
+  /* controls over the graph */
+  .tg-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin: 8px 0 10px; }
+  .tg-toggle { display: inline-grid; grid-auto-flow: column; padding: 3px; background: var(--line-soft); border-radius: var(--r8); }
+  .tg-toggle button { border: 0; background: transparent; padding: 4px 12px; border-radius: 6px; font-size: 14px; line-height: 20px; color: var(--ink-muted); cursor: pointer; min-height: 30px; }
+  .tg-toggle button[aria-pressed="true"] { background: var(--ground); color: var(--teal); font-weight: 600; box-shadow: var(--card-shadow); }
+  .tg-check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; color: var(--ink-700); cursor: pointer; }
+  .tg-check input { accent-color: var(--teal); width: 16px; height: 16px; margin: 0; }
+  .tg-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 13px; line-height: 20px; color: var(--ink-muted); }
+  .tg-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .tg-key { width: 14px; height: 12px; border-radius: 3px; background: var(--rc); border: 1px solid color-mix(in srgb, var(--rc) 70%, var(--ink)); }
+  .tg-key-line { width: 18px; height: 0; border-top: 2px solid var(--teal); }
+  .tg-key-line.feeds { border-top: 2px dashed var(--gold-600); }
+  .tg-key-line.handoff { border-top: 2px dotted var(--ink-700); }
+  .tg-key-glue { width: 14px; height: 12px; border-radius: 3px; border: 2px solid var(--gold-600); }
+  .tg-key-gate { width: 8px; height: 8px; border-radius: 50%; background: var(--gold-600); }
+  .tg-systems { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; padding: 0; list-style: none; }
+  .tg-systems button { border: 1px solid var(--line); background: var(--ground); border-radius: var(--pill); padding: 2px 10px; font-size: 13px; line-height: 20px; color: var(--ink-700); cursor: pointer; }
+  .tg-systems button:hover { border-color: var(--teal); color: var(--teal); }
+  .tg-systems button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: var(--on-dark); }
+  .tg-systems .tg-n { font-family: var(--mono); font-size: 12px; letter-spacing: 0; opacity: .8; margin-left: 4px; }
+
+  /* the graph */
+  .tg-graph-wrap { position: relative; border-top: 1px solid var(--line-soft); padding-top: 12px; }
+  .tg-cols { display: flex; justify-content: space-between; font-size: 12px; line-height: 18px; color: var(--ink-muted); margin-bottom: 4px; }
+  .tg-svg { display: block; overflow: visible; font-family: var(--sans); }
+  .tg-svg text { letter-spacing: 0; }
+  .tg-step, .tg-pill, .tg-task { cursor: pointer; outline: none; }
+  .tg-box { fill: color-mix(in srgb, var(--rc) 10%, var(--ground)); stroke: color-mix(in srgb, var(--rc) 45%, var(--ground)); stroke-width: 1; }
+  .tg-bar { fill: var(--rc); stroke: color-mix(in srgb, var(--rc) 75%, var(--ink)); stroke-width: .5; }
+  .tg-step.f-gone .tg-box { fill: var(--ground); stroke: var(--ink-placeholder); stroke-dasharray: 4 3; }
+  .tg-step.f-gone .tg-what { fill: var(--ink-muted); }
+  .tg-step.is-glue .tg-box { stroke: var(--gold-600); stroke-width: 1.6; }
+  .tg-what { font-size: 11.5px; font-weight: 500; fill: var(--ink); }
+  .tg-foot { font-size: 10.5px; fill: var(--ink-muted); }
+  .tg-fate { font-size: 10.5px; font-weight: 600; fill: var(--ink-700); }
+  .tg-gate { fill: var(--gold-600); }
+  .tg-sys { font-size: 10.5px; fill: var(--ink-muted); }
+  .tg-next { stroke: var(--input-line); stroke-width: 1.2; fill: none; }
+  .tg-task-title { font-size: 12.5px; font-weight: 600; fill: var(--ink); }
+  .tg-task-foot { font-family: var(--mono); font-size: 11px; fill: var(--ink-muted); }
+  .tg-task:hover .tg-task-title, .tg-task:focus-visible .tg-task-title { fill: var(--teal); }
+  .tg-head { font-size: 15px; font-weight: 600; fill: var(--teal); }
+  .tg-head-note { font-size: 12px; fill: var(--ink-muted); }
+  .tg-head-line { stroke: var(--line); }
+  .tg-pill rect { fill: var(--cream); stroke: var(--line); }
+  .tg-pill.k-role rect { fill: var(--ground); stroke: var(--teal); }
+  .tg-pill text { font-size: 11px; fill: var(--ink-700); }
+  .tg-pill.k-role text { fill: var(--teal); font-weight: 600; }
+  .tg-pill .tg-pill-n { font-family: var(--mono); font-size: 10.5px; fill: var(--ink-muted); }
+  .tg-edge { fill: none; stroke-width: 1.2; opacity: .2; }
+  .tg-edge.e-produces { stroke: var(--teal); }
+  .tg-edge.e-feeds { stroke: var(--gold-600); stroke-dasharray: 4 3; }
+  .tg-edge.e-handoff { stroke: var(--ink-700); stroke-dasharray: 1.5 3; }
+  .m-produces { fill: var(--teal); }
+  .m-feeds { fill: var(--gold-600); }
+  .m-handoff { fill: var(--ink-700); }
+  .m-next { fill: var(--input-line); }
+  .tg-svg.dim .tg-edge { opacity: .04; }
+  .tg-svg.dim .tg-edge.hot { opacity: 1; stroke-width: 1.8; }
+  .tg-svg.dim .tg-step:not(.hot), .tg-svg.dim .tg-pill:not(.hot) { opacity: .32; }
+  .tg-svg.sysdim .tg-step:not(.sys-hit) { opacity: .25; }
+  .tg-step.hot .tg-box, .tg-step:focus-visible .tg-box, .tg-step.selected .tg-box { stroke: var(--gold-600); stroke-width: 2.4; }
+  .tg-pill.hot rect, .tg-pill:focus-visible rect { stroke: var(--gold-600); stroke-width: 2; }
+  .tg-step.sys-hit .tg-box { stroke: var(--teal); stroke-width: 2; }
+  .tg-empty { padding: 24px; border: 1px dashed var(--line); border-radius: var(--r12); color: var(--ink-muted); }
+
+  /* the list view (always on narrow screens) */
+  .tg-list { display: none; }
+  [data-view="list"] .tg-list { display: block; }
+  [data-view="list"] .tg-graph-wrap { display: none; }
+  .tg-list-role { margin: 20px 0 8px; font-size: 17px; line-height: 25px; font-weight: 600; color: var(--teal); }
+  .tg-task-card { border: 1px solid var(--line); border-radius: var(--r12); padding: 14px 16px; margin-bottom: 12px; background: var(--ground); }
+  .tg-task-card > button { border: 0; background: none; padding: 0; text-align: left; font-size: 15px; line-height: 22px; font-weight: 600; color: var(--ink); cursor: pointer; }
+  .tg-task-card > button:hover { color: var(--teal); }
+  .tg-task-card > p { margin: 2px 0 8px; }
+  .tg-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .tg-step-row { display: grid; gap: 2px; width: 100%; text-align: left; padding: 8px 10px 8px 14px; border: 1px solid color-mix(in srgb, var(--rc) 45%, var(--ground)); border-radius: var(--r8); background: color-mix(in srgb, var(--rc) 10%, var(--ground)); box-shadow: inset 4px 0 0 var(--rc); cursor: pointer; min-height: 44px; }
+  .tg-step-row.is-glue { border-color: var(--gold-600); border-width: 2px; }
+  .tg-step-row.f-gone { background: var(--ground); border-style: dashed; border-color: var(--ink-placeholder); }
+  .tg-step-row.sys-hit { outline: 2px solid var(--teal); }
+  .tg-step-row .tg-step-what { font-size: 14px; line-height: 20px; font-weight: 500; }
+  .tg-step-row .tg-step-meta { font-size: 12px; line-height: 18px; color: var(--ink-muted); }
+
+  /* the step and task drawer */
+  .tg-drawer {
+    position: fixed; top: var(--nav-h); right: 0; bottom: 0; z-index: 90; width: min(440px, 100vw); overflow-y: auto;
+    padding: 20px 24px 40px; background: var(--ground); border-left: 1px solid var(--line);
+    box-shadow: -12px 0 32px color-mix(in srgb, var(--ink) 12%, transparent);
+  }
+  .tg-drawer-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+  .tg-drawer-head > div { flex: 1; min-width: 0; }
+  .tg-drawer h2 { font-size: 20px; line-height: 28px; font-weight: 550; }
+  .tg-drawer h2:focus { outline: none; box-shadow: none; }
+  .tg-drawer h3 { margin: 18px 0 6px; font-size: 14px; line-height: 22px; font-weight: 600; color: var(--teal); }
+  .tg-drawer p { font-size: 14px; line-height: 22px; }
+  .tg-close { flex: none; border: 1px solid var(--line); background: var(--ground); border-radius: var(--r8); width: 36px; height: 36px; font-size: 18px; line-height: 1; cursor: pointer; color: var(--ink-700); }
+  .tg-close:hover { border-color: var(--teal); color: var(--teal); }
+  .tg-facts { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 6px 12px; margin: 0; font-size: 14px; line-height: 21px; }
+  .tg-facts dt { color: var(--ink-muted); }
+  .tg-facts dd { margin: 0; }
+  .tg-facts ul { margin: 0; padding-left: 16px; }
+  .tg-link { border: 0; background: none; padding: 0; color: var(--teal); font: inherit; text-align: left; cursor: pointer; }
+  .tg-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .tg-chip { display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px; border-radius: var(--r4); font-size: 13px; line-height: 20px; background: color-mix(in srgb, var(--rc) 16%, var(--ground)); box-shadow: inset 3px 0 0 var(--rc); white-space: nowrap; }
+  .tg-loop { margin: 4px 0 0; padding: 12px 14px; border-radius: var(--r8); background: var(--cream); }
+  .tg-loop .tg-facts { grid-template-columns: 96px minmax(0, 1fr); }
+  .tg-flag { margin: 0; padding: 8px 12px; border-radius: var(--r8); background: var(--danger-tint); color: var(--danger); font-size: 13px; line-height: 20px; }
+  .tg-flag ul { margin: 0; padding-left: 16px; }
+
+  /* glue */
+  .tg-glue { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .tg-glue li { display: grid; grid-template-columns: 36px minmax(0, 1fr) 132px; gap: 6px 16px; padding: 14px 0; border-bottom: 1px solid var(--line-soft); }
+  .tg-rank { font: 500 13px/24px var(--mono); color: var(--gold-600); letter-spacing: 0; }
+  .tg-glue h3 { font-size: 15px; line-height: 24px; font-weight: 600; }
+  .tg-glue h3 button { border: 0; background: none; padding: 0; font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
+  .tg-glue h3 button:hover { color: var(--teal); }
+  .tg-glue p { margin: 2px 0 0; font-size: 14px; line-height: 21px; }
+  .tg-glue .tg-design { color: var(--ink-700); max-width: 92ch; }
+  .tg-glue .tg-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .tg-nums { text-align: right; font-size: 13px; line-height: 20px; color: var(--ink-muted); }
+  .tg-nums strong { display: block; font: 400 20px/28px var(--mono); color: var(--ink); letter-spacing: 0; }
+  .tg-more { margin-top: 12px; }
+
+  /* building blocks */
+  .tg-bars { display: grid; gap: 14px; margin: 8px 0 20px; }
+  .tg-bar-label { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; line-height: 22px; margin-bottom: 4px; }
+  .tg-bar-label span { color: var(--ink-muted); }
+  .tg-stack { display: flex; height: 34px; border-radius: var(--r4); overflow: hidden; background: var(--line-soft); }
+  .tg-stack span { display: flex; align-items: center; justify-content: center; min-width: 0; overflow: hidden; background: var(--rc); color: var(--rt); font: 500 12px/1 var(--mono); letter-spacing: 0; white-space: nowrap; }
+  .tg-ladder { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0 0 20px; padding: 0; list-style: none; }
+  .tg-ladder li { padding: 12px 14px; border-radius: var(--r8); background: var(--ground-50); font-size: 13px; line-height: 20px; color: var(--ink-muted); }
+  .tg-ladder strong { display: block; font: 400 22px/30px var(--mono); color: var(--ink); letter-spacing: 0; }
+  .tg-ladder b { display: block; font-size: 14px; line-height: 22px; font-weight: 600; color: var(--ink); }
+  .tg-matrix td, .tg-matrix th { text-align: right; white-space: nowrap; }
+  .tg-matrix th:first-child, .tg-matrix td:first-child { text-align: left; }
+  .tg-matrix td.cell { font-family: var(--mono); letter-spacing: 0; background: color-mix(in srgb, var(--teal) calc(var(--v) * 55%), var(--ground)); color: var(--ink); }
+  .tg-matrix td.cell.dark { color: var(--on-dark); }
+  .tg-matrix td.zero { color: var(--line); }
+  .tg-matrix tfoot td { font-weight: 600; border-top: 1px solid var(--line); }
+  .tg-matrix th .tg-chip { font-weight: 500; }
+  .tg-two { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+  .tg-note { font-size: 13px; line-height: 20px; color: var(--ink-muted); }
+  .tg-narrow { display: none; }
+
+  /* the repeat run */
+  .tg-repeat-table td:nth-child(n+2), .tg-repeat-table th:nth-child(n+2) { text-align: right; font-family: var(--mono); letter-spacing: 0; white-space: nowrap; }
+
+  @media (max-width: 960px) {
+    .tg-two { grid-template-columns: minmax(0, 1fr); }
+    .tg-narrow { display: inline; }
+    .tg-wide { display: none; }
+    .tg-ladder { grid-template-columns: 1fr 1fr; }
+    .tg-scope { min-width: 0; width: 100%; }
+  }
+  @media (max-width: 899px) {
+    .tg-graph-wrap, .tg-viewtoggle { display: none !important; }
+    .tg-list { display: block !important; }
+  }
+  @media (max-width: 600px) {
+    .tg-sec-head { flex-direction: column; gap: 4px; }
+    .tg-glue li { grid-template-columns: 28px minmax(0, 1fr); }
+    .tg-nums { grid-column: 2; text-align: left; display: flex; gap: 16px; align-items: baseline; }
+    .tg-nums strong { display: inline; font-size: 16px; }
+    .tg-drawer { top: 0; z-index: 150; padding: 16px 16px 40px; }
+    .tg-facts { grid-template-columns: 1fr; gap: 0 0; }
+    .tg-facts dt { margin-top: 8px; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to the task graph</a>
+<header class="topnav">
+  <a class="brand" href="team-canvas.html"><span class="brand-mark">Noordhaven</span><span class="product">Team reimagine</span></a>
+  <nav class="nav-links" aria-label="Prototypes">
+    <a href="flow/index.html">Team flow</a>
+    <a href="team-canvas.html">Team canvas</a>
+    <a href="task-explorer.html">Task explorer</a>
+    <a href="task-table.html">Task table</a>
+    <a href="task-graph.html" class="active" aria-current="page">Task graph</a>
+    <a href="intake.html">Intake</a>
+    <a href="opportunities.html">Opportunities</a>
+    <a href="job.html">Jobs</a>
+  </nav>
+  <div class="nav-side"><span class="tag tag-secondary">fictional company</span></div>
+</header>
+
+<main id="main" class="page">
+  <div class="page-head">
+    <div>
+      <div class="crumbs">Prototype P5 · method v2, the task graph</div>
+      <h1>Task graph</h1>
+      <p class="meta" id="source-meta"><span class="loading">Loading the merged task graph…</span></p>
+      <nav class="tg-jump" aria-label="Sections">
+        <a href="#graph-sec">Graph</a><a href="#glue-sec">Glue</a><a href="#blocks-sec">Building blocks</a><a href="#repeat-sec">Repeat run</a>
+      </nav>
+    </div>
+    <div class="tg-scope">
+      <label class="label" for="scope">Team or role</label>
+      <div class="tg-scope-row">
+        <select id="scope" class="select" disabled><option>Loading…</option></select>
+        <button class="btn tg-reload" id="reload" type="button" title="Read data/graph again after a rerun of tools/graph.py">Reload</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="load-error" class="card error" role="alert" hidden></div>
+
+  <div id="app" hidden>
+    <div class="onet-figs" id="figs"></div>
+
+    <section class="tg-sec" id="graph-sec" data-view="graph" aria-labelledby="graph-title">
+      <div class="tg-sec-head">
+        <h2 id="graph-title">Steps, artefacts, systems and handoffs</h2>
+        <p><span class="tg-wide">One row per task, its steps in order. On the right: artefacts that link two or more tasks, and the roles that work is handed to. Hover or tab to a step to trace its links; click it for the detail.</span><span class="tg-narrow">Each task with its steps in order. Tap a step for what it takes in, makes and hands on, and what it becomes.</span></p>
+      </div>
+      <div class="tg-controls">
+        <div class="tg-toggle tg-viewtoggle" role="group" aria-label="View">
+          <button type="button" data-view="graph" aria-pressed="true">Graph</button>
+          <button type="button" data-view="list" aria-pressed="false">List</button>
+        </div>
+        <label class="tg-check"><input type="checkbox" id="glue-only"> Only tasks with glue</label>
+        <div class="tg-legend" id="legend"></div>
+      </div>
+      <ul class="tg-systems" id="systems" aria-label="Systems in this view: choose one to see its steps"></ul>
+      <div class="tg-graph-wrap" id="graph-wrap">
+        <div class="tg-cols" aria-hidden="true"><span>Task · hours a year · time freed</span><span>Shared artefacts and roles handed to</span></div>
+        <svg class="tg-svg" id="graph" role="group" aria-label="Task graph"></svg>
+      </div>
+      <div class="tg-list" id="list"></div>
+      <p class="tg-empty" id="graph-empty" hidden>No answered tasks in this view yet.</p>
+    </section>
+
+    <section class="tg-sec" id="glue-sec" aria-labelledby="glue-title">
+      <div class="tg-sec-head">
+        <h2 id="glue-title">The glue, ranked by hours</h2>
+        <p>Steps done today in a spreadsheet, mail or document that connect two or more systems, or hand work to another role, team or outside party.</p>
+      </div>
+      <p class="tg-lead" id="glue-lead"></p>
+      <ol class="tg-glue" id="glue"></ol>
+      <button class="btn btn-text tg-more" id="glue-more" type="button" hidden></button>
+    </section>
+
+    <section class="tg-sec" id="blocks-sec" aria-labelledby="blocks-title">
+      <div class="tg-sec-head">
+        <h2 id="blocks-title">How far deterministic gets us</h2>
+        <p>Hours by building block and build rung. A step's freed hours are its hours today times the share of its time that goes away.</p>
+      </div>
+      <ul class="tg-ladder" id="ladder"></ul>
+      <div class="tg-bars" id="bars"></div>
+      <div class="tg-two">
+        <div>
+          <div class="tg-controls">
+            <div class="tg-toggle" role="group" aria-label="Measure in the table" id="metric">
+              <button type="button" data-metric="hours_saved" aria-pressed="true">Hours freed</button>
+              <button type="button" data-metric="hours" aria-pressed="false">Hours today</button>
+              <button type="button" data-metric="steps" aria-pressed="false">Steps</button>
+            </div>
+          </div>
+          <div class="table-scroll"><table class="onet-table tg-matrix" id="matrix"></table></div>
+        </div>
+        <div>
+          <h3 class="onet-sub">The model loops</h3>
+          <div class="table-scroll"><table class="onet-table" id="loops"></table></div>
+          <p class="tg-note" id="blocks-note"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="tg-sec" id="repeat-sec" aria-labelledby="repeat-title">
+      <div class="tg-sec-head">
+        <h2 id="repeat-title">Does the same model say the same twice?</h2>
+        <p>Finance was answered a second time with the tasks batched differently. Same model, same prompt.</p>
+      </div>
+      <div id="repeat"></div>
+    </section>
+  </div>
+</main>
+
+<aside class="tg-drawer" id="drawer" aria-labelledby="drawer-title" hidden></aside>
+
+<script type="module">
+const $ = id => document.getElementById(id);
+const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[ch]));
+const number = (value, digits = 0) => Number(value ?? 0).toLocaleString('en-GB', {minimumFractionDigits: digits, maximumFractionDigits: digits});
+const pct = value => value == null ? '–' : `${Math.round(value * 100)}%`;
+const sum = values => values.reduce((a, b) => a + b, 0);
+
+const RUNGS = ['eliminate', 'configure', 'deterministic', 'deterministic_plus_loop', 'agent', 'stays_manual'];
+const RUNG = {eliminate: 'Eliminate', configure: 'Configure', deterministic: 'Deterministic', deterministic_plus_loop: 'Deterministic + loop', agent: 'Agent', stays_manual: 'Stays manual'};
+const BLOCK = {none: 'No block', artefact_generator: 'Artefact generator', workflow_automation: 'Workflow automation', crud_app: 'Records app', dashboard: 'Dashboard', answer_desk: 'Answer desk', integration: 'Integration', judgement_step: 'Judgement step', conversation: 'Conversation', notification: 'Notification'};
+const MEANS = {system_screen: 'system screen', spreadsheet: 'spreadsheet', email_chat: 'mail or chat', document: 'document', meeting_call: 'meeting or call', paper_phone: 'paper or phone', in_person: 'in person'};
+const MEANS_SHORT = {system_screen: 'screen', spreadsheet: 'sheet', email_chat: 'mail', document: 'doc', meeting_call: 'meeting', paper_phone: 'phone', in_person: 'in person'};
+const FATE = {gone: 'gone', machine: 'done by the machine', person_reviews: 'a person reviews', person_does: 'a person does it'};
+const FATE_SHORT = {gone: 'gone', machine: 'machine', person_reviews: 'review', person_does: 'person'};
+const AUTHORITY = {read: 'read only', draft: 'drafts for a person', write_internal: 'writes in internal systems', act_external: 'acts outside the company'};
+const CROSS = {role: 'another role in the team', team: 'another team', external: 'outside the company', same_role: 'the same role', system: 'a system', none: 'nobody'};
+
+const state = {scope: null, view: 'graph', glueOnly: false, system: null, selected: null, pinned: null, glueAll: false, metric: 'hours_saved', data: null, width: 0};
+const ctx = document.createElement('canvas').getContext('2d');
+
+async function readJSON(url) {
+  const r = await fetch(url, {cache: 'no-store'});
+  if (!r.ok) throw Error(`${url}: ${r.status}`);
+  return r.json();
+}
+
+async function load() {
+  try {
+    const [graph, blocks, glue, consistency] = await Promise.all(['graph', 'blocks', 'glue', 'consistency'].map(n => readJSON(`../data/graph/${n}.json`)));
+    await document.fonts.ready;
+    const nodes = new Map(graph.nodes.map(n => [n.id, n]));
+    const tasks = new Map(graph.tasks.map(t => [t.uid, t]));
+    const roles = graph.nodes.filter(n => n.kind === 'role' && n.party === 'role');
+    state.data = {graph, blocks, glue, consistency, nodes, tasks, roles, glueBy: new Map(glue.steps.map(g => [g.step, g]))};
+    buildScopes();
+    $('app').hidden = false;
+    $('load-error').hidden = true;
+    render();
+  } catch (error) {
+    $('load-error').hidden = false;
+    $('load-error').innerHTML = `<strong>The task graph is not there yet.</strong> <span class="small">Run <code>python3 tools/graph.py</code> from the team-reimagine folder, then reload. (${esc(error.message)})</span>`;
+    $('source-meta').textContent = '';
+  }
+}
+
+function buildScopes() {
+  const {graph, blocks, roles} = state.data;
+  const cov = key => blocks.scopes[key]?.coverage;
+  const label = (name, key) => { const c = cov(key); return c ? `${name} (${c.tasks_answered} of ${c.tasks_in_scope} tasks)` : name; };
+  let html = `<optgroup label="Teams"><option value="all">${esc(label('Both teams', 'all'))}</option>`;
+  for (const t of Object.values(graph.teams)) html += `<option value="team:${t.id}">${esc(label(t.name, 'team:' + t.id))}</option>`;
+  html += '</optgroup>';
+  for (const t of Object.values(graph.teams)) {
+    html += `<optgroup label="${esc(t.name)} roles">`;
+    for (const r of roles.filter(r => r.team === t.id)) html += `<option value="${esc(r.id)}">${esc(label(r.name, r.id))}</option>`;
+    html += '</optgroup>';
+  }
+  const select = $('scope');
+  select.innerHTML = html;
+  select.disabled = false;
+  const fromHash = decodeURIComponent(location.hash.slice(1));
+  const valid = [...select.options].map(o => o.value);
+  if (!state.scope || !valid.includes(state.scope)) {
+    // start on the role with the most glue hours: the most to read
+    const byRole = new Map();
+    for (const g of state.data.glue.steps) byRole.set('role:' + g.role, (byRole.get('role:' + g.role) || 0) + (g.hours || 0));
+    const busiest = [...byRole].sort((a, b) => b[1] - a[1])[0]?.[0];
+    state.scope = valid.includes(fromHash) ? fromHash : (busiest || 'all');
+  }
+  select.value = state.scope;
+}
+
+const inScope = item => {
+  if (state.scope === 'all') return true;
+  const [kind, id] = state.scope.split(':');
+  return kind === 'team' ? item.team === id : item.role === id;
+};
+const scopeTasks = () => {
+  const {graph, glueBy} = state.data;
+  const list = graph.tasks.filter(inScope);
+  return state.glueOnly ? list.filter(t => t.steps.some(id => glueBy.has(id))) : list;
+};
+const roleName = id => state.data.nodes.get('role:' + id)?.name || id;
+const partyName = nodeId => state.data.nodes.get(nodeId)?.name || (nodeId || '').replace(/^role:/, '');
+
+function render() {
+  const {graph, blocks} = state.data;
+  const meta = graph._meta;
+  $('source-meta').innerHTML = `<span>${esc(meta.source)} · ${meta.files} batch files · ${meta.tasks} of ${meta.tasks_in_scope} automate and amplify tasks answered</span><span>merged ${esc(meta.generated)}</span>`;
+  const sc = blocks.scopes[state.scope];
+  renderFigs(sc);
+  renderLegend();
+  renderSystems();
+  renderGraph();
+  renderList();
+  renderGlue();
+  renderBlocks(sc);
+  renderRepeat();
+}
+
+function fig(label, value, note) {
+  return `<div class="onet-fig"><span class="onet-fig-label">${label}</span><span class="onet-fig-value">${value}</span><span class="onet-fig-note">${note}</span></div>`;
+}
+
+function renderFigs(sc) {
+  if (!sc) { $('figs').innerHTML = ''; return; }
+  const c = sc.coverage, t = sc.totals, h = sc.headline;
+  $('figs').innerHTML =
+    fig('Hours answered', `${number(t.hours)} h`, `${c.tasks_answered} of ${c.tasks_in_scope} automate and amplify tasks · ${pct(c.share_hours_answered)} of their hours`) +
+    fig('Hours freed', `${number(t.hours_saved)} h`, `${t.time_saved_pct ?? '–'}% of the answered hours, before adoption`) +
+    fig('Freed without a model', pct(h.no_model.share_saved), 'of the freed hours: eliminate, configure or deterministic code') +
+    fig('With small loops added', pct(h.deterministic_with_loops.share_saved), `agents ${pct(h.agent.share_saved)} · stays manual ${pct(h.stays_manual.share_saved)}`);
+}
+
+function renderLegend() {
+  $('legend').innerHTML = RUNGS.map(r => `<span class="r-${r}"><i class="tg-key"></i>${RUNG[r]}</span>`).join('') +
+    `<span><i class="tg-key-glue"></i>glue</span><span><i class="tg-key-gate"></i>person approves</span>` +
+    `<span><i class="tg-key-line"></i>produces</span><span><i class="tg-key-line feeds"></i>feeds</span><span><i class="tg-key-line handoff"></i>hands to</span>`;
+}
+
+function visibleSteps() {
+  return scopeTasks().flatMap(t => t.steps.map(id => state.data.nodes.get(id)));
+}
+
+function renderSystems() {
+  const hours = new Map();
+  for (const s of visibleSteps()) for (const name of s.systems) hours.set(name, (hours.get(name) || 0) + (s.hours || 0));
+  if (state.system && !hours.has(state.system)) state.system = null;
+  $('systems').innerHTML = [...hours].sort((a, b) => b[1] - a[1]).map(([name, h]) =>
+    `<li><button type="button" data-system="${esc(name)}" aria-pressed="${state.system === name}">${esc(name)}<span class="tg-n">${number(h)} h</span></button></li>`).join('');
+}
+
+/* ------------------------------------------------------------------ the SVG graph */
+
+function fit(text, width, size, weight = 400, maxLines = 1, family = "Geist, 'Helvetica Neue', Arial, sans-serif") {
+  ctx.font = `${weight} ${size}px ${family}`;
+  const words = String(text ?? '').trim().split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = '', i = 0;
+  for (; i < words.length; i++) {
+    const test = line ? `${line} ${words[i]}` : words[i];
+    if (!line || ctx.measureText(test).width <= width) { line = test; continue; }
+    lines.push(line);
+    line = words[i];
+    if (lines.length === maxLines) break;
+  }
+  if (lines.length < maxLines) { if (line) lines.push(line); i = words.length; }
+  const last = lines.length - 1;
+  if (last >= 0 && (i < words.length || ctx.measureText(lines[last]).width > width)) {
+    let s = lines[last];
+    while (s.length > 1 && ctx.measureText(s + '…').width > width) s = s.slice(0, -1);
+    lines[last] = s.replace(/[\s,.;:·-]+$/, '') + '…';
+  }
+  return lines;
+}
+const textWidth = (text, size, weight = 400) => { ctx.font = `${weight} ${size}px Geist, 'Helvetica Neue', Arial, sans-serif`; return ctx.measureText(text).width; };
+
+function rounded(points, r = 6) {
+  let d = `M${points[0][0]},${points[0][1]}`;
+  for (let i = 1; i < points.length - 1; i++) {
+    const [x0, y0] = points[i - 1], [x1, y1] = points[i], [x2, y2] = points[i + 1];
+    const d1 = Math.hypot(x1 - x0, y1 - y0), d2 = Math.hypot(x2 - x1, y2 - y1);
+    const rr = Math.min(r, d1 / 2, d2 / 2);
+    if (rr < 0.5) { d += ` L${x1},${y1}`; continue; }
+    d += ` L${(x1 + (x0 - x1) * rr / d1).toFixed(1)},${(y1 + (y0 - y1) * rr / d1).toFixed(1)} Q${x1},${y1} ${(x1 + (x2 - x1) * rr / d2).toFixed(1)},${(y1 + (y2 - y1) * rr / d2).toFixed(1)}`;
+  }
+  const end = points[points.length - 1];
+  return d + ` L${end[0]},${end[1]}`;
+}
+
+function renderGraph() {
+  const {nodes, glueBy, roles} = state.data;
+  const wrap = $('graph-wrap'), svg = $('graph');
+  const W = Math.round(wrap.clientWidth);
+  state.width = W;
+  const tasks = scopeTasks();
+  $('graph-empty').hidden = tasks.length > 0;
+  if (!W || !tasks.length) { svg.innerHTML = ''; svg.setAttribute('height', 0); graphIndex = {els: new Map(), edges: new Map()}; return; }
+
+  const L = {label: 196, gap: 22, chan: 56, col: Math.round(Math.min(230, Math.max(176, W * 0.15))), boxH: 66, sysH: 18, gutter: 22, head: 40, pillH: 22, pillGap: 5};
+  const maxSteps = Math.max(...tasks.map(t => t.steps.length), 1);
+  const slot = Math.min(214, (W - L.label - L.chan - L.col) / maxSteps);
+  const boxW = Math.floor(slot - L.gap);
+  const colX = W - L.col;
+  const pos = new Map(), rows = [], heads = [];
+  const byRole = !state.scope.startsWith('role:');
+  let y = 4, lastRole = null;
+  for (const t of tasks) {
+    if (byRole && t.role !== lastRole) { heads.push({role: t.role, y}); y += L.head; lastRole = t.role; }
+    const row = {task: t, y, bottom: y + L.boxH + L.sysH};
+    t.steps.forEach((id, i) => pos.set(id, {x: Math.round(L.label + i * slot), y, w: boxW, h: L.boxH, row}));
+    rows.push(row);
+    y = row.bottom + L.gutter;
+  }
+  const rowsBottom = y;
+  const visibleTasks = new Set(tasks.map(t => t.uid));
+
+  // the right-hand column: artefacts that link tasks, and the parties work is handed to
+  const pills = [];
+  for (const n of nodes.values()) {
+    if (n.kind !== 'artefact' || n.tasks < 2) continue;
+    const ends = [...n.produced_by.map(id => [id, 'produces']), ...n.fed_to.map(id => [id, 'feeds'])].filter(([id]) => pos.has(id));
+    if (!ends.length) continue;
+    const seen = new Set(ends.map(([id]) => nodes.get(id).task));
+    if (seen.size < 2 && n.tasks <= seen.size) continue;
+    pills.push({id: n.id, kind: 'artefact', node: n, ends, outside: n.tasks - seen.size});
+  }
+  const handTo = new Map();
+  for (const id of pos.keys()) {
+    const s = nodes.get(id);
+    if (!s.handoff || !['role', 'team', 'external'].includes(s.cross)) continue;
+    if (!handTo.has(s.handoff)) handTo.set(s.handoff, []);
+    handTo.get(s.handoff).push([id, 'handoff']);
+  }
+  for (const [id, ends] of handTo) pills.push({id, kind: 'role', node: nodes.get(id), ends, outside: 0});
+  for (const p of pills) p.want = sum(p.ends.map(([id]) => pos.get(id).y + L.boxH / 2)) / p.ends.length - L.pillH / 2;
+  pills.sort((a, b) => a.want - b.want || (a.kind === 'role') - (b.kind === 'role'));
+  let floor = 0;
+  for (const p of pills) { p.y = Math.max(p.want, floor); floor = p.y + L.pillH + L.pillGap; }
+  const H = Math.ceil(Math.max(rowsBottom, floor) + 8);
+
+  // edges, routed down from the box, along the gutter under the row, up or down the channel to the pill
+  const perStep = new Map();
+  const edges = [];
+  pills.forEach((p, lane) => {
+    for (const [id, kind] of p.ends) {
+      const b = pos.get(id);
+      const k = perStep.get(id) || 0;
+      perStep.set(id, k + 1);
+      const x0 = b.x + b.w - 10 - (k % 6) * 6;
+      const yg = b.row.bottom + 4 + (lane % 5) * 3;
+      const xc = colX - 12 - (lane % 8) * 5;
+      const yp = Math.round(p.y + L.pillH / 2);
+      let pts = [[x0, b.y + b.h], [x0, yg], [xc, yg], [xc, yp], [colX - 1, yp]];
+      if (kind === 'feeds') pts = pts.reverse();
+      edges.push(`<path class="tg-edge e-${kind}" data-step="${esc(id)}" data-node="${esc(p.id)}" d="${rounded(pts)}" marker-end="url(#m-${kind})"/>`);
+    }
+  });
+
+  const parts = [`<defs>${['produces', 'feeds', 'handoff', 'next'].map(k =>
+    `<marker id="m-${k}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="${k === 'next' ? 7 : 6}" markerHeight="${k === 'next' ? 7 : 6}" orient="auto-start-reverse"><path class="m-${k}" d="M0,0 L8,4 L0,8 z"/></marker>`).join('')}</defs>`];
+  parts.push(`<g class="tg-edges">${edges.join('')}</g>`);
+
+  for (const h of heads) {
+    const role = nodes.get('role:' + h.role);
+    const sc = state.data.blocks.scopes['role:' + h.role]?.coverage;
+    const title = role?.name || h.role;
+    const note = `${number(role?.fte, role?.fte % 1 ? 1 : 0)} FTE${sc ? ` · ${sc.tasks_answered} of ${sc.tasks_in_scope} tasks answered` : ''}`;
+    parts.push(`<line class="tg-head-line" x1="0" x2="${W}" y1="${h.y + 6}" y2="${h.y + 6}"/>` +
+      `<text class="tg-head" x="0" y="${h.y + 27}">${esc(title)}</text>` +
+      `<text class="tg-head-note" x="${Math.ceil(textWidth(title, 15, 600)) + 12}" y="${h.y + 27}">${esc(note)}</text>`);
+  }
+
+  for (const row of rows) {
+    const t = row.task;
+    const title = fit(t.short, L.label - 26, 12.5, 600, 3);
+    parts.push(`<g class="tg-task" data-task="${esc(t.uid)}" tabindex="0" role="button" aria-label="${esc(`Task: ${t.short}. Open its design.`)}"><title>${esc(t.statement)}</title>` +
+      title.map((l, i) => `<text class="tg-task-title" x="0" y="${row.y + 14 + i * 16}">${esc(l)}</text>`).join('') +
+      `<text class="tg-task-foot" x="0" y="${row.y + 14 + title.length * 16 + 4}">${number(t.hours)} h · ${t.time_saved_pct ?? '–'}% freed</text></g>`);
+    t.steps.forEach((id, i) => {
+      const s = nodes.get(id), b = pos.get(id);
+      if (i < t.steps.length - 1) {
+        const n = pos.get(t.steps[i + 1]);
+        parts.push(`<path class="tg-next" d="M${b.x + b.w + 2},${b.y + b.h / 2} H${n.x - 3}" marker-end="url(#m-next)"/>`);
+      }
+      parts.push(stepSVG(s, b, glueBy.has(id)));
+    });
+  }
+
+  for (const p of pills) {
+    const n = p.node;
+    const label = p.kind === 'role' ? `→ ${partyName(p.id)}` : n.name;
+    const count = p.kind === 'role' ? `${p.ends.length}` : `${n.tasks}`;
+    const room = L.col - 18 - textWidth(count, 10.5) - 6;
+    const shown = fit(label, room, 11, p.kind === 'role' ? 600 : 400, 1)[0] || '';
+    const tip = p.kind === 'role'
+      ? `${p.ends.length} step${p.ends.length === 1 ? '' : 's'} in this view hand work to ${partyName(p.id)}`
+      : `${n.name}: in ${n.tasks} tasks (${n.roles.map(roleName).join(', ')})${p.outside ? `; ${p.outside} outside this view` : ''}. Made by ${n.produced_by.length} step${n.produced_by.length === 1 ? '' : 's'}, used by ${n.fed_to.length}.${n.raw.length > 1 ? ` Merged from: ${n.raw.join(', ')}.` : ''}`;
+    parts.push(`<g class="tg-pill k-${p.kind}" data-id="${esc(p.id)}" tabindex="0" role="button" aria-label="${esc(tip)}"><title>${esc(tip)}</title>` +
+      `<rect x="${colX}" y="${p.y.toFixed(1)}" width="${L.col}" height="${L.pillH}" rx="${p.kind === 'role' ? 11 : 4}"/>` +
+      `<text x="${colX + 9}" y="${(p.y + 15).toFixed(1)}">${esc(shown)}</text>` +
+      `<text class="tg-pill-n" x="${W - 8}" y="${(p.y + 15).toFixed(1)}" text-anchor="end">${p.outside ? '+' : ''}${count}</text></g>`);
+  }
+
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = parts.join('');
+  indexGraph();
+  applySystem();
+  hot(state.pinned || state.selected);
+}
+
+function stepSVG(s, b, glue) {
+  const lines = fit(s.what, b.w - 17, 11.5, 500, 3);
+  const fate = FATE_SHORT[s.fate] || s.fate || '';
+  const fateW = textWidth(fate, 10.5, 600);
+  // hours before means: in a narrow box the means goes first
+  const room = b.w - 24 - fateW - (s.human_gate ? 10 : 0);
+  const full = `${MEANS_SHORT[s.today_means] || s.today_means} · ${number(s.hours)} h`;
+  const foot = textWidth(full, 10.5) <= room ? full : fit(`${number(s.hours)} h`, room, 10.5)[0] || '';
+  const sys = fit(s.systems.join(' · '), b.w - 30, 10.5)[0] || '';
+  const label = `${s.what}. ${RUNG[s.rung] || s.rung}, ${FATE[s.fate] || s.fate}, ${number(s.hours)} hours a year${glue ? ', glue' : ''}.`;
+  const right = b.x + b.w - 7;
+  return `<g class="tg-step r-${esc(s.rung)} f-${esc(s.fate)}${glue ? ' is-glue' : ''}" data-id="${esc(s.id)}" tabindex="0" role="button" aria-label="${esc(label)}">` +
+    `<title>${esc(`${s.what} · ${RUNG[s.rung] || s.rung} · ${BLOCK[s.block] || s.block}`)}</title>` +
+    `<rect class="tg-box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="6"/>` +
+    `<rect class="tg-bar" x="${b.x}" y="${b.y}" width="4" height="${b.h}" rx="2"/>` +
+    lines.map((l, i) => `<text class="tg-what" x="${b.x + 11}" y="${b.y + 17 + i * 14}">${esc(l)}</text>`).join('') +
+    `<text class="tg-foot" x="${b.x + 11}" y="${b.y + b.h - 8}">${esc(foot)}</text>` +
+    `<text class="tg-fate" x="${right - (s.human_gate ? 10 : 0)}" y="${b.y + b.h - 8}" text-anchor="end">${esc(fate)}</text>` +
+    (s.human_gate ? `<circle class="tg-gate" cx="${right - 3}" cy="${b.y + b.h - 12}" r="3.5"/>` : '') +
+    `<text class="tg-sys" x="${b.x + 4}" y="${b.y + b.h + 13}">${esc(sys)}</text></g>`;
+}
+
+let graphIndex = {els: new Map(), edges: new Map()};
+function indexGraph() {
+  const svg = $('graph');
+  const els = new Map(), edges = new Map();
+  svg.querySelectorAll('.tg-step, .tg-pill').forEach(el => els.set(el.dataset.id, el));
+  svg.querySelectorAll('.tg-edge').forEach(el => {
+    for (const end of [el.dataset.step, el.dataset.node]) {
+      if (!edges.has(end)) edges.set(end, []);
+      edges.get(end).push(el);
+    }
+  });
+  graphIndex = {els, edges};
+}
+
+function hot(id) {
+  const svg = $('graph');
+  svg.querySelectorAll('.hot').forEach(el => el.classList.remove('hot'));
+  svg.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+  if (state.selected) graphIndex.els.get(state.selected)?.classList.add('selected');
+  if (!id || !graphIndex.els.has(id)) { svg.classList.remove('dim'); return; }
+  svg.classList.add('dim');
+  graphIndex.els.get(id).classList.add('hot');
+  for (const edge of graphIndex.edges.get(id) || []) {
+    edge.classList.add('hot');
+    graphIndex.els.get(edge.dataset.step)?.classList.add('hot');
+    graphIndex.els.get(edge.dataset.node)?.classList.add('hot');
+  }
+}
+
+function applySystem() {
+  const svg = $('graph');
+  svg.classList.toggle('sysdim', !!state.system);
+  for (const [id, el] of graphIndex.els) {
+    if (!id.startsWith('step:')) continue;
+    el.classList.toggle('sys-hit', !!state.system && state.data.nodes.get(id).systems.includes(state.system));
+  }
+  document.querySelectorAll('.tg-step-row').forEach(el => el.classList.toggle('sys-hit', !!state.system && state.data.nodes.get(el.dataset.step).systems.includes(state.system)));
+}
+
+/* ------------------------------------------------------------------ the list view */
+
+function renderList() {
+  const {nodes, glueBy} = state.data;
+  const byRole = !state.scope.startsWith('role:');
+  let last = null, html = '';
+  for (const t of scopeTasks()) {
+    if (byRole && t.role !== last) { html += `<h3 class="tg-list-role">${esc(roleName(t.role))}</h3>`; last = t.role; }
+    html += `<article class="tg-task-card"><button type="button" data-task="${esc(t.uid)}">${esc(t.short)}</button>` +
+      `<p class="xs muted">${number(t.hours)} h a year · ${t.time_saved_pct ?? '–'}% freed · ${t.steps.length} steps</p><ol class="tg-steps">` +
+      t.steps.map(id => {
+        const s = nodes.get(id);
+        const hand = ['role', 'team', 'external'].includes(s.cross) ? ` → ${partyName(s.handoff)}` : '';
+        return `<li><button type="button" class="tg-step-row r-${esc(s.rung)} f-${esc(s.fate)}${glueBy.has(id) ? ' is-glue' : ''}" data-step="${esc(id)}">` +
+          `<span class="tg-step-what">${esc(s.what)}</span>` +
+          `<span class="tg-step-meta">${esc(MEANS[s.today_means] || s.today_means)} · ${number(s.hours)} h · ${esc(FATE_SHORT[s.fate] || s.fate)} · ${esc(RUNG[s.rung] || s.rung)}${s.human_gate ? ' · gate' : ''}${glueBy.has(id) ? ' · glue' : ''}</span>` +
+          `<span class="tg-step-meta">${esc(s.systems.join(', '))}${esc(hand)}</span></button></li>`;
+      }).join('') + '</ol></article>';
+  }
+  $('list').innerHTML = html;
+}
+
+/* ------------------------------------------------------------------ the drawer */
+
+let lastTrigger = null;
+function openDrawer(html, trigger) {
+  lastTrigger = trigger || document.activeElement;
+  const d = $('drawer');
+  d.innerHTML = html;
+  d.hidden = false;
+  d.scrollTop = 0;
+  d.querySelector('h2')?.setAttribute('tabindex', '-1');
+  d.querySelector('h2')?.focus();
+}
+function closeDrawer() {
+  $('drawer').hidden = true;
+  state.selected = null;
+  hot(state.pinned);
+  if (lastTrigger && document.contains(lastTrigger)) lastTrigger.focus();
+}
+
+function stepLinks(step, name, dir) {
+  const {nodes} = state.data;
+  const n = nodes.get('art:' + name);
+  if (!n) return '';
+  const ids = (dir === 'from' ? n.produced_by : n.fed_to).filter(id => id !== step.id);
+  const same = ids.filter(id => nodes.get(id).task === step.task).map(id => nodes.get(id).sid);
+  const other = ids.filter(id => nodes.get(id).task !== step.task);
+  const bits = [];
+  if (same.length) bits.push(`${dir === 'from' ? 'from' : 'to'} ${same.join(', ')} of this task`);
+  if (other.length) bits.push(`${dir === 'from' ? 'made in' : 'used in'} ` + other.slice(0, 4).map(id => {
+    const o = nodes.get(id);
+    return `<button type="button" class="tg-link" data-goto="${esc(id)}">${esc(o.what)}</button> <span class="muted">(${esc(roleName(o.role))})</span>`;
+  }).join('; ') + (other.length > 4 ? `; ${other.length - 4} more` : ''));
+  return bits.length ? `<br><span class="xs">${bits.join(' · ')}</span>` : '';
+}
+
+function stepHTML(id) {
+  const {nodes, tasks, glueBy} = state.data;
+  const s = nodes.get(id), t = tasks.get(s.task), g = glueBy.get(id);
+  const actor = s.actor === s.role ? roleName(s.role) : partyName('role:' + s.actor);
+  const hand = s.handoff ? `${esc(partyName(s.handoff))} <span class="muted">(${esc(CROSS[s.cross] || s.cross)})</span>` : 'nobody';
+  const loop = s.loop ? `<h3>The model loop</h3><div class="tg-loop"><dl class="tg-facts">` +
+    [['Purpose', s.loop.purpose], ['Input', s.loop.input], ['Output', s.loop.output], ['Check', s.loop.check], ['Stop', s.loop.stop], ['Why not simpler', s.loop.why_not_simpler]]
+      .map(([k, v]) => `<dt>${k}</dt><dd>${esc(v || '–')}</dd>`).join('') + '</dl></div>' : '';
+  const flags = s.checks?.length ? `<h3>Checks on this answer</h3><div class="tg-flag"><ul>${s.checks.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>` : '';
+  return `<div class="tg-drawer-head"><div><div class="crumbs">${esc(roleName(s.role))} · step ${s.order} of ${t.steps.length}</div><h2 id="drawer-title">${esc(s.what)}</h2></div>` +
+    `<button class="tg-close" type="button" data-close aria-label="Close">×</button></div>` +
+    `<p class="small muted">Task: <button type="button" class="tg-link" data-task="${esc(t.uid)}">${esc(t.short)}</button></p>` +
+    (g ? `<p class="small"><span class="tag">glue #${g.rank}</span> ${esc(g.reasons.join('; '))}</p>` : '') +
+    `<h3>Today</h3><dl class="tg-facts">` +
+    `<dt>Who</dt><dd>${esc(actor)}</dd>` +
+    `<dt>In</dt><dd>${esc(MEANS[s.today_means] || s.today_means)}${s.systems.length ? ` · ${esc(s.systems.join(', '))}` : ''}</dd>` +
+    `<dt>Time</dt><dd>${s.share_pct}% of the task · ${number(s.hours)} h a year</dd>` +
+    `<dt>Takes in</dt><dd>${s.inputs.length ? `<ul>${s.inputs.map(n => `<li>${esc(n)}${stepLinks(s, n, 'from')}</li>`).join('')}</ul>` : '–'}</dd>` +
+    `<dt>Makes</dt><dd>${s.outputs.length ? `<ul>${s.outputs.map(n => `<li>${esc(n)}${stepLinks(s, n, 'to')}</li>`).join('')}</ul>` : '–'}</dd>` +
+    `<dt>Hands to</dt><dd>${hand}</dd></dl>` +
+    `<h3>Its future</h3><dl class="tg-facts">` +
+    `<dt>Fate</dt><dd>${esc(FATE[s.fate] || s.fate)}; ${s.remaining_pct}% of the time stays · ${number(s.hours_saved)} h a year freed</dd>` +
+    `<dt>Block</dt><dd>${esc(BLOCK[s.block] || s.block)}</dd>` +
+    `<dt>Rung</dt><dd><span class="tg-chip r-${esc(s.rung)}">${esc(RUNG[s.rung] || s.rung)}</span></dd>` +
+    `<dt>Authority</dt><dd>${esc(AUTHORITY[s.authority] || s.authority)}</dd>` +
+    `<dt>Human gate</dt><dd>${s.human_gate ? 'yes: a person approves before it takes effect' : 'no'}</dd></dl>` +
+    loop + flags +
+    `<h3>The task's design</h3><p>${esc(t.design)}</p>`;
+}
+
+function taskHTML(uid) {
+  const {nodes, tasks} = state.data;
+  const t = tasks.get(uid);
+  const bd = t.build_days || {};
+  const amb = t.ambition && t.ambition.kind !== 'none' ? `<h3>Ambition</h3><p>${esc(t.ambition.what)}</p>` : '';
+  return `<div class="tg-drawer-head"><div><div class="crumbs">${esc(roleName(t.role))} · ${number(t.hours)} h a year · ${t.time_saved_pct ?? '–'}% freed</div><h2 id="drawer-title">${esc(t.short)}</h2></div>` +
+    `<button class="tg-close" type="button" data-close aria-label="Close">×</button></div>` +
+    `<p class="small muted">O*NET: ${esc(t.statement)}</p>` +
+    `<h3>Design</h3><p>${esc(t.design)}</p>` +
+    `<h3>Steps</h3><ol class="small">${t.steps.map(id => { const s = nodes.get(id); return `<li><button type="button" class="tg-link" data-goto="${esc(id)}">${esc(s.what)}</button> <span class="tg-chip r-${esc(s.rung)}">${esc(RUNG[s.rung] || s.rung)}</span> <span class="muted">${s.share_pct}% · ${esc(FATE_SHORT[s.fate] || s.fate)}</span></li>`; }).join('')}</ol>` +
+    `<h3>Why now</h3><dl class="tg-facts"><dt>Blocked by</dt><dd>${esc(t.previous_blocker)}</dd><dt>Enabled by</dt><dd>${esc(t.enabler_now)}</dd><dt>Still hard</dt><dd>${esc(t.still_hard)}</dd><dt>Human edge</dt><dd>${esc(t.human_edge)}</dd></dl>` +
+    `<h3>Build</h3><dl class="tg-facts"><dt>Coding</dt><dd>${esc(bd.coding || '–')} days</dd><dt>Integration</dt><dd>${esc(bd.integration || '–')} days</dd><dt>Test and roll out</dt><dd>${esc(bd.testing_rollout || '–')} days</dd><dt>Consent, access</dt><dd>${esc(bd.consent_and_access || '–')} days</dd><dt>Run cost</dt><dd>${esc(t.run_cost || '–')}</dd></dl>` +
+    amb + `<h3>Altitude</h3><p>${esc(t.altitude)}</p>` +
+    (t.warnings?.length ? `<h3>Checks on this answer</h3><div class="tg-flag"><ul>${t.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>` : '') +
+    `<p class="tg-note">From ${esc(t.file)}</p>`;
+}
+
+function selectStep(id, trigger) {
+  const s = state.data.nodes.get(id);
+  if (!s) return;
+  if (!inScope(s) || (state.glueOnly && !scopeTasks().some(t => t.uid === s.task))) {
+    state.scope = 'role:' + s.role;
+    state.glueOnly = false;
+    $('glue-only').checked = false;
+    $('scope').value = state.scope;
+    history.replaceState(null, '', '#' + state.scope);
+    render();
+  }
+  state.selected = id;
+  hot(id);
+  openDrawer(stepHTML(id), trigger);
+  const el = graphIndex.els.get(id);
+  if (el && $('graph-wrap').offsetParent) {
+    const r = el.getBoundingClientRect();
+    if (r.top < 80 || r.bottom > innerHeight) el.scrollIntoView({block: 'center', behavior: 'smooth'});
+  }
+}
+
+/* ------------------------------------------------------------------ glue */
+
+function renderGlue() {
+  const all = state.data.glue.steps.filter(inScope);
+  const answered = sum(visibleSteps().map(s => s.hours || 0));
+  const hours = sum(all.map(g => g.hours || 0));
+  const freed = sum(all.map(g => g.hours_saved || 0));
+  const byMeans = ['spreadsheet', 'email_chat', 'document'].map(m => [m, sum(all.filter(g => g.today_means === m).map(g => g.hours || 0))]).filter(([, h]) => h > 0);
+  const noModel = sum(all.filter(g => ['eliminate', 'configure', 'deterministic'].includes(g.rung)).map(g => g.hours_saved || 0));
+  $('glue-lead').innerHTML = all.length
+    ? `${all.length} glue steps, <strong>${number(hours)} h a year</strong> today${answered ? ` (${pct(hours / answered)} of the answered hours in this view)` : ''}: ` +
+      byMeans.map(([m, h]) => `${number(h)} h in ${MEANS[m]}`).join(', ') +
+      `. The proposed builds free ${number(freed)} h of it; ${freed ? pct(noModel / freed) : '–'} of that without a model.`
+    : 'No glue steps in this view yet.';
+  const shown = state.glueAll ? all : all.slice(0, 12);
+  $('glue').innerHTML = shown.map((g, i) => {
+    const overall = state.scope === 'all' ? '' : `<span class="xs muted" title="Rank among all glue steps">#${g.rank}</span>`;
+    return `<li><span class="tg-rank">${i + 1}${overall ? '<br>' + overall : ''}</span><div>` +
+      `<h3><button type="button" data-step="${esc(g.step)}">${esc(g.what)}</button></h3>` +
+      `<p class="muted">${esc(roleName(g.role))} · ${esc(g.reasons.join('; '))}</p>` +
+      `<p>Task: ${esc(g.short)}</p>` +
+      `<p class="tg-design small">Design: ${esc(g.design)}</p>` +
+      `<div class="tg-tags"><span class="tag tag-secondary">${esc(MEANS[g.today_means])}</span>${g.systems.map(x => `<span class="tag tag-secondary">${esc(x)}</span>`).join('')}` +
+      `<span class="tg-chip r-${esc(g.rung)}">${esc(RUNG[g.rung] || g.rung)}</span><span class="tag">${esc(BLOCK[g.block] || g.block)}</span>${g.human_gate ? '<span class="tag">person approves</span>' : ''}</div></div>` +
+      `<div class="tg-nums"><strong>${number(g.hours)} h</strong>today · ${number(g.hours_saved)} h freed</div></li>`;
+  }).join('');
+  const more = $('glue-more');
+  more.hidden = all.length <= 12;
+  more.textContent = state.glueAll ? 'Show the top 12' : `Show all ${all.length}`;
+}
+
+/* ------------------------------------------------------------------ building blocks */
+
+function stack(label, sc, field, total) {
+  const segs = RUNGS.map(r => [r, sc.by_rung[r]?.[field] || 0]).filter(([, v]) => v > 0);
+  return `<div><div class="tg-bar-label"><strong>${label}</strong><span>${number(total)} h</span></div><div class="tg-stack" role="img" aria-label="${esc(label + ': ' + segs.map(([r, v]) => `${RUNG[r]} ${pct(v / total)}`).join(', '))}">` +
+    segs.map(([r, v]) => `<span class="r-${r}" style="flex:${v}" title="${esc(`${RUNG[r]}: ${number(v)} h (${pct(v / total)})`)}">${v / total >= 0.06 ? pct(v / total) : ''}</span>`).join('') + '</div></div>';
+}
+
+function renderBlocks(sc) {
+  if (!sc || !sc.totals.steps) {
+    ['ladder', 'bars', 'matrix', 'loops'].forEach(id => { $(id).innerHTML = ''; });
+    $('blocks-note').textContent = 'No answered steps in this view yet.';
+    return;
+  }
+  const h = sc.headline;
+  $('ladder').innerHTML = [
+    ['Without a model', h.no_model.share_saved, 'of the freed hours: eliminate, configure or deterministic code'],
+    ['Plus bounded loops', h.deterministic_with_loops.share_saved, `of the freed hours; the loops add ${pct(h.bounded_loop.share_saved)}`],
+    ['Agents', h.agent.share_saved, `of the freed hours; ${sc.by_rung.agent?.steps || 0} steps`],
+    ['Stays manual', h.stays_manual.share_saved, `of the freed hours; ${pct(h.stays_manual.share_hours)} of today's hours`],
+  ].map(([k, v, n]) => `<li><strong>${pct(v)}</strong><b>${k}</b>${n}</li>`).join('');
+  $('bars').innerHTML = stack('Hours freed, by rung', sc, 'hours_saved', sc.totals.hours_saved) + stack("Today's hours, by rung", sc, 'hours', sc.totals.hours);
+
+  const m = state.metric;
+  const rungs = RUNGS.filter(r => sc.by_rung[r]?.steps);
+  const blocks = Object.keys(sc.by_block);
+  const cell = (b, r) => sc.matrix.find(c => c.block === b && c.rung === r)?.[m] || 0;
+  const max = Math.max(...blocks.flatMap(b => rungs.map(r => cell(b, r))), 1);
+  const fmt = v => m === 'steps' ? number(v) : `${number(v)} h`;
+  $('matrix').innerHTML = `<caption class="sr-only">${m === 'steps' ? 'Steps' : m === 'hours' ? "Today's hours" : 'Hours freed'} by building block and rung</caption>` +
+    `<thead><tr><th scope="col">Block</th>${rungs.map(r => `<th scope="col"><span class="tg-chip r-${r}">${RUNG[r]}</span></th>`).join('')}<th scope="col">All</th></tr></thead><tbody>` +
+    blocks.sort((a, b) => (sc.by_block[b][m] || 0) - (sc.by_block[a][m] || 0)).map(b => `<tr><th scope="row">${esc(BLOCK[b] || b)}</th>` +
+      rungs.map(r => { const v = cell(b, r); return v ? `<td class="cell${v / max > 0.6 ? ' dark' : ''}" style="--v:${(v / max).toFixed(3)}">${fmt(v)}</td>` : '<td class="zero">·</td>'; }).join('') +
+      `<td>${fmt(sc.by_block[b][m] || 0)}</td></tr>`).join('') +
+    `</tbody><tfoot><tr><td>All</td>${rungs.map(r => `<td>${fmt(sc.by_rung[r][m] || 0)}</td>`).join('')}<td>${fmt(m === 'steps' ? sc.totals.steps : sc.totals[m])}</td></tr></tfoot>`;
+
+  const loops = Object.entries(sc.loops).sort((a, b) => b[1].hours_saved - a[1].hours_saved);
+  $('loops').innerHTML = loops.length
+    ? `<thead><tr><th scope="col">Purpose</th><th scope="col">Steps</th><th scope="col">Hours freed</th><th scope="col">Person approves</th></tr></thead><tbody>` +
+      loops.map(([k, v]) => `<tr><td>${esc(k)}</td><td class="onet-num">${v.steps}</td><td class="onet-num">${number(v.hours_saved)} h</td><td class="onet-num">${v.gated} of ${v.steps}</td></tr>`).join('') + '</tbody>'
+    : '<tbody><tr><td>No model loops in this view.</td></tr></tbody>';
+  const c = sc.coverage;
+  $('blocks-note').textContent = `${sc.totals.steps} steps from ${c.tasks_answered} answered tasks; ${c.tasks_in_scope - Math.min(c.tasks_answered, c.tasks_in_scope)} automate and amplify tasks are not answered yet and count nowhere. ${sc.totals.gated_steps} steps have a person approve; ${sc.totals.act_external_steps} act outside the company. Hours are potential, before adoption.`;
+}
+
+/* ------------------------------------------------------------------ the repeat run */
+
+function renderRepeat() {
+  const c = state.data.consistency;
+  const s = c.summary;
+  const [a, b] = c._meta.runs.map(r => r.split('/')[1]);
+  if (!s.tasks) {
+    $('repeat').innerHTML = `<p class="tg-empty">The repeat run (${esc(c._meta.runs[1])}) has ${c._meta.files[b] || 0} batch files so far; no Finance task is in both runs yet.</p>`;
+    return;
+  }
+  const g = s.rung_groups_saved;
+  const rows = c.tasks.slice().sort((x, y) => Math.abs(y.time_saved_pct.diff) - Math.abs(x.time_saved_pct.diff));
+  $('repeat').innerHTML = `<div class="onet-figs">` +
+    fig('Tasks in both runs', `${s.tasks}`, `of ${c._meta.finance_tasks_in_scope} Finance tasks · ${number(s.hours)} h a year`) +
+    fig('Time saved, run to run', `±${s.time_saved.mean_abs_diff}`, `points on average · ${pct(s.time_saved.within_10_points)} within 10 · r ${s.time_saved.pearson_r ?? '–'}`) +
+    fig('Same rung, step by step', pct(s.rung_agreement), `same block ${pct(s.block_agreement)} · same fate ${pct(s.fate_agreement)} (share of task time)`) +
+    fig('Design overlap', pct(s.design_overlap), `words shared by the two designs; ${pct(s.design_overlap_chance)} between different tasks`) +
+    `</div><p class="tg-lead">Hours freed: ${number(s.time_saved['hours_saved_' + a])} h in the first run, ${number(s.time_saved['hours_saved_' + b])} h in the repeat. Without a model: ${pct(g[a].no_model)} against ${pct(g[b].no_model)} of the freed hours; with loops ${pct(g[a].no_model + g[a].bounded_loop)} against ${pct(g[b].no_model + g[b].bounded_loop)}; agents ${pct(g[a].agent)} against ${pct(g[b].agent)}. Steps per task ${s.steps['mean_' + a]} and ${s.steps['mean_' + b]}; ${pct(s.steps.share_matched)} of the task time matched step to step.</p>` +
+    `<div class="table-scroll"><table class="onet-table tg-repeat-table"><caption class="sr-only">Finance tasks answered twice, largest difference first</caption>` +
+    `<thead><tr><th scope="col">Task</th><th scope="col">Saved, run 1</th><th scope="col">Saved, run 2</th><th scope="col">Same rung</th><th scope="col">Same block</th><th scope="col">Design overlap</th></tr></thead><tbody>` +
+    rows.map(r => `<tr><td><button type="button" class="tg-link" data-task="${esc(r.uid)}">${esc(r.short)}</button> <span class="xs muted">${esc(roleName(r.role))}</span></td>` +
+      `<td>${r.time_saved_pct[a]}%</td><td>${r.time_saved_pct[b]}%</td><td>${pct(r.rung_agreement)}</td><td>${pct(r.block_agreement)}</td><td>${pct(r.design_overlap)}</td></tr>`).join('') +
+    `</tbody></table></div><p class="tg-note">${esc(c._meta.method)}.</p>`;
+}
+
+/* ------------------------------------------------------------------ events */
+
+$('scope').addEventListener('change', e => {
+  state.scope = e.target.value;
+  state.pinned = null;
+  state.glueAll = false;
+  history.replaceState(null, '', '#' + state.scope);
+  if (!$('drawer').hidden) closeDrawer();
+  render();
+});
+$('reload').addEventListener('click', () => load());
+$('glue-only').addEventListener('change', e => { state.glueOnly = e.target.checked; state.pinned = null; renderSystems(); renderGraph(); renderList(); applySystem(); });
+document.querySelectorAll('.tg-viewtoggle button').forEach(btn => btn.addEventListener('click', () => {
+  state.view = btn.dataset.view;
+  $('graph-sec').dataset.view = state.view;
+  document.querySelectorAll('.tg-viewtoggle button').forEach(b => b.setAttribute('aria-pressed', b === btn));
+  if (state.view === 'graph') renderGraph();
+}));
+$('metric').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-metric]');
+  if (!btn) return;
+  state.metric = btn.dataset.metric;
+  $('metric').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b === btn));
+  renderBlocks(state.data.blocks.scopes[state.scope]);
+});
+$('systems').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-system]');
+  if (!btn) return;
+  state.system = state.system === btn.dataset.system ? null : btn.dataset.system;
+  $('systems').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.system === state.system));
+  applySystem();
+});
+$('glue-more').addEventListener('click', () => { state.glueAll = !state.glueAll; renderGlue(); });
+
+const svg = $('graph');
+const target = e => e.target.closest('.tg-step, .tg-pill, .tg-task');
+svg.addEventListener('pointerover', e => hot(target(e)?.dataset.id || state.pinned || state.selected));
+svg.addEventListener('pointerleave', () => hot(state.pinned || state.selected));
+svg.addEventListener('focusin', e => { const el = target(e); if (el?.dataset.id) hot(el.dataset.id); });
+svg.addEventListener('focusout', () => hot(state.pinned || state.selected));
+function activate(el, trigger) {
+  if (el.classList.contains('tg-step')) selectStep(el.dataset.id, trigger);
+  else if (el.classList.contains('tg-task')) openDrawer(taskHTML(el.dataset.task), trigger);
+  else { state.pinned = state.pinned === el.dataset.id ? null : el.dataset.id; hot(state.pinned); }
+}
+svg.addEventListener('click', e => { const el = target(e); if (el) activate(el, el); });
+svg.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const el = target(e);
+  if (el) { e.preventDefault(); activate(el, el); }
+});
+document.addEventListener('click', e => {
+  if (e.target.closest('#graph')) return;
+  const step = e.target.closest('[data-step], [data-goto]');
+  if (step && step.tagName === 'BUTTON') { selectStep(step.dataset.step || step.dataset.goto, lastTrigger && step.closest('#drawer') ? lastTrigger : step); return; }
+  const task = e.target.closest('button[data-task]');
+  if (task) { openDrawer(taskHTML(task.dataset.task), task.closest('#drawer') ? lastTrigger : task); return; }
+  if (e.target.closest('[data-close]')) closeDrawer();
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (!$('drawer').hidden) closeDrawer();
+  else if (state.pinned) { state.pinned = null; hot(null); }
+});
+window.addEventListener('hashchange', () => {
+  const want = decodeURIComponent(location.hash.slice(1));
+  if (state.data && want && want !== state.scope && [...$('scope').options].some(o => o.value === want)) { state.scope = want; $('scope').value = want; render(); }
+});
+new ResizeObserver(() => {
+  if (!state.data) return;
+  const w = Math.round($('graph-wrap').clientWidth);
+  if (w !== state.width) requestAnimationFrame(renderGraph);
+}).observe($('graph-wrap'));
+
+await load();
+</script>
+</body>
+</html>

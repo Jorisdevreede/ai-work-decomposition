@@ -1,0 +1,966 @@
+{
+ "job_code": "13-1031.00",
+ "tasks": [
+  {
+   "uid": "13-1031.00:21417",
+   "short": "Examine claim forms and records to decide insurance coverage.",
+   "steps": [
+    {
+     "id": "coverage_open",
+     "what": "Open the claim and check submitted documents",
+     "actor": "claims adjuster",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "claim form",
+      "claim documents"
+     ],
+     "outputs": [
+      "complete claim file"
+     ],
+     "handoff_to": "none",
+     "share_pct": 18,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "claim-file-completeness-check",
+     "approval_refs": []
+    },
+    {
+     "id": "coverage_extract",
+     "what": "Extract policy terms and relevant claim facts",
+     "actor": "claims adjuster",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "complete claim file",
+      "policy wording"
+     ],
+     "outputs": [
+      "coverage fact sheet"
+     ],
+     "handoff_to": "claims adjuster",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "policy wording and claim documents",
+      "output": "coverage fact sheet with quoted source locations",
+      "check": "claims adjuster compares each extracted fact with the source record",
+      "stop": "stop on missing pages, conflicting versions, or unclear exclusions; return the case for manual review",
+      "why_not_simpler": "Policy wording and claim evidence are unstructured and vary by case."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "claim-coverage-fact-sheet",
+     "approval_refs": []
+    },
+    {
+     "id": "coverage_decide",
+     "what": "Interpret coverage and decide the file position",
+     "actor": "claims adjuster",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "coverage fact sheet",
+      "policy wording"
+     ],
+     "outputs": [
+      "coverage decision"
+     ],
+     "handoff_to": "none",
+     "share_pct": 32,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "coverage_record",
+     "what": "Record rationale and request missing evidence",
+     "actor": "claims adjuster",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "EMAIL"
+     ],
+     "inputs": [
+      "coverage decision",
+      "coverage fact sheet"
+     ],
+     "outputs": [
+      "coverage rationale",
+      "evidence request"
+     ],
+     "handoff_to": "claimant",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "claim-coverage-rationale",
+     "approval_refs": []
+    }
+   ],
+   "design": "A {WORKFLOW} flow checks that a claim form, policy version, and documents are present in the {OTHER} claim record. A bounded extraction creates a cited coverage fact sheet from {DOCS}; the claims adjuster alone decides coverage and confirms the stored rationale.",
+   "previous_blocker": "The evidence and policy wording sit in case-specific documents, so staff must assemble them before applying judgement.",
+   "enabler_now": "Required-field checks and bounded extraction can prepare the evidence without deciding coverage.",
+   "still_hard": "Ambiguous exclusions, disputed facts, and the accountability for a coverage decision remain with the claims adjuster.",
+   "human_edge": "The claims adjuster interprets evidence, policy intent, and the effect of a decision on a claimant.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Review a daily queue of incomplete coverage files before they become delayed claims."
+   },
+   "altitude": "The claims adjuster spends less time locating clauses and more time deciding borderline coverage and improving evidence requests.",
+   "reach": [
+    {
+     "role": "insurance underwriter",
+     "task": "Identify recurring wording or evidence gaps",
+     "learn": "Read policy versions and classify recurring coverage exceptions."
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "3-6",
+    "testing_rollout": "5-8",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Claims software can guide intake and prepare a case record.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "A coverage decision still requires human interpretation of evidence and policy wording.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "A significant automated coverage decision needs legal review.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The workflow begins when a claim form arrives and ends with a versioned coverage rationale in the claim record.",
+    "The structured input contract is claim identifier, policy version, loss date, claimant name, document type, document version, and intake status; the claims intake team produces these fields.",
+    "Missing fields are entered manually. Scanned documents are extracted only to a fact sheet and move to manual review when a page or policy version is missing.",
+    "Native {OTHER} claim-system rules for mandatory fields are tested before custom code.",
+    "Two hours per 100 baseline hours are allowed for exception review and maintaining extraction rules."
+   ],
+   "unknowns": [
+    "The current claim-system fields and document access rights.",
+    "The rate of incomplete claim forms and the cases where legal review is required."
+   ],
+   "research_questions": [
+    "Which policy lines have stable clause structures?",
+    "How often do adjusters change a prepared coverage fact sheet?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Review extracted facts and the generated case rationale",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 15,
+      "counted_step_ids": [
+       "coverage_open",
+       "coverage_extract",
+       "coverage_record"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Maintain evidence-request rules and review extraction exceptions",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 25,
+    "high": 42,
+    "basis": "The low case assumes more incomplete documents and policy exceptions; two focal-role upkeep hours per 100 baseline hours are deducted."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 49.1,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 47.1,
+   "speedup": 1.890359,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-1031.00:21418",
+   "short": "Analyse investigation information and report findings and recommendations.",
+   "steps": [
+    {
+     "id": "investigation_collect",
+     "what": "Collect investigator reports, images, and witness records",
+     "actor": "claims adjuster",
+     "today_means": "document",
+     "systems": [
+      "OTHER",
+      "DOCS",
+      "EMAIL"
+     ],
+     "inputs": [
+      "investigation material",
+      "claim file"
+     ],
+     "outputs": [
+      "investigation bundle"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "claim-investigation-bundle",
+     "approval_refs": []
+    },
+    {
+     "id": "investigation_reconcile",
+     "what": "Reconcile findings against claim facts and policy",
+     "actor": "claims adjuster",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "investigation bundle",
+      "policy wording",
+      "claim file"
+     ],
+     "outputs": [
+      "finding map"
+     ],
+     "handoff_to": "claims adjuster",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "reconcile",
+      "input": "investigation bundle, policy wording, and claim file",
+      "output": "finding map showing supported, conflicting, and missing facts",
+      "check": "claims adjuster checks each finding against the source document",
+      "stop": "stop when sources conflict or the evidence is incomplete; mark the item for investigation",
+      "why_not_simpler": "The source material is mixed free text, images, and case-specific evidence."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "claim-finding-map",
+     "approval_refs": []
+    },
+    {
+     "id": "report_draft",
+     "what": "Draft findings and recommendations for the case",
+     "actor": "claims adjuster",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "finding map",
+      "claim file"
+     ],
+     "outputs": [
+      "investigation report"
+     ],
+     "handoff_to": "claims adjuster",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "checked finding map and report template",
+      "output": "draft investigation report",
+      "check": "claims adjuster verifies every conclusion, recommendation, and cited fact",
+      "stop": "stop if a conclusion lacks evidence; retain the template and request more investigation",
+      "why_not_simpler": "The report needs case-specific narrative from unstructured investigation material."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "claim-investigation-report",
+     "approval_refs": []
+    },
+    {
+     "id": "report_submit",
+     "what": "Recommend next action and submit the report",
+     "actor": "claims adjuster",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "investigation report"
+     ],
+     "outputs": [
+      "file recommendation"
+     ],
+     "handoff_to": "claims manager",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "The {WORKFLOW} flow builds an investigation bundle from the {OTHER} claim file and source documents in {DOCS}. It can reconcile facts and draft a report, but the claims adjuster validates the evidence and submits the recommendation.",
+   "previous_blocker": "Investigation material arrives in different formats and the report depends on case-specific judgement.",
+   "enabler_now": "A bounded reconciliation can make gaps and contradictions visible before the report is written.",
+   "still_hard": "A recommendation about liability, fraud, or settlement cannot be inferred safely from an incomplete file.",
+   "human_edge": "The claims adjuster assesses credibility, materiality, and the fairness of the recommended next action.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Run a daily evidence-gap review so investigators receive focused follow-up requests."
+   },
+   "altitude": "The claims adjuster moves from copying evidence into reports to testing the reasoning and directing further investigation.",
+   "reach": [
+    {
+     "role": "security management specialist",
+     "task": "Triage a suspected-fraud evidence gap",
+     "learn": "Use an evidence map and document preservation rules."
+    }
+   ],
+   "build_days": {
+    "coding": "4-6",
+    "integration": "3-6",
+    "testing_rollout": "5-9",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A bounded document workflow can assemble evidence and draft a report for human validation.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "The workflow begins with submitted investigation material and ends when a claims manager receives a versioned report.",
+    "The structured input contract is claim identifier, source type, source version, investigator, received date, and evidence status; the investigator or claims adjuster supplies these fields.",
+    "E-mail attachments and scans are stored as source documents; unreadable or conflicting material is marked for manual review.",
+    "Native case-record templates are tested before a custom report builder.",
+    "Two hours per 100 baseline hours cover report-template updates and reconciliation exceptions."
+   ],
+   "unknowns": [
+    "Which document types can be read from the claim record.",
+    "The proportion of reports that require legal or fraud-specialist review."
+   ],
+   "research_questions": [
+    "How often does a prepared finding map reveal missing evidence?",
+    "Which report sections have an approved template?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Check the reconciled finding map and report draft",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 18,
+      "counted_step_ids": [
+       "investigation_collect",
+       "investigation_reconcile",
+       "report_draft"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Review recurring reconciliation errors and update report templates",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 35,
+    "high": 53,
+    "basis": "The low case assumes mixed evidence and more report corrections; two focal-role upkeep hours per 100 baseline hours are deducted."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 60.25,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 58.25,
+   "speedup": 2.39521,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-1031.00:21426",
+   "short": "Pay and process claims within the designated authority level.",
+   "steps": [
+    {
+     "id": "payment_check",
+     "what": "Check settlement, payee, and authority limit",
+     "actor": "claims adjuster",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "approved settlement",
+      "payee details",
+      "authority limit"
+     ],
+     "outputs": [
+      "payment check"
+     ],
+     "handoff_to": "claims adjuster",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "claim-payment-authority-check",
+     "approval_refs": []
+    },
+    {
+     "id": "payment_create",
+     "what": "Create the payment instruction in the claim record",
+     "actor": "claims adjuster",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "BANK"
+     ],
+     "inputs": [
+      "payment check",
+      "approved settlement"
+     ],
+     "outputs": [
+      "payment instruction"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "compliance-and-risk",
+     "approver": "claims adjuster",
+     "labour_scope": "focal_role",
+     "shared_step_id": "claim-payment-instruction",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
+     "id": "payment_approve",
+     "what": "Approve the checked payment instruction",
+     "actor": "claims adjuster",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "payment instruction",
+      "payment check"
+     ],
+     "outputs": [
+      "approved payment instruction"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "claim-payment-approval",
+     "approval_refs": []
+    },
+    {
+     "id": "payment_exception",
+     "what": "Handle rejected payments and update the file",
+     "actor": "claims adjuster",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "EMAIL"
+     ],
+     "inputs": [
+      "payment status",
+      "claim file"
+     ],
+     "outputs": [
+      "payment exception record"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 40,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "claim-payment-exception",
+     "approval_refs": []
+    }
+   ],
+   "design": "A configured {OTHER} claim record checks payment amount and authority before creating an internal payment instruction for the {BANK} process. The claims adjuster approves the exact payment-instruction version; rejected payments return as a tracked exception.",
+   "previous_blocker": "Payment checks, authority limits, and finance handoff are often checked across separate records.",
+   "enabler_now": "Required fields, authority tables, and an internal payment interface can remove re-keying without removing approval.",
+   "still_hard": "Payee changes, settlements outside authority, and payment exceptions need an accountable claims adjuster.",
+   "human_edge": "The claims adjuster checks whether the settlement, payee, and authority are appropriate before money moves.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Review the daily rejected-payment queue before a claimant experiences a further delay."
+   },
+   "altitude": "The claims adjuster stops re-keying routine payments and focuses on authority exceptions and failed-payment causes.",
+   "reach": [
+    {
+     "role": "finance team",
+     "task": "Resolve payment-batch exceptions",
+     "learn": "Read payment status codes and match them to the approved instruction."
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "5-8",
+    "testing_rollout": "5-8",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A claims record can guide intake and case processing.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "A payment instruction can be checked against configured authority limits before human approval.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "The workflow begins with an approved settlement and ends when the payment status returns to the claim record.",
+    "The structured input contract is claim identifier, settlement version, approved amount, payee identifier, currency, authority limit, and payment status; the claims adjuster and finance team produce these fields.",
+    "The payment interface only writes an internal instruction. Any changed amount, payee, or settlement version voids the approval and requires a new check.",
+    "Native authority controls and payment export configuration are tested before custom integration.",
+    "Three hours per 100 baseline hours cover authority-table maintenance and payment-exception review."
+   ],
+   "unknowns": [
+    "Whether the claim record exposes authority limits and payment statuses.",
+    "Which payment changes require a second approver under the insurer's policy."
+   ],
+   "research_questions": [
+    "What proportion of payment instructions fail validation?",
+    "Can finance return a reason code for every rejected payment?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Approve the versioned payment instruction and review payment exceptions",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 18,
+      "counted_step_ids": [
+       "payment_check",
+       "payment_approve",
+       "payment_exception"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Maintain authority limits and review recurring payment failures",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 3
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "payment_create",
+     "approved_version": "settlement version and payment-instruction snapshot",
+     "approval_step_id": "payment_approve",
+     "approver": "claims adjuster"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 40,
+    "high": 58,
+    "basis": "The low case assumes a material share of payments fail checks and need correction; three focal-role upkeep hours per 100 baseline hours are deducted."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 66.75,
+   "incremental_hours_per_100_baseline_hours": 3,
+   "time_saved_pct": 63.75,
+   "speedup": 2.758621,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-1031.00:21423",
+   "short": "Investigate, evaluate, and settle claims fairly and promptly.",
+   "steps": [
+    {
+     "id": "settlement_plan",
+     "what": "Plan the investigation from the claim file",
+     "actor": "claims adjuster",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "claim file",
+      "policy wording"
+     ],
+     "outputs": [
+      "investigation plan"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "claim facts, policy wording, and prior correspondence",
+      "output": "investigation checklist with missing evidence",
+      "check": "claims adjuster checks the checklist before asking any party for information",
+      "stop": "stop for suspected fraud, serious injury, or contradictory facts; route for specialist handling",
+      "why_not_simpler": "The needed evidence depends on the facts and policy terms of each claim."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "claim-investigation-checklist",
+     "approval_refs": []
+    },
+    {
+     "id": "settlement_contact",
+     "what": "Speak with the claimant and relevant parties",
+     "actor": "claims adjuster",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY",
+      "OTHER"
+     ],
+     "inputs": [
+      "investigation plan",
+      "claim file"
+     ],
+     "outputs": [
+      "contact notes"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "settlement_negotiate",
+     "what": "Evaluate liability and negotiate a fair settlement",
+     "actor": "claims adjuster",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY",
+      "OTHER"
+     ],
+     "inputs": [
+      "contact notes",
+      "claim evidence",
+      "policy wording"
+     ],
+     "outputs": [
+      "settlement position"
+     ],
+     "handoff_to": "claimant",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "settlement_record",
+     "what": "Draft the settlement record and follow-up",
+     "actor": "claims adjuster",
+     "today_means": "document",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "settlement position",
+      "contact notes"
+     ],
+     "outputs": [
+      "settlement record",
+      "follow-up request"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "settlement position, checked notes, and approved template",
+      "output": "draft settlement record",
+      "check": "claims adjuster checks amounts, promises, and factual statements before saving",
+      "stop": "stop when terms are disputed or the template does not cover the case; write the record manually",
+      "why_not_simpler": "Settlement records need a case-specific account of a human conversation and agreement."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "claim-settlement-record",
+     "approval_refs": []
+    }
+   ],
+   "design": "The {WORKFLOW} flow prepares an investigation checklist from the {OTHER} claim record and stores checked contact notes. It leaves claimant conversations, liability evaluation, and settlement negotiation with the claims adjuster, while drafting the settlement record in {DOCS} for review.",
+   "previous_blocker": "The most valuable work is a case-specific investigation and difficult human conversation, not a repeatable form.",
+   "enabler_now": "A bounded checklist and draft record can reduce preparation and post-call administration.",
+   "still_hard": "Trust, negotiation, disputed facts, and fair settlement decisions remain human work.",
+   "human_edge": "The claims adjuster builds trust, tests credibility, and negotiates an outcome that a claimant can understand.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Give claimants with complex cases a clearer evidence checklist before their first detailed conversation."
+   },
+   "altitude": "The claims adjuster spends more of the week on complex conversations and settlement quality rather than gathering files and writing notes.",
+   "reach": [
+    {
+     "role": "insurance underwriter",
+     "task": "Identify recurrent loss patterns from settled claims",
+     "learn": "Interpret claim evidence and settlement reasons without exposing personal details."
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "2-4",
+    "testing_rollout": "4-7",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Claims tools can support guided intake and prepare evidence for review, but settlement conversations require human judgement.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "A checklist and record draft can prepare rather than replace a claims conversation.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "The workflow begins when a complex claim is assigned and ends when the checked settlement record is stored.",
+    "The structured input contract is claim identifier, policy version, loss type, claimant contact preference, investigation status, and settlement status; the claims intake team and claims adjuster produce these fields.",
+    "Conversation recordings or notes are not sent to a model by default. A role holder selects only the necessary checked notes for a draft.",
+    "Existing case checklists and templates are configured before custom drafting support.",
+    "One hour per 100 baseline hours covers checklist and template maintenance."
+   ],
+   "unknowns": [
+    "Which claim types require legal, medical, or fraud-specialist participation.",
+    "Whether callers consent to recording and how contact notes are retained."
+   ],
+   "research_questions": [
+    "Which evidence requests recur most often in complex claims?",
+    "How much time is spent writing post-call settlement records?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Review the prepared investigation checklist and settlement-record draft",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 10,
+      "counted_step_ids": [
+       "settlement_plan",
+       "settlement_record"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Maintain evidence checklists and settlement-record templates",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 5,
+    "high": 10,
+    "basis": "Most time remains in investigation, conversation, and negotiation; one focal-role upkeep hour per 100 baseline hours is deducted."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 28.0,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 27.0,
+   "speedup": 1.369863,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "Lead evidence quality, difficult conversations, and settlement consistency rather than copying documents between claim records.",
+  "reach": [
+   "Support insurance underwriters with recurring coverage and loss-pattern evidence.",
+   "Work with finance on payment-exception causes."
+  ],
+  "skills_to_grow": [
+   "evidence-quality review",
+   "workflow rule design",
+   "responsible use of document extraction"
+  ],
+  "ambitious_version": "A claims service that resolves complete, straightforward files faster while giving complex claimants better evidence requests and more time with an accountable adjuster."
+ },
+ "_meta": {
+  "model": "terra",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "13-1031.00",
+   "title": "Claims Adjusters, Examiners, and Investigators",
+   "tasks": 29,
+   "function": "Business operations"
+  },
+  "digest": "research/digests-minor/13-1.md",
+  "digest_sha256": "7a4c995306b30639d3fcfade08c36bfbbcf664eb9b7dc402d15055b4861b2737",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-15T14:23:06"
+ }
+}

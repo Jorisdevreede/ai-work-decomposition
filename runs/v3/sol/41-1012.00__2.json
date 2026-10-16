@@ -1,0 +1,1328 @@
+{
+ "tasks": [
+  {
+   "uid": "41-1012.00:9673",
+   "short": "Maintain purchase, sales and requisition records, reconcile discrepancies and obtain approval for corrections.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve purchase, sales and requisition records from operational systems.",
+     "actor": "sales supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "CRM",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "purchase orders",
+      "sales orders",
+      "requisitions"
+     ],
+     "outputs": [
+      "source transaction records"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read emailed purchase confirmations and supporting documents for missing transaction details.",
+     "actor": "sales supervisor",
+     "today_means": "document",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "purchase confirmations",
+      "source transaction records"
+     ],
+     "outputs": [
+      "supplementary transaction details"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Purchase confirmations with missing fields identified from source transaction records.",
+      "output": "Typed transaction fields with source passages and unresolved fields.",
+      "check": "Validate identifiers, dates, currency and totals; show source passages for uncertain fields.",
+      "stop": "One extraction and one repair per document; unresolved fields return to the supervisor.",
+      "why_not_simpler": "Some confirmations contain free text and changing layouts; structured records bypass the loop."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Enter missing details and attach supporting documents to transaction records.",
+     "actor": "sales supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "PROCUREMENT",
+      "CRM"
+     ],
+     "inputs": [
+      "source transaction records",
+      "supplementary transaction details",
+      "purchase confirmations"
+     ],
+     "outputs": [
+      "transaction records"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Copy transaction details into a local tracking workbook.",
+     "actor": "sales supervisor",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "transaction records"
+     ],
+     "outputs": [
+      "duplicate transaction log"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 15,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Compare recorded transactions against source orders and identify mismatches.",
+     "actor": "sales supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "CRM",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "transaction records",
+      "purchase orders",
+      "sales orders",
+      "requisitions"
+     ],
+     "outputs": [
+      "transaction exceptions"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Ask order clerks or the finance team to explain mismatches and propose corrections.",
+     "actor": "sales supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "transaction exceptions"
+     ],
+     "outputs": [
+      "correction proposals"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Approve financially material corrections and release them for entry.",
+     "actor": "finance team",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "correction proposals",
+      "purchase confirmations"
+     ],
+     "outputs": [
+      "approved corrections"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "audit-and-controls",
+     "approver": "finance team"
+    }
+   ],
+   "design": "A reusable import and reconciliation kit connects approved exports or APIs from the {ERP}, {CRM} and {PROCUREMENT}, with an exception queue in the {WORKFLOW}. A bounded extractor reads irregular confirmations from the {DOCS}; validated fields update records, while financially material corrections require finance approval and duplicate tracking in the {SPREADSHEET} ends.",
+   "previous_blocker": "Identifiers and document formats differ across systems. A local workbook often bridges gaps that existing configuration never resolved.",
+   "enabler_now": "Existing import features handle standard records. Faster development makes field mappings, validation rules and a small document extractor affordable.",
+   "still_hard": "Missing order references, credit notes and disputed ownership still require investigation. Financial posting permissions need careful separation from record maintenance.",
+   "human_edge": "The supervisor understands why a transaction looks unusual and can get the right colleague to resolve it.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A daily unresolved-order exception service for order clerks."
+   },
+   "altitude": "The supervisor spends less time copying records and more time resolving recurring order failures. Financial approval rights stay with the finance team.",
+   "reach": [
+    {
+     "role": "order clerk",
+     "task": "Resolve sales orders blocked by missing purchase references.",
+     "learn": "Order identifiers, credit-note handling and the boundary between order corrections and ledger postings."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-10",
+    "testing_rollout": "3-6",
+    "consent_and_access": "2-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Scheduled transaction imports, validation and exception reports can use deterministic technology.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The proposed document extraction loop is a design hypothesis, not a documented outcome for this occupation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The company already holds most transactions in the {ERP}, {CRM} and {PROCUREMENT}.",
+    "A local {SPREADSHEET} duplicates part of the system record and can be retired.",
+    "Record maintenance consumes more time than judgement; the judgement-heavy prior mainly describes exceptions.",
+    "Automatic writes add validated details to existing records; ledger postings and material corrections follow finance controls.",
+    "Build ranges estimate one team's pilot and include access approval, GDPR review and consultation under national rules where applicable."
+   ],
+   "unknowns": [
+    "Which system is authoritative for each transaction field?",
+    "Are imports, APIs and document access available to the team?",
+    "How many confirmations require free-text extraction?",
+    "Which corrections require finance approval?",
+    "Does the local workbook serve any unique control or reporting purpose?"
+   ],
+   "research_questions": [
+    "Can configured imports and document capture cover the required fields before custom extraction is built?",
+    "Which reconciliation rules catch missing or duplicate transactions without excessive false alerts?"
+   ],
+   "new_work": [
+    "Review uncertain document fields.",
+    "Resolve transaction exceptions and rejected updates.",
+    "Maintain identifier mappings and validation rules.",
+    "Monitor failed imports and retain correction histories."
+   ],
+   "time_saved_pct": 87,
+   "speedup": 7.69
+  },
+  {
+   "uid": "41-1012.00:9662",
+   "short": "Hire sales staff, arrange their training, coach them and evaluate their performance.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Define the staffing need and prepare a role brief.",
+     "actor": "sales supervisor",
+     "today_means": "document",
+     "systems": [
+      "HCM",
+      "DOCS"
+     ],
+     "inputs": [
+      "staffing plan",
+      "role profile"
+     ],
+     "outputs": [
+      "role brief"
+     ],
+     "handoff_to": "recruiter",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "hire-to-productive",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Review applications and propose candidates for interview.",
+     "actor": "recruiter",
+     "today_means": "system_screen",
+     "systems": [
+      "ATS"
+     ],
+     "inputs": [
+      "role brief",
+      "applications"
+     ],
+     "outputs": [
+      "interview shortlist"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 8,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "hire-to-productive",
+     "approver": "recruiter"
+    },
+    {
+     "id": "s3",
+     "what": "Interview candidates and assess relevant sales skills.",
+     "actor": "sales supervisor",
+     "today_means": "meeting_call",
+     "systems": [
+      "CALENDAR",
+      "ATS"
+     ],
+     "inputs": [
+      "interview shortlist",
+      "role brief"
+     ],
+     "outputs": [
+      "interview feedback"
+     ],
+     "handoff_to": "hiring manager",
+     "share_pct": 18,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "hire-to-productive",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Choose the candidate and approve the proposed offer terms.",
+     "actor": "hiring manager",
+     "today_means": "system_screen",
+     "systems": [
+      "ATS",
+      "HCM"
+     ],
+     "inputs": [
+      "interview feedback",
+      "role brief",
+      "offer terms"
+     ],
+     "outputs": [
+      "hiring decision",
+      "approved offer terms"
+     ],
+     "handoff_to": "recruiter",
+     "share_pct": 7,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "hire-to-productive",
+     "approver": "hiring manager"
+    },
+    {
+     "id": "s5",
+     "what": "Prepare the offer package, check it and send it for signature.",
+     "actor": "recruiter",
+     "today_means": "system_screen",
+     "systems": [
+      "ATS",
+      "ESIGN"
+     ],
+     "inputs": [
+      "hiring decision",
+      "approved offer terms",
+      "offer template"
+     ],
+     "outputs": [
+      "offer package"
+     ],
+     "handoff_to": "candidate",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "hire-to-productive",
+     "approver": "recruiter"
+    },
+    {
+     "id": "s6",
+     "what": "Select training modules and set onboarding milestones.",
+     "actor": "sales supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "LMS",
+      "HCM"
+     ],
+     "inputs": [
+      "role profile",
+      "training catalogue",
+      "start date"
+     ],
+     "outputs": [
+      "training plan"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "learning-to-certified",
+     "approver": "sales supervisor"
+    },
+    {
+     "id": "s7",
+     "what": "Demonstrate sales techniques, practise customer conversations and give coaching feedback.",
+     "actor": "sales supervisor",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "training plan",
+      "sales playbook"
+     ],
+     "outputs": [
+      "coaching notes"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 22,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "learning-to-certified",
+     "approver": "none"
+    },
+    {
+     "id": "s8",
+     "what": "Check course completions and follow up missing training.",
+     "actor": "sales supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "LMS"
+     ],
+     "inputs": [
+      "training plan",
+      "course completions"
+     ],
+     "outputs": [
+      "training exceptions"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "learning-to-certified",
+     "approver": "none"
+    },
+    {
+     "id": "s9",
+     "what": "Compile sales results, agreed goals and previous feedback for evaluation.",
+     "actor": "sales supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM",
+      "TALENT"
+     ],
+     "inputs": [
+      "sales results",
+      "performance goals",
+      "previous feedback",
+      "coaching notes"
+     ],
+     "outputs": [
+      "evaluation evidence"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "performance-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s10",
+     "what": "Discuss performance, hear the employee's explanation and agree an evaluation.",
+     "actor": "sales supervisor",
+     "today_means": "meeting_call",
+     "systems": [
+      "TALENT"
+     ],
+     "inputs": [
+      "evaluation evidence",
+      "performance goals"
+     ],
+     "outputs": [
+      "evaluation decision",
+      "development actions"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 12,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "performance-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s11",
+     "what": "Write and approve the evaluation record and development actions.",
+     "actor": "sales supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "TALENT"
+     ],
+     "inputs": [
+      "evaluation decision",
+      "development actions",
+      "evaluation evidence"
+     ],
+     "outputs": [
+      "approved evaluation record"
+     ],
+     "handoff_to": "employee",
+     "share_pct": 3,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "The supervisor's evaluation decision, development actions and selected supporting evidence.",
+      "output": "A draft evaluation record that expresses the supervisor's assessment.",
+      "check": "Trace statements to supplied notes; forbid inferred ratings or traits; supervisor checks meaning and fairness.",
+      "stop": "One draft and one requested revision; otherwise the supervisor writes the record.",
+      "why_not_simpler": "Individual explanations need free-text wording; fixed fields alone cannot express them clearly."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "performance-cycle",
+     "approver": "sales supervisor"
+    }
+   ],
+   "design": "Configure role templates, offer packages and onboarding flows across the {ATS}, {HCM}, {ESIGN} and {LMS}. A deterministic evidence pack combines agreed metrics from the {CRM} and {TALENT}; a bounded loop drafts the supervisor's evaluation record, with approval before storage or employee release.",
+   "previous_blocker": "Hiring, learning and performance records sit in separate systems. Much of the work also depends on trust, observation and individual circumstances.",
+   "enabler_now": "Existing templates and workflow configuration can remove repeated administration. Small integrations can assemble evidence without introducing automated candidate ranking or performance scoring.",
+   "still_hard": "Hiring judgement, effective coaching and fair evaluation remain demanding. GDPR, national employment rules and consultation can make employee-data changes slower than coding.",
+   "human_edge": "The supervisor hears context, notices confidence and skill gaps, and gives feedback the employee can act on.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A first-month sales practice clinic for new starters."
+   },
+   "altitude": "The supervisor uses saved preparation time for observed practice and individual development. Hiring, pay and promotion authority remain within existing delegations.",
+   "reach": [
+    {
+     "role": "sales representative",
+     "task": "Practise discovery questions and follow-up for a stalled opportunity.",
+     "learn": "The representative's sales cycle, customer objections and evidence of useful coaching."
+    },
+    {
+     "role": "sales engineer",
+     "task": "Teach new starters when to request technical qualification support.",
+     "learn": "Technical discovery boundaries and the information needed for a useful handoff."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "6-15",
+    "testing_rollout": "5-10",
+    "consent_and_access": "10-30"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Configured hiring, training and evaluation workflows can reduce administrative work while people make employment decisions.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Sales-agent experiments found differing responses to AI coaching and better results when managers relayed AI feedback.",
+     "grade": "E3",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Employment-related AI evaluation can fall within the EU AI Act's high-risk categories; applicability needs assessment.",
+     "grade": "E1",
+     "source": "[S7]"
+    },
+    {
+     "claim": "GDPR Article 22 concerns solely automated decisions with legal or similarly significant effects.",
+     "grade": "E1",
+     "source": "[S10]"
+    }
+   ],
+   "assumptions": [
+    "The sales supervisor contributes to hiring; a recruiter and hiring manager hold their stated responsibilities.",
+    "Steps include collaborator time so handoffs are visible; shares describe the combined task rather than one individual's timesheet.",
+    "Conversations and judgement dominate, consistent with the human-work prior.",
+    "The draft evaluation restates a human assessment and does not infer employee ratings.",
+    "Build ranges estimate one team's pilot; consultation and access are working effort, and elapsed approval time may be longer.",
+    "Employee-data use follows GDPR; consultation follows national rules, including Dutch works council requirements where applicable."
+   ],
+   "unknowns": [
+    "Who may shortlist candidates, approve offers and submit evaluations?",
+    "Which hiring, learning and performance systems are available?",
+    "Which metrics employees have been told are used for evaluation?",
+    "What consultation or consent requirements apply under national rules?",
+    "Whether drafting assistance is acceptable to employees and their representatives."
+   ],
+   "research_questions": [
+    "Can existing templates cover evaluation wording well enough to avoid a model loop?",
+    "What is the current legal classification of drafting a human assessment without scoring employees?",
+    "How should evidence packs display territory differences and missing data without implying a ranking?"
+   ],
+   "new_work": [
+    "Check offer packages before sending.",
+    "Review training plans and handle unsuitable module assignments.",
+    "Correct incomplete or misleading evaluation evidence.",
+    "Review drafted evaluation wording.",
+    "Maintain templates, access permissions and retention settings."
+   ],
+   "time_saved_pct": 23,
+   "speedup": 1.29
+  },
+  {
+   "uid": "41-1012.00:9663",
+   "short": "Develop sales methods, market expansion plans and promotional approaches with senior colleagues.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather sales, pipeline and campaign results for the planning discussion.",
+     "actor": "sales supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM",
+      "ERP",
+      "MARKETING_AUTOMATION"
+     ],
+     "inputs": [
+      "sales results",
+      "pipeline records",
+      "campaign results"
+     ],
+     "outputs": [
+      "commercial evidence pack"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "strategy-and-planning",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Prepare possible sales methods and market experiments for discussion.",
+     "actor": "sales supervisor",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "commercial evidence pack",
+      "customer feedback",
+      "sales playbook"
+     ],
+     "outputs": [
+      "commercial options brief"
+     ],
+     "handoff_to": "sales manager",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Commercial evidence, customer feedback and the current sales playbook.",
+      "output": "An options brief with hypotheses, supporting evidence, uncertainties and proposed tests.",
+      "check": "Trace factual claims to inputs; calculate figures deterministically; supervisor checks commercial plausibility.",
+      "stop": "One brief with at most three options and one revision; missing evidence stays explicit.",
+      "why_not_simpler": "Options require synthesising free-text feedback and writing testable hypotheses; metrics use deterministic code."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "strategy-and-planning",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Discuss options with sales, marketing and finance leaders.",
+     "actor": "sales supervisor",
+     "today_means": "meeting_call",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "commercial options brief",
+      "commercial evidence pack"
+     ],
+     "outputs": [
+      "preferred commercial approach"
+     ],
+     "handoff_to": "sales manager",
+     "share_pct": 40,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "strategy-and-planning",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Approve the pilot scope, budget and success criteria.",
+     "actor": "sales manager",
+     "today_means": "meeting_call",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "preferred commercial approach",
+      "budget limits"
+     ],
+     "outputs": [
+      "approved pilot decision"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "strategy-and-planning",
+     "approver": "sales manager"
+    },
+    {
+     "id": "s5",
+     "what": "Write the agreed procedure and pilot plan.",
+     "actor": "sales supervisor",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "approved pilot decision",
+      "sales playbook"
+     ],
+     "outputs": [
+      "pilot plan",
+      "procedure draft"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Approved pilot scope, budget, success criteria and current procedure.",
+      "output": "A pilot plan and proposed procedure changes with decision references.",
+      "check": "Match every commitment to the approved decision; flag missing owners, dates or instructions.",
+      "stop": "One draft and one repair; ambiguous commitments return to the supervisor.",
+      "why_not_simpler": "Each pilot changes free-text working instructions; a template supplies structure but not all wording."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Publish agreed instructions and allocate pilot actions to colleagues.",
+     "actor": "sales supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "PROJECT",
+      "DOCS"
+     ],
+     "inputs": [
+      "pilot plan",
+      "procedure draft",
+      "approved pilot decision"
+     ],
+     "outputs": [
+      "published procedure",
+      "pilot actions"
+     ],
+     "handoff_to": "sales team",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "project-intake-to-delivery",
+     "approver": "sales supervisor"
+    }
+   ],
+   "design": "A reusable evidence dashboard joins approved data from the {CRM}, {ERP} and {MARKETING_AUTOMATION}, while a bounded loop drafts an options brief in the {DOCS}. People choose and approve the pilot; configured flows in the {PROJECT} publish checked instructions, assign actions and collect results for the next discussion.",
+   "previous_blocker": "Evidence takes time to assemble, while commercial choices are too contextual for fixed rules. Meeting decisions often remain buried in notes and email.",
+   "enabler_now": "Small data joins and standard experiment templates are easier to build. Bounded drafting can turn supplied evidence and decisions into usable briefs.",
+   "still_hard": "Market uncertainty, competing priorities and weak attribution remain. A persuasive draft can still describe an unworkable idea.",
+   "human_edge": "The supervisor knows which methods sellers can execute and can negotiate trade-offs with other leaders.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A weekly stop, extend or redesign decision for one customer-segment pilot."
+   },
+   "altitude": "The supervisor arrives with evidence and testable options, then follows pilot outcomes more frequently. Budget and market-entry approval remain with the sales manager unless explicitly delegated.",
+   "reach": [
+    {
+     "role": "sales manager",
+     "task": "Decide whether to extend a customer-segment pilot.",
+     "learn": "Contribution margin, experimental uncertainty and delegated budget limits."
+    },
+    {
+     "role": "advertising sales agent",
+     "task": "Test a revised commercial proposition with prospective customers.",
+     "learn": "How to record objections and distinguish interest from a credible buying signal."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "4-10",
+    "testing_rollout": "3-7",
+    "consent_and_access": "2-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Microsoft Dynamics 365 Sales supports questions on sales data and open-deal risk signals.",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "The cited sales-data capability supports evidence preparation; it does not establish autonomous commercial strategy.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Deterministic metric packs and configured pilot tracking can support human strategy discussions.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Sales methods and market expansion are agreed with senior colleagues rather than decided by the supervisor alone.",
+    "Discussion and approval consume most time, consistent with the human-work prior.",
+    "The evidence pack uses existing approved data and avoids collecting new customer data by default.",
+    "Build ranges estimate one team, a small metric set and one pilot template.",
+    "Access review includes GDPR and any consultation required by national rules."
+   ],
+   "unknowns": [
+    "Which commercial metrics and cost data are accessible?",
+    "Who approves budgets, procedures and market-entry decisions?",
+    "Whether customer feedback can be used in an approved model environment.",
+    "What pilot volume permits meaningful measurement?",
+    "Which data-residency and retention requirements apply?"
+   ],
+   "research_questions": [
+    "Which existing dashboard configuration can produce the evidence pack without custom joins?",
+    "What comparison design can distinguish pilot effects from seasonality and account mix?",
+    "Can structured decision forms remove the need for the procedure-drafting loop?"
+   ],
+   "new_work": [
+    "Check draft hypotheses and their supporting evidence.",
+    "Maintain metric definitions and pilot templates.",
+    "Check published procedures against approved decisions.",
+    "Collect pilot outcomes and document inconclusive results.",
+    "Monitor model access, retention and data processing location."
+   ],
+   "time_saved_pct": 32,
+   "speedup": 1.48
+  },
+  {
+   "uid": "41-1012.00:9666",
+   "short": "Prepare sales-team schedules, assign duties and adjust coverage when availability or customer demand changes.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check contracted hours, leave and recorded absences.",
+     "actor": "sales supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "contracted hours",
+      "leave records",
+      "absence records"
+     ],
+     "outputs": [
+      "recorded availability"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Collect availability changes and scheduling preferences from employees.",
+     "actor": "sales supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "recorded availability",
+      "availability requests"
+     ],
+     "outputs": [
+      "availability plan"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Estimate coverage needs from customer appointments, open orders and planned campaigns.",
+     "actor": "sales supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM",
+      "ERP",
+      "MARKETING_AUTOMATION"
+     ],
+     "inputs": [
+      "customer appointments",
+      "sales orders",
+      "campaign plan"
+     ],
+     "outputs": [
+      "coverage requirements"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Build a draft roster that fits coverage, hours and available skills.",
+     "actor": "sales supervisor",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "availability plan",
+      "coverage requirements",
+      "skills matrix",
+      "working-time rules"
+     ],
+     "outputs": [
+      "draft schedule"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Discuss duty assignments and resolve coverage conflicts with employees.",
+     "actor": "sales supervisor",
+     "today_means": "meeting_call",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "draft schedule",
+      "skills matrix",
+      "employee preferences"
+     ],
+     "outputs": [
+      "duty assignments",
+      "schedule adjustments"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Check working-time limits, coverage and fairness before approving the schedule.",
+     "actor": "sales supervisor",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft schedule",
+      "duty assignments",
+      "schedule adjustments",
+      "working-time rules"
+     ],
+     "outputs": [
+      "approved schedule"
+     ],
+     "handoff_to": "sales supervisor",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "employee-lifecycle",
+     "approver": "sales supervisor"
+    },
+    {
+     "id": "s7",
+     "what": "Publish the approved schedule and notify employees of their duties.",
+     "actor": "sales supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "approved schedule",
+      "duty assignments"
+     ],
+     "outputs": [
+      "published schedule",
+      "schedule notifications"
+     ],
+     "handoff_to": "employee",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s8",
+     "what": "Resolve later absence or swap requests and approve schedule changes.",
+     "actor": "sales supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "CHAT"
+     ],
+     "inputs": [
+      "published schedule",
+      "schedule change requests",
+      "working-time rules"
+     ],
+     "outputs": [
+      "approved schedule changes"
+     ],
+     "handoff_to": "employee",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "absence-to-return",
+     "approver": "sales supervisor"
+    }
+   ],
+   "design": "Configure workforce scheduling in the {OTHER}, using approved availability from the {HCM} and deterministic coverage estimates from the {CRM} and {ERP}. Hard constraints check hours, rest and agreed qualifications; the supervisor resolves duty conflicts and approves schedules and changes before configured notifications publish them.",
+   "previous_blocker": "Coverage needs, absences and employee preferences arrive through different channels. A workbook is flexible, but checking constraints and distributing changes takes repeated effort.",
+   "enabler_now": "Existing workforce scheduling software already supports availability, constraints and swaps. Small mappings can adapt it to non-retail sales coverage without a model or autonomous agent.",
+   "still_hard": "Customer continuity, scarce skills and competing preferences require judgement. National working-time rules, collective agreements and consultation can constrain configuration.",
+   "human_edge": "The supervisor recognises hidden workload, negotiates fair compromises and protects important customer relationships.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A daily customer-coverage recovery decision when absence leaves a gap."
+   },
+   "altitude": "The supervisor spends less time assembling rosters and more time balancing customer coverage and employee needs. Schedule approval stays with the supervisor; contractual changes remain outside that authority.",
+   "reach": [
+    {
+     "role": "telemarketer",
+     "task": "Plan callback coverage around promised customer contact times.",
+     "learn": "Contact windows, queue demand and the skills needed for each call type."
+    },
+    {
+     "role": "sales engineer",
+     "task": "Reserve technical support capacity for qualified customer appointments.",
+     "learn": "Qualification requirements, preparation time and the cost of interrupting technical work."
+    }
+   ],
+   "build_days": {
+    "coding": "1-4",
+    "integration": "3-8",
+    "testing_rollout": "4-8",
+    "consent_and_access": "10-30"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Quinyx supports demand-based schedules, working-time constraints and employee swaps.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Kendra Scott's vendor case reports faster scheduling and personnel-budget savings; transfer to non-retail sales is unproven.",
+     "grade": "E3",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Dutch works council consent can apply to working-time schemes, staff-data arrangements and performance-monitoring tools.",
+     "grade": "E1",
+     "source": "[S6]"
+    },
+    {
+     "claim": "AI allocation based on individual behaviour or traits can fall within the EU AI Act's employment high-risk category.",
+     "grade": "E1",
+     "source": "[S7]"
+    }
+   ],
+   "assumptions": [
+    "The team needs shared customer coverage; many employees otherwise have stable contracted hours.",
+    "A {SPREADSHEET} currently bridges the roster, availability messages and system data.",
+    "Structured scheduling consumes more time than the meeting-heavy prior suggests; duty negotiation remains human.",
+    "The {OTHER} is a workforce scheduling system with suitable constraint and approval features.",
+    "Availability forms collect scheduling information without requesting medical explanations.",
+    "Build ranges estimate one team's configuration and include employee consultation, access and national-rule review.",
+    "Configured deterministic scheduling uses agreed qualifications and availability, without model-based employee scoring."
+   ],
+   "unknowns": [
+    "Does the company already have workforce scheduling capability?",
+    "Which national working-time rules and collective agreements apply?",
+    "What consultation or works council consent is required?",
+    "Which customer commitments and skills create hard coverage constraints?",
+    "How frequently do absences or swaps disrupt coverage?",
+    "Can employees submit availability through a structured form?"
+   ],
+   "research_questions": [
+    "Can existing scheduling configuration represent customer continuity and technical-support coverage?",
+    "Which deterministic coverage estimate is accurate enough for this sales team's workload?",
+    "What current EU AI Act requirements apply if later changes introduce AI-based employee allocation?"
+   ],
+   "new_work": [
+    "Review draft rosters and uncovered demand.",
+    "Resolve preference conflicts and exceptional duty assignments.",
+    "Maintain working-time constraints and qualification records.",
+    "Approve schedule changes and monitor failed notifications.",
+    "Review fairness concerns with employees and their representatives."
+   ],
+   "time_saved_pct": 62,
+   "speedup": 2.65
+  }
+ ],
+ "role": {
+  "altitude": "The sales supervisor spends less of the week copying records, preparing packs and rebuilding schedules. More time goes to coaching, customer coverage and commercial experiments; new budget or employment decision rights require explicit delegation.",
+  "reach": [
+   "Order clerks: resolve recurring order-record failures using transaction evidence.",
+   "Sales representatives: turn observed customer difficulties into practical coaching.",
+   "Sales engineers: coordinate qualified technical-support coverage.",
+   "Sales managers: evaluate a small commercial pilot with agreed financial and customer measures."
+  ],
+  "skills_to_grow": [
+   "Define authoritative records, identifiers and reconciliation rules.",
+   "Read pipeline and margin evidence without confusing correlation with cause.",
+   "Coach different skill levels and recognise feedback overload.",
+   "Evaluate schedule fairness and explain coverage trade-offs.",
+   "Check model drafts against source evidence and human decisions.",
+   "Understand GDPR, relevant EU AI Act obligations and national consultation rules."
+  ],
+  "ambitious_version": "The supervisor runs a weekly commercial improvement cycle: identify an order or coverage failure, coach the affected sellers, test one approved change and review its outcome with the sales manager. Reusable templates and approved exports provide a starting point before company-wide integration."
+ },
+ "job_code": "41-1012.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 268,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "text(await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3500}));\n"
+  ],
+  "job": {
+   "code": "41-1012.00",
+   "title": "First-Line Supervisors of Non-Retail Sales Workers",
+   "tasks": 18,
+   "function": "Sales and account management"
+  }
+ }
+}

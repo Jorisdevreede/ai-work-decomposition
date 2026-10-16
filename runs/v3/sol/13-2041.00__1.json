@@ -1,0 +1,1000 @@
+{
+ "tasks": [
+  {
+   "uid": "13-2041.00:1250",
+   "short": "Assess repayment risk and recommend a credit risk grade.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve the request and current exposure from the {OTHER} credit case system.",
+     "actor": "credit analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "credit request",
+      "credit file"
+     ],
+     "outputs": [
+      "exposure snapshot"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "compliance-and-risk",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read statement notes and credit history for material risk factors.",
+     "actor": "credit analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "financial statements",
+      "credit history",
+      "financial spread",
+      "ratio pack"
+     ],
+     "outputs": [
+      "risk factors"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Statement notes and credit history, with source pages and reporting dates.",
+      "output": "Cited risk factors, conflicting facts and unanswered questions.",
+      "check": "Require source references; reconcile figures to the approved financial spread; analyst checks material interpretations.",
+      "stop": "One extraction and one correction attempt per document; unresolved items enter the manual review queue.",
+      "why_not_simpler": "Fixed fields miss qualifications, contingent liabilities and unusual explanations in free text."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "compliance-and-risk",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Compare repayment capacity under base and stressed assumptions in the {SPREADSHEET}.",
+     "actor": "credit analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "financial spread",
+      "ratio pack",
+      "exposure snapshot",
+      "scenario assumptions"
+     ],
+     "outputs": [
+      "scenario results"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "compliance-and-risk",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Clarify material gaps with the relationship manager.",
+     "actor": "credit analyst",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "risk factors",
+      "scenario results"
+     ],
+     "outputs": [
+      "clarification response"
+     ],
+     "handoff_to": "relationship manager",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "compliance-and-risk",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Weigh evidence, select a risk grade and justify any policy exception.",
+     "actor": "credit analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "risk factors",
+      "scenario results",
+      "clarification response",
+      "credit policy"
+     ],
+     "outputs": [
+      "risk assessment"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve and record the assessment in the {OTHER} credit case system.",
+     "actor": "credit analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "risk assessment",
+      "credit file"
+     ],
+     "outputs": [
+      "approved risk assessment"
+     ],
+     "handoff_to": "credit report preparer",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "compliance-and-risk",
+     "approver": "credit analyst"
+    }
+   ],
+   "design": "The {DATA_PLATFORM} joins exposure from the {OTHER} credit case system to the validated financial spread and ratio pack, then calculates versioned stress scenarios. A bounded reading loop proposes cited risk factors from the {DOCS}; the analyst clarifies gaps, makes the judgement and approves the recorded assessment through the {WORKFLOW}. The lending decision remains with the delegated credit authority.",
+   "previous_blocker": "Data, qualitative evidence and scenario assumptions sit in separate places. Unusual accounting and business risks resist fixed rules.",
+   "enabler_now": "Existing interfaces and reusable calculation code can connect the evidence. Bounded text extraction can prepare a cited reading pack; faster development reduces the cost of fitting it to local records.",
+   "still_hard": "Forward-looking repayment judgement, weak evidence and correlated risks remain difficult. Natural-person credit assessments require additional legal and model-governance work.",
+   "human_edge": "Judge whether reported repayment capacity is credible, challenge optimistic assumptions and explain why an exception is defensible.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly sector stress watchlist prioritisation."
+   },
+   "altitude": "The analyst spends more time challenging assumptions and selecting exposures for deeper review. Lending approval limits remain unchanged; the analyst can refresh review priorities between formal credit reviews.",
+   "reach": [
+    {
+     "role": "financial risk specialist",
+     "task": "Prioritise a sector watchlist using shared stress scenarios.",
+     "learn": "Portfolio concentration, scenario calibration and the difference between individual and correlated risk."
+    }
+   ],
+   "build_days": {
+    "coding": "6-12",
+    "integration": "6-15",
+    "testing_rollout": "10-20",
+    "consent_and_access": "5-25"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Consented credit-data gathering can use an integration without a model; the cited example concerns Netherlands mortgage applications.",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "A product drafts credit memos from financial spreads and deal documents; this supports preparation, not autonomous risk approval.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "AI used to evaluate natural persons' creditworthiness falls within the AI Act's high-risk category, subject to its scope and exceptions.",
+     "grade": "E2",
+     "source": "[S12]"
+    },
+    {
+     "claim": "A score can constitute automated decision-making when the lender gives it a determining role.",
+     "grade": "E2",
+     "source": "[S15]"
+    },
+    {
+     "claim": "Scenario arithmetic and evidence retrieval are suitable for deterministic implementation; material risk judgement still needs accountable review.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline is a mid-size lender's commercial credit team; the {OTHER} slot means its credit case system.",
+    "Validated financial spreads and ratios are supplied by the ratio task; this task does not recreate them.",
+    "Judgement and clarification retain substantial time despite the high automation prior.",
+    "Build ranges cover one portfolio pilot with shared data components, not a full lending-platform replacement.",
+    "The access range includes permissions, GDPR assessment and employee consultation where national rules require it."
+   ],
+   "unknowns": [
+    "Whether the portfolio includes consumers, sole traders, corporate borrowers or mixed cases.",
+    "Which exposure feeds, credit-history sources and interfaces are available and licensed.",
+    "Who may approve risk grades and which exceptions require escalation.",
+    "Whether employee monitoring is introduced and consultation is required under national rules.",
+    "Whether approved scenario assumptions and usable historical outcomes already exist."
+   ],
+   "research_questions": [
+    "Which risk factors are missed when the reading loop is tested against previously reviewed cases?",
+    "How often do scenario results change the analyst's judgement rather than merely restate it?",
+    "Which current EU and national requirements apply to the actual borrower population and deployment date?"
+   ],
+   "new_work": [
+    "Check cited risk factors and resolve unsupported interpretations.",
+    "Maintain scenario versions, data freshness checks and source permissions.",
+    "Review changes in extraction quality and missing-data rates.",
+    "Record judgement overrides and investigate recurring policy exceptions."
+   ],
+   "time_saved_pct": 55,
+   "speedup": 2.25
+  },
+  {
+   "uid": "13-2041.00:1254",
+   "short": "Complete the loan application and submit an approved pack to the loan committee.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect the request, approved credit memo and supporting evidence.",
+     "actor": "credit analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "credit request",
+      "approved credit memo",
+      "approved risk assessment",
+      "credit file"
+     ],
+     "outputs": [
+      "application evidence pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Complete application fields in the {OTHER} credit case system.",
+     "actor": "credit analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "application evidence pack",
+      "application template"
+     ],
+     "outputs": [
+      "draft loan application"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Write the loan request summary for the committee.",
+     "actor": "credit analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft loan application",
+      "approved credit memo",
+      "committee template"
+     ],
+     "outputs": [
+      "loan request summary"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Check completeness, reconcile terms and approve the committee submission.",
+     "actor": "credit analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft loan application",
+      "loan request summary",
+      "credit policy",
+      "application evidence pack"
+     ],
+     "outputs": [
+      "approved committee pack",
+      "release instruction"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "judgement_step",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "opportunity-to-order",
+     "approver": "credit analyst"
+    },
+    {
+     "id": "s5",
+     "what": "Submit the approved pack to the loan committee through the {EMAIL}.",
+     "actor": "credit analyst",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "approved committee pack",
+      "release instruction",
+      "committee recipient list"
+     ],
+     "outputs": [
+      "submission receipt"
+     ],
+     "handoff_to": "loan committee",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    }
+   ],
+   "design": "The {WORKFLOW} gathers approved evidence from the {DOCS} and the {OTHER} credit case system, populates application fields and builds the committee pack. A deterministic generator reuses approved memo sections for the request summary; completeness and consistency checks support the analyst's release approval before internal submission through the {EMAIL}. The same checks provide relationship managers with a pre-submission readiness view.",
+   "previous_blocker": "Applications, evidence and committee templates use different fields and versions. Analysts rewrite summaries and reconcile terms by hand.",
+   "enabler_now": "A shared case identifier, versioned templates and reusable field mappings support deterministic assembly. Approved memo content removes the need for another writing loop.",
+   "still_hard": "Bespoke terms, late changes and committee-specific requirements create exceptions. Submission readiness does not establish that the proposed loan should be approved.",
+   "human_edge": "Spot material inconsistencies, decide whether the evidence is sufficient and defend the request when the committee challenges it.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Pre-submission readiness checks for relationship managers."
+   },
+   "altitude": "The analyst spends less time copying fields and chasing missing attachments, and more time resolving material conditions before committee review. Credit approval rights do not change.",
+   "reach": [
+    {
+     "role": "financial manager",
+     "task": "Prepare a committee agenda that distinguishes routine requests from material policy exceptions.",
+     "learn": "Delegated lending authority, committee information needs and escalation criteria."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Credit memo drafting from spreads, deal documents and institutional templates is available today.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Application population, required-field checks and routing can use deterministic mappings and configured approvals.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Reusing approved text avoids an additional generative step where the required summary follows a fixed structure.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The loan committee is internal; submission does not issue an offer, sign a contract or release funds.",
+    "The credit memo task supplies approved analysis, so this task counts application assembly rather than a second analysis.",
+    "The approved memo contains reusable sections that satisfy the committee's summary requirements.",
+    "The review step approves the exact pack, version and recipient list used by the submission step.",
+    "Build ranges assume shared case data and cover access review and consultation where national rules require it."
+   ],
+   "unknowns": [
+    "Whether the committee requires a separate summary or accepts referenced memo sections.",
+    "Which fields and attachments are mandatory for each loan type.",
+    "Whether the {OTHER} credit case system supports draft writes and version locking.",
+    "Who can approve submission and which changes invalidate that approval.",
+    "Whether committee membership, confidentiality restrictions and recipient lists are maintained reliably."
+   ],
+   "research_questions": [
+    "Which missing fields most often cause committee packs to be returned?",
+    "Can approved memo sections populate every required summary field without new interpretation?",
+    "Can the release mechanism prevent a changed pack from using an earlier approval?"
+   ],
+   "new_work": [
+    "Resolve failed field mappings and missing-evidence alerts.",
+    "Maintain committee templates, required-field rules and recipient lists.",
+    "Review changed terms and reapprove packs when necessary.",
+    "Investigate failed submissions and reconcile receipts to case records."
+   ],
+   "time_saved_pct": 88,
+   "speedup": 8.0
+  },
+  {
+   "uid": "13-2041.00:1255",
+   "short": "Generate validated financial ratios from customer financial statements.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect financial statements and available figures from the {OTHER} credit case system.",
+     "actor": "credit analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "credit file",
+      "financial statements"
+     ],
+     "outputs": [
+      "statement source pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Map statement lines into a comparable financial spread in the {SPREADSHEET}.",
+     "actor": "credit analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "DOCS"
+     ],
+     "inputs": [
+      "statement source pack",
+      "statement mapping rules"
+     ],
+     "outputs": [
+      "draft financial spread"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Unmapped statement lines, source pages, reporting periods, currencies and the approved accounting taxonomy.",
+      "output": "Proposed line mappings with source amounts and explicit unresolved items.",
+      "check": "Use deterministic mappings first; tie totals to statements; check units, signs and periods; review ambiguous classifications.",
+      "stop": "One extraction and one correction attempt per statement; unmatched or unreconciled lines require manual mapping.",
+      "why_not_simpler": "Structured imports and fixed mappings handle known formats; unfamiliar labels and layouts need bounded reading."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Run ratio calculations and assemble comparable periods in the {SPREADSHEET}.",
+     "actor": "credit analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "draft financial spread",
+      "ratio definitions"
+     ],
+     "outputs": [
+      "draft ratio pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Check ratios, reconcile exceptions and approve the financial spread.",
+     "actor": "credit analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "draft ratio pack",
+      "draft financial spread",
+      "financial statements",
+      "ratio definitions"
+     ],
+     "outputs": [
+      "financial spread",
+      "ratio pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "judgement_step",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "data-to-report",
+     "approver": "credit analyst"
+    },
+    {
+     "id": "s5",
+     "what": "Save the approved ratio pack to the {OTHER} credit case system.",
+     "actor": "credit analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "financial spread",
+      "ratio pack"
+     ],
+     "outputs": [
+      "ratio publication record"
+     ],
+     "handoff_to": "credit analyst",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "An intake job on the {DATA_PLATFORM} imports statement figures from the {OTHER} credit case system and the {DOCS}, using fixed mappings before a bounded extraction loop handles unfamiliar lines. Versioned formulas in the {SPREADSHEET} calculate ratios, while deterministic checks flag reconciliation failures, invalid denominators and incomparable periods. After exception review, the {WORKFLOW} publishes the approved spread and ratio pack for analysis and reporting.",
+   "previous_blocker": "Arithmetic is already automated in many teams. Manual imports, inconsistent statement mappings and weak source links leave substantial preparation and checking work.",
+   "enabler_now": "Reusable import code and validation rules can surround existing formulas. Bounded extraction handles unfamiliar statement formats without asking a model to perform arithmetic.",
+   "still_hard": "Accounting treatments, consolidation scope, restatements and exceptional items can make mathematically correct ratios misleading.",
+   "human_edge": "Decide whether statements are genuinely comparable and whether an unusual item should change the interpretation or calculation basis.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Monthly liquidity deterioration review for borrowers supplying monthly financial statements."
+   },
+   "altitude": "The analyst reviews mapping and comparability exceptions instead of rebuilding ratio packs. Credit decision rights remain unchanged; fresher validated figures support earlier review requests.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Reconcile financial statement classifications and explain restatements.",
+     "learn": "Consolidation boundaries, accounting policy differences and treatment of non-recurring items."
+    },
+    {
+     "role": "business intelligence analyst",
+     "task": "Build a liquidity trend view from approved ratio packs.",
+     "learn": "Period comparability, data lineage and suppression of misleading comparisons."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "4-10",
+    "testing_rollout": "6-12",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Evidence extraction and financial statement checking with human sign-off are available capabilities.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "A documented accounting deployment reports shorter financial statement review work; it does not establish savings for credit ratio generation.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "Financial ratios, denominator checks and statement tie-outs can be calculated deterministically.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Today's team already uses calculation programs; savings come mainly from mapping, preparation, checking and publication.",
+    "The {SPREADSHEET} contains reusable approved formulas; where equivalent configured calculations exist in the {OTHER} credit case system, use those.",
+    "Models propose source mappings and never calculate financial ratios.",
+    "This task produces the financial spread and ratio pack reused by analysis and reporting.",
+    "Build ranges cover a limited set of statement formats, with access review and consultation where national rules require it."
+   ],
+   "unknowns": [
+    "Which statement formats and structured imports dominate the workload.",
+    "Whether current formulas are approved, versioned and consistent across analysts.",
+    "Which accounting adjustments require analyst approval.",
+    "Whether source statements contain personal data or information about guarantors.",
+    "Whether monthly borrower statements are available for the proposed liquidity review."
+   ],
+   "research_questions": [
+    "What proportion of statement lines can fixed mappings handle without a model?",
+    "Which validation checks catch incorrect units, signs, periods and consolidation scopes?",
+    "How much analyst time is spent on arithmetic versus data preparation and comparability?"
+   ],
+   "new_work": [
+    "Review ambiguous statement mappings and reconciliation failures.",
+    "Maintain approved formulas, mappings and accounting adjustment rules.",
+    "Check extraction performance on new statement formats.",
+    "Reprocess restatements while retaining earlier approved versions."
+   ],
+   "time_saved_pct": 84,
+   "speedup": 6.06
+  },
+  {
+   "uid": "13-2041.00:1251",
+   "short": "Prepare a source-linked credit risk report for decision-makers.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve the approved assessment, ratios and evidence for the reporting date.",
+     "actor": "credit analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "approved risk assessment",
+      "financial spread",
+      "ratio pack",
+      "credit file"
+     ],
+     "outputs": [
+      "report evidence pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "compliance-and-risk",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Build financial tables and risk comparisons in the {SPREADSHEET}.",
+     "actor": "credit analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "report evidence pack",
+      "report template"
+     ],
+     "outputs": [
+      "report tables"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "compliance-and-risk",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Draft the risk rationale, uncertainties and recommended conditions.",
+     "actor": "credit analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "report evidence pack",
+      "report tables",
+      "report template"
+     ],
+     "outputs": [
+      "draft credit memo"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Approved risk assessment, validated report tables, cited evidence and the report template.",
+      "output": "Draft narrative with source references, stated uncertainty and unchanged approved recommendations.",
+      "check": "Bind figures to validated fields; require references for factual claims; flag contradictions and new recommendations for analyst review.",
+      "stop": "One draft and one correction pass per report; unresolved sections revert to a factual template for manual completion.",
+      "why_not_simpler": "Tables and standard sections are deterministic, but case-specific explanations require synthesis of free-text evidence."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "compliance-and-risk",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Challenge the conclusions and approve the memo and intended internal recipients.",
+     "actor": "credit analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft credit memo",
+      "report evidence pack",
+      "report tables",
+      "credit policy"
+     ],
+     "outputs": [
+      "approved credit memo",
+      "release instruction"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "credit analyst"
+    },
+    {
+     "id": "s5",
+     "what": "Archive the approved memo in the {DOCS} and attach it to the credit case.",
+     "actor": "credit analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "approved credit memo",
+      "release instruction"
+     ],
+     "outputs": [
+      "memo publication record"
+     ],
+     "handoff_to": "credit application preparer",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "compliance-and-risk",
+     "approver": "none"
+    }
+   ],
+   "design": "A generator on the {DATA_PLATFORM} binds approved assessment fields and ratio tables into a versioned template in the {DOCS}. A bounded drafting loop explains the approved findings with source references; the analyst challenges the narrative and authorises publication through the {WORKFLOW}. The same approved content can produce a short risk briefing for relationship managers.",
+   "previous_blocker": "Analysts assemble tables, copy evidence and rewrite narratives across disconnected records. Templates do not reliably preserve the link between a claim and its source.",
+   "enabler_now": "Structured assessments, reusable templates and bounded drafting can produce a reviewable first draft. Deterministic figure binding and source references make checking more focused.",
+   "still_hard": "A fluent explanation can hide weak evidence or overstate certainty. Reviewers must test whether the conclusions follow from the evidence and remain current.",
+   "human_edge": "Explain what the figures fail to capture, distinguish evidence from inference and defend a recommendation under challenge.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Approved risk briefings for relationship managers."
+   },
+   "altitude": "The analyst spends more time testing explanations and discussing material risks, with less report assembly. Report approval and lending decision rights remain unchanged.",
+   "reach": [
+    {
+     "role": "financial manager",
+     "task": "Turn credit findings into a concise decision briefing.",
+     "learn": "Decision materiality, conditions of approval and communication of uncertainty."
+    },
+    {
+     "role": "bill and account collector",
+     "task": "Use approved risk findings to prepare an early arrears handover.",
+     "learn": "Collection triggers, permitted information sharing and separation of risk concerns from payment facts."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "3-8",
+    "testing_rollout": "6-12",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Credit memo drafting from spreads, deal documents and institutional templates is available today.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "The digest describes a European bank deployment through a vendor account; it does not establish independently verified savings for this team.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Deterministic figure binding and versioned publication can reduce transcription work without delegating the credit decision.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The consumer credit directive provides rights concerning explanations and human intervention in automated creditworthiness assessments.",
+     "grade": "E2",
+     "source": "[S16]"
+    }
+   ],
+   "assumptions": [
+    "The risk analysis task supplies the approved judgement; this task presents and explains it.",
+    "The ratio task supplies validated financial tables; reporting does not repeat financial spreading.",
+    "The generator cannot introduce a new risk grade, lending condition or recommendation without renewed analyst approval.",
+    "The approval covers the exact published version and its intended internal audience.",
+    "Build ranges assume shared evidence services and include permissions, GDPR review and consultation where national rules require it."
+   ],
+   "unknowns": [
+    "Which report templates and approval levels are mandatory.",
+    "Whether current assessments separate source facts, assumptions and recommendations.",
+    "Which recipients may access borrower-level evidence.",
+    "Whether consumer-facing explanations are within this team's remit.",
+    "Whether evidence versions and retention schedules are already controlled."
+   ],
+   "research_questions": [
+    "Can reviewers trace every material narrative claim to current evidence?",
+    "Which report sections need synthesis rather than direct reuse of approved text?",
+    "Does the short briefing retain the uncertainties and conditions that matter to relationship managers?"
+   ],
+   "new_work": [
+    "Review narrative claims, source references and uncertainty statements.",
+    "Maintain templates, drafting instructions and approved terminology.",
+    "Invalidate drafts when underlying assessments or evidence change.",
+    "Track publication versions and correct misleading or unsupported passages."
+   ],
+   "time_saved_pct": 76,
+   "speedup": 4.17
+  }
+ ],
+ "role": {
+  "altitude": "The week shifts from collecting figures and assembling packs toward challenging repayment assumptions, resolving exceptions and explaining material risks. Analysts retain accountable judgement; lending authority remains with the existing delegated roles.",
+  "reach": [
+   "Work with financial risk specialists on sector stress and review priorities.",
+   "Work with accountants on statement comparability and unusual accounting treatments.",
+   "Work with financial managers on committee readiness and decision briefings.",
+   "Work with business intelligence analysts on timely, validated liquidity trends."
+  ],
+  "skills_to_grow": [
+   "Financial data lineage and deterministic validation.",
+   "Accounting comparability and treatment of exceptional items.",
+   "Scenario design and portfolio concentration analysis.",
+   "Critical review of generated explanations.",
+   "EU credit-data requirements and applicable national rules.",
+   "Clear communication of evidence, uncertainty and policy exceptions."
+  ],
+  "ambitious_version": "A shared credit insight service supplies validated ratios, current stress scenarios, committee-ready evidence and approved risk briefings. Analysts use that capacity to identify deterioration earlier and defend difficult credit judgements."
+ },
+ "job_code": "13-2041.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 218,
+  "attempts": 1,
+  "checks": [
+   "13-2041.00:1254 s4: judgement step marked deterministic",
+   "13-2041.00:1255 s4: judgement step marked deterministic"
+  ],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3000});text(r.output);\n"
+  ],
+  "job": {
+   "code": "13-2041.00",
+   "title": "Credit Analysts",
+   "tasks": 11,
+   "function": "Finance"
+  }
+ }
+}

@@ -1,0 +1,1219 @@
+{
+ "tasks": [
+  {
+   "uid": "41-4012.00:20267",
+   "short": "Prepare sales contracts and order forms from agreed products, prices and terms.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect agreed products, quantities, prices and customer details from the {CRM}.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "agreed terms",
+      "customer record"
+     ],
+     "outputs": [
+      "deal record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check product codes, availability and permitted prices in the {ERP}.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "deal record",
+      "item master",
+      "price list",
+      "stock record"
+     ],
+     "outputs": [
+      "validated order lines"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Populate contract and order templates stored in the {DOCS}.",
+     "actor": "sales representative",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "validated order lines",
+      "agreed terms",
+      "contract template",
+      "order template"
+     ],
+     "outputs": [
+      "draft contract",
+      "draft order"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Review drafts for customer commitments and departures from approved terms.",
+     "actor": "sales representative",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft contract",
+      "draft order",
+      "approval policy"
+     ],
+     "outputs": [
+      "reviewed contract",
+      "reviewed order",
+      "terms exceptions"
+     ],
+     "handoff_to": "contract approver",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "judgement_step",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve commercial or legal exceptions within the relevant mandate.",
+     "actor": "contract approver",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "reviewed contract",
+      "reviewed order",
+      "terms exceptions",
+      "approval policy"
+     ],
+     "outputs": [
+      "contract approval"
+     ],
+     "handoff_to": "sales representative",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "opportunity-to-order",
+     "approver": "contract approver"
+    },
+    {
+     "id": "s6",
+     "what": "Send approved documents to the customer for acceptance or signature.",
+     "actor": "sales representative",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ESIGN"
+     ],
+     "inputs": [
+      "reviewed contract",
+      "reviewed order",
+      "contract approval",
+      "customer record"
+     ],
+     "outputs": [
+      "issued contract",
+      "issued order"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "opportunity-to-order",
+     "approver": "sales representative"
+    },
+    {
+     "id": "s7",
+     "what": "Register accepted documents and transfer the order to the order desk.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM",
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "accepted contract",
+      "accepted order"
+     ],
+     "outputs": [
+      "sales order",
+      "contract record"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Connect the {CRM} deal record to validation rules in the {ERP} and approved templates in the {DOCS}. A workflow in the {WORKFLOW} routes exceptions, requires approval before external issue through the {ESIGN}, and registers accepted orders without retyping.",
+   "previous_blocker": "Agreed terms, price checks and templates were maintained separately. Exceptions made blanket automation unattractive.",
+   "enabler_now": "Existing configuration and template tools cover standard cases. AI coding can reduce the effort of building validators and system connections.",
+   "still_hard": "Customer clauses, conflicting commercial commitments and unreliable availability data need attention. Acceptance must match the exact issued document version.",
+   "human_edge": "The representative recognises commitments that would damage trust or margin. Authorised approvers accept commercial and legal risk.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Same-day standard contract pack for repeat buyers"
+   },
+   "altitude": "The week contains fewer document edits and more negotiation preparation. The representative can release standard packs within an agreed mandate; exception approval rights remain with authorised approvers.",
+   "reach": [
+    {
+     "role": "order clerk",
+     "task": "Resolve order-line validation failures before fulfilment.",
+     "learn": "Item codes, delivery constraints and order acceptance checks."
+    },
+    {
+     "role": "sales manager",
+     "task": "Evaluate discount and payment-term exceptions.",
+     "learn": "Margin calculations and the commercial approval matrix."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Elfsquad links configuration and quoting to ERP and CRM, with human checks.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "The ZARGES vendor case reports quote preparation falling from about 15 minutes to 90 seconds; contract preparation may differ.",
+     "grade": "E3",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Controlled templates, price rules and acceptance checks can handle standard contract packs without a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline is a mid-size European B2B seller using the {CRM}, {ERP} and document templates.",
+    "Shares are estimated task labour across the listed actors. Conditional approvals are averaged across cases.",
+    "Agreed terms can be captured in structured fields; missing fields become exceptions.",
+    "The document-heavy prior supports template automation, but does not imply that a model is needed.",
+    "GDPR applies to customer contacts and signatures. EU AI Act duties depend on the actual deployment; national rules vary."
+   ],
+   "unknowns": [
+    "Which system connections and template features are licensed and accessible?",
+    "What proportion of contracts contains bespoke clauses?",
+    "Who can approve discounts, legal clauses and external issue?",
+    "What constitutes binding customer acceptance?"
+   ],
+   "research_questions": [
+    "Can standard templates represent the most frequent contract variants?",
+    "Which validation failures account for most order-desk rework?",
+    "Can acceptance events identify the exact document version automatically?"
+   ],
+   "new_work": [
+    "Review missing terms and failed product or price checks.",
+    "Maintain templates, clause versions and approval thresholds.",
+    "Monitor duplicate orders and failed acceptance transfers.",
+    "Check recipients and final versions before external issue."
+   ],
+   "time_saved_pct": 81,
+   "speedup": 5.33
+  },
+  {
+   "uid": "41-4012.00:8119",
+   "short": "Choose and provide product samples and relevant catalogs to customers.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Discuss the customer's intended use and sample needs.",
+     "actor": "sales representative",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "customer requirements"
+     ],
+     "outputs": [
+      "sample requirements"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Choose samples and catalog sections using product information in the {DOCS}.",
+     "actor": "sales representative",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "sample requirements",
+      "product catalog",
+      "product guidance"
+     ],
+     "outputs": [
+      "sample selection",
+      "catalog selection"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Check sample availability and permitted quantities in the {ERP}.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "sample selection",
+      "stock record",
+      "sample policy"
+     ],
+     "outputs": [
+      "sample availability"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Send the selected catalog to the customer through the {EMAIL}.",
+     "actor": "sales representative",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "catalog selection",
+      "customer record"
+     ],
+     "outputs": [
+      "catalog delivery"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Request selected samples from the warehouse through the {EMAIL}.",
+     "actor": "sales representative",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "sample selection",
+      "sample availability",
+      "delivery address"
+     ],
+     "outputs": [
+      "sample request"
+     ],
+     "handoff_to": "warehouse team",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Pick, pack and dispatch the requested physical samples.",
+     "actor": "warehouse team",
+     "today_means": "in_person",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "sample request",
+      "sample stock"
+     ],
+     "outputs": [
+      "sample parcel",
+      "dispatch record"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Present samples and explain differences during the customer visit.",
+     "actor": "sales representative",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "sample selection",
+      "product guidance",
+      "customer requirements"
+     ],
+     "outputs": [
+      "customer feedback"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s8",
+     "what": "Record sample delivery, customer feedback and follow-up in the {CRM}.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "dispatch record",
+      "catalog delivery",
+      "customer feedback"
+     ],
+     "outputs": [
+      "sample history",
+      "follow-up action"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    }
+   ],
+   "design": "Use a sample-request form in the {CRM} to check the {ERP}, send selected catalogs from the {DOCS}, and create warehouse requests in the {OPS_SYSTEM}. Delivery events update sample history automatically, while people select products, handle physical samples and discuss customer reactions.",
+   "previous_blocker": "Physical samples and customer conversations dominated the task. Small requests were passed through a mailbox without a shared delivery record.",
+   "enabler_now": "Existing forms, stock lookups and notifications can connect the administrative steps. A model adds little to this flow.",
+   "still_hard": "Texture, finish, fit and practical suitability require physical evaluation. Sample stock may not be recorded as ordinary saleable stock.",
+   "human_edge": "The representative notices hesitation and helps customers compare physical qualities that a catalog cannot convey.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "A remote sample-request service for small repeat buyers"
+   },
+   "altitude": "The representative spends less time chasing parcels and attaching catalogs. They gain visibility into sample follow-up, but no additional pricing or fulfilment approval rights.",
+   "reach": [
+    {
+     "role": "product demonstrator",
+     "task": "Run a structured comparison of competing sample options.",
+     "learn": "Demonstration techniques and questions that reveal practical suitability."
+    },
+    {
+     "role": "order clerk",
+     "task": "Coordinate sample dispatch and resolve address or stock exceptions.",
+     "learn": "Warehouse request fields and delivery-status handling."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "3-7",
+    "testing_rollout": "3-6",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Forms, stock checks and dispatch notifications can automate sample administration without replacing physical demonstrations.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Catalogs are approved public materials and are sent in response to customer requests.",
+    "Physical handling and customer discussion dominate, consistent with the human-work prior.",
+    "Shares include warehouse labour associated with fulfilling sample requests.",
+    "GDPR applies to contact details and delivery addresses. National rules govern promotional communications; EU AI Act duties apply if AI is later added."
+   ],
+   "unknowns": [
+    "Are sample items and quantities recorded in the {ERP} or {OPS_SYSTEM}?",
+    "Which sample requests require approval because of value or restricted products?",
+    "Can customers request samples remotely today?",
+    "Who maintains current catalogs and language variants?"
+   ],
+   "research_questions": [
+    "Can requested catalogs and sample dispatch use existing configuration?",
+    "Which sample requests most often fail because of stock or address problems?",
+    "Would small repeat buyers use a remote request form?"
+   ],
+   "new_work": [
+    "Maintain catalog versions and sample-request limits.",
+    "Handle missing stock, incorrect addresses and failed delivery events.",
+    "Capture customer feedback and choose the next follow-up action.",
+    "Keep sample availability records accurate."
+   ],
+   "time_saved_pct": 28,
+   "speedup": 1.39
+  },
+  {
+   "uid": "41-4012.00:8122",
+   "short": "Track market changes, product innovations and competitor offerings to inform sales decisions.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read trade publications and competitor pages using a browser and the {DOCS}.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "source list",
+      "product catalog"
+     ],
+     "outputs": [
+      "market source set"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "market-insight",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Ask customers and distributors about demand, alternatives and observed prices.",
+     "actor": "sales representative",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "customer relationships",
+      "market questions"
+     ],
+     "outputs": [
+      "market observations"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "market-insight",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Update competitor comparisons and source notes in the {SPREADSHEET}.",
+     "actor": "sales representative",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "market source set",
+      "market observations",
+      "product catalog"
+     ],
+     "outputs": [
+      "competitor comparison"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Approved source documents and manually captured market observations.",
+      "output": "A sourced comparison of products, prices and innovations, with uncertainty labels.",
+      "check": "Require a supporting passage for every claim; check dates, currencies, units and price conditions.",
+      "stop": "One extraction and one correction per document, within a fixed document limit; failed rows go to review.",
+      "why_not_simpler": "Catalogs and trade articles express comparable facts in inconsistent prose and layouts."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "market-insight",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Compare observations with internal sales trends in the {ERP} and {BI}.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "BI"
+     ],
+     "inputs": [
+      "competitor comparison",
+      "sales records"
+     ],
+     "outputs": [
+      "market trend view"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "market-insight",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Assess which changes matter for assigned accounts and prepare recommendations.",
+     "actor": "sales representative",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "market trend view",
+      "competitor comparison",
+      "account priorities"
+     ],
+     "outputs": [
+      "market recommendations"
+     ],
+     "handoff_to": "sales manager",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "strategy-and-planning",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Discuss recommendations and agree sales priorities with the sales manager.",
+     "actor": "sales representative",
+     "today_means": "meeting_call",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "market recommendations"
+     ],
+     "outputs": [
+      "sales priorities"
+     ],
+     "handoff_to": "sales team",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "strategy-and-planning",
+     "approver": "sales manager"
+    }
+   ],
+   "design": "A scheduled job on the {DATA_PLATFORM} collects permitted sources and detects changes, then a bounded extraction loop drafts a sourced comparison in the {DOCS}. The {BI} combines verified observations with sales data from the {ERP}; the representative interprets account implications and agrees team actions with the sales manager.",
+   "previous_blocker": "Useful information was scattered across publications, catalogs and conversations. Comparing claims required reading inconsistent formats.",
+   "enabler_now": "Scheduled retrieval and change detection are established techniques. Bounded extraction can turn prose into comparable fields with supporting passages.",
+   "still_hard": "Competitor sales are often unavailable, and advertised prices may exclude discounts or delivery. Customer anecdotes can misrepresent wider demand.",
+   "human_edge": "The representative tests weak signals against customer relationships and distinguishes a temporary promotion from a meaningful market shift.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly account outreach priorities based on verified product and price changes"
+   },
+   "altitude": "The week shifts from repeated browsing toward customer interviews and interpreting changes. The representative can choose account follow-up within the agreed sales priorities; pricing and assortment decisions still require their existing approvers.",
+   "reach": [
+    {
+     "role": "sales manager",
+     "task": "Translate demand signals into a revised sales forecast.",
+     "learn": "Forecast assumptions, segment weighting and uncertainty."
+    },
+    {
+     "role": "technical sales representative",
+     "task": "Assess whether a product innovation changes customer suitability.",
+     "learn": "Specification comparison and evidence for product claims."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-8",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Scheduled source collection, change alerts and sourced document summaries can support market monitoring.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Public competitor information cannot establish undisclosed sales volumes or negotiated prices.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Source access is permitted; retrieval uses a fixed source list rather than autonomous browsing.",
+    "Customer conversations remain human and are captured manually; call recording is outside this design.",
+    "The baseline assigns 35% to conversations, below the meeting-heavy prior, because document comparison is a separate recurring activity.",
+    "Unverified observations remain labelled and cannot silently become verified facts.",
+    "GDPR applies to identifiable customer observations. EU AI Act duties and national communication rules depend on use."
+   ],
+   "unknowns": [
+    "Which publications and competitor sources may be collected and retained?",
+    "Which product families and account segments matter most?",
+    "How are customer observations currently recorded?",
+    "Who can change sales priorities, prices and assortment?"
+   ],
+   "research_questions": [
+    "Which sources provide timely facts rather than repeated promotional claims?",
+    "Can extraction preserve price conditions and distinguish comparable products?",
+    "Which alerts would cause a concrete account action?"
+   ],
+   "new_work": [
+    "Review unsupported claims and ambiguous product matches.",
+    "Maintain source permissions, retrieval rules and comparison fields.",
+    "Remove stale prices and duplicate announcements.",
+    "Test market signals with customers before recommending changes."
+   ],
+   "time_saved_pct": 50,
+   "speedup": 2.0
+  },
+  {
+   "uid": "41-4012.00:8124",
+   "short": "Maintain sales records, prepare budgets and reports, and submit expense claims.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Update sales activity, order status and next actions in the {CRM}.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "sales order",
+      "customer feedback",
+      "follow-up action"
+     ],
+     "outputs": [
+      "sales records"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Combine exports from the {CRM} and {ERP} in the {SPREADSHEET}.",
+     "actor": "sales representative",
+     "today_means": "spreadsheet",
+     "systems": [
+      "CRM",
+      "ERP",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "sales records",
+      "invoice records",
+      "sales targets"
+     ],
+     "outputs": [
+      "sales reporting dataset"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Reconcile reporting totals and investigate mismatches in the {SPREADSHEET}.",
+     "actor": "sales representative",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "sales reporting dataset",
+      "invoice records"
+     ],
+     "outputs": [
+      "validated sales dataset",
+      "reporting exceptions"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Calculate a sales budget baseline using the {SPREADSHEET}.",
+     "actor": "sales representative",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "validated sales dataset",
+      "sales targets",
+      "budget rules"
+     ],
+     "outputs": [
+      "budget baseline"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Adjust budget assumptions for account changes, demand and planned activity.",
+     "actor": "sales representative",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "budget baseline",
+      "market recommendations",
+      "account priorities"
+     ],
+     "outputs": [
+      "budget assumptions",
+      "draft sales budget"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Compile sales results and the budget into reporting templates in the {DOCS}.",
+     "actor": "sales representative",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "validated sales dataset",
+      "draft sales budget",
+      "budget assumptions",
+      "report template"
+     ],
+     "outputs": [
+      "sales report",
+      "budget submission"
+     ],
+     "handoff_to": "sales manager",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Review submitted assumptions and approve the sales budget.",
+     "actor": "sales manager",
+     "today_means": "meeting_call",
+     "systems": [
+      "DOCS",
+      "CALENDAR"
+     ],
+     "inputs": [
+      "budget submission",
+      "sales report"
+     ],
+     "outputs": [
+      "approved sales budget"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "plan-to-forecast",
+     "approver": "sales manager"
+    },
+    {
+     "id": "s8",
+     "what": "Attach receipts, enter business purpose and submit claims in the {EXPENSE}.",
+     "actor": "sales representative",
+     "today_means": "system_screen",
+     "systems": [
+      "EXPENSE"
+     ],
+     "inputs": [
+      "expense receipts",
+      "expense transactions",
+      "expense policy"
+     ],
+     "outputs": [
+      "expense claim"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "expense-to-reimburse",
+     "approver": "none"
+    },
+    {
+     "id": "s9",
+     "what": "Check expense evidence and approve or return the claim.",
+     "actor": "finance team",
+     "today_means": "system_screen",
+     "systems": [
+      "EXPENSE"
+     ],
+     "inputs": [
+      "expense claim",
+      "expense policy"
+     ],
+     "outputs": [
+      "expense decision"
+     ],
+     "handoff_to": "sales representative",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "expense-to-reimburse",
+     "approver": "finance team"
+    }
+   ],
+   "design": "Scheduled connections on the {DATA_PLATFORM} reconcile the {CRM} and {ERP}, feed a {BI} report, and generate budget submissions in the {DOCS}. Configure the {EXPENSE} for transaction import, required evidence and policy checks, while people supply business purpose, set forecast assumptions and approve budgets or claims.",
+   "previous_blocker": "Sales and finance used different definitions, exports and reporting periods. Expense paperwork formed a separate administrative queue.",
+   "enabler_now": "Configuration, scheduled data joins and template generation already cover most mechanics. AI coding can reduce the effort of implementing mappings and reconciliation checks.",
+   "still_hard": "Returns, credits, revenue timing and account ownership can distort totals. Forecast assumptions and expense legitimacy remain human judgements.",
+   "human_edge": "The representative explains why an account will grow or shrink and supplies honest business context that transaction records cannot establish.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly territory forecast updates before the monthly budget review"
+   },
+   "altitude": "The representative spends less time assembling reports and more time testing account assumptions. They gain faster scenario preparation and can propose territory changes; budget and reimbursement approval rights remain with their approvers.",
+   "reach": [
+    {
+     "role": "sales manager",
+     "task": "Review territory forecast changes and allocate selling effort.",
+     "learn": "Forecast calibration, capacity constraints and scenario comparison."
+    },
+    {
+     "role": "order clerk",
+     "task": "Resolve discrepancies between booked orders, returns and invoiced sales.",
+     "learn": "Order status, credit notes and sales-period definitions."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-30"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Sales reporting, record synchronisation and expense policy checks generally use deterministic rules.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The cited Dutch works-council rule covers arrangements for observing employee behaviour or performance.",
+     "grade": "E1",
+     "source": "[S13]"
+    }
+   ],
+   "assumptions": [
+    "The {CRM}, {ERP} and {EXPENSE} are used today; the {SPREADSHEET} bridges reporting definitions.",
+    "Shares average recurring administration and less frequent budget work, including associated approval labour.",
+    "The high automation prior fits report assembly, but forecast assumptions and business-purpose entry retain human work.",
+    "GDPR applies to activity records and expenses. Any seller-monitoring change requires assessment of national consultation rules.",
+    "In the Netherlands, covered monitoring arrangements require works council consent; national rules vary elsewhere.",
+    "EU AI Act duties apply if model features are added. This design needs no model.",
+    "Build ranges estimate working effort; consultation and access waiting time can extend elapsed delivery."
+   ],
+   "unknowns": [
+    "How are booked sales, invoiced sales, returns and credits defined?",
+    "Are reliable account identifiers shared across the {CRM} and {ERP}?",
+    "Does the {EXPENSE} support transaction imports and configurable policy checks?",
+    "Would the change introduce employee monitoring or alter an existing arrangement?",
+    "Which employee representatives and approval bodies must be consulted?"
+   ],
+   "research_questions": [
+    "Can existing reporting configuration replace manual exports?",
+    "Which reconciliation rules catch material errors without excessive false alarms?",
+    "Can aggregate territory reporting meet the need without additional individual activity tracking?"
+   ],
+   "new_work": [
+    "Resolve reconciliation exceptions and failed data refreshes.",
+    "Maintain metric definitions, account mappings and reporting periods.",
+    "Review forecast assumptions against subsequent outcomes.",
+    "Maintain expense rules and handle missing evidence.",
+    "Manage access, retention and any required employee consultation."
+   ],
+   "time_saved_pct": 60,
+   "speedup": 2.47
+  }
+ ],
+ "role": {
+  "altitude": "The representative's week shifts toward customer conversations, account judgement and commercial preparation. Faster records and evidence support decisions within their mandate; broader pricing, contract and budget rights require explicit delegation.",
+  "reach": [
+   "Order clerk: prevent order and sample fulfilment exceptions before handoff.",
+   "Sales manager: prepare account forecasts and evaluate commercial scenarios.",
+   "Product demonstrator: structure physical product comparisons around customer use."
+  ],
+  "skills_to_grow": [
+   "Structured capture of agreed terms and customer requirements.",
+   "Product, price and order validation.",
+   "Reading sourced market comparisons and testing uncertain claims.",
+   "Forecast assumptions and margin calculations.",
+   "Handling workflow exceptions and maintaining accurate records."
+  ],
+  "ambitious_version": "Run a territory service that combines same-day standard contract packs, remote sample requests and weekly account priorities from verified market changes, while preserving human product advice and commercial approval."
+ },
+ "job_code": "41-4012.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 237,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:4000}); text(r.output);\n"
+  ],
+  "job": {
+   "code": "41-4012.00",
+   "title": "Sales Representatives, Wholesale and Manufacturing, Except Technical and Scientific Products",
+   "tasks": 18,
+   "function": "Sales and account management"
+  }
+ }
+}

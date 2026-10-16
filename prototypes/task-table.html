@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task table · Team reimagine</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<style>
+.tt-page { max-width:1600px; }
+.tt-page .page-head { margin-bottom:16px; }
+.tt-page h1 { color:var(--teal); }
+.tt-search-row { display:flex; align-items:end; gap:16px; margin-bottom:12px; }
+.tt-search-row label { flex:1; max-width:720px; }
+.tt-controls label { display:flex; flex-direction:column; gap:4px; font-size:13px; line-height:20px; color:var(--ink-muted); }
+.tt-filters { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px 16px; }
+.tt-filters .select { font-size:14px; }
+.tt-controls input { caret-color:var(--teal); }
+.tt-columns { margin-top:16px; border-block:1px solid var(--line-soft); padding:10px 0; }
+.tt-columns summary { cursor:pointer; color:var(--teal); font-size:14px; }
+.tt-columns fieldset { display:flex; flex-wrap:wrap; gap:8px 20px; padding:12px 0 2px; margin:0; border:0; }
+.tt-columns label { display:inline-flex; flex-direction:row; align-items:center; color:var(--ink); cursor:pointer; }
+.tt-columns input { accent-color:var(--teal); width:18px; height:18px; }
+.tt-summary { display:grid; grid-template-columns:2fr 1.4fr 1fr; gap:24px; padding:18px 0; border-bottom:1px solid var(--line); }
+.tt-summary h2 { font-size:13px; line-height:20px; font-weight:600; margin-bottom:6px; color:var(--ink-muted); }
+.tt-counts { display:flex; flex-wrap:wrap; gap:4px 12px; font-size:12px; line-height:20px; }
+.tt-counts b { font-family:var(--mono); font-weight:500; color:var(--teal); }
+.tt-model-stat { font:500 22px/28px var(--mono); color:var(--teal); }
+.tt-toolbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:14px 0; }
+.tt-toolbar p { margin:0; font-size:14px; }
+.tt-pager { display:flex; align-items:center; gap:8px; }
+.tt-pager label { display:flex; align-items:center; gap:6px; font-size:13px; }
+.tt-pager .select { width:78px; font-size:13px; padding-block:6px; }
+.tt-pager .btn { min-height:36px; }
+.tt-page-text { font:400 12px/20px var(--mono); min-width:110px; text-align:center; }
+.tt-scroll { overflow:auto; border:1px solid var(--line); border-radius:var(--r8); max-height:70vh; scrollbar-width:thin; scrollbar-color:var(--input-line) var(--ground-50); }
+.tt-table { margin:0; width:100%; }
+.tt-table th { position:sticky; top:0; z-index:1; vertical-align:top; }
+.tt-table th button { border:0; padding:0; background:transparent; color:var(--ink-muted); font-size:12px; cursor:pointer; text-align:left; min-height:30px; }
+.tt-table th button:hover,.tt-table th[aria-sort] button { color:var(--teal); }
+.tt-table td { font-size:13px; line-height:20px; vertical-align:top; min-width:120px; }
+.tt-table td[data-col="task"] { min-width:350px; max-width:440px; }
+.tt-table td[data-col="occupation"] { min-width:175px; max-width:210px; }
+.tt-table td[data-col="class"] { min-width:90px; }
+.tt-table td[data-col="group"] { max-width:180px; }
+.tt-table tbody tr:hover,.tt-table tbody tr[aria-selected="true"] { background:var(--ground-50); }
+.tt-task-button { font:inherit; text-align:left; background:transparent; border:0; color:var(--teal); padding:0; cursor:pointer; }
+.tt-task-button:hover { text-decoration:underline; text-underline-offset:3px; }
+.tt-code,.tt-prob { display:block; font:400 11px/18px var(--mono); color:var(--ink-muted); }
+.tt-missing { color:var(--ink-muted); }
+.tt-class { font:600 13px/20px var(--mono); }
+.tt-class[data-class="S"] { color:var(--class-s); }
+.tt-class[data-class="A"] { color:var(--teal); }
+.tt-class[data-class="M"] { color:var(--ink); background:var(--gold-tag); padding:2px 4px; border-radius:var(--r4); }
+.tt-class[data-class="I"] { color:var(--class-i); }
+.tt-bar { height:12px; display:flex; width:140px; overflow:hidden; border-radius:var(--r4); background:var(--line-soft); }
+.tt-bar span { flex:0 0 auto; border-right:1px solid var(--ground); background:var(--segment); }
+.tt-seg-0 { --segment:var(--teal); }
+.tt-seg-1 { --segment:var(--gold); }
+.tt-seg-2 { --segment:var(--teal-bright); }
+.tt-seg-3 { --segment:var(--ink-muted); }
+.tt-seg-4 { --segment:var(--danger); }
+.tt-seg-5 { --segment:var(--gold-600); }
+.tt-footnote { font-size:12px; line-height:20px; margin:16px 0; color:var(--ink-muted); max-width:95ch; }
+.tt-empty { padding:32px; text-align:center; }
+.tt-panel { position:fixed; top:var(--nav-h); right:0; bottom:0; z-index:110; width:min(860px,65vw); padding:24px; overflow:auto; background:var(--ground); border-left:1px solid var(--line); box-shadow:var(--card-shadow); scrollbar-width:thin; scrollbar-color:var(--input-line) var(--ground-50); }
+.tt-panel[hidden] { display:none; }
+.tt-panel-top { display:flex; justify-content:space-between; align-items:center; gap:12px; position:sticky; top:-24px; background:var(--ground); padding:12px 0; z-index:2; border-bottom:1px solid var(--line-soft); }
+.tt-panel h2 { font-size:21px; line-height:30px; margin:20px 0 8px; color:var(--teal); }
+.tt-panel h3 { font-size:18px; line-height:26px; margin:28px 0 10px; }
+.tt-panel h4 { font-size:14px; line-height:22px; margin:18px 0 6px; }
+.tt-panel p,.tt-panel li { font-size:14px; line-height:22px; max-width:72ch; overflow-wrap:anywhere; }
+.tt-panel .table-scroll { scrollbar-width:thin; scrollbar-color:var(--input-line) var(--ground-50); }
+.tt-panel .onet-table td { vertical-align:top; }
+.tt-answers td:first-child { width:40%; }
+.tt-answers td:last-child { font-family:var(--mono); white-space:nowrap; }
+.tt-detail-splits { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.tt-detail-splits .tt-bar { width:100%; margin-bottom:12px; }
+.tt-split-list { margin:0; }
+.tt-split-list div { display:flex; justify-content:space-between; gap:16px; font-size:13px; border-bottom:1px solid var(--line-soft); padding:4px 0; }
+.tt-split-list dt::before { content:""; display:inline-block; width:8px; height:8px; background:var(--segment); margin-right:6px; }
+.tt-split-list dd { margin:0; font-family:var(--mono); }
+.tt-steps { min-width:800px; }
+.tt-steps th,.tt-steps td { min-width:110px; }
+.tt-steps td:first-child { min-width:240px; }
+.tt-step-more summary { cursor:pointer; font-size:12px; color:var(--teal); margin-top:8px; }
+.tt-step-more dl { font-size:12px; line-height:20px; }
+.tt-step-more dt { font-weight:600; margin-top:6px; }
+.tt-step-more dd { margin:0; overflow-wrap:anywhere; }
+.tt-graph-metrics { display:flex; flex-wrap:wrap; gap:6px; }
+@media (max-width:1100px) {
+  .topnav { gap:12px; padding-inline:16px; }
+  .topnav .product,.topnav .nav-side { display:none; }
+  .nav-links a { font-size:13px; padding-inline:8px; }
+}
+@media (max-width:960px) {
+  .topnav { height:auto; min-height:var(--nav-h); flex-wrap:wrap; padding-block:10px; gap:4px; }
+  .topnav .nav-links { display:flex; flex-basis:100%; overflow-x:auto; padding-bottom:4px; scrollbar-width:thin; }
+  .nav-links a.active::after { bottom:0; }
+  .tt-panel { top:0; width:min(860px,90vw); }
+}
+@media (max-width:600px) {
+  .tt-search-row { align-items:stretch; flex-direction:column; gap:8px; }
+  .tt-search-row .btn { align-self:start; }
+  .tt-filters { grid-template-columns:1fr 1fr; gap:10px; }
+  .tt-filters .select { font-size:13px; }
+  .tt-summary { grid-template-columns:1fr; gap:16px; }
+  .tt-toolbar { align-items:start; }
+  .tt-pager { flex-wrap:wrap; gap:6px; }
+  .tt-scroll { max-height:65vh; }
+  .tt-table td[data-col="task"] { min-width:270px; }
+  .tt-panel { width:100%; padding:16px; border-left:0; }
+  .tt-panel-top { top:-16px; }
+  .tt-detail-splits { grid-template-columns:1fr; gap:4px; }
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#task-table">Skip to the task table</a>
+<header class="topnav">
+  <a class="brand" href="team-canvas.html"><span class="brand-mark">Noordhaven</span><span class="product">Team reimagine</span></a>
+  <nav class="nav-links" aria-label="Prototypes">
+    <a href="flow/index.html">Team flow</a>
+    <a href="team-canvas.html">Team canvas</a>
+    <a href="task-explorer.html">Task explorer</a>
+    <a href="task-table.html" class="active" aria-current="page">Task table</a>
+    <a href="task-graph.html">Task graph</a>
+    <a href="intake.html">Intake</a>
+    <a href="opportunities.html">Opportunities</a>
+    <a href="job.html">Jobs</a>
+  </nav>
+  <div class="nav-side"><span class="tag tag-secondary">fictional company</span></div>
+</header>
+<main class="page tt-page">
+  <div class="page-head"><div><h1>Task table</h1><p class="meta">Explore every O*NET task, Jev’s answers and the simulated teams’ task graphs.</p></div></div>
+  <p id="load-status" role="status" class="small muted">Loading the task table…</p>
+  <div id="workspace" hidden>
+    <form class="tt-controls" id="filters" role="search" aria-label="Filter tasks">
+      <div class="tt-search-row"><label for="search">Search tasks or occupations<input class="input" type="search" id="search" placeholder="Try payroll, reconcile, or nursing" autocomplete="off"></label><button class="btn btn-text" id="reset" type="button">Reset filters</button></div>
+      <div class="tt-filters">
+        <label>Major group<select class="select" id="filter-group"><option value="">All major groups</option></select></label>
+        <label>Class<select class="select" id="filter-class"><option value="">All classes</option><option value="S">S · Automate</option><option value="A">A · Amplify</option><option value="M">M · Machines</option><option value="I">I · Human</option></select></label>
+        <label>Main shape<select class="select" id="filter-shape_main"><option value="">All shapes</option></select></label>
+        <label>Rule coverage<select class="select" id="filter-rule_coverage"><option value="">All rule bands</option></select></label>
+        <label>Model needed at run time<select class="select" id="filter-model_needed"><option value="">Any probability</option><option value="yes">Likely · ≥50% yes</option><option value="no">Unlikely · &lt;50% yes</option></select></label>
+        <label>Reach<select class="select" id="filter-reach"><option value="">All reach levels</option></select></label>
+        <label>Data sensitivity<select class="select" id="filter-data_sensitivity"><option value="">All sensitivity levels</option></select></label>
+        <label>Has LLM task graph<select class="select" id="filter-llm"><option value="">All tasks</option><option value="yes">Has a task graph</option><option value="no">No task graph</option></select></label>
+      </div>
+      <details class="tt-columns"><summary>Choose column groups <span class="muted" id="column-count"></span></summary><fieldset id="column-groups"><legend class="sr-only">Visible column groups; task stays visible</legend></fieldset></details>
+    </form>
+    <section class="tt-summary" aria-label="Summary of matching tasks" id="summary"></section>
+    <div class="tt-toolbar"><p id="match-count" role="status" aria-live="polite"></p><div class="tt-pager"><label>Rows<select class="select" id="page-size"><option>25</option><option selected>50</option><option>100</option></select></label><button class="btn btn-text" id="prev" type="button">Previous</button><span class="tt-page-text" id="page-info"></span><button class="btn btn-text" id="next" type="button">Next</button></div></div>
+    <div class="tt-scroll" tabindex="0" role="region" aria-label="Scrollable task table"><table class="onet-table tt-table" id="task-table"><caption class="sr-only">Matching O*NET tasks. Sort with column headings. Open a task to view answers and graphs.</caption><thead></thead><tbody></tbody></table></div>
+    <p class="tt-footnote" id="coverage-note"></p>
+  </div>
+</main>
+<aside class="tt-panel" id="detail" role="complementary" aria-labelledby="detail-title" hidden>
+  <div class="tt-panel-top"><span class="label">Task details</span><button class="btn btn-text" id="close-detail" type="button">Close details</button></div>
+  <div id="detail-body"></div>
+</aside>
+<script type="module">
+const $ = selector => document.querySelector(selector);
+const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const names = {under_half:'Under 50%',half_to_80:'50–80%', '80_to_95':'80–95%',over_95:'Over 95%',under_quarter:'Under 25%',quarter_to_half:'25–50%',over_half:'Over 50%',api:'API',crud_app:'Record management app',artefact_generator:'Artefact generator',stays_manual:'Stays manual',deterministic_plus_loop:'Deterministic + model loop'};
+const pretty = value => names[value] ?? String(value ?? '').replaceAll('_',' ').replace(/^./, char => char.toUpperCase());
+const number = value => Number(value).toLocaleString('en-GB');
+const pct = value => value == null ? 'Not available' : `${Math.round(value * 100)}%`;
+const classNames = {S:'Automate',A:'Amplify',M:'Machines',I:'Human'};
+const groups = [
+  {id:'facts',label:'Occupation & class',on:true},
+  {id:'work',label:'Jev · work & software',on:false},
+  {id:'gates',label:'Jev · reach & safeguards',on:false},
+  {id:'shapes',label:'Jev · solution shapes',on:true},
+  {id:'splits',label:'Kind & means splits',on:false},
+  {id:'llm',label:'LLM · task graphs',on:false}
+];
+let meta, questions, questionIndex, rows, matches = [], columns = [];
+let page = 0, pageSize = 50, sortKey = 'occupation', direction = 1, active = null, focusBeforePanel = null, searchTimer;
+const detailCache = new Map();
+const uid = row => `${meta.o[row.o][0]}:${row.i}`;
+const answer = (row,key) => {
+  const index = questionIndex[key], question = questions[index];
+  if (!question) return null;
+  return question.b ? row.p[index] : (row.a[index] == null ? null : question.o[row.a[index]]);
+};
+const answerCell = (row,key) => {
+  const question = questions[questionIndex[key]], probability = row.p[questionIndex[key]], value = answer(row,key);
+  if (value == null) return '<span class="tt-missing">Not available</span>';
+  return question.b ? `${pct(probability)} yes` : `${esc(pretty(value))}<span class="tt-prob">${pct(probability)} probability</span>`;
+};
+const graphSummary = row => row.l?.[0];
+function makeColumns() {
+  const fact = (key,label,get,cell) => ({key,label,group:'facts',get,cell});
+  const qcol = (key,group) => ({key,label:questions[questionIndex[key]].l,group,get:r=>answer(r,key),cell:r=>answerCell(r,key)});
+  columns = [
+    {key:'task',label:'Task',group:'always',get:r=>r.t,cell:r=>`<button type="button" class="tt-task-button" data-task="${esc(uid(r))}">${esc(r.t)}</button><span class="tt-code">Task ${esc(r.i)} · ${esc(meta.y[r.y])}</span>`},
+    fact('occupation','Occupation',r=>meta.o[r.o][1],r=>`${esc(meta.o[r.o][1])}<span class="tt-code">${esc(meta.o[r.o][0])}</span>`),
+    fact('group','Major group',r=>meta.g[meta.o[r.o][2]],r=>esc(meta.g[meta.o[r.o][2]])),
+    fact('class','Class',r=>r.c,r=>`<span class="tt-class" data-class="${esc(r.c)}">${esc(r.c)} · ${classNames[r.c] ?? 'Not available'}</span>`),
+    ...['drudgery','core_work','rule_coverage','hard_part','checking','interface','standard_software','vanishes'].map(k=>qcol(k,'work')),
+    ...['reach','reversibility','human_approval','exposure','data_sensitivity'].map(k=>qcol(k,'gates')),
+    ...['shape_main','shape_support','model_needed'].map(k=>qcol(k,'shapes')),
+    {key:'kind',label:'Kind split',group:'splits',get:r=>r.k?.[0],cell:r=>bar(r.k,meta.k)},
+    {key:'means',label:'Means split',group:'splits',get:r=>r.m?.[0],cell:r=>bar(r.m,meta.m)},
+    {key:'llm',label:'Has task graph',group:'llm',get:r=>r.l?.length ?? 0,cell:r=>r.l?`${r.l.length} graph${r.l.length === 1 ? '' : 's'}`:'No'},
+    {key:'saved',label:'Time saved',group:'llm',get:r=>graphSummary(r)?.t,cell:r=>r.l?r.l.map(g=>`${esc(g.t ?? 'Not available')}${g.t == null ? '' : '%'}<span class="tt-code">${esc(meta.r[g.r])} · estimate</span>`).join(''):'<span class="tt-missing">Not available</span>'},
+    {key:'steps',label:'Steps',group:'llm',get:r=>graphSummary(r)?.n,cell:r=>r.l?r.l.map(g=>g.n).join(' / '):'<span class="tt-missing">Not available</span>'},
+    {key:'rungs',label:'Rungs used',group:'llm',get:r=>r.l?[...new Set(r.l.flatMap(g=>g.u))].map(i=>meta.u[i]).join(' '):null,cell:r=>r.l?[...new Set(r.l.flatMap(g=>g.u))].map(i=>esc(pretty(meta.u[i]))).join('<br>'):'<span class="tt-missing">Not available</span>'}
+  ];
+}
+function bar(values,keys) {
+  if (!values) return '<span class="tt-missing">Not available</span>';
+  const total = values.reduce((sum,v)=>sum+(v??0),0);
+  const text = keys.map((key,i)=>`${pretty(key)}: ${values[i] == null ? 'Not available' : `${values[i]}%`}`).join('; ');
+  return `<div class="tt-bar" role="img" aria-label="${esc(text)}" title="${esc(text)}">${values.map((value,i)=>`<span class="tt-seg-${i}" style="width:${total ? (value??0)/total*100 : 0}%"></span>`).join('')}</div><span class="tt-code">${esc(pretty(keys[values.indexOf(Math.max(...values))]))} leads</span>`;
+}
+function visibleColumns() { return columns.filter(c=>c.group==='always'||groups.find(g=>g.id===c.group)?.on); }
+function fillOptions(id,options) { for (const [value,label] of options) $(`#${id}`).add(new Option(label,value)); }
+function sortRows() {
+  const column = columns.find(c=>c.key===sortKey);
+  matches.sort((a,b)=>{
+    const av=column.get(a),bv=column.get(b);
+    if(av==null || bv==null) return av==null && bv==null ? 0 : (av==null ? 1 : -1);
+    let order;
+    if(typeof av==='number' && typeof bv==='number') order=av-bv;
+    else if(['rule_coverage','drudgery'].includes(sortKey)) order=questions[questionIndex[sortKey]].o.indexOf(av)-questions[questionIndex[sortKey]].o.indexOf(bv);
+    else order=String(av).localeCompare(String(bv),'en',{numeric:true});
+    return order*direction;
+  });
+}
+function filterRows() {
+  const started = performance.now();
+  const search = $('#search').value.trim().toLowerCase();
+  const selected = Object.fromEntries([...$('#filters').querySelectorAll('select')].map(s=>[s.id.replace('filter-',''),s.value]));
+  matches=rows.filter(row=>{
+    if(search && !row._search.includes(search)) return false;
+    if(selected.group && meta.o[row.o][2]!==selected.group) return false;
+    if(selected.class && row.c!==selected.class) return false;
+    if(selected.llm && Boolean(row.l)!==(selected.llm==='yes')) return false;
+    for(const key of ['shape_main','rule_coverage','reach','data_sensitivity']) if(selected[key] && answer(row,key)!==selected[key]) return false;
+    if(selected.model_needed) {
+      const p=answer(row,'model_needed');
+      if(p==null || (p>=.5)!==(selected.model_needed==='yes')) return false;
+    }
+    return true;
+  });
+  page=0; sortRows(); renderSummary(); renderTable();
+  $('#task-table').dataset.filterMs=(performance.now()-started).toFixed(1);
+}
+function renderSummary() {
+  const shapeCounts=new Map(),ruleCounts=new Map();let likely=0,known=0;
+  for(const row of matches) {
+    const shape=answer(row,'shape_main')??'not_available',rule=answer(row,'rule_coverage')??'not_available';
+    shapeCounts.set(shape,(shapeCounts.get(shape)??0)+1);ruleCounts.set(rule,(ruleCounts.get(rule)??0)+1);
+    const p=answer(row,'model_needed');if(p!=null){known++;if(p>=.5)likely++;}
+  }
+  const counts = (map,order) => order.filter(key=>map.has(key)).map(key=>`<span>${esc(pretty(key))} <b>${number(map.get(key))}</b></span>`).join('');
+  $('#summary').innerHTML=`<div><h2>Main shapes · matching tasks</h2><div class="tt-counts">${counts(shapeCounts,[...questions[questionIndex.shape_main].o,'not_available'])||'No matching tasks'}</div></div><div><h2>Rule coverage · matching tasks</h2><div class="tt-counts">${counts(ruleCounts,[...questions[questionIndex.rule_coverage].o,'not_available'])||'No matching tasks'}</div></div><div><h2>Model likely needed at run time</h2><div class="tt-model-stat">${known?pct(likely/known):'—'}</div><div class="xs muted">${number(likely)} of ${number(known)} answered tasks · ≥50% yes</div></div>`;
+}
+function renderTable() {
+  const shown=visibleColumns(),pages=Math.max(1,Math.ceil(matches.length/pageSize));page=Math.min(page,pages-1);
+  $('#column-count').textContent=`· ${shown.length} columns`;
+  $('#task-table thead').innerHTML=`<tr>${shown.map(c=>`<th scope="col" ${c.key===sortKey?`aria-sort="${direction===1?'ascending':'descending'}"`:''}><button type="button" data-sort="${c.key}" aria-label="Sort by ${esc(c.label)}${c.key===sortKey?`, ${direction===1?'ascending':'descending'}`:''}">${esc(c.label)}${c.key===sortKey?(direction===1?' ↑':' ↓'):''}</button></th>`).join('')}</tr>`;
+  const slice=matches.slice(page*pageSize,(page+1)*pageSize);
+  $('#task-table tbody').innerHTML=slice.length?slice.map(row=>`<tr data-row="${esc(uid(row))}" aria-selected="${uid(row)===active}">${shown.map(c=>`<td data-col="${c.key}">${c.cell(row)}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${shown.length}" class="tt-empty">No tasks match these filters. Try another search or reset the filters.</td></tr>`;
+  const first=matches.length?page*pageSize+1:0,last=Math.min((page+1)*pageSize,matches.length);
+  $('#match-count').textContent=`${number(matches.length)} of ${number(rows.length)} tasks · showing ${number(first)}–${number(last)}`;
+  $('#page-info').textContent=`Page ${page+1} of ${pages}`;
+  $('#prev').disabled=page===0;$('#next').disabled=page>=pages-1;
+  $('.tt-scroll').scrollTop=0;
+}
+function detailSplit(row,field,keys,title) {
+  const values=row[field];
+  return `<section><h3>${title}</h3>${values?`${bar(values,keys)}<dl class="tt-split-list">${keys.map((key,i)=>`<div><dt class="tt-seg-${i}">${esc(pretty(key))}</dt><dd>${values[i]??'Not available'}${values[i]==null?'':'%'}</dd></div>`).join('')}</dl>`:'<p class="muted">Not available for this task.</p>'}</section>`;
+}
+function fieldValue(value) {
+  if(value==null)return '<span class="muted">Not available</span>';
+  if(typeof value==='boolean')return value?'Yes':'No';
+  if(Array.isArray(value))return `<ul>${value.map(v=>`<li>${fieldValue(v)}</li>`).join('')}</ul>`;
+  if(typeof value==='object')return `<dl>${Object.entries(value).map(([k,v])=>`<dt>${esc(pretty(k))}</dt><dd>${fieldValue(v)}</dd>`).join('')}</dl>`;
+  return esc(value);
+}
+function stepMore(step) {
+  return `<details class="tt-step-more"><summary>Actor, systems, handoff & loop</summary><dl>${['actor','systems','inputs','outputs','handoff_to','share_pct','remaining_pct','authority'].map(key=>`<dt>${esc(pretty(key))}</dt><dd>${fieldValue(step[key])}${['share_pct','remaining_pct'].includes(key)&&step[key]!=null?'%':''}</dd>`).join('')}<dt>Loop</dt><dd>${fieldValue(step.loop)}</dd></dl></details>`;
+}
+function graphHTML(graph) {
+  const steps=graph.steps??[];
+  return `<section class="tt-graph"><h3>${esc(pretty(graph.role))} · Opus v2 task graph</h3><div class="tt-graph-metrics"><span class="tag">${esc(graph.time_saved_pct??'Not available')}% time saved · estimate</span><span class="tag tag-secondary">${esc(graph.speedup??'Not available')}× speedup</span><span class="tag tag-secondary">${steps.length} steps</span></div><h4>Design</h4><p>${esc(graph.design)}</p><div class="table-scroll" tabindex="0" role="region" aria-label="Task graph steps"><table class="onet-table tt-steps"><caption class="sr-only">Task graph: current work, fate, software block, implementation rung, model loop and human gate</caption><thead><tr><th scope="col">Step</th><th scope="col">Today → fate</th><th scope="col">Block</th><th scope="col">Rung</th><th scope="col">Loop</th><th scope="col">Human gate</th></tr></thead><tbody>${steps.map(step=>`<tr><td><span class="tt-code">${esc(step.id)}</span>${esc(step.what)}${stepMore(step)}</td><td>${esc(pretty(step.today_means))}<br>→ ${esc(pretty(step.fate))}</td><td>${esc(pretty(step.block))}</td><td>${esc(pretty(step.rung))}</td><td>${step.loop?esc(pretty(step.loop.purpose??'Model loop')):'None'}</td><td>${step.human_gate?'Yes':'No'}<span class="tt-code">${esc(pretty(step.authority))}</span></td></tr>`).join('')}</tbody></table></div>${['previous_blocker','enabler_now','still_hard','human_edge','ambition','altitude','reach','build_days','run_cost','assumptions','unknowns','research_questions','evidence'].filter(key=>graph[key]!=null).map(key=>`<h4>${esc(pretty(key))}</h4><div>${fieldValue(graph[key])}</div>`).join('')}</section>`;
+}
+async function openRow(taskUid) {
+  const row=rows.find(r=>uid(r)===taskUid);if(!row)return;
+  focusBeforePanel=document.querySelector(`[data-task="${CSS.escape(taskUid)}"]`)??document.activeElement;active=taskUid;
+  const occupation=meta.o[row.o];
+  $('#detail-body').innerHTML=`<h2 id="detail-title">${esc(row.t)}</h2><p class="muted">${esc(occupation[1])} · ${esc(taskUid)}</p><p>${esc(meta.g[occupation[2]])} · ${esc(meta.y[row.y])} · Importance ${esc(row.im??'Not available')} · ${esc(row.f==null?'Frequency not available':meta.f[row.f])}</p><p><strong>${esc(row.c)} · ${classNames[row.c]}</strong></p><div class="table-scroll"><table class="onet-table"><caption class="sr-only">Task classification scores</caption><thead><tr><th>Substitution</th><th>Complementarity</th><th>Part</th><th>Mechanical</th></tr></thead><tbody><tr>${row.s.map(v=>`<td>${v??'Not available'}</td>`).join('')}</tr></tbody></table></div><h3>Jev · all ${questions.length} answers</h3><p class="small muted">Choice rows show the most probable answer and its probability. Yes/no rows show the probability of yes.</p><table class="onet-table tt-answers"><caption class="sr-only">Jev answers and probabilities</caption><thead><tr><th scope="col">Question</th><th scope="col">Answer</th><th scope="col">Probability</th></tr></thead><tbody>${questions.map((q,i)=>`<tr><td>${esc(q.l)}</td><td>${q.b?'Yes':esc(pretty(answer(row,q.k)))}</td><td>${pct(row.p[i])}${q.b?' yes':''}</td></tr>`).join('')}</tbody></table><div class="tt-detail-splits">${detailSplit(row,'k',meta.k,'Kind split')}${detailSplit(row,'m',meta.m,'Means split')}</div>${row.v?`<h3>v1 three-model consensus</h3><p>${esc(pretty(meta.v[row.v[0]]))} · ${esc(row.v[1])}% time saved · ${esc(row.v[2])}× speedup · ${row.v[3]} models. These are supplied estimates; the v1 pattern includes the synthesis rules.</p>`:''}<div id="graph-content">${row.l?'<h3>Task graphs</h3><p class="muted" role="status">Loading occupation details…</p>':'<h3>Task graphs</h3><p class="muted">No LLM task graph for this task. Graphs cover tasks from the simulated HR and Finance teams.</p>'}</div>`;
+  $('#detail').hidden=false;$('#detail').scrollTop=0;$('#close-detail').focus();
+  document.querySelectorAll('[data-row]').forEach(tr=>tr.setAttribute('aria-selected',tr.dataset.row===taskUid?'true':'false'));
+  if(!row.l)return;
+  try {
+    const code=occupation[0];
+    if(!detailCache.has(code)) {
+      detailCache.set(code,fetch(`data/task-detail/${encodeURIComponent(code)}.json`).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.json();}).catch(error=>{detailCache.delete(code);throw error;}));
+    }
+    const details=await detailCache.get(code);
+    if(active!==taskUid)return;
+    if(!details[taskUid])throw new Error('Task graph missing from occupation file');
+    $('#graph-content').innerHTML=details[taskUid].map(graphHTML).join('');
+  } catch(error) {
+    if(active===taskUid)$('#graph-content').innerHTML=`<h3>Task graphs</h3><p class="error" role="alert">Could not load this task graph (${esc(error.message)}). Close and reopen the row to retry.</p>`;
+  }
+}
+function closePanel() {
+  $('#detail').hidden=true;active=null;
+  document.querySelectorAll('[aria-selected="true"]').forEach(tr=>tr.setAttribute('aria-selected','false'));
+  if(focusBeforePanel?.isConnected)focusBeforePanel.focus();else $('.tt-scroll').focus();
+}
+$('#close-detail').addEventListener('click',closePanel);
+document.addEventListener('keydown',event=>{
+  if($('#detail').hidden)return;
+  if(event.key==='Escape')closePanel();
+  if(event.key==='Tab'&&window.matchMedia('(max-width:600px)').matches) {
+    const targets=[...$('#detail').querySelectorAll('button, a[href], summary, [tabindex="0"]')];
+    const first=targets[0],last=targets.at(-1);
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  }
+});
+$('#filters').addEventListener('submit',event=>event.preventDefault());
+$('#search').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(filterRows,120);});
+$('#filters').addEventListener('change',event=>{
+  if(event.target.matches('select')){clearTimeout(searchTimer);filterRows();}
+  if(event.target.dataset.group){groups.find(g=>g.id===event.target.dataset.group).on=event.target.checked;renderTable();}
+});
+$('#reset').addEventListener('click',()=>{clearTimeout(searchTimer);$('#filters').reset();for(const group of groups)$('#column-groups input[data-group="'+group.id+'"]').checked=group.on;filterRows();});
+$('#prev').addEventListener('click',()=>{page--;renderTable();});$('#next').addEventListener('click',()=>{page++;renderTable();});
+$('#page-size').addEventListener('change',()=>{pageSize=Number($('#page-size').value);page=0;renderTable();});
+$('#task-table').addEventListener('click',event=>{
+  const sorter=event.target.closest('[data-sort]');
+  if(sorter){direction=sortKey===sorter.dataset.sort?-direction:1;sortKey=sorter.dataset.sort;sortRows();page=0;renderTable();$(`[data-sort="${sortKey}"]`).focus({preventScroll:true});return;}
+  const row=event.target.closest('[data-row]');if(row)openRow(row.dataset.row);
+});
+try {
+  const response=await fetch('data/task-table.json');if(!response.ok)throw new Error(`HTTP ${response.status}`);
+  const data=await response.json();meta=data.meta;rows=data.rows;questions=meta.q;
+  questionIndex=Object.fromEntries(questions.map((q,i)=>[q.k,i]));
+  for(const row of rows)row._search=`${row.t} ${meta.o[row.o][1]} ${meta.o[row.o][0]} ${row.i}`.toLowerCase();
+  makeColumns();
+  fillOptions('filter-group',Object.entries(meta.g).filter(([g])=>meta.o.some(o=>o[2]===g)).map(([g,name])=>[g,`${g} · ${name}`]));
+  for(const key of ['shape_main','rule_coverage','reach','data_sensitivity'])fillOptions(`filter-${key}`,questions[questionIndex[key]].o.map(v=>[v,pretty(v)]));
+  $('#column-groups').insertAdjacentHTML('beforeend',groups.map(g=>`<label><input type="checkbox" data-group="${g.id}" ${g.on?'checked':''}>${esc(g.label)}</label>`).join(''));
+  $('#coverage-note').textContent=`Coverage: ${number(meta.coverage.anatomy)} tasks with ${meta.coverage.questions} anatomy answers each; kind splits ${number(meta.coverage.kind)}, means splits ${number(meta.coverage.means)}; ${meta.coverage.llm_tasks} tasks with Opus v2 graphs and ${meta.coverage.consensus} with v1 consensus. Source anatomy has 22 questions, although the order describes 30. Missing data stays unavailable. All savings and splits are estimates; savings concern the fictional company. Probabilities are rounded to two decimals.`;
+  $('#load-status').hidden=true;$('#workspace').hidden=false;filterRows();
+} catch(error) {
+  $('#load-status').hidden=false;$('#workspace').hidden=true;
+  $('#load-status').className='error';$('#load-status').setAttribute('role','alert');
+  $('#load-status').innerHTML=`Could not load the task table (${esc(error.message)}). Run tools/build_task_table.py, serve the project folder on port 8790, and <a href="task-table.html">reload this page</a>.`;
+}
+</script>
+</body>
+</html>

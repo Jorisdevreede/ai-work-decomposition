@@ -1,0 +1,1058 @@
+{
+ "tasks": [
+  {
+   "uid": "43-9041.00:23321",
+   "short": "Explain claim procedures and provide suitable repair or contractor referrals.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the policyholder's enquiry in {EMAIL}.",
+     "actor": "claims clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "customer enquiry"
+     ],
+     "outputs": [
+      "enquiry record"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Customer enquiry and allowed enquiry categories.",
+      "output": "Enquiry category and supporting text.",
+      "check": "Require an allowed category and matching source text; uncertain cases enter the clerk queue.",
+      "stop": "One classification attempt per enquiry; no automatic retry; ambiguity goes to a clerk.",
+      "why_not_simpler": "Unstructured enquiries describe the same need in many ways; structured submissions use rules instead."
+     },
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Verify identity in the insurance administration system {OTHER}.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "enquiry record",
+      "customer record"
+     ],
+     "outputs": [
+      "identity verification"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "claims clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Retrieve case context from the insurance administration system {OTHER}.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "identity verification",
+      "enquiry record",
+      "policy record",
+      "claim record"
+     ],
+     "outputs": [
+      "case context"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Find applicable claim instructions and approved referrals in {DOCS}.",
+     "actor": "claims clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "case context",
+      "enquiry record",
+      "claim instructions",
+      "contractor directory"
+     ],
+     "outputs": [
+      "applicable guidance"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Compose and send claim guidance or contractor referrals through {EMAIL}.",
+     "actor": "claims clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "applicable guidance",
+      "case context",
+      "identity verification"
+     ],
+     "outputs": [
+      "customer guidance"
+     ],
+     "handoff_to": "policyholder",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "claims clerk"
+    },
+    {
+     "id": "s6",
+     "what": "Explain sensitive or confusing cases by phone and agree next steps.",
+     "actor": "claims clerk",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "customer guidance",
+      "customer questions"
+     ],
+     "outputs": [
+      "clarification note"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Record advice in the insurance administration system {OTHER}.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "customer guidance",
+      "clarification note"
+     ],
+     "outputs": [
+      "contact history"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure a queue in {WORKFLOW} that links {EMAIL} enquiries to insurance administration records in {OTHER}; a bounded classifier handles free-text intent. Approved instructions and referral lists in {DOCS} populate response templates, with identity checks and clerk approval before disclosure. Sent messages and structured call notes return automatically to {OTHER}.",
+   "previous_blocker": "Policy context, instructions and contractor lists sit apart. Clerks bridge them and interpret loosely written enquiries.",
+   "enabler_now": "Existing queues and templates cover most of the flow. AI-assisted coding reduces connector effort, while a small classifier handles varied wording.",
+   "still_hard": "Identity ambiguity, outdated contractor lists and questions that imply a coverage decision still need attention.",
+   "human_edge": "Recognise distress, explain uncertainty and help customers choose practical next steps without promising cover.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The week shifts from searching and copying to difficult calls and checking customer understanding. Coverage and referral decision rights do not change.",
+   "reach": [
+    {
+     "role": "administrative services manager",
+     "task": "Maintain a usable regional contractor directory.",
+     "learn": "Service-area mapping, directory ownership and referral-quality checks."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Paperbox organises insurer emails and attachments into case files; this supports intake, not advice accuracy.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "VKG reports automating over 60% of claims correspondence; this vendor case does not establish savings here.",
+     "grade": "E3",
+     "source": "[S13]"
+    },
+    {
+     "claim": "Approved guidance can be selected by product, claim type and policy version, then inserted into templates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The setting is a mid-size insurer or insurance administrator with a specialist insurance administration system represented by {OTHER}.",
+    "The illustrated route is an email enquiry, with a phone conversation when needed.",
+    "Time shares and remaining percentages are design estimates, not measured results.",
+    "The configured guidance catalogue excludes coverage decisions and settlement commitments.",
+    "Access work includes GDPR controls and any employee consultation required by national rules; staff performance monitoring is outside scope."
+   ],
+   "unknowns": [
+    "Available identity-verification methods and insurance administration interfaces.",
+    "Ownership, freshness and contractual restrictions of the contractor directory.",
+    "Actual enquiry mix, handling time and proportion needing a sensitive conversation."
+   ],
+   "research_questions": [
+    "Can existing enquiry categories select the right guidance without semantic document search?",
+    "Which enquiry types most often produce incorrect or misunderstood referrals?"
+   ],
+   "new_work": [
+    "Review proposed guidance and resolve ambiguous enquiry categories.",
+    "Maintain approved instructions, policy-version mappings and contractor availability.",
+    "Check failed record links and sample sent guidance for accuracy."
+   ],
+   "time_saved_pct": 72,
+   "speedup": 3.57
+  },
+  {
+   "uid": "43-9041.00:23322",
+   "short": "Request missing information and inform policyholders or insurance agents about account status and approved changes.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check outstanding information and status in the insurance administration system {OTHER}.",
+     "actor": "policy processing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "policy record",
+      "claim record",
+      "information checklist",
+      "contact history"
+     ],
+     "outputs": [
+      "correspondence requirement"
+     ],
+     "handoff_to": "policy processing clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read replies and attachments in {EMAIL}.",
+     "actor": "policy processing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "customer reply",
+      "supporting evidence",
+      "correspondence requirement"
+     ],
+     "outputs": [
+      "reply assessment"
+     ],
+     "handoff_to": "policy processing clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Reply, attachments and outstanding information checklist.",
+      "output": "Proposed checklist updates with source references and unresolved items.",
+      "check": "Check case identifiers, attachment references and field formats; a clerk approves ambiguous or material updates.",
+      "stop": "One extraction and one correction attempt per reply; unresolved content goes to a clerk.",
+      "why_not_simpler": "Replies mix narrative, partial answers and scanned evidence; structured responses bypass the model."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "policy processing clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Draft an information request or status message in {EMAIL}.",
+     "actor": "policy processing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "correspondence requirement",
+      "reply assessment",
+      "approved change",
+      "correspondence template"
+     ],
+     "outputs": [
+      "correspondence draft"
+     ],
+     "handoff_to": "policy processing clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Check the recipient and send correspondence through {EMAIL}.",
+     "actor": "policy processing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "correspondence draft",
+      "verified contact",
+      "communication preference"
+     ],
+     "outputs": [
+      "sent correspondence"
+     ],
+     "handoff_to": "policyholder",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Clarify incomplete or disputed information by phone.",
+     "actor": "policy processing clerk",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "customer questions",
+      "reply assessment",
+      "sent correspondence"
+     ],
+     "outputs": [
+      "clarification note"
+     ],
+     "handoff_to": "policy processing clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Record correspondence and follow-up dates in the insurance administration system {OTHER}.",
+     "actor": "policy processing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "sent correspondence",
+      "clarification note",
+      "follow-up rules"
+     ],
+     "outputs": [
+      "contact history",
+      "follow-up queue"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure information checklists and deadlines in {OTHER}, with {WORKFLOW} producing approved templates and sending routine correspondence through {EMAIL}. A bounded extractor proposes updates from replies; disputed or material content reaches a clerk before it changes the checklist. A scheduled queue identifies overdue cases, while delivery records and structured call outcomes update {OTHER}.",
+   "previous_blocker": "The checklist, incoming replies and outgoing messages do not reliably update each other. Clerks remember what remains missing.",
+   "enabler_now": "Template rules and delivery tracking already exist in many systems. Small integrations and bounded extraction can connect the remaining gaps.",
+   "still_hard": "Conflicting replies, insurance-agent authority, changed contact details and messages that carry legal consequences need careful handling.",
+   "human_edge": "Ask a clear follow-up question when the customer cannot provide the expected evidence or disputes the record.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily escalation of cases stalled by missing evidence."
+   },
+   "altitude": "The clerk spends less time chasing routine replies and reviews a daily list of stalled cases. Proposed delegated authority covers routing overdue cases to specialists, with coverage decisions retained by authorised handlers.",
+   "reach": [
+    {
+     "role": "management analyst",
+     "task": "Identify recurring causes of incomplete submissions.",
+     "learn": "Case-age analysis, reason coding and comparison of request wording."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Paperbox handles insurer emails and attachments as organised case files.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "VKG reports automation of over 60% of claims correspondence, supporting feasibility without establishing this task's savings.",
+     "grade": "E3",
+     "source": "[S13]"
+    },
+    {
+     "claim": "Checklist triggers, approved templates, reminder limits and contact-history updates can use deterministic workflows.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The specialist insurance administration system is represented by {OTHER}.",
+    "Automatic sends cover standard information requests, factual status and notices of changes already approved elsewhere.",
+    "Refusals, cancellations, disputed changes and nonstandard legal wording leave the automatic-send path.",
+    "Verified contacts and communication preferences are available before dispatch.",
+    "Time estimates are illustrative; access and consultation work covers GDPR and applicable national rules."
+   ],
+   "unknowns": [
+    "Which notices require specific wording, channels or individual approval.",
+    "Whether insurance-agent authority and verified recipient details are recorded reliably.",
+    "Existing reminder functions, delivery interfaces and escalation authority."
+   ],
+   "research_questions": [
+    "Which checklist items can be closed by objective evidence rules?",
+    "What reminder frequency reduces delays without creating repeated or confusing requests?"
+   ],
+   "new_work": [
+    "Review ambiguous reply extractions and failed case matches.",
+    "Maintain templates, reminder limits and escalation rules.",
+    "Resolve bounced messages, changed representatives and duplicate correspondence."
+   ],
+   "time_saved_pct": 75,
+   "speedup": 4.0
+  },
+  {
+   "uid": "43-9041.00:23323",
+   "short": "Verify application and policy details against supporting evidence and existing records.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the application and supporting evidence in {DOCS}.",
+     "actor": "policy processing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "insurance application",
+      "supporting evidence"
+     ],
+     "outputs": [
+      "application fields"
+     ],
+     "handoff_to": "policy processing clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Application documents and supporting evidence; structured submissions bypass extraction.",
+      "output": "Typed application fields with source locations and uncertainty flags.",
+      "check": "Validate required fields, dates, currency and source locations; flag conflicting or unreadable values.",
+      "stop": "One extraction and one correction attempt per document; unresolved fields enter the discrepancy queue.",
+      "why_not_simpler": "Legacy scans and narrative evidence lack reliable fields; forms and fixed layouts use deterministic parsing."
+     },
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "contract-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Retrieve existing policy details from the insurance administration system {OTHER}.",
+     "actor": "policy processing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "application fields",
+      "policy record",
+      "customer record"
+     ],
+     "outputs": [
+      "comparison record"
+     ],
+     "handoff_to": "policy processing clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "contract-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Check identity, address and insured values in the insurance administration system {OTHER}.",
+     "actor": "policy processing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "application fields",
+      "comparison record",
+      "validation rules"
+     ],
+     "outputs": [
+      "validation report"
+     ],
+     "handoff_to": "policy processing clerk",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "contract-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Assess conflicting identity or valuation evidence in {DOCS}.",
+     "actor": "policy processing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "validation report",
+      "supporting evidence"
+     ],
+     "outputs": [
+      "discrepancy resolution",
+      "information checklist"
+     ],
+     "handoff_to": "policy processing clerk",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "contract-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Record verified details in the insurance administration system {OTHER}.",
+     "actor": "policy processing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "application fields",
+      "validation report",
+      "discrepancy resolution"
+     ],
+     "outputs": [
+      "verified application",
+      "verification log"
+     ],
+     "handoff_to": "underwriter",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "contract-to-renewal",
+     "approver": "policy processing clerk"
+    }
+   ],
+   "design": "Bring structured application fields directly into {OTHER}; use a bounded extractor for remaining documents in {DOCS}. Configured checks produce a discrepancy queue with field-level evidence, while the clerk resolves conflicting identity or valuation evidence. Approved values and their provenance return to {OTHER}, and missing-information items feed the correspondence workflow.",
+   "previous_blocker": "Documents require manual reading, and record comparisons lack consistent field-level evidence. Format differences create avoidable checking work.",
+   "enabler_now": "Structured intake removes some transcription entirely. Existing validation rules and small document-extraction components can cover much of the remainder.",
+   "still_hard": "Matching values can both be wrong. Property valuation, identity conflicts and evidence authenticity cannot be settled by format checks.",
+   "human_edge": "Distinguish a harmless formatting difference from evidence that changes the insured risk or requires specialist valuation.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A field-level application discrepancy report with evidence references."
+   },
+   "altitude": "The clerk reviews evidence conflicts and gives underwriters a traceable discrepancy report. Verification becomes clearer, but underwriting and valuation authority do not change.",
+   "reach": [
+    {
+     "role": "data entry keyer",
+     "task": "Improve application capture forms to prevent recurring field errors.",
+     "learn": "Field schemas, validation messages and provenance requirements."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "5-15",
+    "testing_rollout": "7-15",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Paperbox demonstrates insurance document intake and case organisation, not verification of insured values.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Deterministic checks can compare names, dates, amounts and required evidence without establishing real-world truth.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Structured submissions can eliminate transcription; extraction remains useful for residual documents.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The insurance administration system is represented by {OTHER} and supports configurable field validation.",
+    "The clerk verifies submitted values rather than performing an independent property appraisal.",
+    "Uncertain extracted fields cannot silently overwrite authoritative policy data.",
+    "Manual assessment retains less search time because the discrepancy queue assembles supporting evidence.",
+    "Time estimates are illustrative; GDPR access controls and consultation under applicable national rules are included."
+   ],
+   "unknowns": [
+    "Application formats, scan quality and existing structured-intake coverage.",
+    "Authoritative sources for identity, address and insured values.",
+    "Which field changes require underwriting approval rather than clerical verification.",
+    "Current validation capabilities and permission to retrieve historical policy versions."
+   ],
+   "research_questions": [
+    "Which discrepancies are formatting issues, and which change the risk assessment?",
+    "What proportion of documents can bypass model extraction through structured intake or fixed-layout parsing?"
+   ],
+   "new_work": [
+    "Resolve extraction flags and conflicting evidence.",
+    "Maintain field mappings, tolerances and document-version handling.",
+    "Sample apparently clean validations and trace errors back to source documents."
+   ],
+   "time_saved_pct": 80,
+   "speedup": 5.13
+  },
+  {
+   "uid": "43-9041.00:23324",
+   "short": "Check reinstatement requests against policy criteria and approve eligible cases within delegated authority.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the reinstatement request and supporting evidence in {DOCS}.",
+     "actor": "policy processing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "reinstatement request",
+      "supporting evidence"
+     ],
+     "outputs": [
+      "reinstatement fields"
+     ],
+     "handoff_to": "policy processing clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Unstructured reinstatement request and supporting documents.",
+      "output": "Requested effective date, declarations and evidence references.",
+      "check": "Require source references, valid dates and explicit missing-value flags; never infer absent declarations.",
+      "stop": "One extraction and one correction attempt per request; unresolved fields prevent an eligibility recommendation.",
+      "why_not_simpler": "Free-text declarations and scans need reading; structured reinstatement forms bypass the model."
+     },
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "contract-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Retrieve lapse details from the insurance administration system {OTHER}.",
+     "actor": "policy processing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "reinstatement fields",
+      "policy record"
+     ],
+     "outputs": [
+      "lapse record"
+     ],
+     "handoff_to": "policy processing clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "contract-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Check cleared premium payments and arrears in {ERP}.",
+     "actor": "policy processing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "policy record",
+      "premium ledger"
+     ],
+     "outputs": [
+      "premium clearance"
+     ],
+     "handoff_to": "policy processing clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Compare evidence with the applicable reinstatement criteria in {DOCS}.",
+     "actor": "policy processing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "reinstatement fields",
+      "lapse record",
+      "premium clearance",
+      "reinstatement criteria"
+     ],
+     "outputs": [
+      "eligibility assessment"
+     ],
+     "handoff_to": "policy processing clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "contract-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve standard reinstatements or refer exceptions in the insurance administration system {OTHER}.",
+     "actor": "policy processing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "eligibility assessment",
+      "delegated authority"
+     ],
+     "outputs": [
+      "reinstatement decision",
+      "policy record",
+      "exception referral"
+     ],
+     "handoff_to": "policy processing clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "contract-to-renewal",
+     "approver": "policy processing clerk"
+    },
+    {
+     "id": "s6",
+     "what": "Send confirmation or referral status through {EMAIL}.",
+     "actor": "policy processing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "reinstatement decision",
+      "exception referral",
+      "verified contact",
+      "correspondence template"
+     ],
+     "outputs": [
+      "sent correspondence"
+     ],
+     "handoff_to": "policyholder",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    }
+   ],
+   "design": "A deterministic service joins lapse records from {OTHER}, cleared premiums from {ERP} and versioned reinstatement criteria held in {DOCS}; a bounded extractor handles residual unstructured requests. It produces an evidence-linked recommendation, and the clerk approves binding reinstatement within delegated authority before {OTHER} changes cover. {WORKFLOW} routes exceptions to an underwriter and sends approved confirmation templates through {EMAIL}.",
+   "previous_blocker": "Criteria are written for people, payment evidence arrives separately and clerks must reconstruct the applicable policy version.",
+   "enabler_now": "Explicit criteria can be encoded as dated rules and checked against joined records. Faster connector development helps; no autonomous agent is required.",
+   "still_hard": "Retroactive cover, payment reversals, ambiguous declarations and requests outside delegated authority need specialist judgement.",
+   "human_edge": "Recognise when a technically eligible request raises a material ambiguity, and refer it with a clear evidence summary.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Twice-daily approval rounds for complete standard reinstatement requests."
+   },
+   "altitude": "The clerk reviews concise eligibility packets instead of reconstructing each case. Approval happens more frequently, but existing reinstatement limits and underwriting authority remain unchanged.",
+   "reach": [
+    {
+     "role": "computer systems analyst",
+     "task": "Translate reinstatement criteria into a versioned decision table.",
+     "learn": "Rule precedence, effective dates, payment freshness and exception-path testing."
+    }
+   ],
+   "build_days": {
+    "coding": "6-12",
+    "integration": "7-18",
+    "testing_rollout": "10-20",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Shift Claims supports claims triage and automation; it does not establish reinstatement-rule coverage.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "DNB reported that flagged claims reached people in its six-insurer study; this is historical claims evidence, not current reinstatement practice.",
+     "grade": "E3",
+     "source": "[S15]"
+    },
+    {
+     "claim": "Explicit reinstatement conditions can be checked deterministically when policy versions and cleared-payment data are available.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "GDPR Article 22 restricts solely automated decisions with legal or similarly significant effects, subject to exceptions and safeguards.",
+     "grade": "E1",
+     "source": "[S17]"
+    },
+    {
+     "claim": "EU AI Act Annex III includes life and health insurance risk assessment and pricing; this does not classify every insurance workflow as high-risk.",
+     "grade": "E1",
+     "source": "[S18]"
+    }
+   ],
+   "assumptions": [
+    "The specialist insurance administration system is represented by {OTHER}; the illustrated premium ledger is in {ERP}.",
+    "Missing or conflicting evidence produces a pending case or referral, not an automatic refusal.",
+    "Approval records the effective date and terms and activates cover only within existing delegated authority.",
+    "Any later underwriting decision follows its own approval process.",
+    "Time estimates are illustrative; consent and access include GDPR review and consultation required by national rules.",
+    "Insurance lines and intended AI use determine whether additional EU AI Act duties apply."
+   ],
+   "unknowns": [
+    "Insurance lines, reinstatement criteria and clerk approval limits.",
+    "Where the authoritative premium ledger sits and how quickly cleared payments appear.",
+    "Whether retroactive reinstatement is permitted and which cases require underwriting.",
+    "Available interfaces, employee representation and applicable national consultation requirements."
+   ],
+   "research_questions": [
+    "Can every standard criterion be expressed without interpreting narrative declarations?",
+    "Which historical cases expose conflicting rule versions or incorrect effective dates?",
+    "What data-freshness checks prevent approval after payment reversal or concurrent policy changes?"
+   ],
+   "new_work": [
+    "Review eligibility packets and route exceptions to underwriters.",
+    "Maintain dated criteria and approved confirmation wording.",
+    "Test rule changes against historical cases and monitor payment-link failures.",
+    "Reconcile approved reinstatements with policy updates and sent confirmations."
+   ],
+   "time_saved_pct": 92,
+   "speedup": 12.5
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts toward resolving evidence conflicts, explaining difficult situations and approving prepared cases. Routine intake, comparisons, reminders and record updates shrink; formal coverage authority changes only through explicit delegation.",
+  "reach": [
+   "Administrative services manager: maintain referral information and service quality.",
+   "Management analyst: analyse stalled cases and incomplete submissions.",
+   "Data entry keyer: improve structured application capture.",
+   "Computer systems analyst: specify versioned insurance rules and exception paths."
+  ],
+  "skills_to_grow": [
+   "Evidence assessment and clear customer explanations.",
+   "Decision tables, effective dates and delegated authority.",
+   "Field validation, provenance and exception analysis.",
+   "GDPR-aware handling of customer records.",
+   "Testing workflows against representative insurance cases."
+  ],
+  "ambitious_version": "Become a case-quality specialist who helps underwriters act sooner, improves submission quality and makes complex claim procedures understandable to customers."
+ },
+ "job_code": "43-9041.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 228,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3000});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-9041.00",
+   "title": "Insurance Claims and Policy Processing Clerks",
+   "tasks": 25,
+   "function": "Office and operations"
+  }
+ }
+}

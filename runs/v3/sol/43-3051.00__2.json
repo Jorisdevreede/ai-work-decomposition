@@ -1,0 +1,1040 @@
+{
+ "tasks": [
+  {
+   "uid": "43-3051.00:2528",
+   "short": "Prepare period-end payroll reports and reconcile payroll payments to bank statements.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export payroll totals and payment details from the {PAYROLL}.",
+     "actor": "payroll clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL"
+     ],
+     "inputs": [
+      "payroll register",
+      "pay period"
+     ],
+     "outputs": [
+      "payroll export"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Download bank transactions covering payroll settlement dates.",
+     "actor": "finance team",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK"
+     ],
+     "inputs": [
+      "pay period",
+      "payment batch"
+     ],
+     "outputs": [
+      "bank statement"
+     ],
+     "handoff_to": "payroll clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Match payroll payments to statement entries and calculate differences in a {SPREADSHEET}.",
+     "actor": "payroll clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "payroll export",
+      "bank statement",
+      "payment batch"
+     ],
+     "outputs": [
+      "payroll reconciliation",
+      "unmatched payments"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Resolve unmatched payments with the finance team through {EMAIL}.",
+     "actor": "payroll clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "PAYROLL",
+      "BANK"
+     ],
+     "inputs": [
+      "unmatched payments",
+      "payment batch",
+      "payroll register"
+     ],
+     "outputs": [
+      "reconciliation explanation",
+      "correction request"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Prepare the period-end report with totals, explanations, and outstanding differences.",
+     "actor": "payroll clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "payroll reconciliation",
+      "reconciliation explanation",
+      "correction request"
+     ],
+     "outputs": [
+      "period-end payroll report"
+     ],
+     "handoff_to": "payroll manager",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Review outstanding differences and approve the period-end payroll report.",
+     "actor": "payroll manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "period-end payroll report",
+      "payroll reconciliation"
+     ],
+     "outputs": [
+      "approved payroll report"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "record-to-report",
+     "approver": "payroll manager"
+    }
+   ],
+   "design": "Configured exports from the {PAYROLL} and {BANK} feed a deterministic reconciliation on the {DATA_PLATFORM}, matching payment identifiers, amounts, currencies, and settlement dates. A queue in the {WORKFLOW} presents unresolved items with source records, while a template generates the report in the {DOCS} for approval.",
+   "previous_blocker": "Separate exports, inconsistent payment references, and limited implementation capacity left the clerk joining records manually.",
+   "enabler_now": "Existing export features and reusable matching code cover most processing. AI-assisted coding can shorten connector and report development; no model is needed for matching.",
+   "still_hard": "Aggregated bank debits, rejected payments, reversals, and settlement timing need explicit rules. Missing payment identifiers still require investigation.",
+   "human_edge": "The clerk establishes why money moved differently from the payroll instruction and gets the responsible team to resolve it.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly decision on which unresolved payroll cash differences need escalation."
+   },
+   "altitude": "The week shifts from assembling reports to resolving cash exceptions before close. Proposed new authority is to assign reconciliation cases and escalate overdue differences; payment authority does not change.",
+   "reach": [
+    {
+     "role": "compensation and benefits specialist",
+     "task": "Explain recurring differences between expected and paid compensation costs.",
+     "learn": "Pay-component mapping, accrual timing, and benefit settlement schedules."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-8",
+    "testing_rollout": "4-7",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Exact-reference bank matching with exceptions routed to people is available in existing software.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Payroll-to-bank reconciliation can use deterministic matching, control totals, and report templates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The digest contains no documented payroll reconciliation case establishing a realised saving.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This baseline uses a clerk-maintained reconciliation between separate payroll and banking records.",
+    "Time shares and build ranges are planning estimates, not measured outcomes.",
+    "The scope prepares reconciliation records; corrections and payment release follow their existing approval processes.",
+    "Payroll data remains access-controlled under GDPR, with appropriate retention and audit records."
+   ],
+   "unknowns": [
+    "Whether an existing reconciliation feature already covers the full task.",
+    "Whether bank entries identify individual payments or only batch totals.",
+    "Available export formats, identifiers, access permissions, and approval roles.",
+    "Number of legal entities, currencies, bank accounts, and off-cycle runs."
+   ],
+   "research_questions": [
+    "Which structured bank formats preserve payroll batch and rejection identifiers?",
+    "Which existing reconciliation features handle reversals and split settlements?"
+   ],
+   "new_work": [
+    "Resolve unmatched items and document accepted timing differences.",
+    "Maintain matching rules and payroll-to-bank identifier mappings.",
+    "Monitor missing feeds, duplicate imports, and reconciliation control totals."
+   ],
+   "time_saved_pct": 81,
+   "speedup": 5.26
+  },
+  {
+   "uid": "43-3051.00:2518",
+   "short": "Check time and wage records, investigate discrepancies, and apply approved payroll corrections.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve approved timesheets, absence records, and draft wage calculations.",
+     "actor": "payroll clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM",
+      "PAYROLL"
+     ],
+     "inputs": [
+      "approved timesheets",
+      "absence record",
+      "draft payroll"
+     ],
+     "outputs": [
+      "payroll check dataset"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compare hours, rates, deductions, and prior-period pay using checks in the {PAYROLL}.",
+     "actor": "payroll clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL"
+     ],
+     "inputs": [
+      "payroll check dataset",
+      "pay rules",
+      "prior payroll"
+     ],
+     "outputs": [
+      "payroll warnings"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Read supporting notes and documents to explain each payroll warning.",
+     "actor": "payroll clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "PAYROLL"
+     ],
+     "inputs": [
+      "payroll warnings",
+      "timesheet notes",
+      "approved employee change",
+      "pay rules"
+     ],
+     "outputs": [
+      "discrepancy explanation",
+      "clarification request"
+     ],
+     "handoff_to": "line manager",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "reconcile",
+      "input": "One warning, its source records, relevant approved rules, and supporting free-text notes.",
+      "output": "A cited explanation, unresolved facts, and a draft clarification request.",
+      "check": "Every factual claim references a source; code verifies figures and dates. A clerk reviews the explanation.",
+      "stop": "One draft and one validation repair per warning. Missing sources or failed checks return the case to the clerk.",
+      "why_not_simpler": "Rule checks find differences but cannot reliably interpret varied explanations in supporting notes."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "pay-cycle",
+     "approver": "payroll clerk"
+    },
+    {
+     "id": "s4",
+     "what": "Clarify disputed hours or pay facts with the employee and line manager.",
+     "actor": "payroll clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "clarification request",
+      "discrepancy explanation"
+     ],
+     "outputs": [
+      "confirmed payroll facts"
+     ],
+     "handoff_to": "payroll manager",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Decide whether a correction is justified and approve its pay treatment.",
+     "actor": "payroll manager",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL"
+     ],
+     "inputs": [
+      "confirmed payroll facts",
+      "pay rules",
+      "discrepancy explanation"
+     ],
+     "outputs": [
+      "approved payroll correction"
+     ],
+     "handoff_to": "payroll clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "pay-cycle",
+     "approver": "payroll manager"
+    },
+    {
+     "id": "s6",
+     "what": "Enter approved corrections and rerun payroll checks.",
+     "actor": "payroll clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL"
+     ],
+     "inputs": [
+      "approved payroll correction",
+      "draft payroll"
+     ],
+     "outputs": [
+      "corrected draft payroll",
+      "correction audit trail"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    }
+   ],
+   "design": "A controlled integration joins approved time and absence data from the {HCM} to draft calculations in the {PAYROLL}, where configured checks produce warnings. A bounded model loop drafts source-linked explanations from notes in the {DOCS}; people settle disputed facts and approve corrections before deterministic posting and rechecking.",
+   "previous_blocker": "Checks were split between systems, and supporting explanations arrived in varied documents. Interpreting those notes kept even well-structured warnings in a manual queue.",
+   "enabler_now": "Existing payroll checks cover arithmetic and period comparisons. A small model loop can prepare explanations, while AI-assisted coding reduces the effort of connecting records and approvals.",
+   "still_hard": "Unrecorded work, disputed overtime, retroactive changes, and collective-agreement interpretation remain difficult. A plausible explanation is not proof that pay is correct.",
+   "human_edge": "The clerk hears conflicting accounts, protects the employee's ability to challenge a record, and obtains evidence for a fair correction.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Twice-weekly decisions on unresolved pay corrections before payroll cutoff."
+   },
+   "altitude": "The clerk spends more time resolving uncertain cases and less time comparing records. No new authority to change pay is assumed; correction approval stays with the authorised payroll role.",
+   "reach": [
+    {
+     "role": "labor relations specialist",
+     "task": "Investigate recurring disputes about overtime and paid working time.",
+     "learn": "Collective-agreement interpretation, evidence handling, and fair dispute procedures."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "5-10",
+    "testing_rollout": "6-10",
+    "consent_and_access": "3-8"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Nmbrs provides payroll run checks for salary changes.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Nmbrs provides employee-level comparisons across three payroll periods.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Source-linked warning explanations can be drafted in a bounded loop, with numerical validation and human review.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Worker-monitoring uses can fall within the EU AI Act's high-risk categories; classification depends on intended use.",
+     "grade": "E2",
+     "source": "[S17]"
+    }
+   ],
+   "assumptions": [
+    "The target checks payroll correctness and does not score employee performance.",
+    "Approved pay rules are available in a maintained, versioned form.",
+    "Time shares and build ranges are estimates; exception-heavy payrolls retain more human work.",
+    "GDPR applies to source records and model processing; national rules govern consultation and employment procedures."
+   ],
+   "unknowns": [
+    "Existing check coverage and the frequency of genuine discrepancies.",
+    "Where time notes, work charts, and approvals are held.",
+    "Applicable collective agreements and correction approval limits.",
+    "Permitted model-processing environment and whether consultation is required for this change."
+   ],
+   "research_questions": [
+    "Which native checks expose source records and reusable warning identifiers?",
+    "How reliably can bounded explanations distinguish missing evidence from a valid pay exception?"
+   ],
+   "new_work": [
+    "Review drafted explanations and reject unsupported conclusions.",
+    "Maintain pay rules, warning thresholds, and source mappings.",
+    "Sample cleared warnings for missed errors and monitor false positives.",
+    "Maintain model instructions and retest them when rules or document formats change."
+   ],
+   "time_saved_pct": 71,
+   "speedup": 3.48
+  },
+  {
+   "uid": "43-3051.00:2526",
+   "short": "Open time submissions, collect completed records, chase missing entries, and obtain approval.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open the pay period and prepare time-entry forms in the {HCM}.",
+     "actor": "payroll clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "pay calendar",
+      "employee roster"
+     ],
+     "outputs": [
+      "time-entry forms"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Send employees submission instructions and deadlines through {EMAIL}.",
+     "actor": "payroll clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "HCM"
+     ],
+     "inputs": [
+      "time-entry forms",
+      "pay calendar",
+      "employee roster"
+     ],
+     "outputs": [
+      "submission notice"
+     ],
+     "handoff_to": "employee",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Enter worked hours and submit the timesheet in the {HCM}.",
+     "actor": "employee",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "time-entry forms",
+      "work schedule",
+      "actual hours"
+     ],
+     "outputs": [
+      "submitted timesheet"
+     ],
+     "handoff_to": "payroll clerk",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Update a separate {SPREADSHEET} showing received and missing timesheets.",
+     "actor": "payroll clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "HCM"
+     ],
+     "inputs": [
+      "submitted timesheet",
+      "employee roster"
+     ],
+     "outputs": [
+      "submission tracker"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Chase missing submissions and escalate overdue timesheets through {EMAIL}.",
+     "actor": "payroll clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "submission tracker",
+      "pay calendar"
+     ],
+     "outputs": [
+      "submission reminder",
+      "overdue submission list"
+     ],
+     "handoff_to": "line manager",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Review submitted hours and approve or return the timesheet in the {HCM}.",
+     "actor": "line manager",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "submitted timesheet",
+      "work schedule"
+     ],
+     "outputs": [
+      "approved timesheets",
+      "returned timesheet"
+     ],
+     "handoff_to": "payroll clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "pay-cycle",
+     "approver": "line manager"
+    }
+   ],
+   "design": "Configure recurring periods, accessible time-entry forms, submission status, reminders, and approval routing in the {HCM}. Remove the separate {SPREADSHEET} tracker and use the {WORKFLOW} only where native routing is insufficient, with an assisted submission route for employees without desk access.",
+   "previous_blocker": "Digital submission often coexists with manual tracking and chasing. Employee access, local working practices, and consultation can matter more than technical complexity.",
+   "enabler_now": "Existing self-service and approval features can handle collection without a model. Configuration and small deterministic extensions are cheaper to implement and test with coding assistance.",
+   "still_hard": "Employees must still confirm actual hours, and managers must resolve disputed entries. Accessible submission, offline working, GDPR, and national consultation rules need local attention.",
+   "human_edge": "The clerk helps employees who cannot use the standard route and notices when missing submissions reflect access or workplace problems.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "An assisted time-submission route for employees without desk access."
+   },
+   "altitude": "The clerk's week shifts from deadline chasing to access support and unresolved submissions. No new pay or attendance decision rights are assumed.",
+   "reach": [
+    {
+     "role": "human resources assistant",
+     "task": "Help employees gain access to self-service HR processes.",
+     "learn": "Accessible form design, identity checks, and assisted digital support."
+    }
+   ],
+   "build_days": {
+    "coding": "0-2",
+    "integration": "1-4",
+    "testing_rollout": "4-7",
+    "consent_and_access": "4-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Recurring time-entry forms, submission tracking, reminders, and approvals can use configured workflows.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "In the Netherlands, works council consent can apply to staff-data rules and attendance-monitoring arrangements.",
+     "grade": "E2",
+     "source": "[S15]"
+    },
+    {
+     "claim": "The digest documents a Dutch fine for fingerprint-based employee clocking.",
+     "grade": "E3",
+     "source": "[S16]"
+    }
+   ],
+   "assumptions": [
+    "A digital-first collection process is used as the mid-size-company baseline; paper-heavy sites need a different baseline.",
+    "The {HCM} has usable time-entry and approval features.",
+    "The proposed route uses ordinary authenticated entry and collects only necessary time data.",
+    "Shares include employee and manager effort, so they do not equal payroll-clerk savings.",
+    "Consultation estimates are working-day effort; elapsed consultation time may be longer."
+   ],
+   "unknowns": [
+    "How many employees currently use paper timecards or lack individual digital access.",
+    "Whether native reminders and status reports are already enabled.",
+    "Employee accessibility, language, device, and connectivity needs.",
+    "Applicable national rules and existing employee-representative agreements."
+   ],
+   "research_questions": [
+    "Which accessible submission patterns work well for shared-device and offline workplaces?",
+    "Which native features support delegated entry without obscuring who confirmed the hours?"
+   ],
+   "new_work": [
+    "Support employees who cannot complete the standard submission route.",
+    "Maintain rosters, approval delegates, calendars, and reminder schedules.",
+    "Handle failed notifications and access problems.",
+    "Review whether reminder frequency creates unnecessary employee burden."
+   ],
+   "time_saved_pct": 62,
+   "speedup": 2.67
+  },
+  {
+   "uid": "43-3051.00:2520",
+   "short": "Update payroll records for tax declarations, transfers, and departures.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve approved employee changes from the {HCM}.",
+     "actor": "payroll clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "approved employee change"
+     ],
+     "outputs": [
+      "payroll change request"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check supporting documents for required fields, approval, and effective dates.",
+     "actor": "payroll clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "HCM"
+     ],
+     "inputs": [
+      "payroll change request",
+      "employee declaration",
+      "change approval"
+     ],
+     "outputs": [
+      "validated change request",
+      "missing information request"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Determine the payroll treatment and authorise the record amendment.",
+     "actor": "payroll clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL",
+      "DOCS"
+     ],
+     "inputs": [
+      "validated change request",
+      "pay rules",
+      "current payroll record"
+     ],
+     "outputs": [
+      "authorised payroll amendment"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "judgement_step",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "pay-cycle",
+     "approver": "payroll clerk"
+    },
+    {
+     "id": "s4",
+     "what": "Enter the authorised changes into the employee record in the {PAYROLL}.",
+     "actor": "payroll clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL"
+     ],
+     "inputs": [
+      "authorised payroll amendment",
+      "current payroll record"
+     ],
+     "outputs": [
+      "updated payroll record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Compare the updated record against the authorised amendment and check payroll impact.",
+     "actor": "payroll clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL"
+     ],
+     "inputs": [
+      "updated payroll record",
+      "authorised payroll amendment",
+      "draft payroll"
+     ],
+     "outputs": [
+      "change verification",
+      "payroll warnings"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "File the supporting evidence and change verification in the {DOCS}.",
+     "actor": "payroll clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "change approval",
+      "employee declaration",
+      "change verification"
+     ],
+     "outputs": [
+      "employee change audit trail"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    }
+   ],
+   "design": "Structured change forms in the {HCM} require effective dates, supporting evidence, and upstream approval; configured rules prepare the payroll amendment for the authorised clerk. After approval, a deterministic integration updates the {PAYROLL}, verifies the written fields and calculation impact, and files evidence in the {DOCS}.",
+   "previous_blocker": "Separate employee and payroll records created repeated entry. Effective-date conventions, ownership of fields, and incomplete change requests made direct synchronisation unreliable.",
+   "enabler_now": "Structured forms, validation rules, and controlled imports already exist. AI-assisted coding can speed field mapping, duplicate protection, and verification without interpreting employment decisions.",
+   "still_hard": "Retroactive changes, overlapping amendments, tax treatment, and final-pay effects require payroll expertise. National rules and collective agreements vary.",
+   "human_edge": "The clerk recognises when a valid HR change has an unusual payroll consequence and obtains a justified treatment before it affects pay.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily decisions on effective-date conflicts before payroll cutoff."
+   },
+   "altitude": "The week shifts from copying employee details to resolving change conflicts and unusual payroll effects. Proposed new authority is to return incomplete requests directly to their originator; compensation and termination decisions retain their existing approvers.",
+   "reach": [
+    {
+     "role": "human resources specialist",
+     "task": "Coordinate transfers and departures with complete, effective-dated employee records.",
+     "learn": "Employee-lifecycle controls, data ownership, and dependencies between contract changes and payroll."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "5-9",
+    "testing_rollout": "5-8",
+    "consent_and_access": "3-7"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Structured employee changes can be validated, approved, transferred, and verified using deterministic workflows.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Nmbrs provides checks on salary changes, supporting automated verification of change impact.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "GDPR requires appropriate controls for processing employee personal data.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The {HCM} holds approved employment facts and the {PAYROLL} holds payroll-specific treatment.",
+    "Required values can be captured in structured fields; legacy free-text requests remain exceptions.",
+    "The authorised payroll clerk may approve routine record amendments within existing limits.",
+    "Verification warnings enter the payroll discrepancy process before pay-run approval.",
+    "Build ranges assume one principal employee-record integration and are not measured delivery commitments."
+   ],
+   "unknowns": [
+    "Which fields are authoritative in each system and who may approve changes.",
+    "Whether supported write interfaces preserve effective dates and historical records.",
+    "Volume of retroactive changes, rescinded departures, and overlapping amendments.",
+    "Applicable national consultation requirements and approved retention schedules."
+   ],
+   "research_questions": [
+    "Which supported integration methods preserve effective-dated history and allow safe retries?",
+    "Which payroll checks detect conflicting changes before they affect a pay run?"
+   ],
+   "new_work": [
+    "Resolve rejected, incomplete, and conflicting change requests.",
+    "Maintain field mappings, approval limits, and effective-date rules.",
+    "Monitor failed transfers and verify recovery without duplicate amendments.",
+    "Review access permissions and retain linked approval evidence."
+   ],
+   "time_saved_pct": 92,
+   "speedup": 13.33
+  }
+ ],
+ "role": {
+  "altitude": "The role becomes more focused on payroll exceptions, employee support, and coordination across HR and finance. Proposed decision rights cover returning incomplete requests and assigning reconciliation cases; pay changes and payment release follow explicit existing authority.",
+  "reach": [
+   "Human resources specialist: coordinate effective-dated employee changes.",
+   "Compensation and benefits specialist: investigate recurring pay-component differences.",
+   "Labor relations specialist: support evidence-based resolution of working-time disputes.",
+   "Human resources assistant: provide accessible self-service support."
+  ],
+  "skills_to_grow": [
+   "Payroll controls and effective-dated record handling.",
+   "Structured data validation and reconciliation.",
+   "Collective-agreement and national-rule interpretation.",
+   "Source-based review of model-generated explanations.",
+   "Employee communication and dispute handling.",
+   "Integration monitoring, access control, and exception analysis."
+  ],
+  "ambitious_version": "Provide an early payroll assurance service: surface unresolved time, employee-change, and cash-settlement issues before cutoff, with evidence and a named decision owner for each case."
+ },
+ "job_code": "43-3051.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 178,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:4000});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-3051.00",
+   "title": "Payroll and Timekeeping Clerks",
+   "tasks": 21,
+   "function": "HR"
+  }
+ }
+}

@@ -1,0 +1,1043 @@
+{
+ "job_code": "41-3031.00",
+ "tasks": [
+  {
+   "uid": "41-3031.00:23192",
+   "short": "Make a bid or offer to buy or sell a security.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the quote, the position and the client limit.",
+     "actor": "securities sales agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "CRM"
+     ],
+     "inputs": [
+      "market quote",
+      "open position",
+      "client limit"
+     ],
+     "outputs": [
+      "market snapshot"
+     ],
+     "handoff_to": "none",
+     "share_pct": 22,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "opportunity-to-order",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "sec-market-snapshot",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Settle the securities offer with the client or the desk.",
+     "actor": "securities sales agent",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY",
+      "CRM"
+     ],
+     "inputs": [
+      "market snapshot",
+      "client instruction"
+     ],
+     "outputs": [
+      "spoken price"
+     ],
+     "handoff_to": "client",
+     "share_pct": 40,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "opportunity-to-order",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Approve the order ticket version before it can be sent.",
+     "actor": "securities sales agent",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM",
+      "OTHER"
+     ],
+     "inputs": [
+      "spoken price",
+      "market snapshot"
+     ],
+     "outputs": [
+      "approved order ticket"
+     ],
+     "handoff_to": "none",
+     "share_pct": 23,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "opportunity-to-order",
+     "approver": "securities sales agent",
+     "labour_scope": "focal_role",
+     "shared_step_id": "sec-order-ticket",
+     "approval_refs": [
+      "a-ticket"
+     ]
+    },
+    {
+     "id": "s4",
+     "what": "Send that approved ticket to the venue.",
+     "actor": "securities sales agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "approved order ticket"
+     ],
+     "outputs": [
+      "venue order"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "securities sales agent",
+     "labour_scope": "focal_role",
+     "shared_step_id": "sec-order-send",
+     "approval_refs": [
+      "a-send"
+     ]
+    }
+   ],
+   "design": "A {BI} view joins the live quote, the open position and the client limit from the {CRM}. The securities sales agent settles side, size and price, then approves that ticket version. Only that version is sent to the venue, and the message is stored in {DOCS}.",
+   "previous_blocker": "The quote, the client limit and the venue ticket sat on separate screens, and a wrong send is a firm loss.",
+   "enabler_now": "The order fields are stable, so a pre-filled ticket and a versioned send are ordinary integration, not a new pricing model.",
+   "still_hard": "The price still depends on a live conversation, and a missed client limit is not fixed by a faster screen.",
+   "human_edge": "Only the agent can judge whether this price and size fit this client's instruction and the firm's own limit.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Re-check a resting bid when the quote crosses the client's written limit, including sizes too small to watch by hand."
+   },
+   "altitude": "The agent still decides every price. Typing the ticket and the venue click drop out of the hour, and they can refuse a send.",
+   "reach": [
+    {
+     "role": "insurance sales agent",
+     "task": "confirm a cover note matches the quoted terms before it goes to the client",
+     "learn": "which fields must be frozen in the approved version, and which edit voids it"
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "5-9",
+    "testing_rollout": "4-7",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Joining a quote, a position and a client limit into one ticket is records and screen work. A model is not needed to set the price.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The job digest says order-related calls and messages are kept for five years, and up to seven. The stored ticket is that record, not a new scoring of the agent.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "Workflow boundary: the task starts when a client or the house book needs a live bid, and ends when the venue has that offer. Agreeing a strategy and keeping the blotter are other tasks.",
+    "Fields: instrument id, side, quantity, limit price, currency, client id, account, time-in-force. The agent types side, quantity and limit. Quote and client id come from the market terminal ({OTHER}) and the {CRM}. If client id or limit is missing, the send stops and the agent finishes the ticket by hand.",
+    "Native check: the venue screen already accepts an order. The build only pre-fills from an approved version. It does not add a second order-entry app.",
+    "The live conversation is the person speaking, so it has no separate approval step. The ticket version is the gated artefact, and any edit voids it.",
+    "Focal upkeep is the venue field map only. No seller scoring is added, so works-council consent for scoring is out of scope."
+   ],
+   "unknowns": [
+    "Whether this firm's venue accepts an order feed or only a screen.",
+    "Whether these clients are retail advice clients or professional counterparties.",
+    "Whether order-message retention is already switched on."
+   ],
+   "research_questions": [
+    "What share of bids is still a phone call rather than a screen ticket?",
+    "How often does the limit change between approval and a venue reject?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The agent still settles price and size on the call.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 40.0,
+      "counted_step_ids": [
+       "s2"
+      ]
+     },
+     {
+      "description": "The agent still checks the ticket fields before the send.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 18.4,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Keep the venue field map and the client-limit fields current.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 3
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a-ticket",
+     "action_step_id": "s3",
+     "approved_version": "order-ticket v1: instrument, side, size, limit, client-id, quote-time",
+     "approval_step_id": "s3",
+     "approver": "securities sales agent"
+    },
+    {
+     "id": "a-send",
+     "action_step_id": "s4",
+     "approved_version": "order-ticket v1: instrument, side, size, limit, client-id, quote-time",
+     "approval_step_id": "s3",
+     "approver": "securities sales agent"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 21.2,
+    "high": 31.6,
+    "basis": "If most bids are still settled by phone and the venue rejects a field often enough that the agent rekeys the ticket, only the quote lookup is reliably saved."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 41.6,
+   "incremental_hours_per_100_baseline_hours": 3,
+   "time_saved_pct": 38.6,
+   "speedup": 1.628664,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "41-3031.00:23193",
+   "short": "Watch markets and open positions for breaks.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read quotes and positions on the market terminal.",
+     "actor": "securities sales agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "market quote",
+      "open position"
+     ],
+     "outputs": [
+      "position screen"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "market-insight",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "sec-market-snapshot",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Flag a position that crosses a limit set in advance.",
+     "actor": "securities sales agent",
+     "today_means": "system_screen",
+     "systems": [
+      "BI",
+      "OTHER"
+     ],
+     "inputs": [
+      "position screen",
+      "position limit"
+     ],
+     "outputs": [
+      "position alert"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "market-insight",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "sec-position-alert",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Read a short news note tied to names on the book.",
+     "actor": "securities sales agent",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "BI"
+     ],
+     "inputs": [
+      "headline",
+      "open position"
+     ],
+     "outputs": [
+      "linked news note"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "dashboard",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Headlines and the open book of instrument ids.",
+      "output": "A note that names an instrument on the book, each sentence with a link.",
+      "check": "Drop any sentence with no link or with an instrument id that is not on the book.",
+      "stop": "If more than five sentences fail, stop and leave the raw headline list for the agent.",
+      "why_not_simpler": "Headlines are free text. A fixed word list misses a renamed issuer and still forces a full read."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "market-insight",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Decide which alerts need a call or a hedge.",
+     "actor": "securities sales agent",
+     "today_means": "system_screen",
+     "systems": [
+      "BI",
+      "CRM"
+     ],
+     "inputs": [
+      "position alert",
+      "linked news note"
+     ],
+     "outputs": [
+      "watch decision"
+     ],
+     "handoff_to": "trading desk",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "market-insight",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "The market terminal ({OTHER}) already shows the quote. A {BI} limit watch raises a position alert, and a bounded read turns headlines into notes that name only instruments on the book. The agent still decides which alert needs a call or a hedge. Nothing is sent to a venue from this task.",
+   "previous_blocker": "Limits lived in a notebook or a side file, and the news wire was a separate screen the agent scanned by eye.",
+   "enabler_now": "A numeric limit is a rule, and a headline can be kept only when it names an instrument already on the book.",
+   "still_hard": "Whether an alert is a real risk for this client is still a judgement, and a bad news link is worse than silence.",
+   "human_edge": "The agent decides which move matters for this book. A threshold cannot tell a headline from a reason to call.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Raise a limit alert on small positions that the agent does not have time to scan each hour."
+   },
+   "altitude": "The hour shifts from scanning every quote to the alerts and the news notes that name the book. The agent still chooses the call.",
+   "reach": [
+    {
+     "role": "travel agent",
+     "task": "watch fare changes against a trip the customer has not yet confirmed",
+     "learn": "which fare fields are a hard limit and which change still needs a person"
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "4-8",
+    "testing_rollout": "3-6",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Position limits and a market screen are a dashboard and a notification. The job digest treats market watch as a feed plus alerts, with a model only to summarise news that carries a link.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The job digest says scoring sellers, and recording calls, needs works-council consent. This task stores no score of the agent and records no call.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "Workflow boundary: the task is the watch, not the bid and not the blotter. It ends when the agent has marked a watch decision.",
+    "Fields: instrument id, position quantity, limit quantity, limit price, alert time. Limits are maintained by the agent. The quote comes from the market terminal. A headline with no instrument id on the book is dropped.",
+    "Native check: the terminal already displays the quote. The new part is the limit rule and the linked note, not a second market screen.",
+    "No seller scoring and no call recording are added. Access to position data is permissioned.",
+    "Focal upkeep is the limit list and the headline source list."
+   ],
+   "unknowns": [
+    "Whether the firm already has a limit watch in the terminal.",
+    "Which news sources the desk is allowed to store next to client positions."
+   ],
+   "research_questions": [
+    "How many position checks per hour are a glance rather than a decision?",
+    "What share of alerts is a false cross of a stale limit?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The agent still reads the linked news note.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 6.0,
+      "counted_step_ids": [
+       "s3"
+      ]
+     },
+     {
+      "description": "The agent still decides which alert needs a call or a hedge.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 27.0,
+      "counted_step_ids": [
+       "s4"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Maintain position limits and the list of headline sources.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 34.6,
+    "high": 51.6,
+    "basis": "If the terminal has no feed and about half of the breaks are still spotted by looking, the saved time is the threshold list and the news note, not the whole watch."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 67.0,
+   "incremental_hours_per_100_baseline_hours": 4,
+   "time_saved_pct": 63.0,
+   "speedup": 2.702703,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "41-3031.00:23194",
+   "short": "Agree a buy or sell price that suits the client.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Assemble the quote, the last instruction and the position.",
+     "actor": "securities sales agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "CRM"
+     ],
+     "inputs": [
+      "market quote",
+      "client instruction",
+      "open position"
+     ],
+     "outputs": [
+      "price brief"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "opportunity-to-order",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "sec-market-snapshot",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Agree buying and selling prices with the client.",
+     "actor": "securities sales agent",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "price brief"
+     ],
+     "outputs": [
+      "spoken level"
+     ],
+     "handoff_to": "client",
+     "share_pct": 50,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "opportunity-to-order",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Approve the agreed level as a versioned note.",
+     "actor": "securities sales agent",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "CRM"
+     ],
+     "inputs": [
+      "spoken level",
+      "price brief"
+     ],
+     "outputs": [
+      "approved level note"
+     ],
+     "handoff_to": "none",
+     "share_pct": 18,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "opportunity-to-order",
+     "approver": "securities sales agent",
+     "labour_scope": "focal_role",
+     "shared_step_id": "sec-price-agreement",
+     "approval_refs": [
+      "a-level"
+     ]
+    },
+    {
+     "id": "s4",
+     "what": "Copy that approved level onto the order ticket.",
+     "actor": "securities sales agent",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM",
+      "OTHER"
+     ],
+     "inputs": [
+      "approved level note"
+     ],
+     "outputs": [
+      "order ticket"
+     ],
+     "handoff_to": "none",
+     "share_pct": 12,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "opportunity-to-order",
+     "approver": "securities sales agent",
+     "labour_scope": "focal_role",
+     "shared_step_id": "sec-order-ticket",
+     "approval_refs": [
+      "a-copy"
+     ]
+    }
+   ],
+   "design": "A {BI} brief pulls the quote, the last client instruction and the open position before the call. The agent agrees the level in the conversation, then approves a short note in {DOCS}. Only that note is copied onto the order ticket in the {CRM}. The venue send stays in the bidding task.",
+   "previous_blocker": "The agreed level was a sentence in a mailbox or a note, and the ticket was typed again from memory.",
+   "enabler_now": "The level has a few fields. Copying an approved note is a plain write, once the person has agreed the price.",
+   "still_hard": "The agreement itself is a conversation about this client's interest. A brief does not hold that talk.",
+   "human_edge": "The agent is the one who can say this price is acceptable for this client, and who carries the duty for that advice.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Call time stays. The brief is ready before the call, and the agent no longer retypes the level they just agreed.",
+   "reach": [
+    {
+     "role": "insurance sales agent",
+     "task": "agree a premium and cover with the customer before the policy is issued",
+     "learn": "which cover fields the customer actually agreed, as distinct from the quote"
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "3-6",
+    "testing_rollout": "3-5",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "The job digest keeps securities advice with the person. A model may prepare a brief. It does not agree the price.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The job digest says staff who advise need the relevant professional qualification, and a model draft is signed by the adviser. Agreeing a price for a client is that advice.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "Workflow boundary: this task ends when the approved level is on the order ticket. Sending the bid is the bidding task. The blotter is the records task.",
+    "Fields: client id, instrument id, side, price, size, currency, agreed time. The agent confirms price and size from the call. Quote and client id are already on the brief. A missing price blocks the copy.",
+    "The live call is the person speaking, so it is not a separate approval. The written level is the gated version. Any change to price or size voids it.",
+    "No new call recording is added. If the firm already records order calls, that retention stays as it is.",
+    "Focal upkeep is the brief's field list, not a second review of the call."
+   ],
+   "unknowns": [
+    "How often the agreed level changes again before the ticket is sent.",
+    "Whether this desk's clients expect a written confirmation of the level."
+   ],
+   "research_questions": [
+    "What share of price agreements is a call rather than a screen message?",
+    "How often does the written note disagree with what the client later says was agreed?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The agent still holds the price conversation.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 50.0,
+      "counted_step_ids": [
+       "s2"
+      ]
+     },
+     {
+      "description": "The agent still checks the written level against what was just agreed.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 8.1,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Keep the price-brief fields aligned with the order ticket.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 3
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a-level",
+     "action_step_id": "s3",
+     "approved_version": "agreed-level v1: client-id, instrument, side, price, size, agreed-time",
+     "approval_step_id": "s3",
+     "approver": "securities sales agent"
+    },
+    {
+     "id": "a-copy",
+     "action_step_id": "s4",
+     "approved_version": "agreed-level v1: client-id, instrument, side, price, size, agreed-time",
+     "approval_step_id": "s3",
+     "approver": "securities sales agent"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 21.3,
+    "high": 31.8,
+    "basis": "If clients still bargain on the phone and the brief is often stale, the agent rebuilds it, and only the copy onto the ticket is saved."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 41.9,
+   "incremental_hours_per_100_baseline_hours": 3,
+   "time_saved_pct": 38.9,
+   "speedup": 1.636661,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "41-3031.00:23195",
+   "short": "Keep a complete record of each trade.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Copy each fill into the transaction records.",
+     "actor": "securities sales agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "venue fill"
+     ],
+     "outputs": [
+      "blotter row"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "record-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "sec-trade-blotter",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Match the fill to the order and the client account.",
+     "actor": "securities sales agent",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM",
+      "OTHER"
+     ],
+     "inputs": [
+      "blotter row",
+      "approved order ticket",
+      "client account"
+     ],
+     "outputs": [
+      "matched fill"
+     ],
+     "handoff_to": "none",
+     "share_pct": 22,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Resolve a break in size, price or account.",
+     "actor": "securities sales agent",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM",
+      "OTHER"
+     ],
+     "inputs": [
+      "matched fill",
+      "venue fill"
+     ],
+     "outputs": [
+      "corrected blotter row"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "record-to-report",
+     "approver": "securities sales agent",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a-break"
+     ]
+    },
+    {
+     "id": "s4",
+     "what": "Sample the day's blotter against the venue list.",
+     "actor": "securities sales agent",
+     "today_means": "system_screen",
+     "systems": [
+      "BI",
+      "OTHER"
+     ],
+     "inputs": [
+      "blotter row",
+      "venue fill"
+     ],
+     "outputs": [
+      "blotter sign-off"
+     ],
+     "handoff_to": "none",
+     "share_pct": 16,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "audit-and-controls",
+     "approver": "securities sales agent",
+     "labour_scope": "focal_role",
+     "shared_step_id": "sec-blotter-signoff",
+     "approval_refs": [
+      "a-day"
+     ]
+    },
+    {
+     "id": "s5",
+     "what": "Store the signed blotter with the order message.",
+     "actor": "securities sales agent",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "blotter sign-off",
+      "corrected blotter row"
+     ],
+     "outputs": [
+      "retained trade record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 12,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "securities sales agent",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a-store"
+     ]
+    }
+   ],
+   "design": "Fills land from the venue ({OTHER}) into the blotter without a second typing. Native match rules in the {CRM} tie each fill to the order and the account. The agent resolves breaks and signs the day's sample on a {BI} list. That signed version is the record kept in {DOCS}.",
+   "previous_blocker": "The fill, the order and the account sat in different places, and the blotter was a spreadsheet keyed by hand at the end of the day.",
+   "enabler_now": "A fill match is a rule on instrument, side, size, price and account. The records system can post a clean row once those fields tie.",
+   "still_hard": "A break still needs a person, because the cost of a wrong account or a wrong size is a loss and a bad record.",
+   "human_edge": "The agent can tell a mistyped fill from a trade that really happened, and signs the record that will be kept.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Sample every day the blotter is open, including quiet days that used to be filed without a look."
+   },
+   "altitude": "End-of-day retyping goes. The agent keeps the break queue and a short sample of the day, and still signs the record.",
+   "reach": [
+    {
+     "role": "insurance sales agent",
+     "task": "file the issued policy against the quote that was accepted",
+     "learn": "which policy fields must tie to the accepted quote before the record is stored"
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "6-10",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "The job digest treats transaction records, position reports and trade checks as code and a dashboard, with no model on the match.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The job digest says order-related records are kept for five years, up to seven. The signed blotter is that retained record.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "Workflow boundary: this task starts at the fill and ends at the retained record. Making the bid and agreeing the price are earlier tasks.",
+    "Fields: trade date, venue reference, instrument id, side, size, price, currency, client id, account, order-ticket id. The venue supplies the fill. Client id and account come from the {CRM}. A mismatch on size, price or account goes to the break queue and is not posted as clean.",
+    "Native check: the records screen already stores a trade. Use its match and its blotter before adding a new store. The new part is the feed and the day's sign-off.",
+    "Outside labour: trading operations may also see the blotter, but this occupation's statement assigns the record to the agent, so the time is focal until a customer splits it.",
+    "Focal upkeep is the match rule and the account map. The sample review is already in the remaining time."
+   ],
+   "unknowns": [
+    "What share of fills still arrives by phone or mail rather than a venue feed.",
+    "Who is allowed to correct a posted row after the day is signed."
+   ],
+   "research_questions": [
+    "How many breaks per hundred fills are an account map error rather than a real trade difference?",
+    "Is the five-to-seven-year retention already configured for this desk?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The agent still resolves breaks in size, price or account.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 12.0,
+      "counted_step_ids": [
+       "s3"
+      ]
+     },
+     {
+      "description": "The agent still samples the day's blotter and signs it.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 5.6,
+      "counted_step_ids": [
+       "s4"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Maintain match rules and the map from venue account to client account.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a-break",
+     "action_step_id": "s3",
+     "approved_version": "break-fix v1: blotter-row, field-changed, source-fill-id",
+     "approval_step_id": "s3",
+     "approver": "securities sales agent"
+    },
+    {
+     "id": "a-day",
+     "action_step_id": "s4",
+     "approved_version": "blotter-day v1: trade-date, account, instrument, side, size, price, venue-ref",
+     "approval_step_id": "s4",
+     "approver": "securities sales agent"
+    },
+    {
+     "id": "a-store",
+     "action_step_id": "s5",
+     "approved_version": "blotter-day v1: trade-date, account, instrument, side, size, price, venue-ref",
+     "approval_step_id": "s4",
+     "approver": "securities sales agent"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 43.1,
+    "high": 64.2,
+    "basis": "If a large share of fills still arrives by phone or mail, the break queue grows past the one-in-five assumed here, and the agent spends the afternoon on corrections."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 82.4,
+   "incremental_hours_per_100_baseline_hours": 4,
+   "time_saved_pct": 78.4,
+   "speedup": 4.62963,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "The agent keeps the price talk and the break decision. Hunting quotes, retyping tickets and posting clean rows leave the day.",
+  "reach": [
+   "Insurance sales agent: freeze the fields on a cover note before it is sent, and learn which later edit voids the sign-off.",
+   "Travel agent: price a trip from the published rate card before the customer accepts, and learn which rate fields the total must match."
+  ],
+  "skills_to_grow": [
+   "Write a client limit as fields another person can check without replaying the call.",
+   "Tell a booking break from a real position when the fill and the blotter disagree."
+  ],
+  "ambitious_version": "A resting bid is re-checked against the written client limit when the quote crosses it, including sizes too small to watch by hand."
+ },
+ "_meta": {
+  "model": "grok-4.7",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "41-3031.00",
+   "title": "Securities, Commodities, and Financial Services Sales Agents",
+   "tasks": 30,
+   "function": "Sales and account management"
+  },
+  "digest": "research/digests-minor/41-3.md",
+  "digest_sha256": "98273aa70e075b7ddfa7e937a6c567912d180d2bc0ef953d0c589f8bd0222bb9",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-15T14:20:16"
+ }
+}

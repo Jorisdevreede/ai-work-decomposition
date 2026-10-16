@@ -1,0 +1,268 @@
+{
+ "tasks": [
+  {
+   "uid": "11-3031.00:21329",
+   "short": "Review securities transactions and prices to assess market conditions affecting treasury holdings.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve securities transaction reports from the {BANK}.",
+     "actor": "finance analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK"
+     ],
+     "inputs": [
+      "reporting period",
+      "custody account list"
+     ],
+     "outputs": [
+      "securities transaction report"
+     ],
+     "handoff_to": "finance analyst",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Collect dated price lists from the market-data service {OTHER}, stored in the {DOCS}.",
+     "actor": "finance analyst",
+     "today_means": "document",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "instrument list",
+      "reporting period"
+     ],
+     "outputs": [
+      "dated price list"
+     ],
+     "handoff_to": "finance analyst",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Match instruments and calculate price movements, yields and exposures in the {SPREADSHEET}.",
+     "actor": "finance analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "securities transaction report",
+      "dated price list",
+      "holdings register",
+      "instrument reference"
+     ],
+     "outputs": [
+      "market comparison",
+      "data exception list"
+     ],
+     "handoff_to": "financial manager",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Assess market movements against liquidity needs, investment limits and holding-specific risks.",
+     "actor": "financial manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "market comparison",
+      "data exception list",
+      "investment policy",
+      "liquidity forecast"
+     ],
+     "outputs": [
+      "market assessment"
+     ],
+     "handoff_to": "financial manager",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Record the market assessment and follow-up recommendations in the {DOCS}.",
+     "actor": "financial manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "market assessment",
+      "market comparison",
+      "investment policy"
+     ],
+     "outputs": [
+      "market review note"
+     ],
+     "handoff_to": "treasurer",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Manager's market assessment, validated market comparison and investment policy excerpts.",
+      "output": "Draft market review note with source references and proposed follow-up.",
+      "check": "Check every figure against calculation records; manager checks interpretation and recommendations.",
+      "stop": "One draft and one correction pass, capped at two model calls; unresolved claims return to manual drafting.",
+      "why_not_simpler": "A template handles tables, but expressing case-specific reasoning from the manager's assessment needs flexible writing."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "treasury-and-cash",
+     "approver": "financial manager"
+    }
+   ],
+   "design": "Configure scheduled securities reports from the {BANK} and licensed price exports from the market-data service {OTHER}. A job on the {DATA_PLATFORM} validates identifiers, dates and currencies, calculates comparisons, and feeds a {BI} view with exceptions. A bounded drafting loop combines validated figures with the manager's assessment; the manager approves the review note before it is filed in the {DOCS}.",
+   "previous_blocker": "Different instrument identifiers, price conventions and report formats made recurring reconciliation expensive. Market interpretation still required judgement.",
+   "enabler_now": "Existing exports and scheduled feeds can supply structured records. AI-assisted coding reduces the effort of building mappings, calculations and document assembly; no forecasting breakthrough is assumed.",
+   "still_hard": "Licensed data, illiquid instruments, stale quotes and corporate actions need care. Explaining whether a price movement matters to this company's liquidity remains judgement-heavy.",
+   "human_edge": "The manager connects market evidence to upcoming cash needs, risk tolerance and uncertainty, and challenges misleading comparisons.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly review of whether short-term investment maturities still match upcoming cash obligations."
+   },
+   "altitude": "The week shifts from collecting prices and rebuilding comparisons to investigating exceptions and assessing liquidity implications. The manager gains earlier opportunities to recommend maturity changes; trading authority does not change.",
+   "reach": [
+    {
+     "role": "financial risk specialist",
+     "task": "Assess interest-rate and counterparty exposure under adverse scenarios.",
+     "learn": "Duration, concentration limits, scenario construction and the limits of quoted prices."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Scheduled imports, identifier matching and financial calculations can automate preparation while interpretation remains human.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "This securities-review task applies mainly where a company holds treasury investments; many mid-size companies have little such work.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The proposed build ranges and remaining-time percentages are planning estimates, not measured results.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Scope is the company's own treasury holdings, rather than managing investments for clients.",
+    "The task recurs often enough to justify scheduled preparation.",
+    "The bank and market-data service offer usable exports under suitable licences.",
+    "Calculations use approved conventions for currency, accrued interest and reporting dates.",
+    "Build ranges cover one bank connection and one market-data feed.",
+    "GDPR and the EU AI Act apply where relevant. National rules determine employee consultation obligations; consultation time is included if required."
+   ],
+   "unknowns": [
+    "Whether the company holds securities and how often these reviews occur.",
+    "Instrument types, custody accounts, transaction volume and valuation conventions.",
+    "Available exports, feed licences, integration permissions and data charges.",
+    "Current division of preparation and review between finance staff and the manager.",
+    "Existing investment limits and delegated decision rights.",
+    "Whether employee consultation is required under applicable national rules."
+   ],
+   "research_questions": [
+    "Can existing reporting configuration provide complete transactions and dated prices?",
+    "Which instrument identifiers and corporate actions require explicit reconciliation rules?",
+    "Which comparisons materially inform treasury decisions rather than repeat available reports?",
+    "What historical cases should validate stale-price detection and yield calculations?"
+   ],
+   "new_work": [
+    "Resolve missing identifiers, stale prices and unmatched transactions.",
+    "Maintain calculation conventions and instrument mappings.",
+    "Review draft notes for unsupported explanations and recommendations.",
+    "Monitor feed failures, access permissions and licence renewals."
+   ],
+   "time_saved_pct": 72,
+   "speedup": 3.51
+  }
+ ],
+ "role": {
+  "altitude": "For this task, the financial manager spends more time assessing treasury exposure and less time assembling evidence. Existing investment approval rights remain in place.",
+  "reach": [
+   "Work with the treasurer on matching investment maturities to liquidity needs.",
+   "Work with the financial risk specialist on interest-rate and counterparty scenarios."
+  ],
+  "skills_to_grow": [
+   "Treasury scenario analysis",
+   "Market-data quality assessment",
+   "Validation of financial calculations",
+   "Clear communication of uncertainty"
+  ],
+  "ambitious_version": "Run a weekly treasury exposure review that links market movements, maturity dates and upcoming cash obligations to specific recommendations."
+ },
+ "job_code": "11-3031.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 70,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "text(await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":4000}));\n"
+  ],
+  "job": {
+   "code": "11-3031.00",
+   "title": "Financial Managers",
+   "tasks": 17,
+   "function": "Finance"
+  }
+ }
+}

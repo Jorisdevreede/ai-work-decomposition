@@ -1,0 +1,646 @@
+{
+ "role_id": "hr-admin",
+ "role": {
+  "altitude": "The two HR administrators stop re-typing between AFAS, Excel, Word and agency portals. They handle exceptions and check documents before they go out. They own the templates, the report definitions and the handbook content, and they approve any disclosure to third parties.",
+  "reach": [
+   "Payroll Specialist: learn the loonbeslag and payroll mutation rules, so garnishment requests and salary statements share one checked AFAS lookup.",
+   "People Analytics and HRIS Analyst: learn the governed AFAS extract and Power BI model, so monthly reports become a dashboard the administrator maintains.",
+   "HR Business Partner: learn how CAO changes become handbook and policy changes, so the administrator can prepare the redline and the OR consultation pack."
+  ],
+  "skills_to_grow": [
+   "Writing and keeping templates and field mappings (AFAS, Word, PDF forms)",
+   "Basic data modelling in Power BI on the AFAS extract",
+   "Writing and structuring handbook content for reuse by a Q&A bot",
+   "AVG/GDPR judgement on disclosure: legal basis, consent, data minimisation",
+   "Reviewing model drafts against source data"
+  ],
+  "ambitious_version": "The HR administrators run an employee self-service desk. Employees request their own werkgeversverklaring, salary statement and org-chart data, and a deterministic AFAS lookup answers them the same day. Monthly reports and the handbook update themselves from AFAS and CAO changes. The administrators spend their week on exceptions, content ownership and new-hire dossiers that are complete on day one."
+ },
+ "tasks": [
+  {
+   "uid": "43-4161.00:2694",
+   "short": "Answer requests from banks, bailiffs, UWV and lenders by looking up employee data in AFAS and filling forms.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read request, check requester's authority and the employee's consent or legal basis",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "information request",
+      "employee consent"
+     ],
+     "outputs": [
+      "checked request"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "incoming request mail or PDF (werkgeversverklaring, loonbeslag, UWV request, reference)",
+      "output": "request type, employee number, requested fields, requester, legal basis claimed",
+      "check": "employee number must match AFAS; request type from a fixed list; legal-basis rules table decides whether consent is required",
+      "stop": "one pass plus one retry; low confidence or unknown type goes to the administrator's queue",
+      "why_not_simpler": "Requests arrive as free mail and bank-specific PDFs; a fixed form cannot be imposed on bailiffs and banks."
+     },
+     "authority": "read",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Look up contract, salary, start date and hours in AFAS",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "checked request",
+      "employee record"
+     ],
+     "outputs": [
+      "employee data extract"
+     ],
+     "handoff_to": "system",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Fill werkgeversverklaring or bank, bailiff or UWV form",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "Microsoft Word",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "employee data extract",
+      "request form"
+     ],
+     "outputs": [
+      "completed statement"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "non-standard PDF form from a bank or bailiff",
+      "output": "mapping of form fields to AFAS data fields",
+      "check": "each mapped field must exist in the AFAS extract; values filled deterministically, never generated; the standard model werkgeversverklaring uses a fixed template without a model",
+      "stop": "one mapping pass; unmapped fields are left blank and flagged",
+      "why_not_simpler": "Form layouts differ per bank and bailiff; the common ones get fixed templates over time."
+     },
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Check, sign and send statement to requester",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook"
+     ],
+     "inputs": [
+      "completed statement"
+     ],
+     "outputs": [
+      "sent statement"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Log disclosure in the employee dossier",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "sent statement"
+     ],
+     "outputs": [
+      "disclosure log entry"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    }
+   ],
+   "design": "A shared HR mailbox feeds a small intake workflow (Power Automate or a scheduled Python job on the governed platform). A bounded model step classifies each request and maps the form, a deterministic AFAS lookup fills the statement, and the administrator approves and sends from a review queue. Each disclosure is logged back into the AFAS dossier, and loonbeslag requests are also routed to Payroll.",
+   "previous_blocker": "Requests come in many formats, from many outside parties, and each one needs an authority check. Building templates per form type cost more than the volume justified.",
+   "enabler_now": "Models can read varied PDFs and mails into fixed fields, and AI coding makes templates and AFAS connector queries cheap to build.",
+   "still_hard": "Judging whether a requester may receive data, and handling odd cases such as a pending dismissal or a variable-hours contract, stays with the administrator. Every outgoing statement is irreversible.",
+   "human_edge": "Deciding whether a disclosure is lawful and proportionate under AVG, and answering questions from the employee or a bailiff when the facts are unusual.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Employee self-service for their own werkgeversverklaring and salary statement, generated from AFAS the same day."
+   },
+   "altitude": "The administrator approves a queue of prepared statements instead of building each one. They gain the right to decide which request types are fully templated and which need a check by the HRBP.",
+   "reach": [
+    {
+     "role": "payroll",
+     "task": "Processing loonbeslag (wage garnishment) orders",
+     "learn": "The beslagvrije voet rules, so garnishment intake and payroll mutation run through one checked flow."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "3-5",
+    "testing_rollout": "3-5",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS Profit 8 has Jonas, which reads documents into dossier fields.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Deterministic lookups for personal entitlements beat generated text; the model should only read and map.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Processing personal data with a new system that logs per employee needs works council consent under WOR art. 27(1)(k).",
+     "grade": "E3",
+     "source": "[S12]"
+    }
+   ],
+   "assumptions": [
+    "Most requests are werkgeversverklaringen for mortgages and loonbeslag orders.",
+    "AFAS Profit API access (GetConnector) is available for contract and salary fields.",
+    "Statements are signed with a scanned or digital signature, not wet ink."
+   ],
+   "unknowns": [
+    "Monthly volume per request type.",
+    "Whether employee consent is collected today, and how.",
+    "Whether the AFAS licence includes Jonas and the needed connectors.",
+    "Who may sign statements today."
+   ],
+   "research_questions": [
+    "What share of last quarter's requests used the standard werkgeversverklaring model versus bank-specific forms?",
+    "Can the AFAS GetConnector return all fields of the werkgeversverklaring, including irregular pay and the intention to extend a contract?",
+    "Does the OR see the intake workflow as a new processing of personal data under art. 27(1)(k)?",
+    "How often does an authority or consent check fail today?"
+   ],
+   "time_saved_pct": 84,
+   "speedup": 6.45
+  },
+  {
+   "uid": "43-4161.00:2697",
+   "short": "Compile monthly and ad hoc personnel reports from AFAS, Recruitee, Studytube and agency exports in Excel.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export headcount, mutations, absence, hiring, training and flex data",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Recruitee",
+      "Studytube",
+      "Staffing agency portals"
+     ],
+     "inputs": [
+      "AFAS export",
+      "Recruitee export",
+      "Studytube export",
+      "agency hours export"
+     ],
+     "outputs": [
+      "raw report data"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Merge, clean and reconcile data in Excel",
+     "actor": "hr-admin",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "raw report data"
+     ],
+     "outputs": [
+      "clean report dataset"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Build tables and charts per site and department",
+     "actor": "hr-admin",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "PowerPoint"
+     ],
+     "inputs": [
+      "clean report dataset"
+     ],
+     "outputs": [
+      "personnel report"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Write short commentary on changes and outliers",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "PowerPoint"
+     ],
+     "inputs": [
+      "personnel report"
+     ],
+     "outputs": [
+      "report commentary"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "month-on-month figures and threshold breaches computed deterministically",
+      "output": "three to six plain sentences per section",
+      "check": "every number in the text must match the dataset (automatic string check); no health or individual data in the prompt",
+      "stop": "one draft, one regeneration if the number check fails, otherwise blank section for the person",
+      "why_not_simpler": "Fixed sentence templates cover the routine cases; a model only helps when several changes need to be put together in one explanation."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Check and send report to HR director, managers and OR",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "SharePoint"
+     ],
+     "inputs": [
+      "personnel report",
+      "report commentary"
+     ],
+     "outputs": [
+      "distributed report"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Replace the monthly Excel workbook that combines AFAS, Recruitee, Studytube and agency exports with scheduled extract jobs into the governed data platform behind the existing Power BI model. Standard reports become Power BI pages with row-level security per site, and a bounded model step drafts commentary that the administrator checks before a subscription sends the report.",
+   "previous_blocker": "Recruitee, Studytube and the agency portals were never connected to the nightly AFAS extract. Each report was a one-off Excel job that nobody had time to rebuild properly.",
+   "enabler_now": "APIs exist for AFAS, Recruitee and Studytube, and AI coding makes the extract jobs and Power BI measures fast to build. Agency portals still need file drops.",
+   "still_hard": "Agency data comes as different exports from three portals, and definitions (FTE, flex headcount, verzuim percentage) must be agreed once. Ad hoc requests from the OR or management still need judgement about what to show.",
+   "human_edge": "Knowing what a manager or the OR actually needs to see, and spotting a figure that is technically right but misleading.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A weekly view per site of open roles, offer acceptance, week-one onboarding and 90-day retention, instead of a monthly Excel report."
+   },
+   "altitude": "The administrator checks and explains reports instead of building them. They own the report definitions and decide, with the People Analyst, which ad hoc questions become standard pages.",
+   "reach": [
+    {
+     "role": "people-analyst",
+     "task": "Maintaining the Power BI HR model on the AFAS extract",
+     "learn": "Data model and measure definitions, so the administrator can add a field or filter without a ticket."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "5-10",
+    "testing_rollout": "4-6",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Power BI dashboards on a nightly AFAS extract already exist at the company.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Health data is special-category under GDPR Art. 9 and should stay out of model prompts; absence reports must use aggregates only.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Recruitee and Studytube offer APIs for pipeline and completion data.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "About five standard reports a month make up most of this task.",
+    "The existing Power BI workspace can take new sources.",
+    "The agencies can deliver a regular file export of hours and headcount."
+   ],
+   "unknowns": [
+    "Which reports are produced, for whom, and how often.",
+    "Whether the agency portals offer API or scheduled exports.",
+    "Whether the OR already receives a standard personnel report under WOR art. 31b."
+   ],
+   "research_questions": [
+    "Which of last quarter's reports could be fully rebuilt from AFAS, Recruitee and Studytube data alone?",
+    "Can the three agency portals deliver a scheduled export, and in what format?",
+    "Do readers use the commentary, or only the figures?"
+   ],
+   "time_saved_pct": 89,
+   "speedup": 9.09
+  },
+  {
+   "uid": "13-1071.00:18863",
+   "short": "Keep org charts, the employee handbook, directories and evaluation forms current after changes in AFAS, the CAO or policy.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Notice a change from manager mail, AFAS mutation or CAO update",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "AFAS mutation",
+      "CAO change",
+      "manager request"
+     ],
+     "outputs": [
+      "document change request"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Update org charts and staff directories by hand",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "PowerPoint",
+      "Excel",
+      "SharePoint"
+     ],
+     "inputs": [
+      "document change request",
+      "employee record"
+     ],
+     "outputs": [
+      "org chart",
+      "staff directory"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Edit handbook and policy text after CAO or policy changes",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "SharePoint"
+     ],
+     "inputs": [
+      "CAO change",
+      "employee handbook"
+     ],
+     "outputs": [
+      "handbook redline"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "new CAO text or policy decision and the affected handbook sections",
+      "output": "tracked-changes redline with a list of sections touched",
+      "check": "the administrator and HRBP review every change; section list is compared with a keyword search across the handbook for missed hits",
+      "stop": "one draft per change; sections the model is unsure of are flagged, not changed",
+      "why_not_simpler": "CAO changes are written as legal prose; finding and rewording every affected handbook section needs reading free text."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Adjust performance evaluation forms and templates",
+     "actor": "hr-admin",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "form change request"
+     ],
+     "outputs": [
+      "evaluation form"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Publish new versions on SharePoint and inform staff",
+     "actor": "hr-admin",
+     "today_means": "email_chat",
+     "systems": [
+      "SharePoint",
+      "Teams",
+      "Outlook"
+     ],
+     "inputs": [
+      "approved document"
+     ],
+     "outputs": [
+      "published document",
+      "change notice"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    }
+   ],
+   "design": "Org charts and directories are generated each night from the AFAS org structure, either in Power BI or through the Microsoft 365 directory, so they are no longer kept by hand. Handbook changes run as a SharePoint approval flow: a bounded model step drafts a redline from the CAO or policy change, the HRBP approves it, and publishing and the Teams notice are automatic.",
+   "previous_blocker": "Org data in AFAS was not trusted enough to publish directly, and handbook updates needed someone to read the CAO and find every affected section.",
+   "enabler_now": "AFAS can feed the M365 directory and Power BI, and models can draft redlines from legal text with a person checking them.",
+   "still_hard": "AFAS data quality (managers, cost centres, flex workers who are not in AFAS) sets the quality of the generated org charts. Handbook wording that has legal effect still needs an HRBP and sometimes OR consent under WOR art. 27.",
+   "human_edge": "Judging how a CAO change applies to Noordhaven's own warehouse arrangements, and writing policy text that shift workers on the floor understand.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A handbook Q&A in Teams for all 1,200 staff, labelled as AI and answering from the maintained handbook, with a ticket to HR when it cannot answer."
+   },
+   "altitude": "The administrator becomes the handbook content owner instead of the person who copy-edits charts. They decide the structure of the handbook and flag which changes need the HRBP or the OR.",
+   "reach": [
+    {
+     "role": "hrbp",
+     "task": "Translating CAO and policy changes into local arrangements",
+     "learn": "Which handbook clauses are CAO-bound and which are company policy, so redlines go to the right approver."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "3-6",
+    "testing_rollout": "3-5",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "SixFifty drafts handbooks from an attorney-maintained law base and routes them through strict workflows (US law only).",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "In HR bot rollouts, content structure and a named content owner mattered more than the model.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "An employee-facing bot must disclose it is AI under EU AI Act Art. 50(1).",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "A chatbot added beside the old work saved about 3% of hours; savings come from redesigned workflows.",
+     "grade": "E3",
+     "source": "[S3]"
+    }
+   ],
+   "assumptions": [
+    "The handbook and policies live as Word files on SharePoint.",
+    "AFAS holds manager and department for all permanent staff.",
+    "Org charts today are kept in PowerPoint or Visio by hand."
+   ],
+   "unknowns": [
+    "How many handbook versions exist (per site, per CAO).",
+    "Whether AFAS is already synced to Entra ID / the M365 directory.",
+    "How often the CAO and policies change per year.",
+    "Whether flex workers must appear in org charts and directories."
+   ],
+   "research_questions": [
+    "What share of AFAS employee records have a correct manager and department today?",
+    "How many handbook sections changed after the last CAO round, and how long did the update take?",
+    "Will the OR want consent rights over the generated directory or a handbook Q&A bot under WOR art. 27(1)(k)?"
+   ],
+   "time_saved_pct": 84,
+   "speedup": 6.25
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 80,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

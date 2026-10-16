@@ -1,0 +1,1172 @@
+{
+ "tasks": [
+  {
+   "uid": "11-3012.00:21266",
+   "short": "Maintain accurate, accessible paper and electronic records.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect correspondence, attendance records and approved documents for filing.",
+     "actor": "office clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "HCM",
+      "EMAIL"
+     ],
+     "inputs": [
+      "correspondence",
+      "attendance record",
+      "decision record",
+      "approved payroll pack"
+     ],
+     "outputs": [
+      "record intake"
+     ],
+     "handoff_to": "office clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Enter document dates, subjects, owners and reference numbers in the {DOCS}.",
+     "actor": "office clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "record intake"
+     ],
+     "outputs": [
+      "record metadata"
+     ],
+     "handoff_to": "office clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Unstructured documents from record intake; structured fields pass through directly.",
+      "output": "Provisional record metadata with source locations and an approved record-type label.",
+      "check": "Validate required fields, dates, identifiers and source locations; reject unsupported labels and missing evidence.",
+      "stop": "One extraction and one repair attempt per document. Unresolved fields enter the exception queue.",
+      "why_not_simpler": "Correspondence and scanned forms vary. Fixed field mappings handle only the structured sources."
+     },
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Assign filing locations, access groups and retention categories in the {DOCS}.",
+     "actor": "office clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "record metadata",
+      "filing rules",
+      "retention schedule"
+     ],
+     "outputs": [
+      "filed record",
+      "record exception"
+     ],
+     "handoff_to": "records manager",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Resolve unclear ownership, conflicting versions and sensitive access requests.",
+     "actor": "records manager",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "record exception",
+      "filing rules",
+      "retention schedule"
+     ],
+     "outputs": [
+      "record correction",
+      "access decision"
+     ],
+     "handoff_to": "office clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "records manager"
+    },
+    {
+     "id": "s5",
+     "what": "Copy attendance totals into a local administrative summary.",
+     "actor": "office clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "HCM",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "attendance record"
+     ],
+     "outputs": [
+      "attendance summary"
+     ],
+     "handoff_to": "administrative services manager",
+     "share_pct": 10,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Check filing completeness, duplicate records and overdue corrections.",
+     "actor": "administrative services manager",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS",
+      "HCM"
+     ],
+     "inputs": [
+      "filed record",
+      "record correction",
+      "record intake"
+     ],
+     "outputs": [
+      "records quality report"
+     ],
+     "handoff_to": "records manager",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure intake, filing rules and version control in the {DOCS}, with structured feeds from the {HCM} and {EMAIL}. A bounded extractor supplies provisional metadata for varied documents; deterministic checks route uncertain records to a records manager without broadening access. Replace the duplicate attendance summary with a saved {HCM} view and show completeness checks in the {BI}.",
+   "previous_blocker": "Local folder conventions, inconsistent metadata and paper arrivals made shared filing rules difficult to apply.",
+   "enabler_now": "Existing records features handle much of the work. AI-assisted coding makes small connectors and validation screens cheaper; bounded extraction handles varied documents.",
+   "still_hard": "Legacy migration, poor scans and disputed record ownership remain expensive. GDPR retention and access requirements need approved rules; employee-record changes may require consultation under national rules.",
+   "human_edge": "Recognise when a document's sensitivity, business context or legal hold overrides its usual filing category.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A records handover pack for temporary cover staff"
+   },
+   "altitude": "The week shifts from correcting filenames and chasing missing records to resolving access disputes and improving handovers. No additional authority over retention or employee data follows automatically.",
+   "reach": [
+    {
+     "role": "file clerk",
+     "task": "Design a retrieval test for archived correspondence.",
+     "learn": "Indexing, version history and retrieval sampling."
+    },
+    {
+     "role": "business continuity planner",
+     "task": "Identify essential records needed during an office outage.",
+     "learn": "Recovery priorities and minimum access requirements."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-8",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Metadata fields, version control, access groups and retention mappings can largely use existing records configuration.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Variable correspondence can use bounded extraction with validation and an exception queue; this job has no directly matched implementation case in the digest.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This baseline covers a mixed paper and electronic office, with electronic records taking most handling time.",
+    "The attendance summary duplicates a usable view in the {HCM}; elimination depends on that condition.",
+    "Existing permissions are inherited. Uncertain records remain restricted, and automated disposal is outside the first release.",
+    "Build ranges estimate one record family and a small pilot, excluding bulk archive migration.",
+    "Consultation effort is included where national rules apply; elapsed waiting time may be longer.",
+    "The prior's strong automation potential fits routine filing, but ambiguous access and retention decisions remain human."
+   ],
+   "unknowns": [
+    "Which record families, volumes and paper sources are in scope?",
+    "Can the {DOCS} enforce the approved retention schedule and legal holds?",
+    "Does the attendance summary serve any independent statutory or contractual purpose?",
+    "Which employee representatives must be consulted under applicable national rules?"
+   ],
+   "research_questions": [
+    "How accurately can source identifiers and record types be extracted from a representative document sample?",
+    "Which existing {DOCS} features remove the need for custom code?"
+   ],
+   "new_work": [
+    "Resolve rejected metadata and uncertain record types.",
+    "Sample filed records for retrieval and access accuracy.",
+    "Maintain filing mappings, retention rules and connector permissions.",
+    "Prepare reusable handover packs for cover staff."
+   ],
+   "time_saved_pct": 81,
+   "speedup": 5.33
+  },
+  {
+   "uid": "11-3012.00:21267",
+   "short": "Agree administrative goals and decisions on people, budgets, space and equipment with departmental leaders.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather spending, staffing, service demand and space utilisation figures.",
+     "actor": "administrative services manager",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "HCM",
+      "BI",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "spending report",
+      "staffing report",
+      "service demand report",
+      "space utilisation report"
+     ],
+     "outputs": [
+      "planning dataset"
+     ],
+     "handoff_to": "administrative services manager",
+     "share_pct": 12,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "strategy-and-planning",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Prepare resource options, cost comparisons and proposed objectives.",
+     "actor": "administrative services manager",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "DOCS"
+     ],
+     "inputs": [
+      "planning dataset",
+      "department request",
+      "budget limits"
+     ],
+     "outputs": [
+      "options paper"
+     ],
+     "handoff_to": "departmental leaders",
+     "share_pct": 13,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "strategy-and-planning",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Find a meeting time and circulate the agenda and options paper.",
+     "actor": "administrative assistant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CALENDAR",
+      "DOCS"
+     ],
+     "inputs": [
+      "options paper",
+      "participant list"
+     ],
+     "outputs": [
+      "meeting invitation",
+      "meeting agenda"
+     ],
+     "handoff_to": "departmental leaders",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "meetings-and-calendar",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Discuss priorities, challenge assumptions and negotiate resource trade-offs.",
+     "actor": "departmental leaders",
+     "today_means": "meeting_call",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "options paper",
+      "meeting agenda",
+      "department request"
+     ],
+     "outputs": [
+      "negotiated proposal"
+     ],
+     "handoff_to": "budget owner",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "strategy-and-planning",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve objectives and resource commitments within delegated limits.",
+     "actor": "budget owner",
+     "today_means": "meeting_call",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "negotiated proposal",
+      "budget limits",
+      "delegation policy"
+     ],
+     "outputs": [
+      "approved decision"
+     ],
+     "handoff_to": "administrative services manager",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "strategy-and-planning",
+     "approver": "budget owner"
+    },
+    {
+     "id": "s6",
+     "what": "Write the decision record and assign actions, owners and deadlines.",
+     "actor": "administrative services manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "PROJECT"
+     ],
+     "inputs": [
+      "approved decision",
+      "meeting notes"
+     ],
+     "outputs": [
+      "decision record",
+      "action register"
+     ],
+     "handoff_to": "action owner",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Written meeting notes and explicitly approved decisions.",
+      "output": "Draft decision record and action entries with owners and deadlines.",
+      "check": "Link entries to notes; flag missing owners or dates; the meeting chair checks commitments before publication.",
+      "stop": "One draft and one correction pass per meeting. Unclear commitments return to the chair.",
+      "why_not_simpler": "Free-text notes express commitments inconsistently; templates alone cannot reliably map them into action fields."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "strategy-and-planning",
+     "approver": "meeting chair"
+    },
+    {
+     "id": "s7",
+     "what": "Request progress updates and flag overdue actions.",
+     "actor": "administrative assistant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "PROJECT"
+     ],
+     "inputs": [
+      "action register"
+     ],
+     "outputs": [
+      "action status report"
+     ],
+     "handoff_to": "administrative services manager",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none"
+    }
+   ],
+   "design": "A scheduled feed on the {DATA_PLATFORM} assembles agreed figures and produces a template-based options paper with explicit scenario assumptions. Configure scheduling in the {CALENDAR} and action tracking in the {PROJECT}; a bounded drafting loop turns written notes into a chair-approved decision record in the {DOCS}. Leaders retain the discussion and approval of commitments.",
+   "previous_blocker": "Figures came from separate teams, scenario assumptions lived in individual workbooks, and action follow-up depended on memory.",
+   "enabler_now": "Small integrations and reusable scenario calculators are cheaper to build. A bounded drafting loop can reduce minutes work without trying to conduct negotiations.",
+   "still_hard": "Teams may disagree about priorities, capacity and what constitutes fair allocation. Personnel and monitoring changes can require consultation under national rules, and employee data remains subject to GDPR.",
+   "human_edge": "Surface hidden constraints, build agreement and take responsibility for trade-offs that disadvantage one department.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A monthly review of discretionary space and equipment allocations"
+   },
+   "altitude": "The manager spends less time assembling papers and chasing actions, leaving more time to test options with departments. Any right to reallocate discretionary resources must be explicitly delegated by the budget owner.",
+   "reach": [
+    {
+     "role": "management analyst",
+     "task": "Compare service capacity and cost under alternative resource allocations.",
+     "learn": "Scenario modelling, sensitivity analysis and clear assumptions."
+    },
+    {
+     "role": "facilities manager",
+     "task": "Test whether proposed space allocations fit operational constraints.",
+     "learn": "Occupancy measures, accessibility needs and move dependencies."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-10",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Data assembly, fixed scenario calculations, scheduling and action reminders can use deterministic technology.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "A Danish study across 11 occupations reported 2.8% of hours saved by chatbots; it does not establish savings for this meeting workflow.",
+     "grade": "E3",
+     "source": "[S9]"
+    }
+   ],
+   "assumptions": [
+    "The baseline is a recurring internal planning meeting; formal employment procedures remain separate.",
+    "Scenario calculations use agreed inputs. The manager still develops substantive options and objectives.",
+    "Written notes are available; meeting recording is not required.",
+    "Build ranges cover one planning forum and a limited set of data feeds.",
+    "Access and applicable national consultation work are included; statutory waiting periods may extend elapsed time.",
+    "The prior's majority meeting time is retained; preparation and follow-up receive most of the changes."
+   ],
+   "unknowns": [
+    "Who can approve spending, space changes and personnel proposals?",
+    "Which figures are reliable enough for shared scenario calculations?",
+    "Does the manager have discretionary allocation authority today?",
+    "Would the proposed data use trigger employee consultation under national rules?"
+   ],
+   "research_questions": [
+    "Which recurring decisions have stable enough inputs for a reusable scenario calculator?",
+    "Can action drafts preserve commitments accurately without full meeting transcripts?"
+   ],
+   "new_work": [
+    "Maintain scenario assumptions and shared metric definitions.",
+    "Review draft commitments before publishing the decision record.",
+    "Resolve conflicting or stale departmental figures.",
+    "Prepare and facilitate the monthly allocation review."
+   ],
+   "time_saved_pct": 35,
+   "speedup": 1.54
+  },
+  {
+   "uid": "11-3012.00:21268",
+   "short": "Oversee approved time records, payroll checks and authorised payroll submission.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Chase missing time entries and pay-change documents before payroll cutoff.",
+     "actor": "payroll administrator",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "HCM",
+      "PAYROLL"
+     ],
+     "inputs": [
+      "payroll calendar",
+      "time record",
+      "pay change"
+     ],
+     "outputs": [
+      "complete payroll inputs",
+      "missing input list"
+     ],
+     "handoff_to": "line manager",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check and approve hours, overtime and absence corrections in the {HCM}.",
+     "actor": "line manager",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "complete payroll inputs",
+      "time record",
+      "attendance record"
+     ],
+     "outputs": [
+      "approved time record",
+      "time exception"
+     ],
+     "handoff_to": "payroll administrator",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "pay-cycle",
+     "approver": "line manager"
+    },
+    {
+     "id": "s3",
+     "what": "Reconcile exports and import approved changes into the {PAYROLL}.",
+     "actor": "payroll administrator",
+     "today_means": "spreadsheet",
+     "systems": [
+      "HCM",
+      "SPREADSHEET",
+      "PAYROLL"
+     ],
+     "inputs": [
+      "approved time record",
+      "approved pay change",
+      "employee master data"
+     ],
+     "outputs": [
+      "payroll input batch",
+      "input reconciliation"
+     ],
+     "handoff_to": "payroll administrator",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Run gross-to-net calculations and produce a draft payroll in the {PAYROLL}.",
+     "actor": "payroll administrator",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL"
+     ],
+     "inputs": [
+      "payroll input batch",
+      "payroll rules"
+     ],
+     "outputs": [
+      "draft payroll",
+      "calculation exception"
+     ],
+     "handoff_to": "administrative services manager",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "pay-cycle",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Review payroll variances and reconcile totals with approved inputs.",
+     "actor": "administrative services manager",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "PAYROLL",
+      "HCM"
+     ],
+     "inputs": [
+      "draft payroll",
+      "input reconciliation",
+      "previous payroll",
+      "calculation exception"
+     ],
+     "outputs": [
+      "payroll control report",
+      "payroll correction"
+     ],
+     "handoff_to": "payroll manager",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Authorise the corrected payroll and its payment and filing instructions.",
+     "actor": "payroll manager",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL",
+      "WORKFLOW"
+     ],
+     "inputs": [
+      "draft payroll",
+      "payroll control report",
+      "payroll correction",
+      "delegation policy"
+     ],
+     "outputs": [
+      "approved payroll pack"
+     ],
+     "handoff_to": "payroll administrator",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "pay-cycle",
+     "approver": "payroll manager"
+    },
+    {
+     "id": "s7",
+     "what": "Upload the payment batch for release through the {BANK}.",
+     "actor": "payroll administrator",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL",
+      "BANK"
+     ],
+     "inputs": [
+      "approved payroll pack"
+     ],
+     "outputs": [
+      "payment receipt"
+     ],
+     "handoff_to": "finance signatory",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "finance signatory"
+    },
+    {
+     "id": "s8",
+     "what": "Submit the approved wage-tax filing and check its acknowledgement.",
+     "actor": "payroll administrator",
+     "today_means": "system_screen",
+     "systems": [
+      "PAYROLL",
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "approved payroll pack"
+     ],
+     "outputs": [
+      "filing acknowledgement"
+     ],
+     "handoff_to": "payroll manager",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "tax-and-filing",
+     "approver": "payroll manager"
+    },
+    {
+     "id": "s9",
+     "what": "Archive payroll evidence and update the completion checklist.",
+     "actor": "payroll administrator",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "PAYROLL"
+     ],
+     "inputs": [
+      "approved payroll pack",
+      "payment receipt",
+      "filing acknowledgement"
+     ],
+     "outputs": [
+      "payroll audit record"
+     ],
+     "handoff_to": "administrative services manager",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure cutoff reminders, calculations and approval stages in the {HCM} and {PAYROLL}, with a deterministic connector replacing export reconciliation. Control totals and variance rules feed an exception view; approved batches pass to the {BANK} and {GOV_PORTAL} through supported submission features, with action-specific approvals. Store acknowledgements and approval evidence in the restricted {DOCS}.",
+   "previous_blocker": "Payroll rules were already automated, but time approvals, export reconciliation and release evidence crossed systems and owners.",
+   "enabler_now": "Existing payroll configuration and supported interfaces cover most needs. AI-assisted coding reduces the cost of connectors and control reports; no model is needed to calculate pay.",
+   "still_hard": "Collective agreements, retrospective corrections, disputed hours and incomplete inputs still need expertise. GDPR, national payroll rules and applicable employee consultation constrain access and changes.",
+   "human_edge": "Resolve disputed entitlement and unusual corrections, and judge whether unresolved exceptions justify delaying a pay run.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A pre-cutoff pay-input correction window for employees"
+   },
+   "altitude": "The manager focuses on unresolved pay risks and employee corrections instead of reconciling exports. Pay policy and payment-signing rights remain with their current authorised owners.",
+   "reach": [
+    {
+     "role": "management analyst",
+     "task": "Analyse recurring payroll input errors by process stage.",
+     "learn": "Control totals, root-cause analysis and privacy-preserving aggregation."
+    },
+    {
+     "role": "computer systems analyst",
+     "task": "Specify the approved-time interface and its failure handling.",
+     "learn": "Stable identifiers, duplicate prevention and reconciliation design."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "8-15",
+    "testing_rollout": "10-20",
+    "consent_and_access": "5-25"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Approved-time imports, configured payroll calculations, control totals and payment approvals are established deterministic patterns.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Time disputes, entitlement exceptions and release accountability prevent treating payroll oversight as fully unattended.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The administrative services manager oversees a payroll administrator or payroll team rather than personally performing every step.",
+    "The baseline has a recurring export bridge between the {HCM} and {PAYROLL}; existing integrated installations need less custom work.",
+    "Approved pay changes already exist upstream; the connector cannot create entitlements or infer missing hours.",
+    "Automation never clears a failed control or changes bank details from unverified input.",
+    "Submission steps have zero operator handling after approval. Human approval time remains in the approval stages; finance-signatory time is outside the manager's task estimate.",
+    "The tax-submission gate uses approval bound to the exact filing in the approved payroll pack.",
+    "Build ranges cover one payroll population, supported interfaces and parallel-run validation, excluding a payroll replacement.",
+    "Access and applicable national consultation effort are included; external approval waits can extend elapsed time."
+   ],
+   "unknowns": [
+    "Who owns payroll, time approval, tax submission and bank release?",
+    "Which interfaces and submission features are enabled?",
+    "Which collective agreements and national payroll rules apply?",
+    "How many exceptions, retrospective corrections and late inputs occur per run?",
+    "What employee consultation is required for the proposed time-data changes?"
+   ],
+   "research_questions": [
+    "Can approved records be transferred with stable identifiers and duplicate prevention?",
+    "Which controls detect missing employees, changed payment totals and unapproved corrections before release?",
+    "Can the approval be bound to the exact submitted batch so later edits invalidate it?"
+   ],
+   "new_work": [
+    "Investigate failed controls and unresolved time disputes.",
+    "Maintain rule changes, interface mappings and access permissions.",
+    "Review parallel-run differences during rollout.",
+    "Operate the employee correction window before cutoff.",
+    "Reconcile rejected payments and filing acknowledgements."
+   ],
+   "time_saved_pct": 67,
+   "speedup": 3.03
+  },
+  {
+   "uid": "11-3012.00:21269",
+   "short": "Read contracts, regulations and procedures to identify obligations and assess compliance.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Find applicable signed contracts, current regulations and approved procedures.",
+     "actor": "administrative services manager",
+     "today_means": "system_screen",
+     "systems": [
+      "CLM",
+      "DOCS",
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "compliance question",
+      "contract register",
+      "procedure index"
+     ],
+     "outputs": [
+      "source pack"
+     ],
+     "handoff_to": "administrative services manager",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read clauses and record duties, deadlines, exceptions and responsible roles.",
+     "actor": "administrative services manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "CLM"
+     ],
+     "inputs": [
+      "source pack"
+     ],
+     "outputs": [
+      "obligation checklist"
+     ],
+     "handoff_to": "administrative services manager",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Versioned source pack and a specific compliance question.",
+      "output": "Draft obligation checklist with clause quotations, conditions, dates and unresolved cross-references.",
+      "check": "Check quotations against source text and resolve source IDs. The manager verifies scope, qualifications and omissions before accepting entries.",
+      "stop": "One extraction and one repair pass per document. Unavailable references or unresolved scope return to a human.",
+      "why_not_simpler": "Clauses express obligations and exceptions in varied prose; keyword rules cannot reliably capture their conditions."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "compliance-and-risk",
+     "approver": "administrative services manager"
+    },
+    {
+     "id": "s3",
+     "what": "Compare obligations with operating procedures and available compliance evidence.",
+     "actor": "administrative services manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "PROJECT"
+     ],
+     "inputs": [
+      "obligation checklist",
+      "procedure record",
+      "compliance evidence"
+     ],
+     "outputs": [
+      "compliance gap list"
+     ],
+     "handoff_to": "administrative services manager",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "compliance-and-risk",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Interpret ambiguous requirements and obtain specialist advice where needed.",
+     "actor": "administrative services manager",
+     "today_means": "meeting_call",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "compliance gap list",
+      "source pack",
+      "obligation checklist"
+     ],
+     "outputs": [
+      "compliance interpretation",
+      "specialist referral"
+     ],
+     "handoff_to": "compliance owner",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve the compliance conclusion and assign follow-up actions.",
+     "actor": "compliance owner",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS",
+      "PROJECT"
+     ],
+     "inputs": [
+      "compliance interpretation",
+      "compliance gap list",
+      "specialist advice"
+     ],
+     "outputs": [
+      "approved compliance assessment",
+      "action register"
+     ],
+     "handoff_to": "action owner",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "compliance-and-risk",
+     "approver": "compliance owner"
+    }
+   ],
+   "design": "Maintain a versioned source index across the {CLM}, {DOCS} and approved sources in the {GOV_PORTAL}. A bounded reading loop drafts cited obligations for human acceptance; deterministic checks compare accepted deadlines, owners and evidence requirements with records, while semantic compliance questions remain for review. The compliance owner approves conclusions, and the {PROJECT} tracks follow-up actions.",
+   "previous_blocker": "Relevant clauses were scattered across documents, and obligations depended on prose, amendments and cross-references.",
+   "enabler_now": "Versioned retrieval, exact quotation checks and bounded extraction reduce reading preparation. Existing records and workflow features can track accepted obligations without delegating legal interpretation.",
+   "still_hard": "Determining applicability, resolving conflicting clauses and detecting omitted obligations remain difficult. GDPR and EU AI Act obligations depend on the processing and use case; national employment and consultation rules also vary.",
+   "human_edge": "Recognise when a plausible reading is unsafe, understand operational consequences and seek qualified advice before committing the organisation.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A pre-change obligation check for proposed office service changes"
+   },
+   "altitude": "The manager spends less time locating clauses and more time discussing practical compliance gaps with service owners. Legal interpretation and risk-acceptance authority do not expand automatically.",
+   "reach": [
+    {
+     "role": "legal secretary",
+     "task": "Maintain amendment history and assemble the controlling contract version.",
+     "learn": "Document provenance, clause references and legal escalation boundaries."
+    },
+    {
+     "role": "quality control systems manager",
+     "task": "Turn an accepted obligation into a verifiable operating control.",
+     "learn": "Evidence requirements, control testing and corrective-action tracking."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "4-8",
+    "testing_rollout": "8-15",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Versioned retrieval and source-linked extraction can reduce document-reading preparation, but do not establish legal compliance.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Approved deadlines, evidence links and action statuses support deterministic checks; ambiguous applicability requires human interpretation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The first release covers a bounded set of administrative contracts and procedures, not all law.",
+    "Source selection uses an approved register; the manager checks applicability and completeness.",
+    "Deterministic comparisons cover explicit dates, owners and evidence requirements. They do not infer substantive compliance from document presence.",
+    "Specialist advice is required only for escalated cases.",
+    "Build ranges include representative document testing and a limited rollout, excluding a full legal-source monitoring service.",
+    "Access and applicable national consultation effort are included; elapsed waiting time can be longer.",
+    "The prior's automation potential applies mainly to finding and extracting information; legal interpretation keeps substantial human time."
+   ],
+   "unknowns": [
+    "Which jurisdictions, contracts and procedures are in scope?",
+    "Who determines the controlling source version and applicability?",
+    "Who can approve a compliance conclusion or accept residual risk?",
+    "What confidential material may be processed by the bounded loop?",
+    "Which employee consultation requirements apply to the proposed use?"
+   ],
+   "research_questions": [
+    "How often does extraction miss qualifications, annexes or cross-referenced duties in a representative sample?",
+    "Which obligation fields are stable enough for deterministic evidence checks?",
+    "Can current source access support reliable version-change detection?"
+   ],
+   "new_work": [
+    "Verify extracted obligations and investigate missing references.",
+    "Maintain the approved source index and amendment history.",
+    "Review false gaps and stale evidence links.",
+    "Test extraction quality after document or model changes.",
+    "Prepare pre-change obligation checks and route specialist referrals."
+   ],
+   "time_saved_pct": 45,
+   "speedup": 1.83
+  }
+ ],
+ "role": {
+  "altitude": "The manager's week shifts toward service trade-offs, records exceptions, payroll risks and practical compliance discussions. Existing budget, employment, payment and legal approval rights remain unless explicitly delegated.",
+  "reach": [
+   "Management analysis: compare administrative service costs and capacity using transparent scenarios.",
+   "Facilities management: connect resource plans to occupancy and operational constraints.",
+   "Business continuity planning: identify essential records and service dependencies.",
+   "Computer systems analysis: specify reliable interfaces and exception handling."
+  ],
+  "skills_to_grow": [
+   "Define control totals, exception thresholds and reconciliation rules.",
+   "Design records metadata, access groups and retention mappings.",
+   "Build and explain resource-allocation scenarios.",
+   "Evaluate source-linked extraction for omissions and misleading summaries.",
+   "Facilitate decisions across departments and escalate disputed obligations."
+  ],
+  "ambitious_version": "Run a small administrative service improvement function that offers monthly allocation reviews, employee pay-input correction windows and pre-change obligation checks, using existing delegated authority and specialist escalation."
+ },
+ "job_code": "11-3012.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 199,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3000});text(r.output)\n"
+  ],
+  "job": {
+   "code": "11-3012.00",
+   "title": "Administrative Services Managers",
+   "tasks": 18,
+   "function": "Office and operations"
+  }
+ }
+}

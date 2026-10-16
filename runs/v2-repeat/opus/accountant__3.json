@@ -1,0 +1,827 @@
+{
+ "role_id": "accountant",
+ "role": {
+  "altitude": "The two accountants stop extracting data, building one-off Excel tests and keying invoices. They own the rule sets, tie-outs and control tests that run over every transaction in AFAS, and they spend their time on the exceptions, the judgement calls and the conversations with the controller, payroll and the auditor.",
+  "reach": [
+   "controller: month-end close sign-off and the internal control framework",
+   "bookkeeper: AP exception queue and supplier master data changes",
+   "payroll: monthly payroll-to-ledger and loonaangifte reconciliation",
+   "fpa: budget-versus-actual commentary built on the same tested ledger data"
+  ],
+  "skills_to_grow": [
+   "Writing control tests and reconciliation rules as code (SQL or Python) on the AFAS extract",
+   "Reading and reviewing model-drafted findings and workpapers so every number can be rebuilt",
+   "Dutch payroll tax and premium rules (WW high/low rate, Aof, WHK, inlenersaansprakelijkheid)",
+   "Test design for system changes: sample transactions, expected ledger outcomes, authorisation checks",
+   "Explaining analytics to the works council and the external auditor"
+  ],
+  "ambitious_version": "Finance runs a continuous control layer over AFAS, Rabobank and the agency portals: every invoice, payment, vendor change and payroll run is tested the day it happens, and the accountants bring the auditor a tested population instead of samples. That cuts audit adjustments and lets the month close in fewer days with fewer surprises."
+ },
+ "tasks": [
+  {
+   "uid": "13-2011.00:21507",
+   "short": "Pull ledger, AP and bank data, test for duplicates, fraud signs and policy breaches, report findings.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export ledger, AP, vendor master and bank statements into Excel",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Rabobank",
+      "Excel"
+     ],
+     "inputs": [
+      "general ledger export",
+      "AP invoice register",
+      "vendor master",
+      "bank statement"
+     ],
+     "outputs": [
+      "audit data set"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Run tests: duplicate invoices, IBAN changes, split orders, segregation of duties",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "audit data set",
+      "AFAS user roles"
+     ],
+     "outputs": [
+      "exception list"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Gather evidence per hit: invoice, approval trail, related mail",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Outlook",
+      "SharePoint"
+     ],
+     "inputs": [
+      "exception list",
+      "purchase invoice",
+      "approval log"
+     ],
+     "outputs": [
+      "case file"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "read",
+      "input": "Exception record plus linked invoice PDF, AFAS approval log and supplier notes",
+      "output": "One-page case file listing facts, documents and open questions, each with a link to its source",
+      "check": "Every amount and date in the case file is matched by code against AFAS fields; unlinked claims are rejected",
+      "stop": "One pass per hit, at most two retries; on failure the hit goes to the accountant without a draft",
+      "why_not_simpler": "Invoice PDFs and free-text notes differ per supplier and cannot be parsed by fixed rules"
+     },
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Judge whether a hit is error, waste, fraud or acceptable",
+     "actor": "accountant",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "case file"
+     ],
+     "outputs": [
+      "control finding"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Write findings memo with root cause and control fix",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "SharePoint"
+     ],
+     "inputs": [
+      "control finding"
+     ],
+     "outputs": [
+      "control findings memo"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Confirmed findings with amounts and case files",
+      "output": "Draft memo per finding: what happened, amount, cause, proposed control",
+      "check": "Accountant edits and signs; amounts are pulled from the finding table, not written by the model",
+      "stop": "One draft per finding; the accountant rewrites if the draft is off",
+      "why_not_simpler": "Root-cause wording differs per case; a template alone leaves most of the writing"
+     },
+     "authority": "draft",
+     "human_gate": true
+    }
+   ],
+   "design": "Replace the ad-hoc Excel exports with a nightly job on a governed data platform that reads the AFAS extract (already used for Power BI) and Rabobank CAMT.053 files and runs a fixed test library over every transaction. Hits land in a Power BI exception page with a case queue; a bounded model step assembles a case file and drafts the memo, while the accountant judges each case and the controller signs off.",
+   "previous_blocker": "Testing every transaction meant building and maintaining scripts nobody in a 10-person finance team had time to write, so tests ran by hand on samples once or twice a year.",
+   "enabler_now": "AI coding makes a test library on the existing AFAS extract a matter of days, and models can read invoice PDFs and notes to prepare case files.",
+   "still_hard": "Telling fraud from sloppy process needs context about people and suppliers; false positives must be tuned down or the queue is ignored.",
+   "human_edge": "Deciding whether a pattern is fraud, waste or a sensible exception, and handling the conversation with the people involved.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Run the duplicate-payment, IBAN-change and segregation-of-duties tests daily on all transactions instead of yearly on samples."
+   },
+   "altitude": "The accountant reviews a short daily exception queue and spends the saved time on root causes and control fixes. They gain the right to block a flagged payment pending review.",
+   "reach": [
+    {
+     "role": "bookkeeper",
+     "task": "Vendor master changes and IBAN updates",
+     "learn": "Which change patterns trigger hits, so they add a call-back check at entry."
+    },
+    {
+     "role": "controller",
+     "task": "Internal control framework and auditor liaison",
+     "learn": "How the full-population tests can replace sample testing in the audit plan."
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "4-7",
+    "testing_rollout": "5-8",
+    "consent_and_access": "10-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Tests over every transaction (duplicates, segregation of duties, IBAN changes) suit deterministic software; an LLM step writes findings.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Models add unnoticed assumptions so workpapers cannot be rebuilt; human review and source links are needed.",
+     "grade": "E3",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Multi-step reasoning across files is where top models fail most.",
+     "grade": "E3",
+     "source": "[S2]"
+    }
+   ],
+   "assumptions": [
+    "The nightly AFAS extract used for Power BI includes AP, vendor master, mutation logs and user roles.",
+    "Rabobank statements are available as CAMT.053 files."
+   ],
+   "unknowns": [
+    "Whether AFAS mutation logs on vendor IBAN changes are kept and exportable.",
+    "Whether the works council sees tests on user behaviour (approvals, logins) as a personnel monitoring system needing consent under WOR art. 27.",
+    "How many hits per month today's manual tests find."
+   ],
+   "research_questions": [
+    "How many duplicate or suspicious payments do the tests find on the last 24 months of AFAS data?",
+    "What false-positive rate makes the queue workable for one accountant?",
+    "Does the external auditor accept full-population tests as audit evidence for the procure-to-pay cycle?"
+   ],
+   "time_saved_pct": 76,
+   "speedup": 4.26
+  },
+  {
+   "uid": "13-2011.00:21524",
+   "short": "Check payroll and personnel records against ledger, wage tax return, premium rates and CAO rules.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export payroll journals, loonaangifte and employee contract data",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "payroll journal",
+      "loonaangifte",
+      "employee contract data"
+     ],
+     "outputs": [
+      "payroll audit data set"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Reconcile payroll to ledger and wage tax return; check WW, Aof, WHK rates",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "payroll audit data set",
+      "general ledger export",
+      "premium rate table"
+     ],
+     "outputs": [
+      "payroll reconciliation"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Test contract type against WW low rate and CAO scale per employee",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "SharePoint"
+     ],
+     "inputs": [
+      "employee contract data",
+      "CAO pay scales"
+     ],
+     "outputs": [
+      "payroll exception list"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Check agency invoices: hours, G-account share, chain liability documents",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "Staffing agency portals",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "agency invoice",
+      "agency hours export"
+     ],
+     "outputs": [
+      "agency check result"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Agree corrections with payroll and approve correction return",
+     "actor": "accountant",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "payroll exception list",
+      "payroll reconciliation"
+     ],
+     "outputs": [
+      "payroll correction"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "A monthly scheduled job on the governed data platform reads AFAS payroll journals, loonaangifte totals, contract data and the agency portal hour exports, reconciles them to the ledger and applies a coded rule table (WW high/low rate, Aof, WHK, CAO scales, G-account share). Breaks show on a restricted Power BI page; the accountant and payroll specialist resolve them and payroll files any correction.",
+   "previous_blocker": "The rules are scattered across tax law, the CAO and agency contracts, and building them into a tool for 1,200 staff plus flex workers was not worth a custom project.",
+   "enabler_now": "AI coding makes a maintained rule table and reconciliation job cheap to build and change each January when rates move.",
+   "still_hard": "Rules change yearly and edge cases (on-call contracts, sector code, rehires) need a person who knows the law; payroll data is sensitive under the AVG.",
+   "human_edge": "Judging an edge case under premium or CAO rules and agreeing the correction with payroll and, if needed, the tax office.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Reconcile payroll to ledger and loonaangifte every month instead of at year end, before corrections pile up."
+   },
+   "altitude": "The accountant reviews a monthly break list in an hour instead of rebuilding the reconciliation. They gain sign-off on the monthly payroll tie-out before close.",
+   "reach": [
+    {
+     "role": "payroll",
+     "task": "Monthly payroll run and loonaangifte",
+     "learn": "Which contract fields drive WW premium errors, so they fix them at entry."
+    },
+    {
+     "role": "hr-admin",
+     "task": "Contract registration in AFAS",
+     "learn": "Why a missing written permanent contract costs the high WW rate."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "4-6",
+    "testing_rollout": "5-8",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Payroll checks are best done as deterministic tests over every record, with findings written by a model step at most.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Tax estimates belong on the mandatory human review list.",
+     "grade": "E3",
+     "source": "[S7]"
+    }
+   ],
+   "assumptions": [
+    "AFAS holds contract type, CAO scale and sector code per employee in fields the extract can read.",
+    "Agency portals offer hour exports per flex worker."
+   ],
+   "unknowns": [
+    "Which agencies use a G-account and on what share of the invoice.",
+    "Whether payroll data may be copied to the data platform under the current AVG processing register.",
+    "How many payroll corrections were filed in the last two years."
+   ],
+   "research_questions": [
+    "Do last year's payroll journals reconcile to the loonaangifte totals, and where do they differ?",
+    "How many employees pay the high WW rate while holding a permanent contract, or the reverse?",
+    "Can agency hour exports be matched to invoices by worker and week without manual work?"
+   ],
+   "time_saved_pct": 78,
+   "speedup": 4.44
+  },
+  {
+   "uid": "13-2011.00:21530",
+   "short": "Review planned system changes and test that controls, postings and interfaces will work before go-live.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read design and interview project team on the planned change",
+     "actor": "accountant",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams",
+      "SharePoint"
+     ],
+     "inputs": [
+      "project design document"
+     ],
+     "outputs": [
+      "interview notes"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Build risk-control matrix for the new process in Excel",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "project design document",
+      "interview notes",
+      "control framework"
+     ],
+     "outputs": [
+      "risk-control matrix"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Design document, interview notes and the existing control framework",
+      "output": "Draft risk-control matrix rows: risk, control, owner, test, with source references",
+      "check": "Accountant reviews each row; rows without a source reference are flagged",
+      "stop": "One draft per process area; at most two revisions, then the accountant writes by hand",
+      "why_not_simpler": "Design documents are free text and differ per project; a fixed template cannot map them to risks"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Run test transactions in AFAS test environment and compare ledger outcomes",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "risk-control matrix",
+      "test transactions"
+     ],
+     "outputs": [
+      "test results"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Write go/no-go memo with open issues",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "SharePoint"
+     ],
+     "inputs": [
+      "test results",
+      "risk-control matrix"
+     ],
+     "outputs": [
+      "go-live memo"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Test results table and open risk-control rows",
+      "output": "Draft memo: scope, passed tests, failed tests, open risks, advice",
+      "check": "Pass/fail counts come from the test table by code; accountant writes the advice and signs",
+      "stop": "One draft; if it misstates results the accountant writes from the table",
+      "why_not_simpler": "The summary of failures needs wording per project; counts alone do not explain risk"
+     },
+     "authority": "draft",
+     "human_gate": true
+    }
+   ],
+   "design": "Keep a reusable library of test transactions and expected ledger outcomes (VAT codes, cost centres, approvals, interfaces) that a script loads into the AFAS test environment and compares automatically. A bounded model step drafts the risk-control matrix and go-live memo from project documents in SharePoint; the accountant runs the interviews, reviews and signs.",
+   "previous_blocker": "Each project was different and too rare to justify building test tooling, so testing was manual clicking in a test environment.",
+   "enabler_now": "AI coding makes a scripted regression set against the AFAS test environment cheap, and models can turn free-text designs into a first control matrix.",
+   "still_hard": "Knowing which risks matter for a specific change and getting project teams to fix issues before a deadline.",
+   "human_edge": "Asking the project team the right questions and taking a go/no-go position the business has to accept.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Give every AFAS update and agency-portal interface change a finance regression test, not only large projects."
+   },
+   "altitude": "The accountant spends review time on the risks and talks with project teams earlier. They gain a formal finance sign-off on go-live of changes touching the ledger.",
+   "reach": [
+    {
+     "role": "people-analyst",
+     "task": "AFAS and HRIS configuration changes",
+     "learn": "Which changes touch postings, so finance tests run before release."
+    },
+    {
+     "role": "controller",
+     "task": "Control framework upkeep",
+     "learn": "How regression results feed the yearly control assessment."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "3-6",
+    "testing_rollout": "3-6",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Judgement, not retrieval, is the bottleneck on full accounting tasks; leading models meet about 62% of criteria.",
+     "grade": "E3",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Scripted regression tests against a test environment are a standard deterministic approach.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "B2B e-invoicing in the Netherlands is planned from July 2030, a likely future change to audit before go-live.",
+     "grade": "E3",
+     "source": "[S8]"
+    }
+   ],
+   "assumptions": [
+    "Noordhaven has an AFAS test environment that can be loaded via API or import.",
+    "There is a written control framework to map against."
+   ],
+   "unknowns": [
+    "How many system changes touching finance happen per year.",
+    "Whether the AFAS licence includes a test environment with API access.",
+    "Who currently signs off go-live of finance-relevant changes."
+   ],
+   "research_questions": [
+    "How many go-live issues in the last two years would a scripted ledger regression set have caught?",
+    "Can test transactions be loaded and reversed in the AFAS test environment by script?",
+    "Do model-drafted control matrices match what the controller would write for a past project?"
+   ],
+   "time_saved_pct": 48,
+   "speedup": 1.93
+  },
+  {
+   "uid": "13-2011.00:21533",
+   "short": "Code, match and route supplier and agency invoices in AFAS, then prepare the Rabobank payment batch.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect invoices from mailbox and load into AFAS",
+     "actor": "accountant",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "purchase invoice"
+     ],
+     "outputs": [
+      "registered invoice"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Code supplier, ledger account, cost centre and VAT code",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "registered invoice",
+      "vendor master"
+     ],
+     "outputs": [
+      "coded invoice"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Invoice fields and lines without a PO or supplier coding rule",
+      "output": "Proposed ledger account, cost centre and VAT code with reason",
+      "check": "VAT code checked against supplier country and rate by code; amount must equal the invoice total; low-confidence goes to review",
+      "stop": "One proposal per invoice; anything not passing checks goes to the accountant queue",
+      "why_not_simpler": "Non-PO invoices with free-text lines (repairs, services) do not fit a fixed supplier rule"
+     },
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Match to PO and receipt, or agency invoice to portal hours",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Staffing agency portals",
+      "Excel"
+     ],
+     "inputs": [
+      "coded invoice",
+      "purchase order",
+      "agency hours export"
+     ],
+     "outputs": [
+      "matched invoice"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Route to budget holder for approval and chase late approvals",
+     "actor": "accountant",
+     "today_means": "email_chat",
+     "systems": [
+      "AFAS Profit",
+      "Outlook"
+     ],
+     "inputs": [
+      "matched invoice"
+     ],
+     "outputs": [
+      "approved invoice"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Build payment batch and approve it in Rabobank",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Rabobank"
+     ],
+     "inputs": [
+      "approved invoice"
+     ],
+     "outputs": [
+      "payment batch"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "Configure AFAS invoice recognition and approval workflows so invoices flow from the mailbox to a coded, routed state, with coding rules per supplier and a bounded model step for non-PO lines. A scheduled job matches agency invoices to portal hours and PO invoices to receipts, sends approver reminders, and leaves only breaks in the queue; the payment batch is generated in AFAS and released in Rabobank by two people.",
+   "previous_blocker": "Free-text invoices and agency invoices that had to be matched to hours in three separate portals kept a person in the loop for most invoices.",
+   "enabler_now": "Models can propose coding for free-text lines, and AI coding makes a portal-to-AFAS matching job cheap to build.",
+   "still_hard": "Agency portals may lack stable exports; suppliers change IBANs and formats; PDFs are not e-invoices until the 2030 mandate.",
+   "human_edge": "Settling disputes with suppliers and agencies over prices and hours, and releasing payments.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Match every agency invoice to hours weekly instead of spot checks, catching overbilling before payment."
+   },
+   "altitude": "The accountant works a small exception queue and the payment release instead of keying invoices. They gain ownership of the coding rules and the match tolerances.",
+   "reach": [
+    {
+     "role": "bookkeeper",
+     "task": "Accounts payable processing",
+     "learn": "The same exception-queue flow, since they handle most AP volume."
+    },
+    {
+     "role": "collections",
+     "task": "Customer invoice disputes",
+     "learn": "How match tolerances and dispute reasons are logged, to reuse on the sales side."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-10",
+    "testing_rollout": "5-8",
+    "consent_and_access": "3-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Workday's Accounting Agent prepares entries; teams stay responsible for review.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "B2B e-invoicing becomes mandatory from 1 July 2030; a PDF is not an e-invoice.",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "AFAS Profit offers purchase invoice recognition and approval workflows.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Bookkeepers handle most AP volume; the accountant handles a share of invoices and the exceptions.",
+    "The AFAS licence includes invoice recognition and workflow modules."
+   ],
+   "unknowns": [
+    "Monthly invoice volume and the share without a PO.",
+    "Whether the three agency portals offer an API or file export of approved hours.",
+    "Current two-person release rules in Rabobank."
+   ],
+   "research_questions": [
+    "What share of last quarter's invoices could have been coded by supplier rules alone?",
+    "How often do agency invoices differ from approved portal hours, and by how much?",
+    "Does AFAS recognition reach acceptable field accuracy on Noordhaven's top 50 suppliers?"
+   ],
+   "time_saved_pct": 87,
+   "speedup": 7.55
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 104,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

@@ -1,0 +1,826 @@
+{
+ "job_code": "11-9199.01",
+ "tasks": [
+  {
+   "uid": "11-9199.01:18035",
+   "short": "Answer an agency question on the product.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open the agency question and the approved product facts.",
+     "actor": "regulatory affairs manager",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "agency question"
+     ],
+     "outputs": [
+      "fact pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Draft responses that cite only those product facts.",
+     "actor": "regulatory affairs manager",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "fact pack"
+     ],
+     "outputs": [
+      "reply draft"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "the question and the approved facts",
+      "output": "a reply draft",
+      "check": "every sentence cites an approved fact",
+      "stop": "stop when a sentence has no fact",
+      "why_not_simpler": "a fixed reply cannot see which fact the question is about"
+     },
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Review the response on product information or issues.",
+     "actor": "regulatory affairs manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "reply draft"
+     ],
+     "outputs": [
+      "signed reply"
+     ],
+     "handoff_to": "none",
+     "share_pct": 40,
+     "fate": "person_reviews",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Send the signed response to the regulatory agency.",
+     "actor": "regulatory affairs manager",
+     "today_means": "system_screen",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "signed reply"
+     ],
+     "outputs": [
+      "sent reply"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "regulatory affairs manager",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a18035"
+     ]
+    }
+   ],
+   "design": "The question and the approved product facts are opened from {DOCS}. A draft may cite only those facts. The regulatory affairs manager reviews the response and signs it. The {EMAIL} send uses that version alone. A question with no matching fact is not drafted.",
+   "previous_blocker": "Replies were rewritten from the last letter, and a fact from a different product could slip in.",
+   "enabler_now": "Approved facts can be separated from the question before a sentence is written.",
+   "still_hard": "A question about a fact the file does not contain, and a tone the agency will read as evasive.",
+   "human_edge": "The manager can see that a cited fact answers a different question.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A question that matches an approved fact is ready for the manager's signature the same day, including a decision that it does not match."
+   },
+   "altitude": "Routine replies wait on a signature. New issues are still written by the manager. The agency never receives an unsigned draft.",
+   "reach": [
+    {
+     "role": "Compliance Managers",
+     "task": "Answer a supervisor from the approved control text and stop when the text is silent.",
+     "learn": "The citation check is the same idea. The agency reply is signed here."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "2-4",
+    "testing_rollout": "3-5",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "A draft can be limited to sentences that cite an approved fact. It cannot invent a product claim.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "EU GDPR article 22 bars a solely automated decision with a legal effect. The agency receives a package only after the manager signs that exact version. The job digest treats rule registers as document work, not as product authorisation. A drafted sentence may cite only a rule or a figure already in the file. A sentence with neither stops and the manager rewrites it.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "Workflow boundary: A regulatory affairs manager at a European product company. National product rules apply. A checklist does not authorise a product.",
+    "Fields: Question id and approved fact id, produced by the product file. A question with no fact id is not drafted. If a required field is missing, the step stops and the manager finishes it by hand.",
+    "Native check: Use the approved product file the company already holds.",
+    "Any edit after approval voids the version and returns the item to the manager.",
+    "A drafted sentence may cite only a rule or a figure already in the file. A sentence with neither stops and the manager rewrites it."
+   ],
+   "unknowns": [
+    "Which mailbox the agency expects.",
+    "Whether a sister affiliate must approve the same reply."
+   ],
+   "research_questions": [
+    "What share of questions match an approved fact?",
+    "Which replies must be a formal variation instead of a letter?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The manager still reviews the reply.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 28.0,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "The manager rewrites a sentence that cited no fact.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a18035",
+     "action_step_id": "s4",
+     "approved_version": "reply version and the fact ids cited in it",
+     "approval_step_id": "s3",
+     "approver": "regulatory affairs manager"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 37.4,
+    "high": 55.7,
+    "basis": "Saving is a cited draft and the send of a signed reply. It disappears when the question matches no fact and the manager writes the letter by hand."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 72.0,
+   "incremental_hours_per_100_baseline_hours": 4,
+   "time_saved_pct": 68.0,
+   "speedup": 3.125,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "11-9199.01:18036",
+   "short": "Represent the company before a regulatory agency.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Assemble the brief on the policy matter.",
+     "actor": "regulatory affairs manager",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "policy question"
+     ],
+     "outputs": [
+      "brief"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Represent the company before the regulatory agency.",
+     "actor": "regulatory affairs manager",
+     "today_means": "meeting_call",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "brief"
+     ],
+     "outputs": [
+      "meeting outcome"
+     ],
+     "handoff_to": "none",
+     "share_pct": 70,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Write the decision the agency gave on the product.",
+     "actor": "regulatory affairs manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "meeting outcome"
+     ],
+     "outputs": [
+      "outcome note"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "A brief is taken from {DOCS} before the meeting. The regulatory affairs manager represents the company before the domestic or international agency and writes what was decided. The brief is not a script the screen delivers. No policy decision is recorded unless the manager writes it.",
+   "previous_blocker": "The brief was a stack of mail, and the outcome lived in the manager's notebook.",
+   "enabler_now": "The papers for the meeting can be one pack. The meeting itself is unchanged.",
+   "still_hard": "A question the brief did not expect, and an agency position that is not yet written down.",
+   "human_edge": "The manager hears what the agency will not put in a letter.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The representation stays in the room with the manager. The only change is a brief beforehand and a note afterwards. No decision right moves.",
+   "reach": [
+    {
+     "role": "Compliance Managers",
+     "task": "Attend a supervisor meeting and write what was asked.",
+     "learn": "The pack can be prepared. The representation cannot be delegated to a screen."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "1-3",
+    "testing_rollout": "2-4",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A document pack can be assembled for a meeting. It cannot represent the company.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "A policy position given to an agency is the manager's act. EU GDPR article 22 does not allow a screen to make that representation.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "Workflow boundary: A regulatory affairs manager at a European product company. National product rules apply. A checklist does not authorise a product.",
+    "Fields: Meeting id and document id, produced by the policy file. A meeting with no document list still happens; the pack is simply empty. If a required field is missing, the step stops and the manager finishes it by hand.",
+    "Native check: Use the files already stored for that policy matter."
+   ],
+   "unknowns": [
+    "Whether this agency accepts a remote meeting.",
+    "Who else from the company must attend."
+   ],
+   "research_questions": [
+    "Which matters are major enough that the manager must attend in person?",
+    "What note does the legal team also need?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The manager still attends.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 70.0,
+      "counted_step_ids": [
+       "s2"
+      ]
+     },
+     {
+      "description": "The manager still writes the outcome.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 7.5,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "The manager adds a paper the brief missed.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 11.2,
+    "high": 16.8,
+    "basis": "Saving is only the brief. It disappears when the matter is new and the manager builds the pack in the room. The meeting time is unchanged."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 22.5,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 20.5,
+   "speedup": 1.257862,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "11-9199.01:18024",
+   "short": "Give regulatory guidance to project teams.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open the mapped rule for this design question.",
+     "actor": "regulatory affairs manager",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "team question"
+     ],
+     "outputs": [
+      "mapped rule"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Write regulatory guidance where the map is silent.",
+     "actor": "regulatory affairs manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "mapped rule"
+     ],
+     "outputs": [
+      "guidance note"
+     ],
+     "handoff_to": "none",
+     "share_pct": 55,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Release the signed guidance to the project team.",
+     "actor": "regulatory affairs manager",
+     "today_means": "system_screen",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "guidance note"
+     ],
+     "outputs": [
+      "released note"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "regulatory affairs manager",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a18024"
+     ]
+    }
+   ],
+   "design": "A mapped rule is shown from {DOCS} when the question matches one. The regulatory affairs manager writes the guidance on design, development, evaluation, or marketing when it does not. The {EMAIL} note is the signed version. A question with no map is not answered by the screen.",
+   "previous_blocker": "The same design question was answered in different mail threads, and the team kept the last reply.",
+   "enabler_now": "A rule that has already been mapped can be shown before the manager writes.",
+   "still_hard": "A design the map has never seen, and marketing wording that is not yet an approved claim.",
+   "human_edge": "The manager can tell a team that the mapped rule does not cover this design.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Known mappings are shown. New guidance is still written and signed by the manager. The team does not get an unsigned answer.",
+   "reach": [
+    {
+     "role": "Architectural and Engineering Managers",
+     "task": "Answer a design question against the brief and stop when the brief is silent.",
+     "learn": "The map is the brief. The guidance is still written here."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "2-5",
+    "testing_rollout": "2-4",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A mapped rule can be shown for a question that matches it. It cannot write new guidance.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "Guidance that changes a design or a marketing claim is the manager's text. It is released only as the signed version. EU GDPR article 22 is not a licence to auto-answer.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "Workflow boundary: A regulatory affairs manager at a European product company. National product rules apply. A checklist does not authorise a product.",
+    "Fields: Question id and mapped rule id, produced by the rule register. A question with no rule id is not auto-answered. If a required field is missing, the step stops and the manager finishes it by hand.",
+    "Native check: Use the rule map the regulatory team already maintains.",
+    "Any edit after approval voids the version and returns the item to the manager."
+   ],
+   "unknowns": [
+    "Which departments may request guidance.",
+    "Whether marketing claims use a separate approved list."
+   ],
+   "research_questions": [
+    "What share of questions match a mapped rule?",
+    "Who must be copied when the guidance changes a claim?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The manager still writes the guidance.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 41.25,
+      "counted_step_ids": [
+       "s2"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "The manager maps a rule after writing the same guidance twice.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 3
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a18024",
+     "action_step_id": "s3",
+     "approved_version": "guidance version and the rule id it relies on",
+     "approval_step_id": "s2",
+     "approver": "regulatory affairs manager"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 30.6,
+    "high": 45.7,
+    "basis": "Saving is showing a mapped rule and releasing a signed note. It disappears when the question is unmapped and the manager writes the whole answer."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 58.75,
+   "incremental_hours_per_100_baseline_hours": 3,
+   "time_saved_pct": 55.75,
+   "speedup": 2.259887,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "11-9199.01:18031",
+   "short": "Manage an audit, inspection, or product recall.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open the audit file, the inspection dates, and the recall status.",
+     "actor": "regulatory affairs manager",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "event id"
+     ],
+     "outputs": [
+      "event file"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "audit-and-controls",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Manage the audit, the inspection, or the product recall.",
+     "actor": "regulatory affairs manager",
+     "today_means": "in_person",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "event file"
+     ],
+     "outputs": [
+      "event finding"
+     ],
+     "handoff_to": "none",
+     "share_pct": 65,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Record the decision the manager made on the event.",
+     "actor": "regulatory affairs manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "event finding"
+     ],
+     "outputs": [
+      "event note"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "Dates and the current status are shown from {DOCS} before the day. The regulatory affairs manager manages the audit, the agency inspection, or the product recall in person. The note records only what that person decided. The register does not classify a cause and does not declare a recall.",
+   "previous_blocker": "Inspection dates and recall lots were chased by phone while the manager was on the floor.",
+   "enabler_now": "The file and the dates can be open before the manager arrives.",
+   "still_hard": "An inspector who asks for a record that is not in the file, and a recall boundary that is still unclear.",
+   "human_edge": "The manager can see a record that is present and still not what the inspector asked for.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The event is still run by the manager. The file is only the papers and the dates. No recall is declared by the screen.",
+   "reach": [
+    {
+     "role": "Loss Prevention Managers",
+     "task": "Open an incident file and leave the cause to the person who looked.",
+     "learn": "The status can be listed. The inspection cannot be automated."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "2-4",
+    "testing_rollout": "2-4",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A register can show dates and status for an audit or a recall. It cannot run the inspection.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "Declaring a recall and answering an inspector are the manager's acts. The register must not assign a cause. EU GDPR article 22 is not met by an automatic recall flag.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "Workflow boundary: A regulatory affairs manager at a European product company. National product rules apply. A checklist does not authorise a product.",
+    "Fields: Event id, date, and lot, produced by the quality file. An event with no id is handled outside the register. If a required field is missing, the step stops and the manager finishes it by hand.",
+    "Native check: Use the quality file the company already keeps for audits and recalls."
+   ],
+   "unknowns": [
+    "Who has authority to declare a recall.",
+    "Which inspectorate this product answers to."
+   ],
+   "research_questions": [
+    "Which records must be in the room for this inspectorate?",
+    "How is a recall boundary decided today?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The manager still runs the event.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 65.0,
+      "counted_step_ids": [
+       "s2"
+      ]
+     },
+     {
+      "description": "The manager still writes the decision.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 6.0,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "The manager adds a record the inspector asked for that was not in the file.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 14.8,
+    "high": 22.1,
+    "basis": "Saving is opening the file and the dates. It disappears when the event is a surprise inspection and the manager gathers the papers in the room. The floor time is unchanged."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 29.0,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 27.0,
+   "speedup": 1.369863,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "Agency replies can be drafted from approved facts. The manager still attends the agency, still writes new guidance, and still runs the inspection or the recall.",
+  "reach": [
+   "Compliance managers answer a supervisor from an approved control text, and this job learns a new question stays with the person.",
+   "Loss prevention managers open an incident and do not let the register name a culprit."
+  ],
+  "skills_to_grow": [
+   "Match an agency question to an approved product fact before a reply is drafted.",
+   "Keep an inspection note as what was seen, not as an automatic classification."
+  ],
+  "ambitious_version": "A routine agency question that matches an approved fact is ready for signature the same day, and the meeting at the agency is unchanged."
+ },
+ "_meta": {
+  "model": "grok-4.7",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "11-9199.01",
+   "title": "Regulatory Affairs Managers",
+   "tasks": 27,
+   "function": "Management"
+  },
+  "digest": "research/digests-minor/11-9.md",
+  "digest_sha256": "a4940c09e4dc73efe2b80ad6ea9bfcc88a5229c01f1c500b7897275e596ab193",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-15T15:12:44"
+ }
+}

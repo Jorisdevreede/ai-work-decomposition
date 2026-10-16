@@ -1,0 +1,867 @@
+{
+ "job_code": "13-1041.08",
+ "tasks": [
+  {
+   "uid": "13-1041.08:15932",
+   "short": "Compile import invoices and certificates of origin",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "List necessary import documents still missing",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "shipment id"
+     ],
+     "outputs": [
+      "missing list"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Request certificates of origin and invoices",
+     "actor": "customs broker",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "missing list"
+     ],
+     "outputs": [
+      "requests sent"
+     ],
+     "handoff_to": "external",
+     "share_pct": 40,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "notification",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Compile the import documentation that arrived",
+     "actor": "customs broker",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "requests sent"
+     ],
+     "outputs": [
+      "compiled pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "Assemble a document pack only from documents already stored for the shipment.",
+      "input": "Shipment id and the stored document ids.",
+      "output": "A pack of those documents, or a stop.",
+      "check": "Every document in the pack is a stored id for that shipment.",
+      "stop": "Stop when a required document id is missing.",
+      "why_not_simpler": "A pack cannot include a certificate that has not arrived."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "File the customs document pack after compile",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "compiled pack"
+     ],
+     "outputs": [
+      "filed pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "customs broker",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "Missing import documents are listed from {DOCS}. The broker requests invoices, certificates of origin, and cargo control documents by {EMAIL}. A pack is compiled only from documents that have arrived, and the broker's compile is what gets filed.",
+   "previous_blocker": "Requests and certificates lived in a mailbox, and a complete set was hard to see.",
+   "enabler_now": "The missing list is a comparison of required types against stored document ids.",
+   "still_hard": "A certificate that the sender has not returned cannot be compiled, and the chase stays with the broker.",
+   "human_edge": "The broker decides the pack is complete enough to file.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A shipment shows its missing documents the day it is opened, and the broker still chases them."
+   },
+   "altitude": "The broker sees which certificates arrived and which are still out.",
+   "reach": [
+    {
+     "role": "client",
+     "task": "Return a certificate",
+     "learn": "Which document type is still missing."
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "3-6",
+    "testing_rollout": "2-4",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A pack is a set of stored documents, and the broker compiles only what has arrived. The source pack says duty and tax figures are configured from a public tariff and contracted rates, and that a classification is taken from a stored binding decision only when one matches, with the broker signing the code.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The source pack says a solely automated decision with a significant effect on a person needs a human review. A duty figure here is a stored rate times a stored value, and the broker signs before a filing, a payment, or a quote leaves. Other countries differ.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The work starts when a shipment needs import documents and ends when the broker has compiled the ones that arrived.",
+    "A document row has shipment id, type, and document id, produced by the sender. A type with no document id stays on the missing list.",
+    "Time a system already spends running is not counted as the broker's effort.",
+    "A missing rate, code, or document is not invented. The broker does that part.",
+    "The incremental hour updates the record when its source row changes."
+   ],
+   "unknowns": [
+    "How often certificates arrive as fields rather than as unscanned mail."
+   ],
+   "research_questions": [
+    "Which document types are still missing after the request?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The checking time is already in the broker's step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s2"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Update the opened record when its source row changes.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "document pack the broker compiled for that shipment",
+     "approval_step_id": "s3",
+     "approver": "customs broker"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 20.3,
+    "high": 38.4,
+    "basis": "The saving counts document types that are already stored. A missing certificate is still requested by the broker, and the compile check stays."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 58.5,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 56.5,
+   "speedup": 2.298851,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-1041.08:15944",
+   "short": "Advise customers on import and export restrictions",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open import and export tariff restrictions",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "GOV_PORTAL",
+      "DOCS"
+     ],
+     "inputs": [
+      "question id"
+     ],
+     "outputs": [
+      "matching rules"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Draft advice from the stored customs rules",
+     "actor": "customs broker",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "matching rules"
+     ],
+     "outputs": [
+      "draft advice"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "Draft advice that cites only a stored customs rule.",
+      "input": "The question and the stored rule ids.",
+      "output": "A draft that names those rules, or a stop.",
+      "check": "Every rule cited in the draft is a stored rule id.",
+      "stop": "Stop when the question has no stored rule.",
+      "why_not_simpler": "Advice that invents a quota or a restriction cannot be sent."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Advise customers on quotas and insurance",
+     "actor": "customs broker",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "draft advice"
+     ],
+     "outputs": [
+      "approved advice"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Send the advice the broker approved",
+     "actor": "customs broker",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "approved advice"
+     ],
+     "outputs": [
+      "sent advice"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "customs broker",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "A customer question is matched to stored rules in {GOV_PORTAL} and {DOCS}: restrictions, tariff systems, quotas, and insurance requirements. The draft cites only those rules. The broker advises the customer, and nothing is sent until the broker approves it.",
+   "previous_blocker": "The answer was rewritten from memory for each customer, and a quota was easy to misstate.",
+   "enabler_now": "Stored rules can be cited by id, so a draft either names a real rule or stops.",
+   "still_hard": "A question with no stored rule, and the choice of what the customer should do, stay with the broker.",
+   "human_edge": "The broker approves the advice before it is sent.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A question that matches a stored rule gets a draft the same day, and the broker still approves it."
+   },
+   "altitude": "The broker sees the rule ids beside the draft.",
+   "reach": [
+    {
+     "role": "client",
+     "task": "Read the advice",
+     "learn": "Which rule the advice cited."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "3-6",
+    "testing_rollout": "2-4",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Advice is a draft that cites stored rules, and the broker approves what the customer receives. The source pack says duty and tax figures are configured from a public tariff and contracted rates, and that a classification is taken from a stored binding decision only when one matches, with the broker signing the code.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The source pack says a solely automated decision with a significant effect on a person needs a human review. A duty figure here is a stored rate times a stored value, and the broker signs before a filing, a payment, or a quote leaves. Other countries differ.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The work starts when a customer asks about a restriction and ends when the broker has approved the advice.",
+    "A rule has rule id, matter, and text, maintained by the broker from the authority's publication. A question with no rule id is answered by the broker without a draft.",
+    "Time a system already spends running is not counted as the broker's effort.",
+    "A missing rate, code, or document is not invented. The broker does that part.",
+    "The incremental hour updates the record when its source row changes."
+   ],
+   "unknowns": [
+    "How current the stored rules are against the authority's latest notice."
+   ],
+   "research_questions": [
+    "Which questions stopped because no rule was stored?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The checking time is already in the broker's step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Update the opened record when its source row changes.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "advice the broker approved for that question",
+     "approval_step_id": "s3",
+     "approver": "customs broker"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 21.4,
+    "high": 40.5,
+    "basis": "The saving counts questions that match a stored rule. A new matter is answered by the broker, and the approval stays."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 61.5,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 59.5,
+   "speedup": 2.469136,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-1041.08:15924",
+   "short": "Sign documents using powers of attorney",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open the documents and the attorney record",
+     "actor": "customs broker",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "ESIGN"
+     ],
+     "inputs": [
+      "document id"
+     ],
+     "outputs": [
+      "document and power"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Read the documents on behalf of the clients",
+     "actor": "customs broker",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "document and power"
+     ],
+     "outputs": [
+      "reading note"
+     ],
+     "handoff_to": "none",
+     "share_pct": 40,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Sign documents using powers of attorney",
+     "actor": "customs broker",
+     "today_means": "in_person",
+     "systems": [
+      "ESIGN"
+     ],
+     "inputs": [
+      "reading note"
+     ],
+     "outputs": [
+      "signed document"
+     ],
+     "handoff_to": "external",
+     "share_pct": 50,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "customs broker",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "The document and the power of attorney are opened from {DOCS}. The broker reads them on behalf of the client and signs in {ESIGN}. No signature is applied unless the broker applies it, and a missing power stops the signing.",
+   "previous_blocker": "The power sat in a file, and the document arrived by mail for a wet signature.",
+   "enabler_now": "The power is stored against the client, so the broker can see that it covers this document.",
+   "still_hard": "Signing for a client is the broker's own act, and a doubtful power is not signed.",
+   "human_edge": "The broker signs, or refuses to sign.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The broker sees the power before signing a document for a client.",
+   "reach": [
+    {
+     "role": "client",
+     "task": "Grant the power",
+     "learn": "Which document was signed under it."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "2-5",
+    "testing_rollout": "2-3",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "The record can show the power, and the signature stays the broker's act. The source pack says duty and tax figures are configured from a public tariff and contracted rates, and that a classification is taken from a stored binding decision only when one matches, with the broker signing the code.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The source pack says a solely automated decision with a significant effect on a person needs a human review. A duty figure here is a stored rate times a stored value, and the broker signs before a filing, a payment, or a quote leaves. Other countries differ.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The work starts when a document needs the broker's signature for a client and ends when the broker has signed or refused.",
+    "The power has client id, scope, and expiry, produced by the client. A document outside that scope is not signed.",
+    "Time a system already spends running is not counted as the broker's effort.",
+    "A missing rate, code, or document is not invented. The broker does that part.",
+    "The incremental hour updates the record when its source row changes."
+   ],
+   "unknowns": [
+    "Whether a particular authority accepts an electronic signature on this document type."
+   ],
+   "research_questions": [
+    "Which documents are waiting because the power does not cover them?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The checking time is already in the broker's step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s2"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Update the opened record when its source row changes.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3",
+     "approved_version": "signature the broker applied under that power",
+     "approval_step_id": "s3",
+     "approver": "customs broker"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 4.7,
+    "high": 8.8,
+    "basis": "The saving is finding the stored power. Reading the document and signing it stay with the broker."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 14.0,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 13.0,
+   "speedup": 1.149425,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-1041.08:15926",
+   "short": "Post bonds for the products being imported",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open the products being imported",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "shipment id"
+     ],
+     "outputs": [
+      "product list"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "treasury-and-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Post bonds for those imported products",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK",
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "product list"
+     ],
+     "outputs": [
+      "bond record"
+     ],
+     "handoff_to": "external",
+     "share_pct": 55,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "treasury-and-cash",
+     "approver": "customs broker",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
+     "id": "s3",
+     "what": "Assist clients who are still obtaining bonds",
+     "actor": "customs broker",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "bond record"
+     ],
+     "outputs": [
+      "assistance note"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "The products on the shipment are opened from {ERP}. The broker posts the bond through {BANK} and {GOV_PORTAL}, or assists the client who is still obtaining one. A bond is not posted by the system on its own.",
+   "previous_blocker": "The bond amount was copied from the invoice into a form, and the client was chased by phone.",
+   "enabler_now": "The product list and the value sit on the shipment, so the broker starts the bond from that list.",
+   "still_hard": "The surety and the authority still have to accept the bond, and assisting a client is a conversation.",
+   "human_edge": "The broker posts the bond, or decides the client must obtain it.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The broker sees the products before a bond is posted.",
+   "reach": [
+    {
+     "role": "client",
+     "task": "Obtain a bond the broker will not post",
+     "learn": "Which products the bond covers."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "3-6",
+    "testing_rollout": "2-4",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "The product list can be opened, and posting or arranging the bond stays with the broker. The source pack says duty and tax figures are configured from a public tariff and contracted rates, and that a classification is taken from a stored binding decision only when one matches, with the broker signing the code.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The source pack says a solely automated decision with a significant effect on a person needs a human review. A duty figure here is a stored rate times a stored value, and the broker signs before a filing, a payment, or a quote leaves. Other countries differ.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The work starts when imported products need a bond and ends when the broker has posted it or noted the client's bond.",
+    "The shipment has product ids and customs value, produced by the entry. A product with no value is not given a bond figure by the system.",
+    "Time a system already spends running is not counted as the broker's effort.",
+    "A missing rate, code, or document is not invented. The broker does that part.",
+    "The incremental hour updates the record when its source row changes."
+   ],
+   "unknowns": [
+    "Which sureties accept a bond that starts from the shipment record."
+   ],
+   "research_questions": [
+    "Which products are still without a bond?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The checking time is already in the broker's step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s2"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Update the opened record when its source row changes.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s2",
+     "approved_version": "bond the broker is posting for those products",
+     "approval_step_id": "s2",
+     "approver": "customs broker"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 10.2,
+    "high": 19.2,
+    "basis": "The saving is opening a product list that already exists. Posting the bond and assisting the client stay with the broker."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 29.25,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 28.25,
+   "speedup": 1.393728,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "Documents are chased and compiled from what arrived. Advice cites a stored rule. The broker signs under a power of attorney. Bonds are posted by the broker.",
+  "reach": [
+   "A client sees which certificate is still missing.",
+   "A customer sees advice that names a rule."
+  ],
+  "skills_to_grow": [
+   "Do not compile a certificate that has not arrived.",
+   "Do not sign without a power that covers the document."
+  ],
+  "ambitious_version": "A question with a stored rule gets a draft the same day, and the broker still approves it."
+ },
+ "_meta": {
+  "model": "grok-4.7",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "13-1041.08",
+   "title": "Customs Brokers",
+   "tasks": 23,
+   "function": "Business operations"
+  },
+  "digest": "research/digests-minor/13-1.md",
+  "digest_sha256": "7a4c995306b30639d3fcfade08c36bfbbcf664eb9b7dc402d15055b4861b2737",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-15T15:43:20"
+ }
+}

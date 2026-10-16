@@ -1,0 +1,1105 @@
+{
+ "tasks": [
+  {
+   "uid": "43-4141.00:4731",
+   "short": "Receive, check, authorise and execute customer wire transfers.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Confirm the customer's transfer instructions and identity.",
+     "actor": "accounts clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "transfer instruction",
+      "identity evidence"
+     ],
+     "outputs": [
+      "confirmed transfer instruction"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 65,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check account authority, funds, limits and required screening results in the {BANK}.",
+     "actor": "accounts clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK"
+     ],
+     "inputs": [
+      "confirmed transfer instruction",
+      "account record",
+      "screening result"
+     ],
+     "outputs": [
+      "transfer validation"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Enter beneficiary, amount, currency and payment reference in the {BANK}.",
+     "actor": "accounts clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK"
+     ],
+     "inputs": [
+      "confirmed transfer instruction",
+      "transfer validation"
+     ],
+     "outputs": [
+      "pending transfer"
+     ],
+     "handoff_to": "payments approver",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Independently review payment details and approve or refer the transfer.",
+     "actor": "payments approver",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK"
+     ],
+     "inputs": [
+      "pending transfer",
+      "confirmed transfer instruction",
+      "transfer validation"
+     ],
+     "outputs": [
+      "transfer approval",
+      "transfer exception"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "payments approver"
+    },
+    {
+     "id": "s5",
+     "what": "Release the approved transfer through the {BANK}.",
+     "actor": "accounts clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK"
+     ],
+     "inputs": [
+      "pending transfer",
+      "transfer approval"
+     ],
+     "outputs": [
+      "payment reference",
+      "payment status"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "payments approver"
+    },
+    {
+     "id": "s6",
+     "what": "Provide the customer with the payment receipt.",
+     "actor": "accounts clerk",
+     "today_means": "document",
+     "systems": [
+      "BANK",
+      "DOCS"
+     ],
+     "inputs": [
+      "payment reference",
+      "payment status"
+     ],
+     "outputs": [
+      "payment receipt"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure structured instruction capture and validation in the {BANK}, with a deterministic adapter where re-entry remains. Bind the approver's authorisation to the exact payment details, release that approved version once, and generate the receipt from confirmed status.",
+   "previous_blocker": "Customer instructions, screening results and payment entry can sit in separate channels. Release controls and duplicate-payment risk make informal automation unsuitable.",
+   "enabler_now": "Existing approval features and supported interfaces can handle most routine processing. AI-assisted coding reduces the effort of building adapters and validation tests.",
+   "still_hard": "Changed beneficiary details, suspected coercion, screening exceptions and uncertain payment status need careful handling. A timeout must never trigger an unchecked retry.",
+   "human_edge": "Notice hesitation or coercion, clarify the customer's intention and judge unusual instructions before money moves.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Intraday escalation of approved transfers approaching their processing cut-off."
+   },
+   "altitude": "The clerk spends less time retyping payments and more time resolving blocked transfers before cut-off. Payment approval limits remain unchanged.",
+   "reach": [
+    {
+     "role": "sales supervisor",
+     "task": "Coordinate urgent customer commitments when a payment is blocked.",
+     "learn": "Payment cut-offs, exception ownership and clear escalation messages."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Structured payment preparation, approval binding and duplicate prevention are deterministic engineering patterns; this is not evidence of a banking deployment.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline is a customer-facing financial institution with separate payment preparation and approval roles.",
+    "Shares estimate active task effort across the participating roles, excluding settlement waits.",
+    "The release gate consumes the approval recorded in s4; it does not require a second identical review.",
+    "Receipts distinguish submission from settlement.",
+    "Build ranges assume supported interfaces and include access review and any applicable employee consultation under national rules."
+   ],
+   "unknowns": [
+    "Available payment interfaces, release permissions and approval thresholds.",
+    "Existing identity and screening controls.",
+    "Transfer volumes, cut-offs, exception rates and current duplicate controls.",
+    "Required access approvals and employee consultation."
+   ],
+   "research_questions": [
+    "Can approval be bound to an immutable payment version?",
+    "Can the interface query a transfer by a unique request reference after a timeout?"
+   ],
+   "new_work": [
+    "Review failed validations and ambiguous payment statuses.",
+    "Maintain field mappings, cut-off calendars and approval limits.",
+    "Reconcile submitted payments and investigate duplicate alerts."
+   ],
+   "time_saved_pct": 68,
+   "speedup": 3.12
+  },
+  {
+   "uid": "43-4141.00:4733",
+   "short": "Verify safe-deposit access, issue keys and accompany customers to the vault.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Inspect identity evidence and establish the customer's key or access request.",
+     "actor": "accounts clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "identity evidence",
+      "vault request"
+     ],
+     "outputs": [
+      "identity check",
+      "confirmed vault request"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "account-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check authorised users and restrictions in the {OTHER} vault access system.",
+     "actor": "accounts clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "identity check",
+      "confirmed vault request",
+      "vault authority record"
+     ],
+     "outputs": [
+      "vault authority check"
+     ],
+     "handoff_to": "vault supervisor",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "account-to-renewal",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Approve replacement-key arrangements or refer disputed authority.",
+     "actor": "vault supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "confirmed vault request",
+      "vault authority check",
+      "key register"
+     ],
+     "outputs": [
+      "replacement approval",
+      "vault exception"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "account-to-renewal",
+     "approver": "vault supervisor"
+    },
+    {
+     "id": "s4",
+     "what": "Issue the initial or replacement key and obtain the customer's receipt.",
+     "actor": "accounts clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "vault authority check",
+      "replacement approval",
+      "vault key"
+     ],
+     "outputs": [
+      "key receipt"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 95,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "account-to-renewal",
+     "approver": "accounts clerk"
+    },
+    {
+     "id": "s5",
+     "what": "Admit and accompany the authorised customer under the vault's physical access procedure.",
+     "actor": "accounts clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "identity check",
+      "vault authority check"
+     ],
+     "outputs": [
+      "vault visit"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "account-to-renewal",
+     "approver": "accounts clerk"
+    },
+    {
+     "id": "s6",
+     "what": "Update the key register and access log in the {OTHER} vault access system.",
+     "actor": "accounts clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "key receipt",
+      "vault visit"
+     ],
+     "outputs": [
+      "key register",
+      "vault access log"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "account-to-renewal",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure the {OTHER} vault access system to show current authority, restrictions and key history together. Capture key receipts and staff-confirmed visit events once, generate the access log, and route replacement exceptions through the {WORKFLOW}.",
+   "previous_blocker": "Physical custody and admission cannot be replaced by record automation. Legacy registers may also separate customer authority from key history.",
+   "enabler_now": "A small records interface and configured approval flow can reduce lookup and logging effort. No model is needed for structured authority checks.",
+   "still_hard": "Lost keys, disputed mandates, estates and physical security incidents remain specialist cases. Software cannot establish that a physical handover actually happened.",
+   "human_edge": "Verify the person present, protect customer privacy and maintain safe physical custody.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The clerk spends slightly less time searching and logging, while physical service still dominates the week. Admission and replacement-key decision rights remain unchanged.",
+   "reach": [
+    {
+     "role": "sales supervisor",
+     "task": "Plan appointment capacity for services requiring secure physical access.",
+     "learn": "Vault staffing constraints, appointment duration and exception escalation."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-10",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Structured authority lookup, key records and approval routing can reduce administration while physical custody remains manual.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The institution offers staffed safe-deposit services.",
+    "Shares describe a blended service mix; replacement approval applies only to replacement or disputed cases.",
+    "Initial key issue does not require a replacement approval.",
+    "The baseline uses a vault access system; a paper-register branch would need a different migration estimate.",
+    "Build ranges exclude new locks, vault hardware and biometric identification.",
+    "Access and rollout estimates include consultation under national rules where staff access logging requires it."
+   ],
+   "unknowns": [
+    "Whether this service exists and which physical access controls apply.",
+    "Register format, integration options and authority update process.",
+    "Replacement-key procedure and specialist dependencies.",
+    "Applicable staff consultation and access-log retention requirements."
+   ],
+   "research_questions": [
+    "Can authority changes reach the vault register before the next customer visit?",
+    "Which events can be captured reliably without adding work to physical access procedures?"
+   ],
+   "new_work": [
+    "Resolve stale or conflicting authority records.",
+    "Reconcile physical key custody with the register.",
+    "Review access permissions and maintain replacement approval routes."
+   ],
+   "time_saved_pct": 23,
+   "speedup": 1.29
+  },
+  {
+   "uid": "43-4141.00:20141",
+   "short": "Collect loan applications, check supporting evidence and prepare cases for an authorised lending decision.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Discuss borrowing needs and explain application requirements.",
+     "actor": "accounts clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "customer enquiry",
+      "loan requirements"
+     ],
+     "outputs": [
+      "application outline"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Receive and file the application and supporting documents in the {DOCS}.",
+     "actor": "accounts clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "application outline",
+      "loan application",
+      "supporting evidence",
+      "identity evidence"
+     ],
+     "outputs": [
+      "application document set"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Transcribe application details into the {OTHER} loan origination system.",
+     "actor": "accounts clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "application document set"
+     ],
+     "outputs": [
+      "application record"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Application documents with their document identifiers and page references.",
+      "output": "Draft application fields with source references and explicit missing values.",
+      "check": "Validate schema, dates, arithmetic and source references; require review of critical fields and discrepancies.",
+      "stop": "One extraction and one repair attempt per document; unresolved fields return to manual entry.",
+      "why_not_simpler": "Forms handle new structured submissions, but supporting documents have varied layouts and free text."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "accounts clerk"
+    },
+    {
+     "id": "s4",
+     "what": "Check required evidence and internal consistency in the {OTHER} loan origination system.",
+     "actor": "accounts clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "application record",
+      "application document set",
+      "loan requirements"
+     ],
+     "outputs": [
+      "application checklist",
+      "missing evidence list"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Request missing or corrected evidence through the {EMAIL}.",
+     "actor": "accounts clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "missing evidence list",
+      "customer contact record"
+     ],
+     "outputs": [
+      "evidence request"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Assemble the application, credit report and checks into a lending pack.",
+     "actor": "accounts clerk",
+     "today_means": "document",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "application record",
+      "application checklist",
+      "credit report",
+      "credit identity check"
+     ],
+     "outputs": [
+      "lending pack"
+     ],
+     "handoff_to": "underwriter",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Assess affordability and creditworthiness, then approve, decline or request further evidence.",
+     "actor": "underwriter",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "lending pack",
+      "lending policy"
+     ],
+     "outputs": [
+      "lending decision",
+      "decision rationale"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "opportunity-to-order",
+     "approver": "underwriter"
+    },
+    {
+     "id": "s8",
+     "what": "Explain the approved decision and next steps to the customer.",
+     "actor": "accounts clerk",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "lending decision",
+      "decision rationale"
+     ],
+     "outputs": [
+      "customer explanation record"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s9",
+     "what": "Update application status and file the decision in the {OTHER} loan origination system.",
+     "actor": "accounts clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "lending decision",
+      "decision rationale",
+      "customer explanation record"
+     ],
+     "outputs": [
+      "application status",
+      "application audit trail"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure application intake and checklists in the {OTHER} loan origination system, with documents stored in the {DOCS}. A bounded extraction loop prepares source-linked fields for review; deterministic rules generate evidence requests and lending packs, while an underwriter makes the lending decision and the clerk explains it.",
+   "previous_blocker": "Supporting evidence arrives in varied formats, while lending systems require structured fields. Existing workflows often automate routing but leave document transcription and pack preparation manual.",
+   "enabler_now": "Bounded extraction can prepare fields with source references, and deterministic checks can catch omissions before underwriting. AI-assisted coding makes document adapters and pack generators cheaper to build.",
+   "still_hard": "Irregular income, conflicting evidence, vulnerability and disputed credit information need substantive assessment. A neat pack must not conceal uncertainty or become an automatic credit recommendation.",
+   "human_edge": "Understand the borrower's circumstances, recognise uncertainty and explain decisions with care. The underwriter weighs evidence and remains accountable for the lending judgement.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A pre-submission evidence readiness check for first-time borrowers."
+   },
+   "altitude": "The clerk spends more of the week helping borrowers resolve evidence gaps and preparing coherent cases. They can offer readiness checks, but gain no lending approval authority.",
+   "reach": [
+    {
+     "role": "services sales representative",
+     "task": "Help prospective customers prepare for an application before making a commitment.",
+     "learn": "Evidence requirements, accessible explanations and the boundary between information and regulated advice."
+    },
+    {
+     "role": "sales manager",
+     "task": "Identify where application delays cause qualified customers to abandon the process.",
+     "learn": "Funnel analysis using aggregate process data without inferring individual credit eligibility."
+    }
+   ],
+   "build_days": {
+    "coding": "8-15",
+    "integration": "10-25",
+    "testing_rollout": "10-20",
+    "consent_and_access": "10-30"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Rossum documents capture, rule checks and exception routing for orders; this supports a comparable document-processing pattern, not proven loan underwriting.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "GDPR Article 22 constrains solely automated decisions with legal or similarly significant effects; this design retains substantive human lending decisions.",
+     "grade": "E1",
+     "source": "[S11]"
+    },
+    {
+     "claim": "The SCHUFA judgment shows that a score can constitute the decision when a lender draws strongly on it; a nominal review is insufficient.",
+     "grade": "E1",
+     "source": "[S13]"
+    },
+    {
+     "claim": "The proposed effort reductions and build ranges are design estimates, not measured lending outcomes.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline is ordinary retail lending with a clerk preparing cases for an authorised underwriter.",
+    "Credit-report retrieval is handled by task 43-4141.00:4727 and is not counted again here.",
+    "Evidence requests use approved templates and secure upload instructions; uncertain requests go to a person.",
+    "Extraction does not score applicants, infer fraud or recommend approval.",
+    "GDPR applies throughout; any later creditworthiness model would require a separate EU AI Act assessment.",
+    "Build estimates include data protection review, access and applicable consultation under national rules."
+   ],
+   "unknowns": [
+    "Loan types, national requirements and the clerk's actual delegated authority.",
+    "Document formats, languages, volumes and missing-evidence rates.",
+    "Available lending-system interfaces and existing intake features.",
+    "Permitted document processing locations, retention periods and access roles.",
+    "Whether signatures, disclosures and disbursement are part of this team's remit."
+   ],
+   "research_questions": [
+    "Which fields can be captured directly from customers instead of extracted?",
+    "How accurately can critical fields be extracted on representative documents, including difficult cases?",
+    "Can every displayed value retain its source and correction history?",
+    "Does the review interface support independent underwriting rather than rubber-stamping?"
+   ],
+   "new_work": [
+    "Review critical extracted values and uncertain documents.",
+    "Maintain evidence checklists, templates and document mappings.",
+    "Monitor extraction errors across document types and languages.",
+    "Handle disputed records and requests for explanation.",
+    "Maintain access controls and retention jobs."
+   ],
+   "time_saved_pct": 59,
+   "speedup": 2.42
+  },
+  {
+   "uid": "43-4141.00:4727",
+   "short": "Request authorised credit reports, verify the applicant match and attach reports to lending cases.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check the recorded purpose and access basis in the {OTHER} loan origination system.",
+     "actor": "accounts clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "loan application",
+      "credit access policy",
+      "access basis record"
+     ],
+     "outputs": [
+      "credit access check"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compare applicant identifiers with identity evidence in the {DOCS}.",
+     "actor": "accounts clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "loan application",
+      "identity evidence",
+      "credit access check"
+     ],
+     "outputs": [
+      "credit request identifiers",
+      "identity exception"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Submit the credit enquiry through the {OTHER} credit-reporting portal.",
+     "actor": "accounts clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "credit request identifiers",
+      "credit access check"
+     ],
+     "outputs": [
+      "credit enquiry reference"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "accounts clerk"
+    },
+    {
+     "id": "s4",
+     "what": "Download the returned report from the {OTHER} credit-reporting portal.",
+     "actor": "accounts clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "credit enquiry reference"
+     ],
+     "outputs": [
+      "credit report"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Check the report's subject, date and matching warnings against the application.",
+     "actor": "accounts clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "credit report",
+      "credit request identifiers",
+      "loan application"
+     ],
+     "outputs": [
+      "credit identity check",
+      "credit report exception"
+     ],
+     "handoff_to": "accounts clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Attach the checked report in the {OTHER} loan origination system.",
+     "actor": "accounts clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "credit report",
+      "credit identity check",
+      "credit enquiry reference"
+     ],
+     "outputs": [
+      "credit report attachment",
+      "credit access audit trail"
+     ],
+     "handoff_to": "underwriter",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    }
+   ],
+   "design": "Connect the {OTHER} loan origination system to the credit-reporting interface through a purpose-restricted job on the {DATA_PLATFORM}. Validate identifiers, obtain clerk approval before the enquiry, retrieve the report and attach it with an access log; route ambiguous matches to a person without interpreting creditworthiness.",
+   "previous_blocker": "Agency access contracts, identifiers and lending records may be disconnected. Manual portal entry also provides an informal checkpoint before a sensitive enquiry.",
+   "enabler_now": "A supported reporting interface allows a deterministic connector to preserve that checkpoint while removing repeated entry and downloads. No language model is needed when report metadata is structured.",
+   "still_hard": "Similar names, changed addresses, cross-border coverage and disputed records can make matching uncertain. Agency permissions and enquiry costs may dominate the implementation.",
+   "human_edge": "Resolve uncertain identity matches and recognise when the enquiry should stop. Report retrieval does not establish that its contents are correct or justify a lending decision.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The clerk spends less time navigating portals and more time resolving mismatches and customer disputes. Credit-access and lending decision rights remain unchanged.",
+   "reach": [
+    {
+     "role": "sales supervisor",
+     "task": "Identify application delays caused by missing or disputed external records.",
+     "learn": "Credit-report provenance, dispute routes and privacy-preserving queue analysis."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "8-20",
+    "testing_rollout": "6-12",
+    "consent_and_access": "10-30"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Purpose-bound requests, identifier validation, report retrieval and audit logging can use deterministic integration; availability depends on the agency interface.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The SCHUFA judgment concerns the decision role of credit scores; this retrieval design makes no eligibility decision.",
+     "grade": "E1",
+     "source": "[S13]"
+    }
+   ],
+   "assumptions": [
+    "The reporting agency permits machine access under an appropriate agreement.",
+    "Permitted identifiers and report metadata are machine-readable; unsupported formats fall back to manual checking.",
+    "An access basis is recorded under applicable policy; consent is not assumed to be the only lawful basis.",
+    "Active effort excludes agency response waiting time.",
+    "Structured retrieval offers more scope for deterministic automation than the supplied low-gain prior suggests; identity exceptions remain human.",
+    "Build ranges include agency access review, GDPR requirements and applicable consultation under national rules."
+   ],
+   "unknowns": [
+    "Agency interfaces, contracts, enquiry charges and permitted uses.",
+    "Which identifiers may lawfully be sent and stored.",
+    "Whether enquiries leave a customer-visible footprint.",
+    "Report formats, matching warnings and dispute frequency.",
+    "Retention rules and the existing approval process for enquiries."
+   ],
+   "research_questions": [
+    "Can an existing report be reused lawfully and within policy instead of making another enquiry?",
+    "Does the interface prevent duplicate enquiries after retries?",
+    "Can matching warnings be obtained as structured fields?",
+    "How are corrected reports linked to earlier reports and affected lending cases?"
+   ],
+   "new_work": [
+    "Approve prepared enquiries and resolve uncertain identities.",
+    "Monitor failed requests, duplicate attempts and agency charges.",
+    "Maintain interface mappings, credentials and access restrictions.",
+    "Route disputes and replace superseded reports with a clear audit trail."
+   ],
+   "time_saved_pct": 76,
+   "speedup": 4.17
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts toward customer explanation, evidence readiness and exception resolution. Physical custody, payment authorisation and substantive lending judgement retain their existing human accountability; automation grants no additional financial authority.",
+  "reach": [
+   "Help services sales representatives prepare customers for evidence requirements.",
+   "Help sales supervisors coordinate time-sensitive exceptions and secure appointments.",
+   "Help sales managers understand aggregate application delays."
+  ],
+  "skills_to_grow": [
+   "Explain financial processes in accessible language.",
+   "Resolve identity and document discrepancies.",
+   "Review source-linked extracted information.",
+   "Understand payment status, duplicate prevention and escalation.",
+   "Use aggregate process data while protecting customer information."
+  ],
+  "ambitious_version": "Become the customer-facing coordinator for application readiness and difficult onboarding cases, with a named pre-submission evidence service and clear escalation paths to authorised specialists."
+ },
+ "job_code": "43-4141.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 191,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "text(await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3500}));\n"
+  ],
+  "job": {
+   "code": "43-4141.00",
+   "title": "New Accounts Clerks",
+   "tasks": 15,
+   "function": "Sales and account management"
+  }
+ }
+}

@@ -1,0 +1,810 @@
+{
+ "job_code": "13-1041.08",
+ "tasks": [
+  {
+   "uid": "13-1041.08:15943",
+   "short": "Apply for tariff concessions and duty drawbacks",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open tariff concessions and prior refunds",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "GOV_PORTAL",
+      "DOCS"
+     ],
+     "inputs": [
+      "entry id"
+     ],
+     "outputs": [
+      "concession record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "tax-and-filing",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Draft duty drawbacks from the stored figures",
+     "actor": "customs broker",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "concession record"
+     ],
+     "outputs": [
+      "draft application"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "Draft a concession or drawback application only from stored duty figures.",
+      "input": "Entry id and the stored duty figures.",
+      "output": "A draft application, or a stop.",
+      "check": "The figures in the draft equal the stored duty figures.",
+      "stop": "Stop when a required figure is missing.",
+      "why_not_simpler": "An application that invents a refund amount cannot be filed."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "tax-and-filing",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Apply for concessions the draft cannot fill",
+     "actor": "customs broker",
+     "today_means": "document",
+     "systems": [
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "draft application"
+     ],
+     "outputs": [
+      "signed application"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "tax-and-filing",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "File the application the broker signed",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "signed application"
+     ],
+     "outputs": [
+      "filed application"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "tax-and-filing",
+     "approver": "customs broker",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "Prior concessions and refunds are opened from {GOV_PORTAL}. A drawback draft uses only stored duty figures in {DOCS}. The broker applies for anything the draft cannot fill, and signs before the application is filed.",
+   "previous_blocker": "The application was rebuilt from old refund files and a calculator.",
+   "enabler_now": "The duty figures and any earlier refund are stored on the entry, so the draft can cite them.",
+   "still_hard": "Whether the concession applies, and a figure the entry does not hold, stay with the broker.",
+   "human_edge": "The broker signs the application.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "An entry with stored figures gets a draft the day the refund is asked, and the broker still signs it."
+   },
+   "altitude": "The broker sees the figures beside the draft.",
+   "reach": [
+    {
+     "role": "client",
+     "task": "Confirm the refund should be asked",
+     "learn": "Which entry the application cites."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "4-7",
+    "testing_rollout": "2-4",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "A drawback draft cites stored figures, and the broker signs the application. The source pack says duty and tax figures are configured from a public tariff and contracted rates, and that a classification is taken from a stored binding decision only when one matches, with the broker signing the code.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The source pack says a solely automated decision with a significant effect on a person needs a human review. A duty figure here is a stored rate times a stored value, and the broker signs before a filing, a payment, or a quote leaves. Other countries differ.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The work starts when a concession or a drawback is to be applied for and ends when the broker has signed the application.",
+    "The entry has entry id, duty paid, and any prior refund id, produced by the filing record. A missing figure stops the draft.",
+    "Time a system already spends running is not counted as the broker's effort.",
+    "A missing rate, code, or document is not invented. The broker does that part.",
+    "The incremental hour updates the record when its source row changes."
+   ],
+   "unknowns": [
+    "How often the authority asks for evidence that is not on the entry."
+   ],
+   "research_questions": [
+    "Which applications stopped because a figure was missing?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The checking time is already in the broker's step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Update the opened record when its source row changes.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "application the broker signed for that concession",
+     "approval_step_id": "s3",
+     "approver": "customs broker"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 20.8,
+    "high": 39.3,
+    "basis": "The saving counts entries whose duty figures are stored. A missing figure is filled by the broker, and the signature stays."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 59.75,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 57.75,
+   "speedup": 2.366864,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-1041.08:15929",
+   "short": "Contract with freight forwarders for destination services",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open destination services still needing a forwarder",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "shipment id"
+     ],
+     "outputs": [
+      "service list"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "supplier-to-contract",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Contract with freight forwarders for those services",
+     "actor": "customs broker",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY",
+      "CLM"
+     ],
+     "inputs": [
+      "service list"
+     ],
+     "outputs": [
+      "contract draft"
+     ],
+     "handoff_to": "external",
+     "share_pct": 60,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "supplier-to-contract",
+     "approver": "customs broker",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
+     "id": "s3",
+     "what": "Note destination services the contract left out",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "CLM"
+     ],
+     "inputs": [
+      "contract draft"
+     ],
+     "outputs": [
+      "left out"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "supplier-to-contract",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "Destination services still open are listed from {ERP}. The broker contracts with the freight forwarder by {TELEPHONY}, and the contract is held in {CLM}. Services the contract does not cover stay listed. The system does not agree a price.",
+   "previous_blocker": "The forwarder was called from memory, and the services were restated each time.",
+   "enabler_now": "The open services are on the shipment, so the conversation starts from that list.",
+   "still_hard": "The price and the forwarder's capacity are still agreed by the broker.",
+   "human_edge": "The broker makes the contract.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The broker sees the destination services before contracting a forwarder.",
+   "reach": [
+    {
+     "role": "forwarder",
+     "task": "Accept the services",
+     "learn": "Which services the contract covers."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "3-6",
+    "testing_rollout": "2-3",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "The service list can be opened, and the contract is made by the broker. The source pack says duty and tax figures are configured from a public tariff and contracted rates, and that a classification is taken from a stored binding decision only when one matches, with the broker signing the code.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The source pack says a solely automated decision with a significant effect on a person needs a human review. A duty figure here is a stored rate times a stored value, and the broker signs before a filing, a payment, or a quote leaves. Other countries differ.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The work starts when destination services need a forwarder and ends when the broker has made the contract or noted the gap.",
+    "A service row has shipment id, place, and service type, produced by the order. A row with no place is not put in a contract by the system.",
+    "Time a system already spends running is not counted as the broker's effort.",
+    "A missing rate, code, or document is not invented. The broker does that part.",
+    "The incremental hour updates the record when its source row changes."
+   ],
+   "unknowns": [
+    "Whether the forwarder will accept terms that start from the service list."
+   ],
+   "research_questions": [
+    "Which destination services are still without a contract?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The checking time is already in the broker's step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s2"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Update the opened record when its source row changes.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s2",
+     "approved_version": "contract the broker is making with that forwarder",
+     "approval_step_id": "s2",
+     "approver": "customs broker"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 12.8,
+    "high": 24.1,
+    "basis": "The saving is opening a service list that already exists. Bargaining and the contract stay with the broker."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 36.5,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 35.5,
+   "speedup": 1.550388,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-1041.08:15937",
+   "short": "Monitor or trace the location of goods",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Monitor location events for the goods",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "shipment id"
+     ],
+     "outputs": [
+      "location events"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Trace goods whose location events have stopped",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "location events"
+     ],
+     "outputs": [
+      "trace notes"
+     ],
+     "handoff_to": "external",
+     "share_pct": 55,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Note goods the trace could not place",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "trace notes"
+     ],
+     "outputs": [
+      "unplaced goods"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 55,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "Location events are monitored on a {OPS_SYSTEM} board from the carrier's status messages. The broker traces goods whose events have stopped, by the board and by {TELEPHONY}. Goods the trace cannot place stay listed. A silent carrier is not given a guessed place.",
+   "previous_blocker": "Location was asked by phone because the last message was in a mailbox.",
+   "enabler_now": "Status messages can be shown against the shipment, so a stop is visible without a call.",
+   "still_hard": "A carrier who has gone quiet still has to be traced by the broker.",
+   "human_edge": "The broker decides which goods are still unplaced.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The broker sees which goods have stopped reporting before starting a trace.",
+   "reach": [
+    {
+     "role": "carrier",
+     "task": "Give the latest place",
+     "learn": "Which goods are still unplaced."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-7",
+    "testing_rollout": "2-4",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "A status board can show events that already arrived, and the trace of a gap stays with the broker. The source pack says duty and tax figures are configured from a public tariff and contracted rates, and that a classification is taken from a stored binding decision only when one matches, with the broker signing the code.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The source pack says a solely automated decision with a significant effect on a person needs a human review. A duty figure here is a stored rate times a stored value, and the broker signs before a filing, a payment, or a quote leaves. Other countries differ.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The work starts when goods are in transit and ends when the broker has traced a stop or noted that the place is unknown.",
+    "An event has shipment id, place, and time, produced by the carrier. A shipment with no event is not given a place by the board.",
+    "Time a system already spends running is not counted as the broker's effort.",
+    "A missing rate, code, or document is not invented. The broker does that part.",
+    "The incremental hour updates the record when its source row changes."
+   ],
+   "unknowns": [
+    "How complete the carrier's status messages are."
+   ],
+   "research_questions": [
+    "Which goods have had no event since the last expected time?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The checking time is already in the broker's step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s2"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Update the opened record when its source row changes.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 15.8,
+    "high": 29.9,
+    "basis": "The saving is watching events that the carrier already sends. A gap is traced by the broker, and an unknown place stays unknown."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 45.0,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 44.0,
+   "speedup": 1.785714,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-1041.08:15931",
+   "short": "Suggest packaging and labeling methods",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open labeling rules for the products",
+     "actor": "customs broker",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "product id"
+     ],
+     "outputs": [
+      "label rules"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Suggest packaging methods for the products",
+     "actor": "customs broker",
+     "today_means": "meeting_call",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "label rules"
+     ],
+     "outputs": [
+      "suggestion"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 60,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Note methods the labeling rules did not cover",
+     "actor": "customs broker",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "suggestion"
+     ],
+     "outputs": [
+      "uncovered methods"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "Stored labeling rules for the product are opened from {DOCS}. The broker suggests packaging methods to the client. A method the rules do not cover is noted, not invented as a rule. The suggestion is the broker's.",
+   "previous_blocker": "The suggestion was given from memory, and the label rule was checked afterwards.",
+   "enabler_now": "The rules are stored against the product, so the broker sees them before suggesting a method.",
+   "still_hard": "The best method for this product and this route is still the broker's judgement.",
+   "human_edge": "The broker makes the suggestion.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The broker sees the labeling rules before suggesting a method.",
+   "reach": [
+    {
+     "role": "client",
+     "task": "Choose a packaging method",
+     "learn": "Which rule the suggestion used."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "1-3",
+    "testing_rollout": "1-3",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Label rules can be opened, and the packaging suggestion stays with the broker. The source pack says duty and tax figures are configured from a public tariff and contracted rates, and that a classification is taken from a stored binding decision only when one matches, with the broker signing the code.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "The source pack says a solely automated decision with a significant effect on a person needs a human review. A duty figure here is a stored rate times a stored value, and the broker signs before a filing, a payment, or a quote leaves. Other countries differ.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "The work starts when a product needs a packaging or labeling suggestion and ends when the broker has made the suggestion.",
+    "A rule has product id, label text, and market, maintained by the broker. A product with no rule is suggested without a cited rule.",
+    "Time a system already spends running is not counted as the broker's effort.",
+    "A missing rate, code, or document is not invented. The broker does that part.",
+    "The incremental hour updates the record when its source row changes."
+   ],
+   "unknowns": [
+    "Whether the client's packer can follow a rule that is only stored as text."
+   ],
+   "research_questions": [
+    "Which products have no stored labeling rule?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The checking time is already in the broker's step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s2"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Update the opened record when its source row changes.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 13.9,
+    "high": 26.2,
+    "basis": "The saving is opening rules that are already stored. The suggestion itself stays with the broker."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 39.5,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 38.5,
+   "speedup": 1.626016,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "Concessions are drafted from stored figures and signed by the broker. Forwarder contracts are made in person. Location gaps are traced by the broker. Packaging advice stays with the broker.",
+  "reach": [
+   "A client sees which entry a refund cites.",
+   "A carrier sees which goods have stopped reporting."
+  ],
+  "skills_to_grow": [
+   "Do not invent a refund figure.",
+   "Do not give a place to goods that have gone quiet."
+  ],
+  "ambitious_version": "An entry with stored figures gets a drawback draft the day it is asked, and the broker still signs it."
+ },
+ "_meta": {
+  "model": "grok-4.7",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "13-1041.08",
+   "title": "Customs Brokers",
+   "tasks": 23,
+   "function": "Business operations"
+  },
+  "digest": "research/digests-minor/13-1.md",
+  "digest_sha256": "7a4c995306b30639d3fcfade08c36bfbbcf664eb9b7dc402d15055b4861b2737",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-15T15:43:20"
+ }
+}

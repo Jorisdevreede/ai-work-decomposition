@@ -1,0 +1,915 @@
+{
+ "tasks": [
+  {
+   "uid": "43-2011.00:4640",
+   "short": "Take caller messages, clarify the wording and record them for colleagues.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Ask for the recipient, callback details and message.",
+     "actor": "switchboard operator",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "incoming call",
+      "staff directory"
+     ],
+     "outputs": [
+      "message notes"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "conversation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Caller speech and required message fields.",
+      "output": "Message notes with recipient, callback details and caller wording.",
+      "check": "Validate required fields and recipient against the staff directory; confirm callback digits.",
+      "stop": "Allow two clarification attempts per missing field, then transfer to the switchboard operator.",
+      "why_not_simpler": "Free speech and spoken names require interpretation; fixed fields constrain the result."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Suggest shorter wording while preserving the caller's meaning.",
+     "actor": "switchboard operator",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "message notes"
+     ],
+     "outputs": [
+      "message draft"
+     ],
+     "handoff_to": "caller",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Message notes and protected names, numbers and dates.",
+      "output": "Concise message draft.",
+      "check": "Preserve protected fields, requests and uncertainty; read the draft back before saving.",
+      "stop": "One draft and one correction; unresolved meaning goes to the switchboard operator.",
+      "why_not_simpler": "Rules cannot reliably shorten varied messages without changing their meaning."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Read back the message and obtain the caller's confirmation.",
+     "actor": "switchboard operator",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "message draft"
+     ],
+     "outputs": [
+      "confirmed message"
+     ],
+     "handoff_to": "switchboard operator",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "conversation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "caller"
+    },
+    {
+     "id": "s4",
+     "what": "Save the confirmed message with its recipient and callback details.",
+     "actor": "switchboard operator",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "confirmed message"
+     ],
+     "outputs": [
+      "message record"
+     ],
+     "handoff_to": "message coordinator",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    }
+   ],
+   "design": "Connect the {TELEPHONY} to a message form in the {HELPDESK}, with bounded speech extraction and concise drafting. Read the message back for caller confirmation, then save a timestamped record for the delivery workflow. Offer immediate transfer to a person and route emergencies directly to a person.",
+   "previous_blocker": "Speech recognition, name matching and message accuracy required substantial setup and testing. Mailboxes offered little field validation.",
+   "enabler_now": "Available voice capabilities and bounded extraction can feed a small records app. AI-assisted coding reduces the effort of building field checks and connectors.",
+   "still_hard": "Accents, noisy calls, sensitive details and implied urgency remain difficult. GDPR requires a lawful basis, limited retention and controlled access; national rules may require employee consultation.",
+   "human_edge": "Recognise distress, clarify delicate meaning and avoid making promises on a colleague's behalf.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "After-hours callers leaving routine callback messages."
+   },
+   "altitude": "The operator spends less time typing and more time resolving unclear or sensitive messages. They can correct message drafts and request clarification; authority to make commitments does not change.",
+   "reach": [
+    {
+     "role": "customer service representative",
+     "task": "Prepare callback cases with complete contact details.",
+     "learn": "Case categories, verification requirements and the minimum information needed for a useful callback."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "4-10",
+    "testing_rollout": "6-12",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Structured message extraction, concise drafting and caller readback are a plausible bounded design; the digest found no message-taking case.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Teams Phone Agent supports conversational answering and routing, establishing adjacent voice capability.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "AI interaction disclosure and machine-readable marking of synthetic audio apply under Article 50.",
+     "grade": "E2",
+     "source": "[S7]"
+    },
+    {
+     "claim": "The Netherlands requires works council consent for specified operator monitoring and recording arrangements.",
+     "grade": "E2",
+     "source": "[S10]"
+    }
+   ],
+   "assumptions": [
+    "Routine messages need a recipient, callback details and a short statement.",
+    "Today's operator commonly composes a message in the {EMAIL} while speaking through the {TELEPHONY}.",
+    "Time shares describe operator effort, not caller waiting time, and are estimates.",
+    "The message-taking task ends at a saved record; delivery effort belongs to the relay task.",
+    "Remaining time includes operator interventions; caller confirmation time is not operator time when automated."
+   ],
+   "unknowns": [
+    "Supported languages, call volumes and frequency of difficult audio.",
+    "Whether the {TELEPHONY} exposes suitable voice and transfer interfaces.",
+    "Which message categories may be processed automatically.",
+    "Existing retention periods, lawful basis, access permissions and applicable national consultation requirements."
+   ],
+   "research_questions": [
+    "How often do drafts change meaning when tested on representative, lawfully obtained calls?",
+    "Can confirmation work without retaining raw audio beyond the approved processing period?"
+   ],
+   "new_work": [
+    "Review failed captures and disputed summaries.",
+    "Maintain required fields, language tests and sensitive-topic transfer rules.",
+    "Check disclosure, retention and access settings after changes.",
+    "Monitor confirmation failures without inferring employee emotions."
+   ],
+   "time_saved_pct": 83,
+   "speedup": 5.88
+  },
+  {
+   "uid": "43-2011.00:4633",
+   "short": "Page colleagues about waiting calls and arrange a fallback when they do not respond.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Find the requested colleague and their paging destination.",
+     "actor": "switchboard operator",
+     "today_means": "system_screen",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "waiting call",
+      "staff directory"
+     ],
+     "outputs": [
+      "paging destination"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Send a page identifying the waiting call.",
+     "actor": "switchboard operator",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "waiting call",
+      "paging destination"
+     ],
+     "outputs": [
+      "page notification"
+     ],
+     "handoff_to": "call recipient",
+     "share_pct": 45,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Check whether the colleague responds before the caller waits too long.",
+     "actor": "switchboard operator",
+     "today_means": "system_screen",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "page notification",
+      "waiting call"
+     ],
+     "outputs": [
+      "page outcome"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Agree a suitable fallback with the caller when paging fails.",
+     "actor": "switchboard operator",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "page outcome",
+      "waiting call",
+      "staff directory"
+     ],
+     "outputs": [
+      "fallback instruction"
+     ],
+     "handoff_to": "call recipient",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "switchboard operator"
+    }
+   ],
+   "design": "Configure the {TELEPHONY} to send private call-waiting notifications, track responses and apply a timeout. Use the approved staff directory and show failed pages to the operator with fallback contacts. Keep unusual fallback conversations with the operator.",
+   "previous_blocker": "Paging equipment and directory records were often separate. Informal backup arrangements made unattended escalation unreliable.",
+   "enabler_now": "Existing notification and queue settings can cover routine pages. Small deterministic connectors can bridge supported interfaces when configuration is insufficient.",
+   "still_hard": "Legacy paging interfaces, stale destinations and unsuitable broadcast channels can limit automation. An unanswered page does not establish a colleague's availability.",
+   "human_edge": "Choose a considerate fallback when the caller's needs and the colleague's availability conflict.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Routine paging and response watching occupy less of the week. The operator handles failed contacts and unusual requests; decision rights do not change.",
+   "reach": [
+    {
+     "role": "first-line supervisor of office and administrative support workers",
+     "task": "Identify gaps in department backup coverage.",
+     "learn": "Coverage schedules and aggregate failed-contact patterns, without treating them as individual performance scores."
+    }
+   ],
+   "build_days": {
+    "coding": "0-3",
+    "integration": "2-6",
+    "testing_rollout": "3-6",
+    "consent_and_access": "2-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Routine paging is a notification workflow despite the supplied human-task prior; live fallback conversations remain human.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Teams Dial by Name supports name lookup and department-based disambiguation; directory changes can take time to appear.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "An AudioCodes Voca hospital case reports about 13,000 automated calls weekly and about 50% lower central reception workload; no method is stated.",
+     "grade": "E3",
+     "source": "[S6]"
+    }
+   ],
+   "assumptions": [
+    "Paging means routine call notification, not emergency dispatch.",
+    "The {TELEPHONY} supports private notifications and a detectable response or timeout.",
+    "Public announcements use minimal information and remain an exception.",
+    "The {TELEPHONY} directory is sufficiently maintained for routine recipient selection.",
+    "The case evidence concerns broader routing and does not establish savings for this task."
+   ],
+   "unknowns": [
+    "Whether paging equipment supports configuration, acknowledgements or integration.",
+    "Which destinations are private and which broadcast to others.",
+    "Approved waiting limits and backup contacts.",
+    "Whether proposed response records trigger consultation under national rules."
+   ],
+   "research_questions": [
+    "Can the existing {TELEPHONY} configuration cover paging and timeouts without custom code?",
+    "How often does a correct page still require an operator's fallback decision?"
+   ],
+   "new_work": [
+    "Maintain paging destinations and backup contacts.",
+    "Investigate failed notifications and repeated timeouts.",
+    "Test fallback behaviour after directory or equipment changes.",
+    "Limit response logs to their approved operational purpose."
+   ],
+   "time_saved_pct": 90,
+   "speedup": 9.52
+  },
+  {
+   "uid": "43-2011.00:4634",
+   "short": "Route messages to the right recipient and handle sensitive or unclear delivery requests.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive a written message or listen to a verbal relay request.",
+     "actor": "switchboard operator",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "message record",
+      "verbal relay request"
+     ],
+     "outputs": [
+      "relay request"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Match the named recipient or department to an approved delivery destination.",
+     "actor": "switchboard operator",
+     "today_means": "system_screen",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "relay request",
+      "staff directory",
+      "routing rules"
+     ],
+     "outputs": [
+      "delivery instruction"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Forward routine messages to known internal recipients.",
+     "actor": "switchboard operator",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "message record",
+      "delivery instruction"
+     ],
+     "outputs": [
+      "delivered message"
+     ],
+     "handoff_to": "message recipient",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Resolve unclear recipients and authorise sensitive or external message delivery.",
+     "actor": "switchboard operator",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY",
+      "EMAIL"
+     ],
+     "inputs": [
+      "relay request",
+      "delivery instruction",
+      "routing rules"
+     ],
+     "outputs": [
+      "delivered message",
+      "delivery exception"
+     ],
+     "handoff_to": "message recipient",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "switchboard operator"
+    },
+    {
+     "id": "s5",
+     "what": "Record delivery status and flag missing acknowledgements.",
+     "actor": "switchboard operator",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "delivered message",
+      "delivery exception"
+     ],
+     "outputs": [
+      "delivery status"
+     ],
+     "handoff_to": "message coordinator",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    }
+   ],
+   "design": "Use a shared message queue in the {HELPDESK}, with approved recipient mappings from the {TELEPHONY} directory. Configure routine internal delivery through the {EMAIL} or {CHAT}, preserving confirmed wording and recording delivery status. Put unclear, sensitive and external releases in an operator queue with recipient checks.",
+   "previous_blocker": "Messages arrived through several channels, while delivery ownership and acknowledgement were informal. Recipient details were separate from message records.",
+   "enabler_now": "Shared records, directory mappings and configured notifications can connect capture to delivery. Forwarding intact messages usually needs no model.",
+   "still_hard": "Recipient intent, confidentiality and changing responsibility are difficult to encode. Technical delivery does not prove that someone has read or acted on a message.",
+   "human_edge": "Know when a message needs a careful conversation, a different recipient or explicit permission to disclose.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "An unresolved-callback queue for departments without dedicated administrative support."
+   },
+   "altitude": "The operator spends less time forwarding and chasing messages and more time recovering failed handoffs. They can coordinate callback ownership under agreed rules; disclosure authority does not expand.",
+   "reach": [
+    {
+     "role": "correspondence clerk",
+     "task": "Track outstanding replies and assign follow-up ownership.",
+     "learn": "Response standards, acknowledgement evidence and escalation routes."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "3-8",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Recipient mapping, intact forwarding and acknowledgement tracking are primarily deterministic; sensitive relay conversations remain human.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "CM.com describes caller identification and routing to people or departments, supporting the adjacent intake-and-routing capability.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Teams Dial by Name supports directory lookup and disambiguation of similar names.",
+     "grade": "E2",
+     "source": "[S2]"
+    }
+   ],
+   "assumptions": [
+    "This task covers routing and delivery; creating and clarifying a message belongs to the message-taking task.",
+    "The intake step combines written and verbal alternatives; it does not assume every message uses both channels.",
+    "Routine requests usually name a person or department, allowing directory rules without semantic classification.",
+    "Unmatched recipients never trigger automatic delivery.",
+    "Routine and exception delivery steps are alternative branches with estimated aggregate time shares."
+   ],
+   "unknowns": [
+    "The proportion of internal, external, sensitive and verbally relayed messages.",
+    "Which destinations may receive which categories of information.",
+    "Whether the {HELPDESK} can accept messages and record recipient acknowledgements.",
+    "Who owns callbacks when the named recipient is unavailable."
+   ],
+   "research_questions": [
+    "What proportion of messages can use exact recipient or department mappings?",
+    "Which acknowledgement method distinguishes receipt from technical delivery without adding excessive work?"
+   ],
+   "new_work": [
+    "Maintain recipient mappings and disclosure rules.",
+    "Resolve bounced messages and unacknowledged handoffs.",
+    "Review access to shared queues under GDPR.",
+    "Remove stale copies and maintain approved retention periods."
+   ],
+   "time_saved_pct": 72,
+   "speedup": 3.51
+  },
+  {
+   "uid": "43-2011.00:20432",
+   "short": "Collect payments, handle petty cash, reconcile records and prepare bank deposits.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check the amount due or the petty cash request against supporting records.",
+     "actor": "switchboard operator",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "payment request",
+      "supplier receipt",
+      "cash policy"
+     ],
+     "outputs": [
+      "checked cash request"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Approve petty cash disbursements under the applicable spending limits.",
+     "actor": "finance team",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "checked cash request",
+      "cash policy"
+     ],
+     "outputs": [
+      "cash authorisation"
+     ],
+     "handoff_to": "switchboard operator",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 70,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "treasury-and-cash",
+     "approver": "finance approver"
+    },
+    {
+     "id": "s3",
+     "what": "Count cash, collect payments or pay approved petty cash claims.",
+     "actor": "switchboard operator",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "checked cash request",
+      "cash authorisation",
+      "cash float"
+     ],
+     "outputs": [
+      "cash movement",
+      "cash receipt"
+     ],
+     "handoff_to": "payer or claimant",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "switchboard operator"
+    },
+    {
+     "id": "s4",
+     "what": "Enter the cash movement and file its receipt.",
+     "actor": "switchboard operator",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "DOCS"
+     ],
+     "inputs": [
+      "cash movement",
+      "cash receipt"
+     ],
+     "outputs": [
+      "cash ledger",
+      "receipt file"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "switchboard operator"
+    },
+    {
+     "id": "s5",
+     "what": "Count remaining cash and compare it with the cash ledger.",
+     "actor": "switchboard operator",
+     "today_means": "in_person",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "cash float",
+      "cash ledger",
+      "receipt file"
+     ],
+     "outputs": [
+      "cash reconciliation",
+      "cash discrepancy"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "treasury-and-cash",
+     "approver": "switchboard operator"
+    },
+    {
+     "id": "s6",
+     "what": "Review discrepancies and authorise ledger adjustments or deposit preparation.",
+     "actor": "finance team",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "cash reconciliation",
+      "cash discrepancy",
+      "cash policy"
+     ],
+     "outputs": [
+      "approved reconciliation",
+      "deposit instruction"
+     ],
+     "handoff_to": "switchboard operator",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 70,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "treasury-and-cash",
+     "approver": "finance approver"
+    },
+    {
+     "id": "s7",
+     "what": "Prepare and deliver the deposit, retaining evidence for finance.",
+     "actor": "switchboard operator",
+     "today_means": "in_person",
+     "systems": [
+      "BANK"
+     ],
+     "inputs": [
+      "deposit instruction",
+      "cash float"
+     ],
+     "outputs": [
+      "deposit receipt"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "switchboard operator"
+    }
+   ],
+   "design": "Configure a cash register and approval form in the {ERP}, attaching receipts in the {DOCS} and generating reconciliation and deposit paperwork. Use deterministic calculations to compare counted balances, authorised movements and deposit evidence, with a small connector if needed. People retain cash custody, physical counts, payment release and finance approvals.",
+   "previous_blocker": "Physical custody cannot be automated through software alone. Small cash volumes often did not justify connecting a local register to the finance process.",
+   "enabler_now": "Existing finance forms and approval settings can replace local transcription. AI-assisted coding lowers the cost of reconciliation checks and document generation without requiring a model in operation.",
+   "still_hard": "Counting, counterfeit detection, custody and bank delivery remain physical work. Eliminating cash depends on the people served and payment policy, so it is not assumed.",
+   "human_edge": "Maintain trustworthy custody, challenge unsupported claims and handle payment disputes respectfully.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily identification of cash discrepancies requiring finance review."
+   },
+   "altitude": "The operator spends less time maintaining the ledger and preparing paperwork, while continuing physical cash duties. They gain earlier visibility of discrepancies; payment and adjustment approval rights do not change.",
+   "reach": [
+    {
+     "role": "credit authorizer, checker or clerk",
+     "task": "Investigate unmatched customer payments.",
+     "learn": "Payment references, reconciliation evidence and when to refer a balance dispute to finance."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "3-8",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Cash custody and physical deposits remain manual; forms, calculations and approval routing can reduce supporting work.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "A local cash register may use a spreadsheet even when the main ledger resides in the finance system; the digest provides no cash-handling case.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Cash handling is a combined reception duty at a site that still accepts cash, rather than a universal switchboard responsibility.",
+    "The task includes finance handoffs; shares describe total task effort across the named actors.",
+    "Collections, petty cash payments and deposits are branches, not steps performed for every transaction.",
+    "Cash authorisation is required for disbursements; ordinary collections follow an established amount due.",
+    "The local {SPREADSHEET} is an illustrative cash register, not an assumption that the main ledger lacks an {ERP}.",
+    "The cheapest supported design retains cash; payment-policy changes require separate assessment."
+   ],
+   "unknowns": [
+    "Whether this operator handles cash and which cash processes actually occur.",
+    "Transaction volumes, cash limits, deposit frequency and custody arrangements.",
+    "Whether the {ERP} has suitable cash, attachment and approval functions.",
+    "Required segregation of duties and available finance approvers.",
+    "Access restrictions and any consultation needed under national rules."
+   ],
+   "research_questions": [
+    "Can existing {ERP} configuration replace the local register without custom development?",
+    "How much time is physical handling versus transcription and reconciliation?",
+    "Which cash uses could be removed while preserving access for the people served?"
+   ],
+   "new_work": [
+    "Resolve unmatched receipts and duplicate entries.",
+    "Maintain cash limits, account mappings and approver access.",
+    "Check reconciliation rules after finance configuration changes.",
+    "Review failed imports and preserve custody and approval evidence."
+   ],
+   "time_saved_pct": 32,
+   "speedup": 1.48
+  }
+ ],
+ "role": {
+  "altitude": "The week shifts toward difficult callers, failed handoffs and sensitive disclosures, with less routine paging, message forwarding and transcription. Cash custody remains where assigned, and authority to disclose information, commit colleagues or approve payments does not automatically expand.",
+  "reach": [
+   "Customer service representatives: prepare complete callback cases.",
+   "Correspondence clerks: coordinate replies and unresolved handoffs.",
+   "First-line supervisors of office and administrative support workers: identify department coverage gaps.",
+   "Credit authorizers, checkers and clerks: investigate unmatched payments where cash handling applies."
+  ],
+  "skills_to_grow": [
+   "Caller clarification and sensitive-message handling.",
+   "Directory maintenance, queue configuration and exception diagnosis.",
+   "Testing voice capture across languages and noisy conditions.",
+   "GDPR-aware message access and retention.",
+   "Cash reconciliation and custody controls where assigned."
+  ],
+  "ambitious_version": "Run a shared callback and handoff service that helps departments recover missed contacts, including routine messages outside staffed hours. Use aggregate failure patterns to propose coverage improvements while keeping emergency handling, sensitive disclosure and financial approvals with authorised people."
+ },
+ "job_code": "43-2011.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 161,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:5000});text(r.output)\n"
+  ],
+  "job": {
+   "code": "43-2011.00",
+   "title": "Switchboard Operators, Including Answering Service",
+   "tasks": 19,
+   "function": "Customer support"
+  }
+ }
+}

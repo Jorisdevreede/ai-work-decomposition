@@ -1,0 +1,1054 @@
+{
+ "job_code": "43-6013.00",
+ "tasks": [
+  {
+   "uid": "43-6013.00:777",
+   "short": "Answer telephones and direct each call to the right staff.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Answer telephones and hear the reason for the call.",
+     "actor": "medical secretary",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "incoming call"
+     ],
+     "outputs": [
+      "call reason"
+     ],
+     "handoff_to": "none",
+     "share_pct": 42,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Find the staff member who covers that reason.",
+     "actor": "medical secretary",
+     "today_means": "system_screen",
+     "systems": [
+      "CALENDAR",
+      "HCM"
+     ],
+     "inputs": [
+      "call reason",
+      "duty roster"
+     ],
+     "outputs": [
+      "duty match"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Direct the call or leave a message for staff.",
+     "actor": "medical secretary",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "duty match",
+      "call reason"
+     ],
+     "outputs": [
+      "transfer",
+      "callback message"
+     ],
+     "handoff_to": "staff member",
+     "share_pct": 26,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Log the callback message on the day's list.",
+     "actor": "medical secretary",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK"
+     ],
+     "inputs": [
+      "callback message"
+     ],
+     "outputs": [
+      "call log"
+     ],
+     "handoff_to": "staff member",
+     "share_pct": 12,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "The duty roster in the {CALENDAR} shows who covers the reason the secretary just heard. The secretary still answers and either transfers the call or speaks the message. The {HELPDESK} stores that message. No patient-facing bot answers the telephone.",
+   "previous_blocker": "The roster lived in someone's head, so every call waited while the secretary asked the room.",
+   "enabler_now": "A maintained duty list is enough to show the name. The call itself does not need a model.",
+   "still_hard": "Hearing what the caller actually needs, and calming someone who will not say it twice.",
+   "human_edge": "The secretary hears tone and urgency, which a roster cannot.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "The secretary decides during the call which staff member should take it, instead of parking the caller to ask the room."
+   },
+   "altitude": "Phone time stays on the week. The secretary can refuse to transfer a call that has no duty match.",
+   "reach": [
+    {
+     "role": "Hotel, Motel, and Resort Desk Clerks",
+     "task": "Look up a guest while other people wait at the desk",
+     "learn": "How they look up a name without making the person at the desk repeat themselves"
+    }
+   ],
+   "build_days": {
+    "coding": "1-2",
+    "integration": "2-4",
+    "testing_rollout": "1-3",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A duty roster and a call log are ordinary directory and list configuration. The live call stays with the secretary.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "Focal role is the medical secretary. Boundary: from the telephone ringing to a transfer or a logged message. Clinical advice on the call is out of scope.",
+    "Structured fields are caller name, reason code and duty role. The practice manager maintains the roster. Fallback: the secretary asks the room and types the message.",
+    "Test the native {CALENDAR} roster before custom code. {CALENDAR} runtime is not secretary time.",
+    "Upkeep of 2 hours per 100 baseline hours covers roster changes when clinics move."
+   ],
+   "unknowns": [
+    "Whether this desk already has a duty roster in the {CALENDAR}.",
+    "Whether callers are patients, wards, or other staff."
+   ],
+   "research_questions": [
+    "What share of calls is a simple transfer rather than a message?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Answering the live call",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 36,
+      "counted_step_ids": [
+       "s1"
+      ]
+     },
+     {
+      "description": "Checking the duty match",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s2"
+      ]
+     },
+     {
+      "description": "Transfer or spoken message",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 18,
+      "counted_step_ids": [
+       "s3"
+      ]
+     },
+     {
+      "description": "Logging the message",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2,
+      "counted_step_ids": [
+       "s4"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Update the duty roster when clinic sessions change",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 6,
+    "high": 14,
+    "basis": "Low: the roster is stale, so the secretary still asks the room, and every call is still spoken. High: the duty match is right and only the log shrinks. The conversation is not removed."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 26.9,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 24.9,
+   "speedup": 1.331558,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "43-6013.00:775",
+   "short": "Schedule and confirm diagnostic appointments, surgeries and consultations.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the diagnostic order for the test or consultation.",
+     "actor": "medical secretary",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "physician order"
+     ],
+     "outputs": [
+      "order fields"
+     ],
+     "handoff_to": "none",
+     "share_pct": 16,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "The physician order for a test, surgery or consultation",
+      "output": "Test name, duration, urgency and named preparation",
+      "check": "Secretary checks each field against the order",
+      "stop": "One pass; a blank field stays for the secretary to type",
+      "why_not_simpler": "Orders mix a form with a handwritten line a fixed map misses"
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Match open slots to the test duration and preparation.",
+     "actor": "medical secretary",
+     "today_means": "system_screen",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "order fields",
+      "slot rules"
+     ],
+     "outputs": [
+      "offered slots"
+     ],
+     "handoff_to": "none",
+     "share_pct": 22,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Phone the patient and confirm one appointment.",
+     "actor": "medical secretary",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "offered slots"
+     ],
+     "outputs": [
+      "accepted slot"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 36,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Send the confirmation and the preparation note.",
+     "actor": "medical secretary",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CALENDAR"
+     ],
+     "inputs": [
+      "accepted slot",
+      "preparation line"
+     ],
+     "outputs": [
+      "confirmation message"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 14,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "meetings-and-calendar",
+     "approver": "medical secretary",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
+     "id": "s5",
+     "what": "Record the appointment on the patient's chart.",
+     "actor": "medical secretary",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "accepted slot"
+     ],
+     "outputs": [
+      "chart appointment"
+     ],
+     "handoff_to": "physician",
+     "share_pct": 12,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "The {CALENDAR} offers slots that match the test duration and the preparation rule. The secretary phones the patient and confirms one slot. A template message then sends that time and the preparation line. The secretary types any field the order left blank.",
+   "previous_blocker": "Orders arrived as paper, and the diary was a grid the secretary searched by eye.",
+   "enabler_now": "Slot types and preparation lines now sit on the test, so the search is a rule. The phone call is not.",
+   "still_hard": "Patients who cannot make any offered slot, and orders that name no test.",
+   "human_edge": "The secretary hears which day the patient can actually travel.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "The secretary decides the same day whether an order fits the standard slots, and only the exceptions wait for a hunt through the diary."
+   },
+   "altitude": "Booking calls stay on the week. The secretary can refuse to offer a slot that breaks the preparation rule.",
+   "reach": [
+    {
+     "role": "Court, Municipal, and License Clerks",
+     "task": "Offer an appointment against a fixed counter diary",
+     "learn": "Which slot types they refuse to double-book"
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "3-6",
+    "testing_rollout": "2-4",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Booking rules, slot types and reminders are ordinary agenda configuration. A person still confirms the slot.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "Health data is a special category under GDPR article 9, so a confirmation that names the test is health data.",
+     "grade": "E1",
+     "source": "[S11]",
+     "kind": "legal"
+    },
+    {
+     "claim": "A patient-facing booking bot must say it is AI. This design does not use one.",
+     "grade": "E1",
+     "source": "[S17]",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "Focal role is the medical secretary. Boundary: from a received physician order to a confirmed slot on the chart. Performing the test is out of scope.",
+    "Structured fields are test name, duration, urgency, preparation line, slot and patient contact. The physician writes the order. The clinic maintains preparation lines. Fallback: the secretary types a blank field and searches the diary by hand.",
+    "Test native {CALENDAR} slot types before custom code. No patient-facing bot. A message is a template after the secretary has confirmed the slot.",
+    "Upkeep of 5 hours per 100 baseline hours covers slot types and preparation lines when clinics change the tests they offer.",
+    "The file is kept under the WGBO periods named in the digest. Other employment rules are national rules."
+   ],
+   "unknowns": [
+    "Whether preparation lines already exist on each test.",
+    "What share of orders arrives as a structured order rather than handwriting."
+   ],
+   "research_questions": [
+    "What share of patients accept one of the first slots offered?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Check extracted order fields",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 5,
+      "counted_step_ids": [
+       "s1"
+      ]
+     },
+     {
+      "description": "Phone call to confirm the slot",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 28,
+      "counted_step_ids": [
+       "s3"
+      ]
+     },
+     {
+      "description": "Chart the accepted slot",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2,
+      "counted_step_ids": [
+       "s5"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Revise slot types and preparation lines when the clinic changes its tests",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 5
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "confirmation message for the slot the patient accepted",
+     "approval_step_id": "s3",
+     "approver": "medical secretary"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 16,
+    "high": 32,
+    "basis": "Low: most orders do not match a slot rule, so the secretary still hunts the diary, and the phone call is unchanged. High: standard tests offer real slots and only the call and a short chart check remain. The conversation is not removed."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 58.2,
+   "incremental_hours_per_100_baseline_hours": 5,
+   "time_saved_pct": 53.2,
+   "speedup": 2.136752,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "43-6013.00:788",
+   "short": "Complete insurance and other claim forms from the chart.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather the encounter, coverage and codes from the chart.",
+     "actor": "medical secretary",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "encounter",
+      "coverage record"
+     ],
+     "outputs": [
+      "claim facts"
+     ],
+     "handoff_to": "none",
+     "share_pct": 18,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Complete the insurance claim form from the chart fields.",
+     "actor": "medical secretary",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "claim facts",
+      "form template"
+     ],
+     "outputs": [
+      "draft claim"
+     ],
+     "handoff_to": "none",
+     "share_pct": 24,
+     "fate": "person_reviews",
+     "remaining_pct": 55,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Chart facts plus the insurer's form",
+      "output": "Filled claim lines, with blanks where the chart has no code",
+      "check": "Secretary compares every money line and code to the chart",
+      "stop": "One pass; a line with no code is left blank and not guessed",
+      "why_not_simpler": "Insurer forms do not share one field layout"
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Flag claim lines that are still blank.",
+     "actor": "medical secretary",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft claim"
+     ],
+     "outputs": [
+      "missing lines"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Ask the physician for a missing clinical line.",
+     "actor": "medical secretary",
+     "today_means": "meeting_call",
+     "systems": [
+      "CHAT"
+     ],
+     "inputs": [
+      "missing lines"
+     ],
+     "outputs": [
+      "clinical question"
+     ],
+     "handoff_to": "physician",
+     "share_pct": 14,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "State the missing clinical fact for the claim.",
+     "actor": "physician",
+     "today_means": "meeting_call",
+     "systems": [
+      "CHAT"
+     ],
+     "inputs": [
+      "clinical question"
+     ],
+     "outputs": [
+      "clinical fact"
+     ],
+     "handoff_to": "medical secretary",
+     "share_pct": 8,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6",
+     "what": "Check the claim and release it to the insurer.",
+     "actor": "medical secretary",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "draft claim",
+      "clinical fact"
+     ],
+     "outputs": [
+      "released claim"
+     ],
+     "handoff_to": "insurer",
+     "share_pct": 26,
+     "fate": "person_reviews",
+     "remaining_pct": 65,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "medical secretary",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "A {DOCS} template fills the insurance form from chart fields and leaves a blank where the code is missing. The secretary asks the physician only for those lines, then checks every money figure and releases that version. Native form fill is tested before custom code.",
+   "previous_blocker": "Each insurer's form was retyped from the chart, including lines the chart already held.",
+   "enabler_now": "The chart now has codes and coverage identifiers. The form layout still differs by insurer, so a person checks it.",
+   "still_hard": "Claims where the clinical code is a judgement, not a field, and insurer portals that reject a file.",
+   "human_edge": "The secretary knows which missing line is a typo and which one needs the physician.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "The secretary decides the same day whether a claim is complete enough to release, instead of holding the whole form for one missing code."
+   },
+   "altitude": "Claim checking stays on the week. The secretary can hold a form that still has a blank money line.",
+   "reach": [
+    {
+     "role": "Loan Interviewers and Clerks",
+     "task": "Complete a lender's form from a customer file",
+     "learn": "Which fields they refuse to guess when the file is silent"
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "4-8",
+    "testing_rollout": "3-6",
+    "consent_and_access": "3-6"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "A template can fill a form from structured chart fields. A person still releases a claim that carries codes and amounts.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "A claim that names a diagnosis is health data under GDPR article 9.",
+     "grade": "E1",
+     "source": "[S11]",
+     "kind": "legal"
+    },
+    {
+     "claim": "The medical file is kept for the WGBO period and stays confidential.",
+     "grade": "E1",
+     "source": "[S13]",
+     "kind": "legal"
+    }
+   ],
+   "assumptions": [
+    "Focal role is the medical secretary. Boundary: from a finished encounter to a claim released to the insurer. The insurer's adjudication is out of scope.",
+    "Structured fields are patient identifier, coverage number, encounter date, procedure code and amount. The physician and the coder produce the codes. Fallback: a blank line is asked, never guessed.",
+    "Test the insurer's own upload or the {DOCS} template before custom code. The loop does not invent a code.",
+    "Upkeep of 4 hours per 100 baseline hours covers form changes when an insurer revises its layout."
+   ],
+   "unknowns": [
+    "How many insurer layouts this desk actually sends.",
+    "Whether codes are on the encounter before the secretary sees it."
+   ],
+   "research_questions": [
+    "What share of claims is missing a code on first look?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Check chart facts pulled for the form",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 5,
+      "counted_step_ids": [
+       "s1"
+      ]
+     },
+     {
+      "description": "Compare filled lines to the chart",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 10,
+      "counted_step_ids": [
+       "s2"
+      ]
+     },
+     {
+      "description": "Ask the physician about a blank clinical line",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 8,
+      "counted_step_ids": [
+       "s4"
+      ]
+     },
+     {
+      "description": "Release check on the claim",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 14,
+      "counted_step_ids": [
+       "s6"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Update insurer form maps when a layout changes",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s6",
+     "approved_version": "claim version the secretary checked against the chart",
+     "approval_step_id": "s6",
+     "approver": "medical secretary"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 12,
+    "high": 26,
+    "basis": "Low: most claims have a missing code or a odd insurer layout, so the form is still completed by hand. High: codes are on the encounter and the secretary only checks the money lines. The release decision stays."
+   },
+   "focal_role_share_pct": 92,
+   "excluded_labour_share_pct": 8,
+   "gross_time_saved_pct": 49.782609,
+   "incremental_hours_per_100_baseline_hours": 4,
+   "time_saved_pct": 45.782609,
+   "speedup": 1.844427,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "43-6013.00:779",
+   "short": "Greet visitors, learn why they came, and direct them.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Greet visitors and ask the purpose of the visit.",
+     "actor": "medical secretary",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "visitor arrival"
+     ],
+     "outputs": [
+      "visit purpose"
+     ],
+     "handoff_to": "none",
+     "share_pct": 48,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "facilities-and-workplace",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Look up the appointment or the right staff member.",
+     "actor": "medical secretary",
+     "today_means": "system_screen",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "visit purpose",
+      "day list"
+     ],
+     "outputs": [
+      "direction"
+     ],
+     "handoff_to": "none",
+     "share_pct": 18,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Direct the visitor to the appropriate staff.",
+     "actor": "medical secretary",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "direction"
+     ],
+     "outputs": [
+      "visitor shown through"
+     ],
+     "handoff_to": "staff member",
+     "share_pct": 34,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "facilities-and-workplace",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "The day list on the {CALENDAR} shows the visitor's appointment and the staff member. The secretary still greets the person, asks why they came, and walks them. Native day-list configuration is used before any custom screen.",
+   "previous_blocker": "The arrival list was a paper sheet, so the secretary hunted a name while the visitor waited.",
+   "enabler_now": "A day list tied to the diary shows the name. Greeting the person does not change.",
+   "still_hard": "Visitors with no appointment, and people who cannot explain the visit.",
+   "human_edge": "The secretary sees who is distressed and who should not wait in a public corridor.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The front door stays on the week. Nothing about who may walk through changes.",
+   "reach": [
+    {
+     "role": "Hotel, Motel, and Resort Desk Clerks",
+     "task": "Greet a guest and send them to the right person",
+     "learn": "How they check a name without turning the greeting into a form"
+    }
+   ],
+   "build_days": {
+    "coding": "0-1",
+    "integration": "1-2",
+    "testing_rollout": "1-2",
+    "consent_and_access": "0-1"
+   },
+   "run_cost": "none",
+   "evidence": [
+    {
+     "claim": "A day list on the agenda shows who is expected. Greeting and directing a visitor stay at the desk.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "Focal role is the medical secretary at the front door. Boundary: from a person arriving to them being directed. Registering a full intake is a different task.",
+    "Structured fields are visitor name and appointment time. The diary produces them. Fallback: the secretary asks the clinics by phone.",
+    "Test the native {CALENDAR} day list before custom code. Upkeep of 2 hours covers session moves."
+   ],
+   "unknowns": [
+    "Whether visitors are mostly booked patients or walk-ins."
+   ],
+   "research_questions": [
+    "What share of visitors has no appointment on the day list?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Greeting and asking the purpose",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 40,
+      "counted_step_ids": [
+       "s1"
+      ]
+     },
+     {
+      "description": "Day-list lookup",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 5,
+      "counted_step_ids": [
+       "s2"
+      ]
+     },
+     {
+      "description": "Walking the visitor to staff",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 30,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Keep the day list aligned when sessions move",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 2,
+    "high": 6,
+    "basis": "Low: most visitors are not on the list, so the lookup saves nothing and the greeting is unchanged. High: the name is on the day list and only the walk to the room remains. The greeting stays."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 11.7,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 9.7,
+   "speedup": 1.10742,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "The week is still the phone, the front door and the desk. Standard bookings, bills and chart packs are ready to check. The secretary can refuse to file or send a record that failed the identity or recipient check.",
+  "reach": [
+   "Eligibility interviewers: which intake questions must be asked aloud",
+   "Court clerks: which identity check they require before a copy leaves",
+   "Hotel desk clerks: how a busy desk looks up a name without losing the queue"
+  ],
+  "skills_to_grow": [
+   "Reading a clinical term before it is filed",
+   "Maintaining a booking rule and a prep line",
+   "Spotting a result that must be phoned, not routed"
+  ],
+  "ambitious_version": "Every result has an owner, every disclosure names the recipient, and no chart line is filed before a person has read it."
+ },
+ "_meta": {
+  "model": "grok-4.7",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "43-6013.00",
+   "title": "Medical Secretaries and Administrative Assistants",
+   "tasks": 15,
+   "function": "Office and operations"
+  },
+  "digest": "research/digests-minor/43-6.md",
+  "digest_sha256": "b9b3ea228d62b83e06be266fa09f6189b517fc415ff5d98b855cb5c2828d8f7a",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-15T14:30:53"
+ }
+}

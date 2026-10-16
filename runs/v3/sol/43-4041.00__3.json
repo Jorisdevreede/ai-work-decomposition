@@ -1,0 +1,1074 @@
+{
+ "tasks": [
+  {
+   "uid": "43-4041.00:23305",
+   "short": "Verify relevant public records and resolve identity matches before using findings in a credit assessment.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open the application in the {OTHER} credit account system and establish permitted checks.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "credit application",
+      "check policy"
+     ],
+     "outputs": [
+      "search scope"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Search permitted registers through the {GOV_PORTAL} and licensed sources through the {PARTNER_PORTAL}.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "GOV_PORTAL",
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "search scope",
+      "credit application"
+     ],
+     "outputs": [
+      "register results"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Read register extracts in the {DOCS} and capture relevant dates, identifiers and findings.",
+     "actor": "credit clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "register results"
+     ],
+     "outputs": [
+      "finding table"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Permitted register extracts and a fixed finding schema.",
+      "output": "Finding table with source passages, dates and identifiers.",
+      "check": "Validate field types and source references; require review of adverse findings and uncertain extraction.",
+      "stop": "One extraction and one repair per document; unreadable or unsupported documents go to the clerk.",
+      "why_not_simpler": "Use structured fields first; variable document layouts and narrative entries need bounded extraction."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Compare identifiers and addresses against the application to resolve possible identity matches.",
+     "actor": "credit clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "finding table",
+      "credit application"
+     ],
+     "outputs": [
+      "identity match record"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 65,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Decide which verified findings are relevant and require clarification before credit assessment.",
+     "actor": "credit clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "identity match record",
+      "finding table",
+      "check policy"
+     ],
+     "outputs": [
+      "verified findings",
+      "clarification request"
+     ],
+     "handoff_to": "credit assessor",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Attach verified findings and source references to the {OTHER} credit account system.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "verified findings",
+      "identity match record"
+     ],
+     "outputs": [
+      "credit evidence pack"
+     ],
+     "handoff_to": "credit assessor",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure permitted checks in the {WORKFLOW}, remove redundant directory searches, and retrieve authorised records through supported {GOV_PORTAL} and {PARTNER_PORTAL} interfaces. A bounded extractor prepares source-linked findings in the {DOCS}; the clerk resolves identity ambiguity and relevance before an integration attaches verified evidence to the {OTHER} credit account system.",
+   "previous_blocker": "Register access, inconsistent identifiers and document formats made retrieval and checking expensive. These constraints still exist.",
+   "enabler_now": "AI coding shortens connector and validation work. Bounded extraction can reduce reading time where structured register data is unavailable.",
+   "still_hard": "Licensed access, stale records, disputed identities and permitted use remain difficult. Public availability alone does not justify collecting or using a record.",
+   "human_edge": "Recognise a mistaken identity, distinguish an unresolved allegation from a reliable finding, and seek a fair clarification.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Source-linked correction pack for applicants disputing a public-record match."
+   },
+   "altitude": "The clerk spends less time searching and copying, and more time resolving disputed matches. Within an agreed mandate, the clerk can mark evidence unusable pending clarification; credit approval authority does not expand.",
+   "reach": [
+    {
+     "role": "customer service representative",
+     "task": "Handle an applicant's record-correction enquiry.",
+     "learn": "Identity verification, correction routes and how to explain source limitations without disclosing unrelated records."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "8-20",
+    "testing_rollout": "8-15",
+    "consent_and_access": "10-30"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Structured retrieval, exact identifier checks and source logging are deterministic engineering patterns, not a documented credit deployment here.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Rossum demonstrates document capture, validation and exception routing for orders; transfer to credit records requires separate validation.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "The SCHUFA judgment shows that a score strongly relied upon by a lender can itself constitute an automated decision.",
+     "grade": "E3",
+     "source": "[S13]"
+    }
+   ],
+   "assumptions": [
+    "The European baseline is relevant address, business, ownership or insolvency verification where permitted. Arrest-record searches are excluded unless a specific lawful and necessary use is established.",
+    "Supported register access is assumed for automated retrieval; inaccessible sources retain manual retrieval.",
+    "Credit assessment and approval occur downstream. This solution does not calculate creditworthiness or make adverse decisions.",
+    "GDPR applies throughout. Adding AI creditworthiness assessment requires separate EU AI Act classification and applicable-date review.",
+    "Time shares and remaining percentages are planning estimates informed by the priors, not measured savings.",
+    "Build ranges are working-day estimates. Access, privacy review and employee consultation under national rules may extend elapsed time."
+   ],
+   "unknowns": [
+    "Which register checks are actually performed, and on individuals or businesses?",
+    "Which purposes, permissions and source licences support each check?",
+    "Which sources offer authorised structured access?",
+    "How often do ambiguous identities or disputed findings occur?",
+    "Which employee consultation requirements apply?"
+   ],
+   "research_questions": [
+    "Which source interfaces support stable identifiers, timestamps and correction notices?",
+    "What restrictions apply to criminal-offence data and credit-related public records in the relevant jurisdictions?",
+    "Which downstream uses could turn evidence preparation into regulated automated credit assessment?"
+   ],
+   "new_work": [
+    "Review uncertain extraction and adverse findings.",
+    "Handle unavailable sources and disputed identities.",
+    "Maintain permitted-source rules, retention settings and connectors.",
+    "Sample source accuracy and track correction outcomes."
+   ],
+   "time_saved_pct": 64,
+   "speedup": 2.8
+  },
+  {
+   "uid": "43-4041.00:23306",
+   "short": "Provide authorised subscribers with credit report information and explain its contents.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check subscriber identity, entitlement and permitted purpose in the {CRM}.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "subscriber request",
+      "subscriber entitlement"
+     ],
+     "outputs": [
+      "validated request"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Retrieve the current report from the {PARTNER_PORTAL} or the {OTHER} credit reporting system.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PARTNER_PORTAL",
+      "OTHER"
+     ],
+     "inputs": [
+      "validated request"
+     ],
+     "outputs": [
+      "credit report"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Prepare a permitted report extract and covering explanation using templates in the {DOCS}.",
+     "actor": "credit clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "credit report",
+      "validated request",
+      "disclosure template"
+     ],
+     "outputs": [
+      "disclosure pack"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Check recipient and permitted content, then release the report through the {EMAIL}.",
+     "actor": "credit clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "disclosure pack",
+      "validated request"
+     ],
+     "outputs": [
+      "report delivery"
+     ],
+     "handoff_to": "subscriber",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "credit clerk"
+    },
+    {
+     "id": "s5",
+     "what": "Explain requested report information to the authenticated subscriber through the {TELEPHONY}.",
+     "actor": "credit clerk",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "credit report",
+      "validated request",
+      "disclosure pack"
+     ],
+     "outputs": [
+      "subscriber explanation"
+     ],
+     "handoff_to": "subscriber",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Record the recipient, report version and disclosure outcome in the {CRM}.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "report delivery",
+      "subscriber explanation",
+      "credit report"
+     ],
+     "outputs": [
+      "disclosure log"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    }
+   ],
+   "design": "Connect subscriber entitlements in the {CRM} to report retrieval through the {PARTNER_PORTAL} or the {OTHER} credit reporting system. Deterministic templates produce permitted extracts and a secure delivery link, with clerk approval before release through the {EMAIL}; delivery metadata and a structured call outcome populate the {CRM}.",
+   "previous_blocker": "Subscriber permissions, report versions and delivery records sat in separate places. Staff manually checked each disclosure and copied details.",
+   "enabler_now": "Existing access controls, templates and delivery workflows can handle much of the work. AI coding reduces the effort of connecting them; a model is unnecessary for standard reports.",
+   "still_hard": "Establishing entitlement, licensing onward disclosure and explaining contested or ambiguous information still require care.",
+   "human_edge": "Explain what a report establishes, acknowledge uncertainty and recognise when the subscriber needs a correction or specialist assessment.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Subscriber report walkthrough appointment."
+   },
+   "altitude": "The clerk handles fewer retrieval and formatting chores and has more time for report explanations. The clerk can resolve delivery problems within policy; disclosure rights and credit decision authority do not expand.",
+   "reach": [
+    {
+     "role": "correspondence clerk",
+     "task": "Prepare a clear response to a report-correction request.",
+     "learn": "Plain-language explanations, source attribution and permitted disclosure boundaries."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Entitlement checks, field-based extracts, templated delivery and disclosure logs can use deterministic software.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "TOPdesk Robin demonstrates knowledge-based answering and pre-filled handover, but does not establish safe credit-report disclosure.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "GDPR automated-decision safeguards matter if report communication expands into decision-making.",
+     "grade": "E1",
+     "source": "[S11]"
+    }
+   ],
+   "assumptions": [
+    "Subscriber reporting applies to a credit-information service or an organisation with authorised onward disclosure; it is not universal mid-size company work.",
+    "Today's service uses email or post and telephone. Shares represent the blended channel mix, not a requirement to use every channel per request.",
+    "Automated entitlement checks accept only established identities, current permissions and explicit purposes; uncertain requests enter an exception queue.",
+    "A secure report link replaces attachments or post where permitted. Postal exceptions remain manual.",
+    "The clerk explains report content without making an automated credit decision.",
+    "GDPR applies; employee consultation follows national rules where applicable.",
+    "Build ranges and time reductions are estimates. Consultation and external access approval may extend elapsed time."
+   ],
+   "unknowns": [
+    "Does the organisation provide reports to subscribers, and under which licence?",
+    "What proportion of requests arrive by telephone, post or email?",
+    "Which report fields may each subscriber receive?",
+    "Can delivery status and structured call outcomes be captured automatically?"
+   ],
+   "research_questions": [
+    "Which source licences allow extracts, secure links and explanatory templates?",
+    "Which identity checks are proportionate for each delivery channel?"
+   ],
+   "new_work": [
+    "Resolve failed authentication and entitlement exceptions.",
+    "Review recipient and report content before release.",
+    "Maintain disclosure templates, permissions and delivery rules.",
+    "Handle expired links, correction requests and failed deliveries."
+   ],
+   "time_saved_pct": 80,
+   "speedup": 4.88
+  },
+  {
+   "uid": "43-4041.00:23307",
+   "short": "Prepare and issue approved account cards through an authorised card programme.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve approved issuance instructions from the {OTHER} credit account system.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "approved account",
+      "issuance policy"
+     ],
+     "outputs": [
+      "issuance instruction"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check cardholder details and delivery address against the {CRM}.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "issuance instruction",
+      "customer record"
+     ],
+     "outputs": [
+      "validated cardholder details"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Enter personalisation details and inspect the production proof in the {PARTNER_PORTAL}.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "validated cardholder details",
+      "issuance instruction",
+      "card template"
+     ],
+     "outputs": [
+      "card production proof"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Approve the production proof and submit the issuance order through the {PARTNER_PORTAL}.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "card production proof",
+      "issuance instruction"
+     ],
+     "outputs": [
+      "card production order"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "opportunity-to-order",
+     "approver": "credit clerk"
+    },
+    {
+     "id": "s5",
+     "what": "Receive the physical cards and check quantities and personalisation against the production order.",
+     "actor": "credit clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "physical cards",
+      "card production order"
+     ],
+     "outputs": [
+      "checked cards",
+      "card discrepancy"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Package checked cards for authorised delivery and record dispatch in the {OTHER} issuance system.",
+     "actor": "credit clerk",
+     "today_means": "in_person",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "checked cards",
+      "validated cardholder details"
+     ],
+     "outputs": [
+      "card dispatch record"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    }
+   ],
+   "design": "Connect approved accounts in the {OTHER} credit account system and verified details in the {CRM} to deterministic card templates and the {PARTNER_PORTAL}. The clerk approves the production order, while configured workflows track receipt, discrepancies and dispatch; physical handling remains where local fulfilment is required.",
+   "previous_blocker": "Provider-specific file formats and disconnected customer records encouraged rekeying. Physical production and secure fulfilment were never software-only tasks.",
+   "enabler_now": "Existing issuance templates and supported provider interfaces can automate preparation. AI coding can speed up adapters and validation without introducing a model.",
+   "still_hard": "Provider certification, secure personalisation, replacements and physical custody remain costly. A mid-size employer cannot assume it controls the issuer's process.",
+   "human_edge": "Notice suspicious issuance requests, incorrect personalisation or custody failures and stop release before a customer is affected.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The clerk spends less time rekeying and more time handling issuance exceptions and physical checks. Credit limits, issuer responsibilities and approval rights remain unchanged.",
+   "reach": [
+    {
+     "role": "customer service representative",
+     "task": "Resolve a missing or incorrectly personalised card enquiry.",
+     "learn": "Secure identity checks, replacement procedures and how to interpret issuance status."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "7-20",
+    "testing_rollout": "7-15",
+    "consent_and_access": "10-30"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Field validation, template personalisation and issuance-order transfer are deterministic patterns; the digest provides no card-issuance deployment.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Physical card inspection and local fulfilment require operational work unless an authorised provider takes them over.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This supplemental task applies only where the organisation operates an authorised account-card programme.",
+    "The baseline uses an external producer and local receipt and dispatch. Direct provider fulfilment would remove the local physical steps.",
+    "Legacy embossed charge plates are uncommon; obsolete plate preparation should be eliminated where the account process permits.",
+    "Issuance follows an existing approved account decision and does not grant new credit.",
+    "Sensitive card credentials remain within the authorised provider's controls.",
+    "GDPR applies. National rules determine any required employee consultation.",
+    "Build ranges are estimates; provider onboarding, certification and access approval can extend elapsed time."
+   ],
+   "unknowns": [
+    "Are physical cards or charge plates actually prepared?",
+    "Who is the authorised issuer and production provider?",
+    "Does the provider support bulk files or an authorised interface?",
+    "Are cards dispatched locally or directly by the provider?",
+    "Which production and release checks are mandatory?"
+   ],
+   "research_questions": [
+    "Can existing provider configuration remove rekeying before building an adapter?",
+    "Can legacy plates or local fulfilment be removed without changing customer access?"
+   ],
+   "new_work": [
+    "Review production proofs and release orders.",
+    "Resolve rejected files, duplicate requests and provider outages.",
+    "Maintain templates and field mappings.",
+    "Reconcile production, receipt, replacement and dispatch records."
+   ],
+   "time_saved_pct": 69,
+   "speedup": 3.25
+  },
+  {
+   "uid": "43-4041.00:23308",
+   "short": "Contact customers about overdue balances, resolve disputes and agree permitted payment arrangements.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Select overdue accounts from the ageing view in the {ERP}.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "aged receivables",
+      "contact policy"
+     ],
+     "outputs": [
+      "collection queue"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check recent receipts, disputed invoices and existing payment arrangements across the {ERP} and {CRM}.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "CRM"
+     ],
+     "inputs": [
+      "collection queue",
+      "payment receipts",
+      "dispute record",
+      "payment arrangement"
+     ],
+     "outputs": [
+      "verified overdue balance"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Prepare a call brief and permitted arrangement options from the {CRM} and {DOCS}.",
+     "actor": "credit clerk",
+     "today_means": "document",
+     "systems": [
+      "CRM",
+      "DOCS"
+     ],
+     "inputs": [
+      "verified overdue balance",
+      "contact history",
+      "arrangement policy"
+     ],
+     "outputs": [
+      "collection call brief"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Call the customer, verify identity, discuss non-payment and agree options within delegated authority.",
+     "actor": "credit clerk",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY",
+      "CRM"
+     ],
+     "inputs": [
+      "collection call brief"
+     ],
+     "outputs": [
+      "call notes",
+      "proposed arrangement",
+      "dispute referral"
+     ],
+     "handoff_to": "credit supervisor",
+     "share_pct": 40,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Review arrangements outside the clerk's mandate and approve or return them through the {CRM}.",
+     "actor": "credit supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "proposed arrangement",
+      "arrangement policy",
+      "verified overdue balance"
+     ],
+     "outputs": [
+      "arrangement decision"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "credit supervisor"
+    },
+    {
+     "id": "s6",
+     "what": "Record the call outcome, agreed terms and follow-up date in the {CRM}.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "call notes",
+      "proposed arrangement",
+      "arrangement decision"
+     ],
+     "outputs": [
+      "collection record",
+      "payment arrangement",
+      "follow-up date"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Clerk-entered call notes and any required supervisor decision.",
+      "output": "Draft outcome, explicit payment commitments and follow-up date.",
+      "check": "Validate dates, amounts and policy limits; the clerk confirms agreement and approval before saving.",
+      "stop": "One extraction and one repair per call; ambiguous commitments require manual entry.",
+      "why_not_simpler": "Structured fields handle standard calls; free-text notes need extraction for nonstandard outcomes."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "credit clerk"
+    },
+    {
+     "id": "s7",
+     "what": "Send the customer a written confirmation of agreed terms through the {EMAIL}.",
+     "actor": "credit clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "payment arrangement",
+      "collection record",
+      "confirmation template"
+     ],
+     "outputs": [
+      "arrangement confirmation"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "credit clerk"
+    }
+   ],
+   "design": "Configure an overdue queue in the {ERP} and join receipts, disputes and arrangements from the {CRM} before preparing a deterministic call brief. People conduct calls and approve exceptional terms; a bounded note extractor prepares the collection record for clerk approval, and templates produce the confirmation through the {EMAIL}.",
+   "previous_blocker": "Payment updates, disputes and contact history were fragmented. Negotiation also depends on circumstances that cannot be reduced to a payment schedule.",
+   "enabler_now": "Integrations and existing queue configuration can remove preparation work. A small extraction loop can turn clerk notes into reviewed records without automating the conversation.",
+   "still_hard": "Late payment allocation, genuine disputes, financial distress and arrangements outside policy still need people. Reliable suppression of inappropriate calls depends on current source data.",
+   "human_edge": "Listen without pressuring, distinguish inability to pay from an invoice dispute, and negotiate a credible next step.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily review of broken payment promises."
+   },
+   "altitude": "The clerk spends less time assembling balances and writing notes, leaving more time for difficult calls and dispute resolution. Within a delegated mandate, the clerk can pause collection contact and route a dispute; exceptional concessions still need approval.",
+   "reach": [
+    {
+     "role": "customer service representative",
+     "task": "Resolve the invoice or service dispute blocking payment.",
+     "learn": "Invoice evidence, dispute categorisation and how to close the loop with the collection clerk."
+    },
+    {
+     "role": "first-line supervisor of office and administrative support workers",
+     "task": "Review collection workload and exceptional payment arrangements.",
+     "learn": "Queue ageing, approval limits and outcome measures that do not reward pressure on customers."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "6-15",
+    "testing_rollout": "8-15",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Ageing queues, balance reconciliation, arrangement calculations and templated confirmations suit deterministic software.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "A study of 5,179 support agents found improved issues resolved per hour with an assistant; it does not establish debt-collection outcomes.",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "The digest identifies emotion recognition on agents as prohibited; it is excluded from this design.",
+     "grade": "E1",
+     "source": "[S20]"
+    }
+   ],
+   "assumptions": [
+    "The baseline is collection of existing overdue customer balances, not legal enforcement or new lending.",
+    "Supervisor review is an exception branch; its share is averaged over the case mix.",
+    "Recent payments, active disputes and contact restrictions suppress queue entries; stale data routes a case for checking.",
+    "Call preparation includes current balances and explicit policy options, not inferred vulnerability or behavioural scoring.",
+    "The note loop uses clerk-entered notes. Call recording is unnecessary for the proposed design.",
+    "GDPR applies, and national rules govern collection conduct and applicable employee consultation.",
+    "A chatbot or automated creditworthiness assessment would require a separate EU AI Act review.",
+    "Build ranges and time reductions are estimates; consultation and access approval can extend elapsed time."
+   ],
+   "unknowns": [
+    "Are customers consumers, businesses or both?",
+    "How quickly are receipts and disputes reflected in the source records?",
+    "Which arrangements can the clerk agree without supervisor approval?",
+    "Which contact limits and hardship procedures apply?",
+    "Can standard outcomes be captured through existing structured fields?",
+    "Does the proposed workflow change require employee consultation?"
+   ],
+   "research_questions": [
+    "Which national collection rules affect contact timing, arrangements and dispute handling?",
+    "Can existing structured outcome forms remove enough note work to avoid the extraction loop?",
+    "What reconciliation checks reliably prevent contact after payment or dispute registration?"
+   ],
+   "new_work": [
+    "Resolve stale balances, unallocated receipts and suppression failures.",
+    "Review extracted commitments and customer confirmations.",
+    "Maintain arrangement limits, queue rules and templates.",
+    "Monitor broken promises, unresolved disputes and inappropriate contacts."
+   ],
+   "time_saved_pct": 52,
+   "speedup": 2.08
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts from retrieval, rekeying and paperwork toward evidence quality, clear explanations, disputed identities and payment conversations. Any expanded rights to pause contact or reject unreliable evidence need an explicit delegated mandate; credit approval authority does not automatically change.",
+  "reach": [
+   "Customer service representative: resolve the underlying dispute and explain record corrections.",
+   "Correspondence clerk: produce clear, source-linked explanations and confirmations.",
+   "First-line supervisor of office and administrative support workers: review exceptions, workload and delegated arrangement limits."
+  ],
+  "skills_to_grow": [
+   "Source provenance and identity-match checking.",
+   "Credit-report explanation and correction handling.",
+   "Payment negotiation and dispute triage.",
+   "Structured data validation and exception management.",
+   "Access controls, data minimisation and retention.",
+   "Testing templates, connectors and bounded extraction."
+  ],
+  "ambitious_version": "Offer a coordinated credit-record correction and payment-resolution service, with people accountable for disputed evidence and consequential decisions. Reusable templates, schemas and validation code provide a head start across employers; customer data, licences and decision policies remain specific to each organisation."
+ },
+ "job_code": "43-4041.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 199,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3000});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-4041.00",
+   "title": "Credit Authorizers, Checkers, and Clerks",
+   "tasks": 16,
+   "function": "Customer support"
+  }
+ }
+}

@@ -1,0 +1,811 @@
+{
+ "role_id": "finance-director",
+ "role": {
+  "altitude": "The Finance Director moves from assembling and checking reports and credit files to owning the finance control system. That means deciding which jobs and model steps run, at what thresholds, with which logs, and who signs each output. Time goes to the bank, large shippers, the board and forecast quality.",
+  "reach": [
+   "Controller: month-close checklist and statutory file preparation; learn which ledger mappings and checks feed the annual accounts.",
+   "Credit and Collections Officer: shipper credit limits and dunning; learn the payment-behaviour signals that should move a limit.",
+   "FP&A Analyst: monthly forecast and MT pack; learn the driver model (volumes, flex hours, diesel) behind forecast accuracy.",
+   "People Analytics and HRIS Analyst: flex worker cost and headcount data from AFAS and agency portals; learn how labour cost per site is built."
+  ],
+  "skills_to_grow": [
+   "Specifying rules and thresholds that code can run, and reading the exception logs",
+   "AI governance in finance: an approved tool, access rights, audit trail the auditor can rebuild (shadow AI risk)",
+   "EU AI Act scope for credit decisions on sole-trader hauliers",
+   "Reading and challenging Power BI data models built on the AFAS extract",
+   "Driver-based forecasting with fuel, interest and labour inputs"
+  ],
+  "ambitious_version": "A finance control layer on the governed data platform. A credit-limit proposal comes back the same day, with a log. The statutory set is generated straight from the AFAS ledger. The MT pack is ready on working day 3 with drafted commentary. A daily market sheet shows diesel, interest and agency rates against contract clauses. The Finance Director signs and decides; the machines prepare, check and log."
+ },
+ "tasks": [
+  {
+   "uid": "11-3031.00:21317",
+   "short": "Assess shipper credit-limit requests and bank facility changes; decide limits and terms.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive credit request from sales and collect KvK, credit and AFAS payment data",
+     "actor": "collections",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "credit limit request",
+      "KvK extract",
+      "credit report",
+      "debtor payment history"
+     ],
+     "outputs": [
+      "credit file"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Read annual accounts and extract solvency, liquidity and turnover figures",
+     "actor": "finance-director",
+     "today_means": "document",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "annual accounts PDF",
+      "credit file"
+     ],
+     "outputs": [
+      "credit ratio sheet"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Annual accounts PDF filed at KvK or supplied by the shipper",
+      "output": "Equity, total assets, current assets and liabilities, turnover, result, with page reference",
+      "check": "Balance sheet must balance within EUR 1k; figures cross-checked against credit report where present; page reference required",
+      "stop": "Two attempts; if check fails, mark 'manual read' and route to the person",
+      "why_not_simpler": "Small-company accounts arrive as scanned or free-format PDFs without structured XBRL, so fixed parsing fails"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Score request against policy rules and propose limit and payment terms",
+     "actor": "finance-director",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "credit ratio sheet",
+      "debtor payment history",
+      "credit policy"
+     ],
+     "outputs": [
+      "credit limit proposal"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Decide limit, terms or security; escalate large or odd cases",
+     "actor": "finance-director",
+     "today_means": "system_screen",
+     "systems": [
+      "Excel",
+      "Outlook"
+     ],
+     "inputs": [
+      "credit limit proposal"
+     ],
+     "outputs": [
+      "credit decision"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Record limit in AFAS debtor and inform sales and customer",
+     "actor": "collections",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Outlook"
+     ],
+     "inputs": [
+      "credit decision"
+     ],
+     "outputs": [
+      "debtor credit limit",
+      "decision letter"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "Replace the mail-and-Excel credit file with a small request form and a scheduled Python job on a governed data platform. The job pulls KvK data, a credit report and AFAS payment history, has a bounded model step read the annual accounts, and scores the request against written policy rules. The Finance Director approves above a threshold in a simple approval screen. The approved limit is then written to the AFAS debtor record with a full log.",
+   "previous_blocker": "Annual accounts come as unstructured PDFs and the policy lived in the Finance Director's head, so each file was assembled by hand.",
+   "enabler_now": "Models now read financial statements reliably enough for checked extraction. AI coding makes a small policy engine and the AFAS connector a matter of days.",
+   "still_hard": "Judging strategic shippers, group structures and guarantees. Sole-trader hauliers are natural persons, so any automated scoring of them falls under EU AI Act high-risk rules.",
+   "human_edge": "Weighing the commercial relationship, the sales pipeline and the risk appetite. Agreeing security or terms face to face with a large shipper.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Review every active shipper's credit limit quarterly from payment behaviour, not only when sales asks for a new one."
+   },
+   "altitude": "The Finance Director spends minutes per routine request and only handles escalations. They gain the right to set the policy thresholds the engine applies and to approve the auto-approval band.",
+   "reach": [
+    {
+     "role": "collections",
+     "task": "Dunning and overdue follow-up",
+     "learn": "Which overdue patterns should trigger a limit review"
+    },
+    {
+     "role": "controller",
+     "task": "Bad-debt provision at month close",
+     "learn": "How limits and provisions should line up"
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "4-7",
+    "testing_rollout": "4-6",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Creditworthiness scoring of natural persons is high-risk under EU AI Act Annex III 5(b)",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "Only 12% of Dutch finance professionals plan cash-in more than 30 days ahead; most explain DSO afterwards",
+     "grade": "E3",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Advisors recommend mandatory human review and timestamped logs for consequential finance decisions",
+     "grade": "E3",
+     "source": "[S3]"
+    },
+    {
+     "claim": "Models can extract balance-sheet figures from PDF annual accounts with checkable accuracy",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "'Loan applications' at Noordhaven means shipper credit limits and changes to the Rabobank facility",
+    "Credit requests run to a few per week",
+    "A credit data provider subscription exists or can be bought"
+   ],
+   "unknowns": [
+    "Is there a written credit policy, and who may approve which amounts?",
+    "Which credit data provider is used today, and does it have an API?",
+    "What share of customers are sole traders (natural persons)?",
+    "Does the bank facility carry covenants that need reporting?"
+   ],
+   "research_questions": [
+    "How many credit requests a month arrive, and how long does each take today?",
+    "What share of annual accounts can the extraction step read correctly against a sample of 30 files?",
+    "Would the auto-approval band cover most requests without raising bad debt, tested on two years of history?",
+    "Can scoring of sole-trader hauliers stay fully rule-based and human-decided, so it stays outside high-risk AI use?"
+   ],
+   "time_saved_pct": 79,
+   "speedup": 4.76
+  },
+  {
+   "uid": "11-3031.00:21320",
+   "short": "Prepare annual accounts, statutory filings, bank covenant and board financial reports.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export trial balance and subledgers from AFAS after close",
+     "actor": "controller",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "general ledger",
+      "closing entries"
+     ],
+     "outputs": [
+      "trial balance export"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Map accounts to report lines and build statements and notes tables",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "trial balance export",
+      "report mapping"
+     ],
+     "outputs": [
+      "financial statements draft",
+      "covenant calculation"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Write notes, directors' report and board commentary",
+     "actor": "finance-director",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "SharePoint"
+     ],
+     "inputs": [
+      "financial statements draft",
+      "prior year report"
+     ],
+     "outputs": [
+      "directors' report draft"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Statement tables, variances versus prior year, prior year text",
+      "output": "Draft note and commentary paragraphs, each figure tagged to its source cell",
+      "check": "Every number in the text is matched by code against the statement tables; unmatched numbers block the draft",
+      "stop": "One draft plus one repair pass; if numbers still fail, leave the paragraph empty for the person",
+      "why_not_simpler": "Narrative explanation of movements is free text; templates cover the fixed notes only"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Review with auditor, resolve adjustments, sign off",
+     "actor": "finance-director",
+     "today_means": "meeting_call",
+     "systems": [
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "directors' report draft",
+      "auditor queries"
+     ],
+     "outputs": [
+      "approved financial statements"
+     ],
+     "handoff_to": "external",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "File with KVK via SBR, send covenant report to bank",
+     "actor": "controller",
+     "today_means": "system_screen",
+     "systems": [
+      "SBR filing tool",
+      "Outlook"
+     ],
+     "inputs": [
+      "approved financial statements",
+      "covenant calculation"
+     ],
+     "outputs": [
+      "KVK filing",
+      "bank covenant report"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "A versioned account-to-line mapping table drives a scheduled Python job that turns the AFAS trial balance into statement tables, the covenant calculation and the board financials, each with a tie-out check. A bounded model step drafts the commentary, and code checks every figure in it against the source. Filing goes through a configured SBR tool, because AFAS cannot file for large companies.",
+   "previous_blocker": "Mapping and notes lived in Excel and Word files rebuilt each year. Narrative text could not be generated with figures you could trust.",
+   "enabler_now": "AI coding makes a tested mapping job cheap to build. Model drafting with a code-based number check is reliable enough to give a first draft.",
+   "still_hard": "Judgement on estimates, provisions and disclosures. Auditor discussions. Keeping the mapping right when the chart of accounts changes.",
+   "human_edge": "Choosing accounting positions, explaining them to the auditor and board, and signing as accountable officer.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Calculate bank covenants monthly instead of only at reporting dates, so headroom is known before the bank asks."
+   },
+   "altitude": "The Finance Director reviews generated statements and edits commentary instead of chasing numbers. They gain a monthly view of covenant headroom.",
+   "reach": [
+    {
+     "role": "controller",
+     "task": "Month-end close and reconciliations",
+     "learn": "Which close checks the statement job depends on"
+    },
+    {
+     "role": "accountant",
+     "task": "Fixed asset and accrual schedules",
+     "learn": "How schedules feed the notes"
+    }
+   ],
+   "build_days": {
+    "coding": "6-10",
+    "integration": "3-5",
+    "testing_rollout": "5-8",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Large companies file accounts with KVK via SBR from FY2025; AFAS cannot do this for them",
+     "grade": "E3",
+     "source": "[S11]"
+    },
+    {
+     "claim": "CSRD now applies above 1,000 employees and EUR 450 million turnover",
+     "grade": "E3",
+     "source": "[S10]"
+    },
+    {
+     "claim": "Workday's Accounting Agent prepares entries while accounting teams keep review and decisions",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Workpapers the auditor cannot rebuild are a key shadow-AI risk",
+     "grade": "E3",
+     "source": "[S4]"
+    }
+   ],
+   "assumptions": [
+    "Noordhaven qualifies as a large company for KVK filing",
+    "The external auditor accepts generated workpapers with a full audit trail",
+    "Statutory work is done by Finance with the controller, not outsourced"
+   ],
+   "unknowns": [
+    "Turnover above EUR 450 million or not (CSRD scope)?",
+    "Which SBR filing route or tool is used today?",
+    "Which bank covenants and reporting dates apply?",
+    "Does the auditor have requirements for AI-assisted drafting?"
+   ],
+   "research_questions": [
+    "How many hours do mapping and the notes take today, measured over the last annual close?",
+    "Does the generated statement tie out to last year's audited accounts without manual adjustment?",
+    "Will the auditor accept the commentary drafting and number check as a control?",
+    "Is Noordhaven in CSRD scope, which would add a reporting stream?"
+   ],
+   "time_saved_pct": 66,
+   "speedup": 2.99
+  },
+  {
+   "uid": "11-3031.00:21314",
+   "short": "Prepare monthly management and risk report for MT: margins, labour cost, cash, risks.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pull figures from Power BI, AFAS, agency invoices and bank balances",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Power BI",
+      "AFAS Profit",
+      "Staffing agency portals",
+      "Rabobank",
+      "Excel"
+     ],
+     "inputs": [
+      "AFAS extract",
+      "agency invoice",
+      "bank statement"
+     ],
+     "outputs": [
+      "MT data sheet"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Calculate KPIs per site: margin, flex share, DSO, cash, forecast variance",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "MT data sheet"
+     ],
+     "outputs": [
+      "KPI tables"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Write commentary and risk list",
+     "actor": "finance-director",
+     "today_means": "document",
+     "systems": [
+      "PowerPoint",
+      "Word"
+     ],
+     "inputs": [
+      "KPI tables",
+      "risk register"
+     ],
+     "outputs": [
+      "MT report draft"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "KPI tables with variances above threshold, risk register entries",
+      "output": "Short commentary per variance and a risk summary, max one page",
+      "check": "Code checks each figure against KPI tables; length capped; only variances above threshold get text",
+      "stop": "One draft and one repair; failing paragraphs left blank for the person",
+      "why_not_simpler": "Explaining variances in plain language needs reading context; the tables themselves are deterministic"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Present in MT meeting and agree actions",
+     "actor": "finance-director",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "MT report"
+     ],
+     "outputs": [
+      "MT action list"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Extend the nightly Power BI dataset on the AFAS extract with agency invoice data and Rabobank CAMT.053 balances, loaded by a scheduled Python job, so the KPI pages need no Excel step. A bounded model step drafts commentary only for variances above a set threshold, and code checks every number. The report is capped at a fixed length so saved time is not spent on more pages.",
+   "previous_blocker": "Agency hours and invoices and bank data were outside the Power BI extract, so an Excel sheet tied them together each month. Commentary was always written by hand.",
+   "enabler_now": "AI coding makes the agency and bank loaders quick to build. Model drafting with number checks gives a usable first draft.",
+   "still_hard": "Agency portals may only offer file exports. The commentary is only as good as the risk register and the forecast behind it.",
+   "human_edge": "Deciding which risks matter to the MT, saying the uncomfortable thing, and agreeing actions with site managers.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A weekly flex labour cost and cash flash per site, not only monthly."
+   },
+   "altitude": "The Finance Director edits a ready draft on working day 3 and spends the time on actions with site managers. Nothing changes in who decides.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Monthly forecast update",
+     "learn": "Which drivers explain forecast variance"
+    },
+    {
+     "role": "people-analyst",
+     "task": "Flex worker headcount and hours reporting",
+     "learn": "How agency hours map to sites and cost centres"
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "5-8",
+    "testing_rollout": "3-5",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Executive reporting takes about 32 hours a month; AI-mature teams often spend more, as volume grows",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Data quality is the top barrier to finance AI (40.4%)",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Power BI can combine several sources in one refreshed dataset",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Power BI already covers AFAS ledger figures per site",
+    "Agency invoices can be exported as files or via API",
+    "Rabobank statements are available as CAMT.053"
+   ],
+   "unknowns": [
+    "Do the three agency portals offer an API or only exports?",
+    "Is there a maintained risk register?",
+    "Who owns the Power BI dataset today?"
+   ],
+   "research_questions": [
+    "How many hours does the MT pack take today, split by data pull, calculation and writing?",
+    "Can all three agency portals deliver hours and invoices automatically?",
+    "Do MT members use the drafted commentary unchanged in a three-month trial?"
+   ],
+   "time_saved_pct": 68,
+   "speedup": 3.12
+  },
+  {
+   "uid": "11-3031.00:21329",
+   "short": "Track diesel, interest, currency and agency rates and judge impact on margins and contracts.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect diesel prices, interest rates, FX and agency rate changes",
+     "actor": "finance-director",
+     "today_means": "system_screen",
+     "systems": [
+      "Excel",
+      "Outlook"
+     ],
+     "inputs": [
+      "diesel price series",
+      "interest rate series",
+      "agency rate card"
+     ],
+     "outputs": [
+      "market price sheet"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Recalculate fuel surcharges and cost impact per site and contract",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "market price sheet",
+      "customer contract terms"
+     ],
+     "outputs": [
+      "fuel surcharge table",
+      "cost impact sheet"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Read market news and bank notes for outlook",
+     "actor": "finance-director",
+     "today_means": "document",
+     "systems": [
+      "Outlook"
+     ],
+     "inputs": [
+      "bank market notes"
+     ],
+     "outputs": [
+      "market outlook note"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "read",
+      "input": "Bank and industry market notes received by mail",
+      "output": "Five-line summary of fuel, rate and FX outlook with source links",
+      "check": "Each claim must cite a source note; no figures without a source",
+      "stop": "One pass per week; if sources conflict, list both",
+      "why_not_simpler": "Market notes are free text in varied formats"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Decide on surcharge updates, rate fixing or price talks",
+     "actor": "finance-director",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "cost impact sheet",
+      "market outlook note"
+     ],
+     "outputs": [
+      "pricing or hedge decision"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "A scheduled Python job loads public diesel, interest and FX series and the agency rate cards into the governed data platform. Deterministic code applies the contract surcharge formulas and feeds a Power BI market page, with a Teams notification when a threshold is crossed. A small weekly model step summarises bank market notes with sources.",
+   "previous_blocker": "Price series and contract surcharge clauses sat in separate Excel files and inboxes, so nobody had time to update them more than monthly.",
+   "enabler_now": "Public price series are downloadable. AI coding makes the loaders and surcharge logic quick to build and test.",
+   "still_hard": "Surcharge clauses differ per customer contract and must be captured once by hand. The market outlook remains uncertain.",
+   "human_edge": "Deciding when to fix rates, renegotiate surcharges or talk to a customer about price.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Update fuel surcharges weekly where contracts allow, instead of monthly."
+   },
+   "altitude": "The Finance Director looks at one market page and acts on alerts. They gain earlier price decisions; decision rights do not change.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Cost forecasting per site",
+     "learn": "How fuel and agency rates drive the forecast"
+    },
+    {
+     "role": "collections",
+     "task": "Invoicing surcharges to shippers",
+     "learn": "Which contracts carry which surcharge clause"
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "2-4",
+    "testing_rollout": "2-4",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "At Noordhaven 'securities' means fuel, interest and currency",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Public diesel and interest rate series are available for download",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Customer contracts contain fuel surcharge clauses linked to a published diesel index",
+    "Noordhaven has a floating-rate bank facility",
+    "FX exposure is small"
+   ],
+   "unknowns": [
+    "Which diesel index and formula each contract uses",
+    "Whether any interest or fuel hedges exist",
+    "Whether agency rate changes arrive in a structured form"
+   ],
+   "research_questions": [
+    "How many contracts have a surcharge clause, and how much margin was lost to late surcharge updates last year?",
+    "Can every surcharge formula be captured as fixed rules?",
+    "Do weekly updates fit customer contract terms and invoicing in AFAS?"
+   ],
+   "time_saved_pct": 74,
+   "speedup": 3.85
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 106,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

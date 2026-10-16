@@ -1,0 +1,380 @@
+{
+ "tasks": [
+  {
+   "uid": "43-5061.00:11378",
+   "short": "Explain production delays, difficulties and cost estimate changes with supporting records.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve production progress, material availability and cost records.",
+     "actor": "planning clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "ERP"
+     ],
+     "inputs": [
+      "production schedule",
+      "work order",
+      "cost estimate"
+     ],
+     "outputs": [
+      "production snapshot",
+      "cost records"
+     ],
+     "handoff_to": "none",
+     "share_pct": 18,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Collect messages explaining shortages, breakdowns and revised delivery dates.",
+     "actor": "planning clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CHAT"
+     ],
+     "inputs": [
+      "work order",
+      "supplier update",
+      "department update"
+     ],
+     "outputs": [
+      "disruption evidence"
+     ],
+     "handoff_to": "department supervisor",
+     "share_pct": 12,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Messages linked to the work order.",
+      "output": "Dated disruption evidence with source references and unresolved claims.",
+      "check": "Validate order identifiers and dates; the clerk checks ambiguous causes and conflicting messages.",
+      "stop": "One extraction and one repair attempt per case; unresolved fields go to the clerk.",
+      "why_not_simpler": "Messages describe causes and revised dates in varied free text."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Ask the department supervisor to clarify causes, recovery actions and missing facts.",
+     "actor": "planning clerk",
+     "today_means": "meeting_call",
+     "systems": [],
+     "inputs": [
+      "production snapshot",
+      "disruption evidence"
+     ],
+     "outputs": [
+      "confirmed explanation",
+      "open questions"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Compare original and revised costs and calculate the documented variance.",
+     "actor": "planning clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "cost estimate",
+      "cost records",
+      "confirmed explanation"
+     ],
+     "outputs": [
+      "cost variance"
+     ],
+     "handoff_to": "none",
+     "share_pct": 18,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Write the explanation and attach supporting records.",
+     "actor": "planning clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "confirmed explanation",
+      "open questions",
+      "cost variance",
+      "disruption evidence"
+     ],
+     "outputs": [
+      "delay report"
+     ],
+     "handoff_to": "operations manager",
+     "share_pct": 18,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Confirmed explanation, calculated variance and linked evidence.",
+      "output": "A delay report separating confirmed facts, estimates and open questions.",
+      "check": "Copy numbers from validated calculations; require evidence references and clerk review of causal claims.",
+      "stop": "One draft and one repair attempt; unsupported explanations remain blank for manual completion.",
+      "why_not_simpler": "A template handles structure, but varied evidence needs a short written explanation."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve material explanations, revised estimates and report release.",
+     "actor": "operations manager",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "delay report",
+      "cost variance",
+      "disruption evidence"
+     ],
+     "outputs": [
+      "approved delay report",
+      "release instruction"
+     ],
+     "handoff_to": "planning clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "operations manager"
+    },
+    {
+     "id": "s7",
+     "what": "File the approved report and evidence against the work order.",
+     "actor": "planning clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "work order",
+      "approved delay report",
+      "disruption evidence"
+     ],
+     "outputs": [
+      "report record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 2,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s8",
+     "what": "Send the approved explanation to the designated recipients.",
+     "actor": "planning clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "approved delay report",
+      "release instruction"
+     ],
+     "outputs": [
+      "report notification"
+     ],
+     "handoff_to": "report recipient",
+     "share_pct": 2,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "operations manager"
+    }
+   ],
+   "design": "A job on the {DATA_PLATFORM} joins work-order records from the {OPS_SYSTEM} with estimates and costs from the {ERP}, calculates variances and assembles evidence. Two bounded loops extract relevant messages from the {EMAIL} and {CHAT} and draft a report in the {DOCS}; the clerk checks evidence and discusses unresolved causes with the department supervisor. The {WORKFLOW} records manager approval, archives the approved version and releases it through the {EMAIL} using that same approval.",
+   "previous_blocker": "Order identifiers, estimate versions and explanations sit in separate records and messages. Joining them was costly, while cause attribution still needed discussion.",
+   "enabler_now": "Available exports or APIs support deterministic joins and calculations. AI-assisted coding reduces implementation effort, and bounded extraction and drafting can handle variable text without deciding responsibility.",
+   "still_hard": "Late production updates, missing cost allocations and disputed causes remain difficult. GDPR applies to personal data; EU AI Act obligations depend on use, especially if the scope expands to evaluating workers. Employee consultation and approval requirements follow national rules.",
+   "human_edge": "The clerk tests explanations against practical production knowledge and asks questions people may hesitate to answer in writing. The manager judges responsibility, commercial wording and whether a revised estimate is justified.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly review of recurring delay causes and prevention priorities"
+   },
+   "altitude": "The clerk spends less time collecting attachments and writing reports, and more time investigating recurring disruptions. They can gain delegated authority to request missing evidence and trigger agreed escalation thresholds; estimate approval remains with the manager.",
+   "reach": [
+    {
+     "role": "logistics analyst",
+     "task": "Compare material arrival delays with production disruptions.",
+     "learn": "Event timestamps, lead-time variation and the difference between correlation and cause."
+    },
+    {
+     "role": "management analyst",
+     "task": "Assess whether a proposed process change reduces recurring delay costs.",
+     "learn": "Cost allocation, baseline selection and measuring results after a change."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Production clerks commonly combine operational records, supervisor explanations and cost comparisons to document disruptions.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Record joins, version comparisons, variance calculations and approval routing can use deterministic technology.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Qargo reads PDF transport orders into fields; this supports bounded extraction feasibility, not automated production-cause attribution.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "The EU AI Act distinguishes worker-related employment uses from ordinary operational document processing.",
+     "grade": "E2",
+     "source": "[S14]"
+    },
+    {
+     "claim": "The Netherlands has works-council consent rules covering certain working-time and employee-monitoring arrangements; national rules elsewhere vary.",
+     "grade": "E2",
+     "source": "[S17]"
+    }
+   ],
+   "assumptions": [
+    "This is a typical mid-size production business with separate operational and financial records.",
+    "A spreadsheet bridges cost records and estimates; some companies already perform this comparison inside the {ERP}.",
+    "Material reports receive manager approval; routine factual updates may have delegated release rules.",
+    "Step shares, remaining time and build ranges are planning estimates, not measured results.",
+    "The prior's document-heavy pattern fits, but structured joins and calculations cover more work than its low rule-coverage estimate suggests.",
+    "The consultation range assumes a limited reporting change; formal national procedures can take longer.",
+    "The initial scope documents work orders and disruptions without scoring individual employees."
+   ],
+   "unknowns": [
+    "Whether the {OPS_SYSTEM} and {ERP} share stable work-order identifiers.",
+    "Whether original estimates and revisions are retained with timestamps.",
+    "Which causes are already recorded in structured fields.",
+    "Who approves cost changes and customer-facing explanations.",
+    "Which APIs, exports and mailbox permissions are available.",
+    "Whether employee consultation is required under applicable national rules or agreements.",
+    "Actual case volumes, handling times and evidence retention requirements."
+   ],
+   "research_questions": [
+    "How often can historical reports be reconstructed from existing records without another supervisor conversation?",
+    "Which variance components reconcile reliably to the {ERP}?",
+    "Can message extraction preserve contradictory evidence and identify unsupported causal claims?",
+    "Which existing {WORKFLOW} and {DOCS} features cover approval, version locking and filing?"
+   ],
+   "new_work": [
+    "Review ambiguous message extraction and unsupported report claims.",
+    "Resolve unmatched work orders, stale records and missing estimate versions.",
+    "Maintain variance formulas, evidence mappings and recipient rules.",
+    "Check failed imports and releases and preserve approval records.",
+    "Review access, retention and any changes affecting employee consultation."
+   ],
+   "time_saved_pct": 66,
+   "speedup": 2.91
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts toward investigating disruption patterns and preparing prevention proposals. Broader escalation rights require explicit delegation; managerial cost and commercial decisions remain accountable human decisions.",
+  "reach": [
+   "Logistics analysis of material delays affecting production.",
+   "Management analysis of recurring disruption costs and prevention results."
+  ],
+  "skills_to_grow": [
+   "Operational data reconciliation",
+   "Cost variance interpretation",
+   "Evidence-based cause investigation",
+   "Clear explanations of uncertainty",
+   "Exception handling and workflow maintenance"
+  ],
+  "ambitious_version": "Run a weekly disruption review that links recurring causes, cost impact and proposed prevention actions, then tracks whether approved changes help."
+ },
+ "job_code": "43-5061.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 110,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3000});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-5061.00",
+   "title": "Production, Planning, and Expediting Clerks",
+   "tasks": 17,
+   "function": "Office and operations"
+  }
+ }
+}

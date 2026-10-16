@@ -1,0 +1,829 @@
+{
+ "role_id": "collections",
+ "role": {
+  "altitude": "The officer stops assembling ageing lists, typing notes and sending first reminders. Their week goes to calls with the 30 to 50 accounts that matter, dispute files and the order-to-cash rules: reminder sequences, credit limits, and dispute causes reported back to sales and operations. They gain the right to set and tune the dunning sequence and the call-priority rules within limits agreed with the Controller.",
+  "reach": [
+   "Bookkeeper (accounts payable and receivable): cash application exceptions in AFAS. Learn the matching rules so unapplied cash stops creating false overdue items.",
+   "Controller: month-close receivables provision. Learn how the ageing and dispute data feed the bad-debt provision and the audit file.",
+   "FP&A Analyst: cash-in forecast. Learn to turn promises-to-pay and payment plans into a weekly cash-in forecast."
+  ],
+  "skills_to_grow": [
+   "Writing and testing dunning and priority rules in AFAS and a small rules file",
+   "Reading a receivables dashboard and explaining DSO movements before month end",
+   "Dispute root-cause analysis with operations (proof of delivery, damage, surcharges)",
+   "Dutch B2B collection law basics: BW 6:119a interest, €40 compensation, Wki registration, hand-over to bailiff or lawyer",
+   "Reviewing model-drafted notes and letters quickly and spotting errors"
+  ],
+  "ambitious_version": "The officer runs a weekly order-to-cash review with sales and operations: which customers get a credit limit change, which dispute causes (missing POD, disputed surcharges) cost the most days, and what the cash-in forecast for the next six weeks is. DSO and the share of disputed invoices become Finance inputs they own and explain before the close, not after."
+ },
+ "tasks": [
+  {
+   "uid": "43-3011.00:2474",
+   "short": "Keep each debtor's status, payment behaviour and collection notes up to date in AFAS and the ageing sheet.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export open items from AFAS and build the ageing list in Excel",
+     "actor": "collections",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "open items export"
+     ],
+     "outputs": [
+      "ageing list"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Check customer financial status: payment history, KvK changes, credit limit use",
+     "actor": "collections",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "KvK Handelsregister"
+     ],
+     "inputs": [
+      "ageing list",
+      "debtor master data"
+     ],
+     "outputs": [
+      "debtor risk flag"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Write call and mail notes into the AFAS debtor dossier",
+     "actor": "collections",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Outlook"
+     ],
+     "inputs": [
+      "debtor mail thread",
+      "call notes"
+     ],
+     "outputs": [
+      "collection note"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Outlook thread or officer's short call jot linked to a debtor number",
+      "output": "Dossier note with date, contact, promise-to-pay amount and date, dispute reason code",
+      "check": "Amounts and invoice numbers must match open items in AFAS; reason code from a fixed list; officer confirms before save",
+      "stop": "One pass per thread; if any field fails the check, leave a draft with the field blank for the officer",
+      "why_not_simpler": "Mails and call jots are free text; a template cannot pull out the promise and the dispute reason."
+     },
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Update status fields: promise-to-pay, dispute, payment plan, on hold",
+     "actor": "collections",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "collection note"
+     ],
+     "outputs": [
+      "debtor collection status"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 10,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Send weekly receivables status to Controller and Finance Director",
+     "actor": "collections",
+     "today_means": "email_chat",
+     "systems": [
+      "Excel",
+      "Outlook"
+     ],
+     "inputs": [
+      "ageing list",
+      "debtor collection status"
+     ],
+     "outputs": [
+      "receivables status report"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 10,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    }
+   ],
+   "design": "Replace the Excel ageing sheet with a Power BI receivables page on the nightly AFAS extract, plus a daily Python job that adds KvK change checks and payment-behaviour flags per debtor. A small bounded model step turns Outlook threads and call jots into structured dossier notes that the officer confirms before they are written to AFAS through its UpdateConnector; status fields are configured as free fields in AFAS.",
+   "previous_blocker": "Notes are free text in mail and phone calls, so no rule could fill the dossier, and the Excel sheet was the only place ageing, notes and status met.",
+   "enabler_now": "AFAS GetConnectors and the nightly Power BI extract already exist, AI coding makes the glue job cheap, and models now pull dates, amounts and reasons from short Dutch business mail reliably enough for a review step.",
+   "still_hard": "Call content is not captured unless the officer jots it down or calls are recorded, which needs works-council agreement. Notes on sole-trader hauliers are personal data under AVG.",
+   "human_edge": "Judging what a customer's tone and history mean for the next step, and confirming that a promise is real before it changes the forecast.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A daily, not monthly, review of which debtors move to a stricter reminder track or a credit hold."
+   },
+   "altitude": "About two hours a week of export and note typing goes; the officer spends it on the ten riskiest accounts and gains the right to put a debtor on credit hold within agreed limits.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Weekly cash-in forecast",
+     "learn": "How promises-to-pay and plan dates feed a cash forecast, and how often they are kept."
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "4-6",
+    "testing_rollout": "4-6",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "30% of Dutch finance and credit professionals name manual work in Excel, mail and exports as the main cash-flow problem; 81% explain DSO after the fact.",
+     "grade": "E3",
+     "source": "[S3]"
+    },
+    {
+     "claim": "AFAS exposes debtor and open-item data through GetConnectors and accepts updates through UpdateConnectors.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Model-drafted call notes with officer review fit this monitoring and recording work at high autonomy.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Collection notes are kept in AFAS dossier items today, not only in Outlook.",
+    "Most debtors are businesses; a minority are sole traders.",
+    "The nightly AFAS extract for Power BI can be extended with open items."
+   ],
+   "unknowns": [
+    "Whether a KvK API subscription exists or is allowed.",
+    "How many active debtors and open invoices there are per month.",
+    "Whether the works council must consent to storing call notes per officer (WOR art. 27)."
+   ],
+   "research_questions": [
+    "How many minutes per day does the officer spend on export and note typing, measured over two weeks?",
+    "What share of dossier notes contain a promise date and amount that a model extracts correctly on 100 past threads?",
+    "Does the AFAS licence include the connectors needed to write dossier items and free fields?"
+   ],
+   "time_saved_pct": 84,
+   "speedup": 6.45
+  },
+  {
+   "uid": "43-3011.00:2475",
+   "short": "Find the right contact at overdue customers and remind them by letter, mail or phone to pay.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Select overdue invoices due for a reminder",
+     "actor": "collections",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "ageing list"
+     ],
+     "outputs": [
+      "reminder run list"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Find the right payables contact, address or mail for each debtor",
+     "actor": "collections",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "KvK Handelsregister",
+      "Outlook"
+     ],
+     "inputs": [
+      "debtor master data",
+      "reminder run list"
+     ],
+     "outputs": [
+      "debtor contact"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Send reminders and final notices with interest and €40 compensation",
+     "actor": "collections",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Outlook"
+     ],
+     "inputs": [
+      "reminder run list",
+      "debtor contact"
+     ],
+     "outputs": [
+      "payment reminder",
+      "final notice"
+     ],
+     "handoff_to": "external",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Phone debtors who did not respond to reminders",
+     "actor": "collections",
+     "today_means": "paper_phone",
+     "systems": [
+      "Teams",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "call list",
+      "debtor dossier"
+     ],
+     "outputs": [
+      "call outcome"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Log reminder and call outcomes, set next action date",
+     "actor": "collections",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "call outcome"
+     ],
+     "outputs": [
+      "collection note",
+      "next action date"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Officer's call jot or reply mail",
+      "output": "Collection note and next action date",
+      "check": "Dates within allowed sequence windows; invoice numbers exist in AFAS; officer confirms",
+      "stop": "Single pass; failed fields left blank for the officer",
+      "why_not_simpler": "Outcomes are spoken or written in free text."
+     },
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Configure the AFAS dunning (aanmaningen) runs with B2B templates that compute statutory commercial interest and the €40 compensation, sent automatically for first and second reminders; final notices go out only after the officer approves the batch. A daily Python job ranks non-responders into a call list by amount, age and risk flag, with contact data checked against KvK, and the call outcome is logged through the same note step as task 2474.",
+   "previous_blocker": "Reminders were partly set up in AFAS but contacts were stale, interest and costs were added by hand, and the call list lived in Excel.",
+   "enabler_now": "AFAS dunning can carry the legal amounts as rules, KvK data is available by API, and a ranked call list is a small deterministic job.",
+   "still_hard": "Getting a real person at a shipper's payables desk, and keeping final notices legally correct: errors in the first letter show up only in court. Personal visits stay rare and human.",
+   "human_edge": "The phone call: reading whether a debtor is stalling, in trouble or has a real complaint, and keeping a customer relationship sales wants to keep.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Every overdue invoice gets the correct reminder on the correct day, instead of batches when time allows."
+   },
+   "altitude": "Reminder admin mostly disappears; the officer approves the final-notice batch weekly and spends freed time on calls ordered by value at risk. They gain authority over the reminder sequence timing.",
+   "reach": [
+    {
+     "role": "bookkeeper",
+     "task": "Cash application exceptions",
+     "learn": "Which unmatched payments cause wrong reminders, so a reminder is never sent for a paid invoice."
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "3-5",
+    "testing_rollout": "5-8",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Statutory commercial interest runs from the agreed due date or 30 days after invoice, and at least €40 compensation is due without a reminder in B2B.",
+     "grade": "E3",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Errors in the first letter, interest or costs surface only in court.",
+     "grade": "E3",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Since 1 October 2026 collection costs are not owed when a non-registered party sends reminders on another's behalf; chasing own invoices is not described as covered.",
+     "grade": "E3",
+     "source": "[S7]"
+    },
+    {
+     "claim": "AFAS Profit has configurable dunning runs with letter templates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Noordhaven sends reminders itself, not through an agency, before legal hand-over.",
+    "Customers are mainly businesses, so the B2B regime applies.",
+    "Personal visits are rare."
+   ],
+   "unknowns": [
+    "Current reminder sequence and whether payment terms in contracts deviate from 30 days.",
+    "Whether sales must be informed before a final notice to key accounts.",
+    "Share of debtors that are sole traders or partnerships."
+   ],
+   "research_questions": [
+    "How many reminders in the last quarter went to invoices already paid or disputed?",
+    "Can the AFAS dunning templates compute interest per invoice from the agreed due date without custom code?",
+    "What share of overdue amount is resolved by reminder alone versus a call?"
+   ],
+   "time_saved_pct": 59,
+   "speedup": 2.44
+  },
+  {
+   "uid": "43-3011.00:2478",
+   "short": "Talk overdue or disputing customers into paying, agree plans, and settle damage-claim offsets.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather dispute file: invoices, proof of delivery, damage claims, surcharges, contract terms",
+     "actor": "collections",
+     "today_means": "email_chat",
+     "systems": [
+      "AFAS Profit",
+      "SharePoint",
+      "Outlook"
+     ],
+     "inputs": [
+      "open items",
+      "proof of delivery",
+      "damage claim",
+      "customer contract"
+     ],
+     "outputs": [
+      "dispute file"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "read",
+      "input": "Customer dispute mail plus invoice numbers; POD and contract documents from SharePoint",
+      "output": "One-page dispute summary: claim, amounts, evidence found and missing, applicable contract clause",
+      "check": "Every amount and invoice ties to AFAS; every cited document is linked; officer reviews",
+      "stop": "One pass plus one retry on failed ties; otherwise list what is missing",
+      "why_not_simpler": "Disputes arrive as free-text mail and evidence sits in scanned PODs and contracts."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Call or meet the customer and negotiate payment",
+     "actor": "collections",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "dispute file"
+     ],
+     "outputs": [
+      "negotiation outcome"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 40,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Decide payment plan, extension or credit note within approval limits",
+     "actor": "collections",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "negotiation outcome",
+      "debtor risk flag"
+     ],
+     "outputs": [
+      "payment plan",
+      "credit note request"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Confirm the agreement in writing to the customer",
+     "actor": "collections",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Word"
+     ],
+     "inputs": [
+      "payment plan"
+     ],
+     "outputs": [
+      "payment agreement letter"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Track instalments and broken promises",
+     "actor": "collections",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "payment plan",
+      "bank statement"
+     ],
+     "outputs": [
+      "broken promise alert"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    }
+   ],
+   "design": "A copilot page on the data platform builds the dispute file per debtor: deterministic pulls from AFAS and SharePoint, with a bounded model step that summarises the dispute mail and evidence. Payment plans use a fixed calculator with approval limits (Controller above a threshold), produce a standard agreement letter from a SharePoint template, and a daily job checks instalments against Rabobank receipts in AFAS and alerts on broken promises.",
+   "previous_blocker": "Evidence for disputes is scattered over mail, scanned PODs and operations systems, and negotiation is a human conversation that no rule covers.",
+   "enabler_now": "Models can read dispute mails and documents into a checked summary, and AI coding makes the AFAS and SharePoint pulls quick to build.",
+   "still_hard": "The negotiation itself, POD evidence held in transport systems not listed here, and damage claims that need operations to accept fault.",
+   "human_edge": "Persuading a customer, weighing the relationship against the debt, and deciding when to give a little to get paid now.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A monthly dispute-cause report to sales and operations naming the top causes (missing POD, disputed surcharges, damage) and the days they cost."
+   },
+   "altitude": "Preparation per dispute falls from tens of minutes to a quick read; the officer negotiates more cases per week and gains a delegated limit for plans and extensions without Controller sign-off.",
+   "reach": [
+    {
+     "role": "controller",
+     "task": "Bad-debt provision at month close",
+     "learn": "How disputed and plan-covered amounts are provisioned, so plan terms support the close."
+    }
+   ],
+   "build_days": {
+    "coding": "6-10",
+    "integration": "5-8",
+    "testing_rollout": "5-8",
+    "consent_and_access": "3-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Receivables suites promise faster disputes and higher collector productivity but give only indicative estimates, with people kept on validation and complex decisions.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Conversations, payment plans and extensions suit a copilot with the dispute file at low autonomy; plans approved by a person.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Creditworthiness scoring of natural persons is high-risk under the AI Act Annex III 5(b), with duties from 2 December 2027.",
+     "grade": "E3",
+     "source": "[S8], [S9]"
+    }
+   ],
+   "assumptions": [
+    "PODs and damage claims are stored or retrievable as files in SharePoint or by mail.",
+    "An approval threshold for plans exists or can be set by the Finance Director.",
+    "No model scores the creditworthiness of sole traders; risk flags stay rule-based."
+   ],
+   "unknowns": [
+    "Where proof of delivery lives (transport management system, scans, carrier portals).",
+    "Current approval limits for extensions and credit notes.",
+    "Share of overdue amount that is disputed rather than simply late."
+   ],
+   "research_questions": [
+    "On 30 past disputes, does the generated file contain every document the officer actually used?",
+    "What share of disputes ends in a credit note, and which cause dominates?",
+    "Do customers on written payment plans pay more reliably than on verbal promises?"
+   ],
+   "time_saved_pct": 40,
+   "speedup": 1.67
+  },
+  {
+   "uid": "43-3011.00:2480",
+   "short": "Keep debtor master data correct: address and contact changes, bankruptcies, ceased companies, old records.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect change requests from mail, returned post and customer notices",
+     "actor": "collections",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook"
+     ],
+     "inputs": [
+      "customer change notice",
+      "returned mail"
+     ],
+     "outputs": [
+      "master data change request"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Mail in the collections inbox flagged as address, contact or bank change",
+      "output": "Structured change request: debtor number, field, old value, new value, source",
+      "check": "Debtor number exists in AFAS; postcode format valid; KvK number matches",
+      "stop": "One pass; unmatched mails go to the officer's queue",
+      "why_not_simpler": "Customers announce changes in free text, letters and signatures."
+     },
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Verify the change against KvK and existing records",
+     "actor": "collections",
+     "today_means": "system_screen",
+     "systems": [
+      "KvK Handelsregister",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "master data change request"
+     ],
+     "outputs": [
+      "verified change"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 5,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Update debtor record in AFAS; bank changes need four-eyes",
+     "actor": "collections",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "verified change"
+     ],
+     "outputs": [
+      "debtor master data"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Handle bankruptcies and ceased companies: block, claim with curator, propose write-off",
+     "actor": "collections",
+     "today_means": "document",
+     "systems": [
+      "AFAS Profit",
+      "Centraal Insolventieregister",
+      "Word"
+     ],
+     "inputs": [
+      "insolvency notice",
+      "open items"
+     ],
+     "outputs": [
+      "curator claim",
+      "write-off proposal"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Clean up inactive debtors and contact persons past retention",
+     "actor": "collections",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "debtor master data"
+     ],
+     "outputs": [
+      "purge list"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "A scheduled Python job on the data platform reads the collections inbox and KvK change and insolvency feeds, proposes verified changes, and writes them to AFAS through the UpdateConnector; bank account changes always wait for a second person. Bankruptcies trigger a block on the debtor and a pre-filled curator claim, and a quarterly purge list of inactive debtor contacts goes to the Controller for approval under AVG retention rules.",
+   "previous_blocker": "Change notices arrive in free text and no one linked the KvK and insolvency registers to AFAS.",
+   "enabler_now": "Register data is available by API or feed, AFAS accepts updates by connector, and a small extraction step handles the mail.",
+   "still_hard": "Bank account change requests are a known invoice-fraud route and must stay with a human check; curator claims and write-offs need judgement and sign-off.",
+   "human_edge": "Spotting a suspicious change request and deciding what to claim and write off when a customer goes under.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Debtors are blocked for new orders on the day a bankruptcy or ceasing is registered, not weeks later."
+   },
+   "altitude": "Master-data typing mostly goes; the officer approves bank changes and handles insolvencies. Nothing else changes in their decision rights.",
+   "reach": [
+    {
+     "role": "bookkeeper",
+     "task": "Supplier master data changes in accounts payable",
+     "learn": "The same four-eyes bank-change check, so both sides use one fraud rule."
+    }
+   ],
+   "build_days": {
+    "coding": "4-6",
+    "integration": "4-6",
+    "testing_rollout": "3-5",
+    "consent_and_access": "2-6"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "KvK lookups and monitoring fit deterministic software in this role's admin and tracing work.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Debtor master data in AFAS can be updated through UpdateConnectors.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Debtor master data changes are done by the officer, not only by bookkeepers.",
+    "Deceased-customer cases are rare because debtors are businesses; sole traders are the exception.",
+    "A retention period for debtor contact data is set or can be set by the Controller."
+   ],
+   "unknowns": [
+    "Volume of change requests per month and share involving bank details.",
+    "Whether a KvK monitoring subscription is in place.",
+    "Who signs off write-offs today and at which amounts."
+   ],
+   "research_questions": [
+    "How many debtor changes and insolvencies occurred in the last 12 months?",
+    "How long after a registered bankruptcy did Noordhaven block the debtor in recent cases?",
+    "Has Noordhaven seen attempted bank-detail fraud through customer or supplier change mails?"
+   ],
+   "time_saved_pct": 78,
+   "speedup": 4.49
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 100,
+  "attempts": 1,
+  "warnings": [
+   "43-3011.00:2478 s3: judgement step marked deterministic"
+  ],
+  "web": "off",
+  "tool_calls": []
+ }
+}

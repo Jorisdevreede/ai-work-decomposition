@@ -1,0 +1,1018 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task explorer · Noordhaven team reimagine</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<style>
+  .te-eyebrow { display: block; font: 500 12px/20px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--gold-600); }
+  .te-section { scroll-margin-top: calc(var(--nav-h) + 16px); }
+  .te-section h3 { margin: 2px 0 4px; }
+  .te-section .te-lede { margin: 0 0 12px; max-width: 80ch; }
+  .te-jump { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 0; }
+  .te-jump a { padding: 1px 10px; border: 1px solid var(--line); border-radius: var(--pill); font-size: 13px; line-height: 22px; color: var(--ink-700); }
+  .te-jump a:hover { border-color: var(--teal); color: var(--teal); text-decoration: none; }
+  .te-back { align-self: flex-start; padding-left: 0; }
+  .te-statement { margin: 8px 0 0; padding-left: 12px; border-left: 3px solid var(--line); color: var(--ink-700); max-width: 80ch; }
+  .te-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+
+  /* chips: models, patterns, grades, autonomy */
+  .te-model { display: inline-flex; align-items: center; padding: 0 8px; border-radius: var(--r4); background: var(--line-soft); color: var(--ink-700); font: 600 12px/22px var(--mono); letter-spacing: 0; white-space: nowrap; }
+  .te-model[data-model='opus'] { background: var(--teal-100); color: var(--teal); }
+  .te-model[data-model='sol'] { background: var(--gold-tag); color: var(--ink-700); }
+  .te-model[data-model='grok'] { background: var(--ink-700); color: var(--on-dark); }
+  .te-pattern { display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: var(--pill); border: 1px solid var(--line); background: var(--ground); font-size: 13px; line-height: 22px; white-space: nowrap; color: var(--ink); }
+  .te-pattern::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--pat); }
+  .te-pattern[data-pattern='deterministic_software'] { --pat: var(--ink-700); }
+  .te-pattern[data-pattern='llm_step'] { --pat: var(--teal-bright); }
+  .te-pattern[data-pattern='agent_with_gate'] { --pat: var(--teal); }
+  .te-pattern[data-pattern='copilot'] { --pat: var(--gold); }
+  .te-pattern[data-pattern='keep_human'] { --pat: var(--danger); }
+  .te-pattern[data-pattern='none'] { --pat: var(--line); color: var(--ink-muted); }
+  .te-grade { display: inline-flex; padding: 0 6px; border-radius: var(--r4); font: 600 12px/20px var(--mono); letter-spacing: 0; background: var(--line-soft); color: var(--ink-700); }
+  .te-grade[data-grade='E0'] { background: var(--danger-tint); color: var(--danger); }
+  .te-grade[data-grade='E2'] { background: var(--gold-tag); }
+  .te-grade[data-grade='E3'] { background: var(--teal-100); color: var(--teal); }
+  .te-grade[data-grade='E4'] { background: var(--teal); color: var(--on-dark); }
+  .te-auto { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; line-height: 20px; color: var(--ink-700); white-space: nowrap; }
+  .te-auto-cells { display: inline-flex; gap: 2px; }
+  .te-auto-cells i { width: 9px; height: 12px; border-radius: 2px; background: var(--line-soft); border: 1px solid var(--line); }
+  .te-auto-cells i.on { background: var(--teal); border-color: var(--teal); }
+  .te-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
+  .te-dot[data-class='S'] { background: var(--class-s); }
+  .te-dot[data-class='A'] { background: var(--class-a); }
+
+  /* sidebar */
+  .te-mode3 { grid-template-columns: repeat(3, 1fr); }
+  .te-row-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 4px; font-size: 12px; line-height: 18px; color: var(--ink-muted); }
+  .te-row-meta .te-pattern { font-size: 12px; line-height: 18px; }
+  .te-overview-row .onet-row-title { font-weight: 600; }
+  .te-refresh { align-self: flex-start; padding-left: 0; font-size: 13px; }
+
+  /* consensus and verdict */
+  .te-consensus { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 24px; }
+  .te-big { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 8px; }
+  .te-big .te-pattern { font-size: 16px; line-height: 28px; padding: 0 12px; }
+  .te-score { display: grid; grid-template-columns: 120px minmax(0, 1fr) 44px; gap: 8px; align-items: center; font-size: 13px; line-height: 20px; }
+  .te-score .onet-meter-fill { background: var(--teal); }
+  .te-notes { margin: 0; padding-left: 18px; font-size: 14px; line-height: 22px; }
+  .te-notes li { margin: 2px 0; }
+  .te-probe { margin: 12px 0 0; padding: 8px 12px; border-radius: var(--r8); background: var(--teal-100); color: var(--teal-dark); font-size: 14px; line-height: 22px; }
+  .te-probe.is-off { background: var(--danger-tint); color: var(--danger); }
+  .te-vrows { display: grid; gap: 8px; margin-top: 16px; }
+  .te-vrow { padding: 12px 14px; border: 1px solid var(--line-soft); border-radius: var(--r8); }
+  .te-vrow-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+  .te-vrow-nums { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-left: auto; font: 400 13px/20px var(--mono); letter-spacing: 0; color: var(--ink-700); }
+  .te-vrow p { margin: 6px 0 0; }
+
+  /* side-by-side grid */
+  .te-compare { display: grid; grid-template-columns: 150px repeat(var(--cols), minmax(0, 1fr)); border-top: 1px solid var(--line); }
+  .te-compare > div { padding: 10px 12px; border-bottom: 1px solid var(--line-soft); min-width: 0; }
+  .te-compare .te-h { background: var(--ground-50); font-size: 13px; line-height: 20px; font-weight: 600; color: var(--ink-muted); }
+  .te-lens { font-size: 14px; line-height: 20px; font-weight: 600; }
+  .te-lens small { display: block; margin-top: 2px; font-size: 12px; line-height: 18px; font-weight: 400; color: var(--ink-muted); }
+  .te-lens .te-overlap { margin-top: 6px; font: 400 12px/18px var(--mono); letter-spacing: 0; color: var(--ink-placeholder); }
+  .te-cell { font-size: 14px; line-height: 22px; overflow-wrap: anywhere; }
+  .te-union, .te-ev, .te-today-card, .te-node-text, .te-side, .te-vrow p { overflow-wrap: anywhere; }
+  .te-cell ul { margin: 0; padding-left: 18px; }
+  .te-cell-model { display: none; }
+  .te-cell.is-best { background: var(--cream); box-shadow: inset 3px 0 0 var(--gold); }
+  .te-cell .te-empty { color: var(--ink-placeholder); }
+  .te-star { display: block; margin-bottom: 2px; font: 600 11px/18px var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--gold-600); }
+
+  /* in practice */
+  .te-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 16px; border-bottom: 1px solid var(--line); }
+  .te-tab { padding: 8px 12px; margin-bottom: -1px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--ink-muted); font-size: 14px; line-height: 20px; cursor: pointer; }
+  .te-tab:hover { color: var(--teal); }
+  .te-tab[aria-selected='true'] { color: var(--teal); font-weight: 600; border-bottom-color: var(--gold); }
+  .te-practice { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 32px; }
+  .te-flow { list-style: none; margin: 0; padding: 0; }
+  .te-flow li { position: relative; padding: 0 0 16px 40px; }
+  .te-flow li::before { content: ""; position: absolute; left: 12px; top: 26px; bottom: 2px; width: 2px; background: var(--line); }
+  .te-flow li:last-child { padding-bottom: 0; }
+  .te-flow li:last-child::before { display: none; }
+  .te-mark { position: absolute; left: 0; top: 0; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--line); background: var(--ground); font: 600 12px/1 var(--mono); color: var(--ink-700); }
+  .te-flow li[data-kind='trigger'] .te-mark { border-color: var(--teal); color: var(--teal); }
+  .te-flow li[data-kind='gate'] .te-mark { border-color: var(--gold); background: var(--gold); color: var(--teal-dark); }
+  .te-flow li[data-kind='log'] .te-mark { border-color: var(--teal); background: var(--teal); color: var(--on-dark); }
+  .te-node-label { display: block; font: 500 12px/20px var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-muted); }
+  .te-node-text { margin: 0; font-size: 15px; line-height: 22px; }
+  .te-flow li[data-kind='gate'] .te-node-text { padding: 8px 12px; border-radius: var(--r8); background: var(--gold-tag); }
+  .te-chips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 4px 0 12px; padding: 0; }
+  .te-chip { display: inline-block; padding: 1px 8px; border-radius: var(--r4); background: var(--line-soft); color: var(--ink-700); font-size: 13px; line-height: 20px; }
+  .te-chip.is-have { background: var(--teal-100); color: var(--teal); }
+  .te-chip.is-new { background: var(--gold-tag); }
+  .te-side h4 { margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; }
+  .te-side ul.te-plain { margin: 4px 0 12px; padding-left: 18px; font-size: 14px; line-height: 22px; }
+
+  /* today */
+  .te-anatomy { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 8px 12px; align-items: center; max-width: 720px; }
+  .te-stack { display: flex; height: 14px; overflow: hidden; border-radius: 3px; background: var(--line-soft); gap: 1px; }
+  .te-stack span { display: block; height: 100%; }
+  .te-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 10px 0 0; font-size: 12px; line-height: 18px; color: var(--ink-muted); }
+  .te-legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 2px; background: var(--seg); vertical-align: -1px; }
+  [data-seg='gather'] { --seg: var(--teal-dark); background: var(--seg); }
+  [data-seg='transform'] { --seg: var(--teal); background: var(--seg); }
+  [data-seg='decide'] { --seg: var(--gold-600); background: var(--seg); }
+  [data-seg='create'] { --seg: var(--gold); background: var(--seg); }
+  [data-seg='communicate'] { --seg: var(--teal-bright); background: var(--seg); }
+  [data-seg='coordinate'] { --seg: var(--ink-placeholder); background: var(--seg); }
+  .te-legend span[data-seg] { background: none; }
+  .te-today { margin-top: 16px; display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 12px; }
+  .te-today-card { padding: 12px 14px; border: 1px solid var(--line-soft); border-radius: var(--r8); font-size: 14px; line-height: 22px; }
+  .te-today-card h4 { margin: 8px 0 2px; font-size: 13px; line-height: 20px; color: var(--ink-muted); font-weight: 600; }
+  .te-today-card ol, .te-today-card ul { margin: 0; padding-left: 18px; }
+  .te-today-card p { margin: 0; }
+
+  /* facts */
+  .te-facts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+  .te-facts .onet-meter { max-width: none; grid-template-columns: minmax(0, 1fr) 110px 44px; margin: 4px 0; }
+  .te-facts .onet-meter-fill { background: var(--class-a); }
+  .te-facts .onet-meter[data-p='S'] .onet-meter-fill { background: var(--class-s); }
+  .te-facts .onet-meter[data-p='M'] .onet-meter-fill { background: var(--class-m); }
+  .te-dl { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 4px 12px; margin: 0; font-size: 14px; line-height: 22px; }
+  .te-dl dt { color: var(--ink-muted); }
+  .te-dl dd { margin: 0; }
+
+  /* evidence, risks, questions */
+  .te-ev { list-style: none; margin: 0; padding: 0; }
+  .te-ev li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 8px; padding: 6px 0; border-top: 1px solid var(--line-soft); font-size: 14px; line-height: 22px; }
+  .te-ev li:first-child { border-top: 0; }
+  .te-ev .te-src { display: block; font-size: 12px; line-height: 18px; color: var(--ink-muted); }
+  .te-gradecount { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+  .te-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+  .te-union { margin: 4px 0 0; padding-left: 18px; font-size: 14px; line-height: 22px; }
+  .te-union li { margin: 6px 0; }
+  .te-union .te-model { margin-left: 6px; font-size: 11px; line-height: 18px; padding: 0 6px; vertical-align: 1px; }
+
+  /* role overview */
+  .te-modeltable td, .te-modeltable th { white-space: nowrap; }
+  .te-tasklist { list-style: none; margin: 0; padding: 0; }
+  .te-tasklist a { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 10px 8px; border-top: 1px solid var(--line-soft); color: var(--ink); }
+  .te-tasklist a:hover { background: var(--ground-50); text-decoration: none; }
+  .te-tasklist a:hover .te-tl-title { color: var(--teal); }
+  .te-tl-title { font-size: 15px; line-height: 22px; }
+  .te-tl-hours { font: 400 13px/22px var(--mono); letter-spacing: 0; color: var(--ink-muted); text-align: right; white-space: nowrap; }
+  .te-tl-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 13px; line-height: 20px; color: var(--ink-muted); }
+  .te-empty-box { padding: 16px; border-radius: var(--r8); background: var(--ground-50); color: var(--ink-700); }
+  .te-empty-box code { font: 400 13px/20px var(--mono); letter-spacing: 0; }
+
+  @media (max-width: 960px) {
+    .te-consensus, .te-practice, .te-facts, .te-two { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .te-compare { grid-template-columns: minmax(0, 1fr); }
+    .te-compare .te-h { display: none; }
+    .te-compare .te-lens { background: var(--ground-50); }
+    .te-cell-model { display: inline-flex; margin: 0 6px 4px 0; }
+    .te-today { grid-template-columns: minmax(0, 1fr); }
+    .te-dl { grid-template-columns: 110px minmax(0, 1fr); }
+    .te-anatomy { grid-template-columns: 70px minmax(0, 1fr); }
+    .te-vrow-nums { margin-left: 0; width: 100%; }
+    .te-score { grid-template-columns: 100px minmax(0, 1fr) 40px; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#detail">Skip to the task</a>
+<header class="topnav">
+  <a class="brand" href="team-canvas.html"><span class="brand-mark">Noordhaven</span><span class="product">Team reimagine</span></a>
+  <nav class="nav-links" aria-label="Prototypes">
+    <a href="flow/index.html">Team flow</a>
+    <a href="team-canvas.html">Team canvas</a>
+    <a href="task-explorer.html" class="active" aria-current="page">Task explorer</a>
+    <a href="task-table.html">Task table</a>
+    <a href="task-graph.html">Task graph</a>
+    <a href="intake.html">Intake</a>
+    <a href="opportunities.html">Opportunities</a>
+    <a href="job.html">Jobs</a>
+  </nav>
+  <div class="nav-side"><span class="tag tag-secondary">fictional company</span></div>
+</header>
+
+<main class="page">
+  <div class="page-head">
+    <div>
+      <div class="crumbs">Prototype P2 · rungs 1 to 5 of the model</div>
+      <h1>Task explorer</h1>
+      <p class="meta" id="source-meta"><span class="loading">Loading the roles and the model answers…</span></p>
+    </div>
+    <div class="actions" id="variant-slot"></div>
+  </div>
+
+  <div class="onet-layout">
+    <aside class="onet-browser" aria-label="Roles and tasks">
+      <div class="onet-mode" role="radiogroup" aria-label="Team" id="team-mode"></div>
+      <label class="sr-only" for="role">Role</label>
+      <select class="select" id="role"></select>
+      <div class="onet-mode te-mode3" role="radiogroup" aria-label="Class" id="class-mode"></div>
+      <div class="search">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <label class="sr-only" for="q">Search tasks</label>
+        <input class="input" id="q" type="search" placeholder="Search this role's tasks" autocomplete="off">
+      </div>
+      <ul class="onet-list" id="task-list"></ul>
+      <button class="btn btn-text te-refresh" id="refresh" type="button">Check for new answers</button>
+    </aside>
+
+    <section class="onet-detail" id="detail" tabindex="-1" aria-label="Detail"></section>
+  </div>
+</main>
+
+<footer class="site-attribution">
+  <p>Task statements, work activities, importance and frequency come from the O*NET database by the U.S. Department of Labor, Employment and Training Administration (USDOL/ETA), used under the CC BY 4.0 license; O*NET is a trademark of USDOL/ETA. Class probabilities come from the AI-ISCO task scores. Noordhaven Logistics is fictional; model answers are drafts from Opus 5.5, Sol 6.1 and Grok 4.7 and carry their own evidence grades.</p>
+</footer>
+
+<script type="module">
+const MODEL_ORDER = ['opus', 'sol', 'grok'];
+const MODEL_NAMES = { opus: 'Opus 5.5', sol: 'Sol 6.1', grok: 'Grok 4.7' };
+const VARIANT_NAMES = { inmemory: 'In memory', grounded: 'Grounded' };
+const PATTERNS = {
+  deterministic_software: 'Deterministic software', llm_step: 'LLM step', agent_with_gate: 'Agent with gate',
+  copilot: 'Copilot', keep_human: 'Keep human',
+};
+const AUTONOMY = ['manual', 'assisted', 'partial', 'conditional', 'high', 'full'];
+const LENSES = [
+  ['faster', 'Faster', 'Same result, a fraction of the time'],
+  ['autonomous', 'Autonomous', 'Runs on an event, not a reminder'],
+  ['ambitious', 'Ambitious', 'If it cost a tenth, what would we want more of?'],
+  ['joy', 'Joy', 'The drudgery nobody misses'],
+  ['options', 'Options', 'Five drafts instead of one'],
+  ['altitude', 'Altitude', 'Design the system that does it'],
+  ['reach', 'Reach', 'Adjacent tasks this person can take on'],
+  ['human_edge', 'Human edge', 'Where the person beats the machine'],
+];
+const SEGMENTS = ['gather', 'transform', 'decide', 'create', 'communicate', 'coordinate'];
+const CLASS_LABEL = { S: 'automate', A: 'amplify' };
+const STOP = new Set('a an and are as at be by can for from has in into is it its of on or so that the their them then this to was we when which while who will with without your our they there each per one two three more less not no only now same than also'.split(' '));
+const HAVE = /AFAS|Recruitee|Studytube|Outlook|Teams|SharePoint|Excel|Power ?BI|Rabobank|agency|Microsoft 365|Microsoft Graph|Word|OneDrive|CAMT|SEPA/i;
+const NEW = /Copilot|GPT|Claude|OpenAI|agent|LLM|model|bot|new /i;
+
+const state = {
+  data: null, roles: new Map(), runs: {}, listed: true, synth: null, synthName: null,
+  answers: new Map(), roleBlocks: new Map(), loaded: new Set(),
+  team: 'hr', role: null, task: null, variant: 'inmemory', cls: 'all', q: '', practiceModel: null,
+};
+
+const $ = (sel, el = document) => el.querySelector(sel);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const fmt = (n, d = 0) => Number(n).toLocaleString('en-GB', { maximumFractionDigits: d, minimumFractionDigits: d });
+const median = (xs) => { const s = xs.filter((x) => Number.isFinite(x)).sort((a, b) => a - b); if (!s.length) return null; const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+const modelName = (m) => MODEL_NAMES[m] ?? m;
+const modelChip = (m, cls = '') => `<span class="te-model ${cls}" data-model="${esc(m)}">${esc(modelName(m))}</span>`;
+const patternChip = (p) => p ? `<span class="te-pattern" data-pattern="${esc(p)}">${esc(PATTERNS[p] ?? p)}</span>` : '<span class="te-pattern" data-pattern="none">no answer yet</span>';
+const consensusChip = (c) => patternChip(c?.pattern);
+const gradeTag = (g) => `<span class="te-grade" data-grade="${esc(g)}">${esc(g)}</span>`;
+const autoScale = (level, label = true) => {
+  if (level == null) return '';
+  const lv = Math.round(level);
+  const cells = AUTONOMY.map((_, i) => `<i class="${i <= lv && i > 0 ? 'on' : ''}"></i>`).slice(1).join('');
+  return `<span class="te-auto" title="Autonomy level ${fmt(level, Number.isInteger(level) ? 0 : 1)} of 5"><span class="te-auto-cells" aria-hidden="true">${cells}</span>${label ? `L${fmt(level, Number.isInteger(level) ? 0 : 1)} ${esc(AUTONOMY[lv] ?? '')}` : ''}</span>`;
+};
+const modelsIn = (variant) => {
+  const ms = Object.keys(state.runs[variant] ?? {});
+  return ms.sort((a, b) => (MODEL_ORDER.indexOf(a) + 99 * !MODEL_ORDER.includes(a)) - (MODEL_ORDER.indexOf(b) + 99 * !MODEL_ORDER.includes(b)) || a.localeCompare(b));
+};
+
+/* ------------------------------------------------------------ loading */
+
+async function listDir(url) {
+  // python -m http.server answers a folder with an HTML listing; other servers may not.
+  try {
+    const r = await fetch(url, { cache: 'no-store' });
+    if (!r.ok || !(r.headers.get('content-type') ?? '').includes('text/html')) return null;
+    const html = await r.text();
+    return [...html.matchAll(/href="([^"?#]+)"/g)].map((m) => decodeURIComponent(m[1]))
+      .filter((n) => !n.startsWith('/') && !n.startsWith('.') && !n.includes(':'));
+  } catch { return null; }
+}
+
+async function discoverRuns() {
+  const runs = {};
+  const variants = await listDir('../runs/');
+  if (!variants) {
+    // No folder listing: guess the file names reimagine.py writes (8 tasks per batch).
+    await state.ready;
+    for (const model of MODEL_ORDER) {
+      for (const role of state.roles.values()) {
+        const n = Math.ceil(role.tasks.filter((t) => t.class === 'S' || t.class === 'A').length / 8);
+        for (let i = 1; i <= n; i++) ((runs.inmemory ??= {})[model] ??= []).push({ role: role.id, n: i, file: `../runs/inmemory/${model}/${role.id}__${i}.json`, guess: true });
+      }
+    }
+    state.listed = false;
+    return runs;
+  }
+  await Promise.all(variants.filter((v) => v.endsWith('/')).map(async (v) => {
+    const variant = v.slice(0, -1);
+    const models = (await listDir(`../runs/${variant}/`)) ?? [];
+    await Promise.all(models.filter((m) => m.endsWith('/')).map(async (m) => {
+      const model = m.slice(0, -1);
+      const files = (await listDir(`../runs/${variant}/${model}/`)) ?? [];
+      for (const f of files) {
+        const match = f.match(/^([a-z0-9-]+)__(\d+)\.json$/);
+        if (match) ((runs[variant] ??= {})[model] ??= []).push({ role: match[1], n: Number(match[2]), file: `../runs/${variant}/${model}/${f}` });
+      }
+    }));
+  }));
+  return runs;
+}
+
+async function loadSynthesis() {
+  state.synth = null; state.synthMeta = null; state.synthRoles = null; state.synthName = null;
+  const data = await listDir('../data/');
+  // Without a folder listing, ask for the files directly; with one, only ask for what is there.
+  const files = data === null ? ['tasks.json', 'roles.json'] : data.includes('synthesis/') ? ((await listDir('../data/synthesis/')) ?? []) : [];
+  const get = async (name) => {
+    if (!files.includes(name)) return null;
+    try { const r = await fetch(`../data/synthesis/${name}`, { cache: 'no-store' }); return r.ok ? await r.json() : null; } catch { return null; }
+  };
+  const [tasks, roles] = await Promise.all([get('tasks.json'), get('roles.json')]);
+  if (tasks?.tasks) {
+    state.synth = Array.isArray(tasks.tasks) ? Object.fromEntries(tasks.tasks.map((t) => [t.uid, t])) : tasks.tasks;
+    state.synthMeta = tasks._meta ?? {};
+    state.synthName = 'data/synthesis/tasks.json';
+  }
+  if (roles?.roles) state.synthRoles = new Map((Array.isArray(roles.roles) ? roles.roles : Object.values(roles.roles)).map((r) => [r.id, r]));
+}
+
+/* data/synthesis/tasks.json (tools/synthesize.py) holds every model's answer per task uid, under
+   'models' for the primary run and '<variant>.models' for the other. They fill in what the run
+   files do not have; answers read from runs/ replace them, being the fresher copy. */
+function ingestSynth() {
+  if (!state.synth) return;
+  const primary = state.synthMeta.primary_variant ?? 'inmemory';
+  for (const rec of Object.values(state.synth)) {
+    const sets = [[primary, rec.models], ...Object.keys(VARIANT_NAMES).filter((v) => v !== primary && rec[v]?.models).map((v) => [v, rec[v].models])];
+    for (const [variant, models] of sets) {
+      for (const [model, a] of Object.entries(models ?? {})) {
+        const key = `${variant}|${model}|${rec.role_id}|${rec.uid}`;
+        if (!state.answers.has(key)) state.answers.set(key, { uid: rec.uid, ...a });
+        (state.runs[variant] ??= {})[model] ??= [];
+      }
+    }
+  }
+}
+
+async function loadRole(variant, roleId) {
+  const key = `${variant}|${roleId}`;
+  if (state.loaded.has(key)) return;
+  const jobs = [];
+  for (const [model, files] of Object.entries(state.runs[variant] ?? {})) {
+    for (const f of files.filter((x) => x.role === roleId)) {
+      jobs.push(fetch(f.file, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null)
+        .then((json) => json && ingest(variant, model, roleId, json, f.n)));
+    }
+  }
+  await Promise.all(jobs);
+  state.loaded.add(key);
+}
+
+function ingest(variant, model, roleId, json, n) {
+  for (const t of json.tasks ?? []) state.answers.set(`${variant}|${model}|${roleId}|${t.uid}`, t);
+  if (json.role) {
+    const k = `${variant}|${model}|${roleId}`;
+    const blocks = state.roleBlocks.get(k) ?? [];
+    blocks[n - 1] = json.role;
+    state.roleBlocks.set(k, blocks);
+  }
+}
+
+/* ------------------------------------------------------------ derived */
+
+function answersFor(roleId, uid, variant = state.variant) {
+  return modelsIn(variant).map((model) => ({ model, a: state.answers.get(`${variant}|${model}|${roleId}|${uid}`) })).filter((x) => x.a);
+}
+
+const BUILD = ['deterministic_software', 'llm_step', 'agent_with_gate'];
+const PATTERN_KEYS = Object.keys(PATTERNS);
+
+/* Same rules as tools/synthesize.py: modal pattern, a tie goes to the more careful answer (the tied
+   pattern given with the lowest autonomy); median-low autonomy, median speedup and time saved;
+   agreement = mean(pattern share, 1 - autonomy spread / 5, slowest / fastest speedup). */
+function pageConsensus(list) {
+  if (!list.length) return null;
+  const votes = {};
+  for (const { a } of list) votes[a.pattern] = (votes[a.pattern] ?? 0) + 1;
+  const top = Math.max(...Object.values(votes));
+  const minAut = (p) => Math.min(...list.filter((x) => x.a.pattern === p).map((x) => x.a.autonomy_level));
+  const tied = Object.keys(votes).filter((p) => votes[p] === top).sort((p, q) => minAut(p) - minAut(q) || PATTERN_KEYS.indexOf(p) - PATTERN_KEYS.indexOf(q));
+  const aut = list.map((x) => Number(x.a.autonomy_level) || 0).sort((a, b) => a - b);
+  const sp = list.map((x) => Math.max(Number(x.a.speedup) || 1, 1)).sort((a, b) => a - b);
+  const ts = list.map((x) => Number(x.a.time_saved_pct) || 0).sort((a, b) => a - b);
+  const parts = list.length > 1 ? { pattern: top / list.length, autonomy: 1 - (aut.at(-1) - aut[0]) / 5, speedup: sp[0] / sp.at(-1) } : null;
+  return {
+    n: list.length, models: list.map((x) => x.model), votes: Object.entries(votes).sort((x, y) => y[1] - x[1]), top,
+    tie: tied.length > 1, unanimous: Object.keys(votes).length === 1, pattern: tied[0],
+    autonomy: aut[(aut.length - 1) >> 1], autMin: aut[0], autMax: aut.at(-1),
+    speedup: median(sp), spMin: sp[0], spMax: sp.at(-1), timeSaved: median(ts), tsMin: ts[0], tsMax: ts.at(-1),
+    parts, score: parts ? Math.round(100 * (parts.pattern + parts.autonomy + parts.speedup) / 3) : null,
+    best: {}, risks: null, questions: null, practiceModel: null, critic: null, rollUp: null, source: 'page',
+  };
+}
+
+function synthRecord(roleId, uid, variant = state.variant) {
+  const rec = state.synth?.[uid];
+  if (!rec || rec.role_id !== roleId) return null;
+  const primary = state.synthMeta.primary_variant ?? 'inmemory';
+  return variant === primary ? { rec, view: rec, primary: true } : rec[variant] ? { rec, view: rec[variant], primary: false } : null;
+}
+
+function consensus(roleId, uid, variant = state.variant) {
+  const list = answersFor(roleId, uid, variant);
+  const c = pageConsensus(list);
+  const s = synthRecord(roleId, uid, variant);
+  const sc = s?.view.consensus;
+  if (!sc) return c;
+  const synthModels = [...(sc.models ?? Object.keys(s.view.models ?? {}))].sort().join();
+  if (c && synthModels !== list.map((x) => x.model).sort().join()) return { ...c, stale: true };
+  const votes = Object.entries(sc.pattern_votes ?? {}).sort((x, y) => y[1] - x[1]);
+  const top = votes[0]?.[1] ?? 0;
+  const best = { ...(s.view.lenses ?? {}) };
+  if (s.primary && s.rec.human_edge) best.human_edge = s.rec.human_edge;
+  return {
+    ...(c ?? {}), n: sc.n ?? list.length, votes, top, tie: votes.filter(([, k]) => k === top).length > 1, unanimous: !!sc.pattern_unanimous,
+    pattern: sc.pattern, autonomy: sc.autonomy, autMin: sc.autonomy_range?.[0], autMax: sc.autonomy_range?.[1],
+    speedup: sc.speedup, spMin: sc.speedup_range?.[0], spMax: sc.speedup_range?.[1],
+    timeSaved: sc.time_saved_pct, tsMin: sc.time_saved_range?.[0], tsMax: sc.time_saved_range?.[1],
+    parts: sc.agreement_parts ?? null, score: sc.agreement != null ? Math.round(sc.agreement * (sc.agreement <= 1 ? 100 : 1)) : null,
+    best, risks: s.primary ? s.rec.risks : null, questions: s.primary ? s.rec.research_questions : null,
+    practiceModel: s.primary ? s.rec.in_practice?.model : null, critic: s.primary ? s.rec.critic : null,
+    rollUp: s.primary ? s.rec.roll_up : null, source: 'synthesis',
+  };
+}
+
+/* Where the fixed probes (rung 2) and the models (rung 4) part ways; the rule of synthesize.py. */
+function probeNote(task, c) {
+  if (!c?.pattern) return null;
+  const what = `${PATTERNS[c.pattern] ?? c.pattern}, L${c.autonomy}`;
+  if (task.class === 'S') {
+    return ['copilot', 'keep_human'].includes(c.pattern) || c.autonomy <= 1
+      ? { disagrees: true, text: `The probes say AI can produce nearly all of the result; the models keep the person in the lead (${what}).` }
+      : { disagrees: false, text: `AI can take most of this (${what}).` };
+  }
+  if (c.autonomy >= 4 && BUILD.includes(c.pattern)) return { disagrees: true, text: `The probes say the person keeps the work; the models let AI run it and leave the person the exceptions (${what}).` };
+  if (c.pattern === 'keep_human' || (c.speedup ?? 1) < 1.15) return { disagrees: true, text: `The probes see a clear gain; the models see little (${what}, ${fmt(c.speedup ?? 1, 2)}×).` };
+  return { disagrees: false, text: `the person keeps the work and AI makes it clearly faster (${what}).` };
+}
+
+function shortFor(roleId, task) {
+  const list = answersFor(roleId, task.uid);
+  const c = consensus(roleId, task.uid);
+  const pick = list.find((x) => x.a.pattern === c?.pattern) ?? list[0];
+  return pick?.a.short || task.statement;
+}
+
+function roleTasks(role) { return role.tasks.filter((t) => t.class === 'S' || t.class === 'A'); }
+
+/* ------------------------------------------------------------ url state */
+
+function readUrl() {
+  const p = new URLSearchParams(location.search);
+  const role = state.roles.get(p.get('role'));
+  state.team = role?.team ?? (p.get('team') === 'finance' ? 'finance' : 'hr');
+  state.role = role?.id ?? null;
+  state.task = p.get('task');
+  if (p.get('v')) state.variant = p.get('v');
+}
+
+function href(over = {}) {
+  const s = { team: state.team, role: state.role, task: state.task, v: state.variant, ...over };
+  const p = new URLSearchParams();
+  if (s.role) p.set('role', s.role); else p.set('team', s.team);
+  if (s.task) p.set('task', s.task);
+  if (s.v && s.v !== 'inmemory') p.set('v', s.v);
+  return `?${p}`;
+}
+
+function go(over, push = true) {
+  Object.assign(state, over);
+  history[push ? 'pushState' : 'replaceState'](null, '', href());
+  return render();
+}
+
+/* ------------------------------------------------------------ render: chrome */
+
+function renderMeta() {
+  const variants = Object.keys(state.runs);
+  const slot = $('#variant-slot');
+  if (variants.length > 1) {
+    slot.innerHTML = `<div class="onet-mode" role="radiogroup" aria-label="Run">${variants.map((v) => `
+      <label><input type="radio" name="variant" value="${esc(v)}" ${v === state.variant ? 'checked' : ''}><span>${esc(VARIANT_NAMES[v] ?? v)}</span></label>`).join('')}</div>`;
+    slot.querySelectorAll('input').forEach((i) => i.addEventListener('change', () => go({ variant: i.value })));
+  } else slot.innerHTML = '';
+  const files = modelsIn(state.variant).map((m) => {
+    const fs = (state.runs[state.variant]?.[m] ?? []);
+    const label = !state.listed ? 'probed' : fs.length ? `${fs.length} ${fs.length === 1 ? 'batch' : 'batches'}` : 'from the synthesis';
+    return `${modelChip(m)} ${label}`;
+  }).join(' ');
+  let synth = '<span>Consensus worked out on this page; it switches to <code>data/synthesis/tasks.json</code> when that exists</span>';
+  if (state.synthName) {
+    const counts = state.synthMeta.answer_files?.[state.variant] ?? {};
+    const newer = state.listed && modelsIn(state.variant).some((m) => (state.runs[state.variant]?.[m]?.length ?? 0) > (counts[m] ?? 0));
+    const when = String(state.synthMeta.generated ?? '').replace('T', ' ').slice(0, 16);
+    synth = `<span>Consensus from <code>${esc(state.synthName)}</code>${when ? ` (${esc(when)})` : ''}${newer ? '; answers that landed after it are merged on this page with the same rules' : ''}</span>`;
+  }
+  $('#source-meta').innerHTML = `<span>Answers from <code>runs/${esc(state.variant)}/</code>: ${files || 'none yet'}</span>${synth}`;
+}
+
+function renderSidebar() {
+  const teams = state.data.teams;
+  $('#team-mode').innerHTML = teams.map((t) => `
+    <label><input type="radio" name="team" value="${t.id}" ${t.id === state.team ? 'checked' : ''}><span>${esc(t.name)} · ${fmt(t.fte)} FTE</span></label>`).join('');
+  const team = teams.find((t) => t.id === state.team);
+  $('#role').innerHTML = team.roles.map((r) => `<option value="${r.id}" ${r.id === state.role ? 'selected' : ''}>${esc(r.title)} (${fmt(r.fte)} FTE)</option>`).join('');
+  $('#class-mode').innerHTML = [['all', 'All'], ['S', 'Automate'], ['A', 'Amplify']].map(([v, l]) => `
+    <label><input type="radio" name="cls" value="${v}" ${v === state.cls ? 'checked' : ''}><span>${l}</span></label>`).join('');
+  renderList();
+}
+
+function renderList() {
+  const role = state.roles.get(state.role);
+  const q = state.q.trim().toLowerCase();
+  const tasks = roleTasks(role)
+    .filter((t) => state.cls === 'all' || t.class === state.cls)
+    .filter((t) => !q || `${t.statement} ${shortFor(role.id, t)}`.toLowerCase().includes(q))
+    .sort((a, b) => b.hours_per_fte - a.hours_per_fte);
+  const rows = tasks.map((t) => {
+    const c = consensus(role.id, t.uid);
+    const agree = !c?.n ? 'no answer yet' : c.n === 1 ? 'one model' : c.tie ? 'split vote' : `${c.top} of ${c.n} agree`;
+    return `<li><a class="onet-row" href="${href({ task: t.uid })}" data-task="${esc(t.uid)}" ${t.uid === state.task ? 'aria-current="true"' : ''}>
+      <span class="onet-row-top"><span class="onet-row-title">${esc(shortFor(role.id, t))}</span><span class="onet-row-code">${fmt(t.hours_per_fte * role.fte)} h</span></span>
+      <span class="te-row-meta"><span><span class="te-dot" data-class="${t.class}"></span>${CLASS_LABEL[t.class]}</span>${c ? consensusChip(c) : ''}<span>${agree}</span></span>
+    </a></li>`;
+  });
+  $('#task-list').innerHTML = `<li><a class="onet-row te-overview-row" href="${href({ task: null })}" data-task="" ${!state.task ? 'aria-current="true"' : ''}>
+      <span class="onet-row-top"><span class="onet-row-title">Role overview</span><span class="onet-row-code">${tasksLabel(roleTasks(role).length)}</span></span>
+      <span class="onet-row-note">Hours a year for the role, all FTE</span></a></li>${rows.join('') || '<li class="onet-row muted small">No task matches.</li>'}`;
+}
+
+/* ------------------------------------------------------------ render: role overview */
+
+function roleSummary(role) {
+  return modelsIn(state.variant).map((model) => {
+    let freed = 0; let answered = 0; let denom = 0;
+    for (const t of role.tasks) {
+      const a = state.answers.get(`${state.variant}|${model}|${role.id}|${t.uid}`);
+      const sp = a ? Math.max(Number(a.speedup) || 1, 1) : 1;
+      denom += t.share / sp;
+      if (a) { answered += 1; freed += t.hours_per_fte * role.fte * (1 - 1 / sp); }
+    }
+    return { model, answered, freed, ceiling: denom > 0 ? 1 / denom : null };
+  });
+}
+
+function mergedRoleBlock(model, roleId) {
+  const blocks = (state.roleBlocks.get(`${state.variant}|${model}|${roleId}`) ?? []).filter(Boolean);
+  if (!blocks.length) return null;
+  const union = (k) => [...new Set(blocks.flatMap((b) => b[k] ?? []))];
+  return { ...blocks[0], reach: union('reach'), skills_to_grow: union('skills_to_grow'), batches: blocks.length };
+}
+
+function renderRole() {
+  const role = state.roles.get(state.role);
+  const team = state.data.teams.find((t) => t.id === role.team);
+  const inScope = roleTasks(role);
+  const hb = role.hours_by_class;
+  const models = modelsIn(state.variant);
+  const summary = roleSummary(role).filter((s) => s.answered);
+  const merged = state.variant === (state.synthMeta?.primary_variant ?? 'inmemory') ? state.synthRoles?.get(role.id) : null;
+  const blocks = models.map((m) => ({ model: m, b: mergedRoleBlock(m, role.id) })).filter((x) => x.b);
+  const fields = [
+    ['altitude', 'Altitude', 'The role one layer up'],
+    ['ambitious_version', 'Ambitious version', 'If it aimed much higher'],
+    ['ceiling_note', 'Ceiling', 'What limits how far it goes'],
+    ['skills_to_grow', 'Skills to grow', ''],
+    ['reach', 'Reach', 'Adjacent tasks it can absorb'],
+  ];
+  const sorted = [...inScope].sort((a, b) => b.hours_per_fte - a.hours_per_fte);
+
+  $('#detail').innerHTML = `
+    <div class="onet-head">
+      <span class="te-eyebrow">${esc(team.name)} · role overview</span>
+      <h2 tabindex="-1" id="detail-title">${esc(role.title)}</h2>
+      <p class="small muted">${fmt(role.fte)} FTE · €${fmt(role.cost_per_hour)} an hour loaded · €${fmt(role.annual_cost)} a year · ${role.tasks.length} O*NET tasks from ${role.onet.map((o) => `${esc(o.title)} <span class="onet-num">${esc(o.code)}</span>`).join(', ')}</p>
+    </div>
+    <div class="onet-stats">
+      ${statBox('S', 'Automate', hb.automate ?? 0, role, tasksLabel(inScope.filter((t) => t.class === 'S').length))}
+      ${statBox('A', 'Amplify', hb.amplify ?? 0, role, tasksLabel(inScope.filter((t) => t.class === 'A').length))}
+      ${statBox('M', 'Machines', hb.machines ?? 0, role, 'left for later')}
+      ${statBox('I', 'Human', hb.human ?? 0, role, 'left for later')}
+    </div>
+
+    <section class="card te-section">
+      <span class="te-eyebrow">Rung 6 preview · per model</span>
+      <h3>Time back if each model is right</h3>
+      <p class="small muted te-lede">Hours freed = role hours per task × (1 − 1 ÷ speedup). Ceiling (Amdahl) = 1 ÷ Σ(share ÷ speedup) over every task of the role; in a model's row, tasks it has not answered and the human tasks count at 1×. The merged row is the synthesis: median speedups, and a fallback (automate 4×, amplify 1.8×) for tasks no model has answered yet. The team view is on the <a href="team-canvas.html">team canvas</a>.</p>
+      ${summary.length ? '' : emptyRuns(role)}
+      ${summary.length || merged ? `<div class="table-scroll"><table class="onet-table te-modeltable">
+        <thead><tr><th>Model</th><th>Tasks answered</th><th>Hours freed a year</th><th>FTE</th><th>Role ceiling</th></tr></thead>
+        <tbody>${summary.map((s) => `<tr><td>${modelChip(s.model)}</td><td class="onet-num">${s.answered} of ${inScope.length}</td>
+          <td class="onet-num">${fmt(s.freed)}</td><td class="onet-num">${fmt(s.freed / state.data.company.hours_per_fte, 2)}</td>
+          <td class="onet-num">${s.ceiling ? `${fmt(s.ceiling, 2)}×` : '–'}</td></tr>`).join('')}${merged ? `
+          <tr><td><span class="te-model">Merged</span></td><td class="onet-num">${merged.coverage?.answered ?? '–'} of ${merged.coverage?.ai_tasks ?? inScope.length}</td>
+          <td class="onet-num">${fmt(merged.hours_freed)}${merged.hours_freed_low !== merged.hours_freed_high ? ` <span class="xs muted">(${fmt(merged.hours_freed_low)}–${fmt(merged.hours_freed_high)})</span>` : ''}</td>
+          <td class="onet-num">${fmt(merged.fte_freed ?? merged.hours_freed / state.data.company.hours_per_fte, 2)}</td>
+          <td class="onet-num">${fmt(merged.ceiling, 2)}× <span class="xs muted">limit ${fmt(merged.ceiling_limit, 1)}×</span></td></tr>` : ''}</tbody></table></div>
+        ${merged?.ceiling_explained ? `<p class="small" style="margin:12px 0 0">${esc(merged.ceiling_explained)}</p>` : ''}`
+        : ''}
+    </section>
+
+    ${blocks.length ? `<section class="card te-section">
+      <span class="te-eyebrow">Rung 4 · the role as a whole</span>
+      <h3>What the role becomes, side by side</h3>
+      <div class="te-compare" style="--cols:${blocks.length}">
+        <div class="te-h">Question</div>${blocks.map((x) => `<div class="te-h">${modelChip(x.model)}${x.b.batches > 1 ? ` <span class="xs muted">${x.b.batches} batches, first one shown, lists merged</span>` : ''}</div>`).join('')}
+        ${fields.map(([k, label, hint]) => `<div class="te-lens">${label}${hint ? `<small>${hint}</small>` : ''}</div>${blocks.map((x) => cell(x.model, x.b[k])).join('')}`).join('')}
+      </div>
+    </section>` : ''}
+
+    <section class="card te-section">
+      <span class="te-eyebrow">Rungs 1 to 3 · ${inScope.length} tasks in scope</span>
+      <h3>Automate and amplify tasks, by hours</h3>
+      <p class="small muted te-lede">Hours are for the whole role (${fmt(role.fte)} FTE) a year, from the O*NET importance and frequency; a person corrects them in the intake. Open a task to see the three models side by side.</p>
+      <ul class="te-tasklist">${sorted.map((t) => {
+        const c = consensus(role.id, t.uid);
+        return `<li><a href="${href({ task: t.uid })}" data-task="${esc(t.uid)}">
+          <span class="te-tl-title">${esc(shortFor(role.id, t))}</span>
+          <span class="te-tl-hours">${fmt(t.hours_per_fte * role.fte)} h</span>
+          <span class="te-tl-meta"><span><span class="te-dot" data-class="${t.class}"></span>${CLASS_LABEL[t.class]}</span>${consensusChip(c)}
+            ${c?.autonomy != null ? autoScale(c.autonomy) : ''}
+            ${c?.speedup ? `<span class="onet-num">${fmt(c.speedup, 1)}× faster</span>` : ''}
+            ${c?.n ? `<span>${c.n === 1 ? 'one model so far' : c.tie ? 'split vote, the more careful pattern shown' : `${c.top} of ${c.n} agree on the pattern`}</span>` : ''}</span>
+        </a></li>`;
+      }).join('')}</ul>
+    </section>`;
+}
+
+const tasksLabel = (n) => `${n} ${n === 1 ? 'task' : 'tasks'}`;
+
+function statBox(cls, label, hours, role, note) {
+  return `<div class="onet-stat" data-class="${cls}" style="cursor:default">
+    <span class="onet-stat-label"><span class="onet-swatch"></span>${label}</span>
+    <span class="onet-stat-value">${fmt(hours)} h</span>
+    <span class="onet-stat-note">${fmt(hours / role.hours * 100)}% of the role · ${note}</span></div>`;
+}
+
+function emptyRuns(role) {
+  return `<div class="te-empty-box small">No model answers for ${esc(role.title)} in this run yet. They land in
+    <code>runs/${esc(state.variant)}/&lt;model&gt;/${esc(role.id)}__&lt;n&gt;.json</code>; use “Check for new answers” or reload.</div>`;
+}
+
+function cell(model, value, best = false) {
+  let body;
+  if (Array.isArray(value)) body = value.length ? `<ul>${value.map((v) => `<li>${esc(v)}</li>`).join('')}</ul>` : '<span class="te-empty">none given</span>';
+  else body = value ? esc(value) : '<span class="te-empty">none given</span>';
+  return `<div class="te-cell${best ? ' is-best' : ''}">${modelChip(model, 'te-cell-model')}${best ? '<span class="te-star">strongest</span>' : ''}${body}</div>`;
+}
+
+/* ------------------------------------------------------------ render: one task */
+
+function renderTask() {
+  const role = state.roles.get(state.role);
+  const task = role.tasks.find((t) => t.uid === state.task);
+  if (!task) { state.task = null; return renderRole(); }
+  const list = answersFor(role.id, task.uid);
+  const c = consensus(role.id, task.uid);
+  const hours = task.hours_per_fte * role.fte;
+  const jumps = [['facts', 'Facts and probes'], ['verdict', 'Pattern and autonomy'], ['lenses', 'Seven lenses'], ['practice', 'In practice'], ['today', 'Today'], ['evidence', 'Evidence'], ['risks', 'Risks and questions']];
+
+  $('#detail').innerHTML = `
+    <a class="btn btn-text te-back" href="${href({ task: null })}" data-task="">← ${esc(role.title)} overview</a>
+    <div class="onet-head">
+      <span class="te-eyebrow"><span class="te-dot" data-class="${task.class}"></span>${CLASS_LABEL[task.class]} · ${esc(role.title)}</span>
+      <h2 tabindex="-1" id="detail-title">${esc(shortFor(role.id, task))}</h2>
+      <p class="te-statement small">O*NET: ${esc(task.statement)}</p>
+      <nav class="te-jump" aria-label="Sections">${jumps.map(([id, l]) => `<a href="#${id}">${l}</a>`).join('')}</nav>
+    </div>
+    <div class="onet-figs">
+      ${fig('Hours a year', `${fmt(hours)} h`, `${fmt(task.hours_per_fte)} h per FTE × ${fmt(role.fte)}`)}
+      ${fig('Share of the role', `${fmt(task.share * 100, 1)}%`, `${esc(task.frequency_label)} · importance ${fmt(task.importance, 1)} of 5`)}
+      ${fig('Cost a year', `€${fmt(hours * role.cost_per_hour)}`, `at €${fmt(role.cost_per_hour)} an hour loaded`)}
+      ${c?.rollUp ? fig('Time back a year', `${fmt(c.rollUp.hours_freed)} h`, `hours × (1 − 1 ÷ ${fmt(c.rollUp.speedup, 2)}) · ${fmt(c.rollUp.hours_freed_low)}–${fmt(c.rollUp.hours_freed_high)} h`)
+        : c?.speedup ? fig('Time back a year', `${fmt(hours * (1 - 1 / c.speedup))} h`, `hours × (1 − 1 ÷ ${fmt(c.speedup, 2)}) · median of ${c.n}`)
+        : fig('Time back a year', '–', 'no answer yet')}
+    </div>
+    ${factsSection(task)}
+    ${list.length ? verdictSection(list, c, task, role.id) + lensSection(list, c) + practiceSection(list, c) + todaySection(list) + evidenceSection(list) + risksSection(list, c)
+      : `<section class="card te-section">${emptyRuns(role)}</section>`}`;
+  wirePractice(list);
+}
+
+function fig(label, value, note) {
+  return `<div class="onet-fig"><span class="onet-fig-label">${label}</span><span class="onet-fig-value">${value}</span><span class="onet-fig-note">${note}</span></div>`;
+}
+
+function meter(label, p, cls) {
+  return `<div class="onet-meter" data-p="${cls}"><span class="onet-meter-label">${label}</span>
+    <span class="onet-meter-bar"><span class="onet-meter-fill" style="width:${Math.round((p ?? 0) * 100)}%"></span></span>
+    <span class="onet-meter-value">${p == null ? '–' : `${Math.round(p * 100)}%`}</span></div>`;
+}
+
+function factsSection(task) {
+  const modes = { through_software: 'through software', with_people: 'with people', directing_others: 'directing others', on_things: 'on things', on_paper_in_place: 'on paper, in place' };
+  return `<section class="card te-section" id="facts">
+    <span class="te-eyebrow">Rungs 1 and 2 · facts and probes, no model involved</span>
+    <h3>What O*NET and the class questions say</h3>
+    <div class="te-facts">
+      <div>
+        <p class="small muted te-lede">Probability that a model would answer yes to each class question. The class follows from these.</p>
+        ${meter('AI does nearly all of it', task.ai_does_nearly_all, 'S')}
+        ${meter('Clear gain on most of it', task.clear_gain_most, 'A')}
+        ${meter('Clear gain on part of it', task.clear_gain_part, 'A')}
+        ${meter('Machines do nearly all of it', task.machines_nearly_all, 'M')}
+      </div>
+      <dl class="te-dl">
+        <dt>Occupation</dt><dd>${esc(task.onet_title)} <span class="onet-num xs">${esc(task.onet_code)}</span></dd>
+        <dt>Task</dt><dd>${esc(task.type)} · id <span class="onet-num">${task.task_id}</span></dd>
+        <dt>Frequency</dt><dd>${esc(task.frequency_label)}</dd>
+        <dt>Importance</dt><dd>${fmt(task.importance, 2)} of 5</dd>
+        <dt>Mostly done</dt><dd>${esc(modes[task.mode] ?? task.mode ?? '–')}</dd>
+        <dt>Software maturity</dt><dd>${esc(String(task.deployment ?? '–').replace('_', ' '))}</dd>
+        <dt>Work activities</dt><dd>${(task.dwas ?? []).map(esc).join('<br>') || '–'}</dd>
+      </dl>
+    </div>
+  </section>`;
+}
+
+function agreementNotes(list, c, task, roleId) {
+  const notes = [];
+  if (list.length < 2) notes.push(`Only ${modelName(list[0].model)} has answered so far; the comparison fills in as the other models land.`);
+  else {
+    const by = {};
+    list.forEach(({ model, a }) => (by[a.pattern] ??= []).push(modelName(model)));
+    const groups = Object.entries(by).sort((x, y) => y[1].length - x[1].length);
+    if (groups.length === 1) notes.push(`All ${list.length} choose <strong>${esc(PATTERNS[groups[0][0]] ?? groups[0][0])}</strong>.`);
+    else notes.push(groups.map(([p, ms]) => `${ms.join(' and ')} ${ms.length > 1 ? 'choose' : 'chooses'} <strong>${esc(PATTERNS[p] ?? p)}</strong>`).join('; ') + `.${c.tie ? ' A tie goes to the more careful answer: the lower autonomy, then the simpler build.' : ''}`);
+    if (c.autMin === c.autMax) notes.push(`Same autonomy: L${c.autMin} ${AUTONOMY[c.autMin] ?? ''}.`);
+    else notes.push(`Autonomy differs by ${c.autMax - c.autMin} ${c.autMax - c.autMin === 1 ? 'level' : 'levels'}: ${list.map(({ model, a }) => `${modelName(model)} L${a.autonomy_level}`).join(', ')}.`);
+    if (c.spMin != null) notes.push(c.spMax / c.spMin >= 1.5 ? `Speedup differs a lot: ${fmt(c.spMin, 1)}× to ${fmt(c.spMax, 1)}×.` : `Speedup is close: ${fmt(c.spMin, 1)}× to ${fmt(c.spMax, 1)}×.`);
+    const conf = [...new Set(list.map((x) => x.a.confidence))];
+    notes.push(conf.length === 1 ? `All say ${esc(conf[0])} confidence.` : `Confidence: ${list.map(({ model, a }) => `${modelName(model)} ${esc(a.confidence)}`).join(', ')}.`);
+  }
+  const order = ['E0', 'E1', 'E2', 'E3', 'E4'];
+  notes.push(`Best evidence: ${list.map(({ model, a }) => `${modelName(model)} ${(a.evidence ?? []).map((e) => e.grade).sort((x, y) => order.indexOf(x) - order.indexOf(y)).at(-1) ?? 'none'}`).join(', ')}.`);
+  const other = Object.keys(state.runs).find((v) => v !== state.variant);
+  const oc = other ? consensus(roleId, task.uid, other) : null;
+  if (oc && c.pattern) {
+    const changes = [];
+    if (oc.pattern !== c.pattern) changes.push(`pattern ${esc(PATTERNS[oc.pattern] ?? oc.pattern)} → ${esc(PATTERNS[c.pattern] ?? c.pattern)}`);
+    if (oc.autonomy !== c.autonomy) changes.push(`autonomy L${oc.autonomy} → L${c.autonomy}`);
+    if (oc.speedup && c.speedup && Math.abs(c.speedup / oc.speedup - 1) >= 0.1) changes.push(`speedup ${fmt(oc.speedup, 1)}× → ${fmt(c.speedup, 1)}×`);
+    notes.push(`From the ${esc((VARIANT_NAMES[other] ?? other).toLowerCase())} run to this one: ${changes.length ? changes.join(', ') : 'same pattern, autonomy and speedup'}.`);
+  }
+  return notes;
+}
+
+function verdictSection(list, c, task, roleId) {
+  const votes = c.votes.map(([p, k]) => `${PATTERNS[p] ?? p} ${k}`).join(' · ');
+  const probe = probeNote(task, c);
+  const parts = c.parts ? ` (pattern ${fmt(c.parts.pattern, 2)}, autonomy ${fmt(c.parts.autonomy, 2)}, speedup ${fmt(c.parts.speedup, 2)})` : '';
+  return `<section class="card te-section" id="verdict">
+    <span class="te-eyebrow">Rung 3 · pattern and autonomy</span>
+    <h3>What to build, and how far it goes on its own</h3>
+    <div class="te-consensus">
+      <div>
+        <div class="te-big">${consensusChip(c)}${c.autonomy != null ? autoScale(c.autonomy) : ''}</div>
+        <p class="small muted">${c.n > 1 ? `Votes: ${esc(votes)}.` : 'One model so far.'} ${c.source === 'synthesis' ? `Consensus from ${esc(state.synthName)}.` : `Worked out on this page with the rules of tools/synthesize.py${c.stale ? ', because the synthesis predates some of these answers' : ''}.`}</p>
+        ${c.score != null ? `<div class="te-score" title="Mean of the pattern share, 1 − autonomy spread ÷ 5, and slowest ÷ fastest speedup"><span class="muted">Agreement</span>
+          <span class="onet-meter-bar"><span class="onet-meter-fill" style="width:${c.score}%"></span></span><span class="onet-num">${c.score}</span></div>
+          <p class="xs muted" style="margin-top:4px">Mean of three parts${esc(parts)}.</p>` : ''}
+        ${probe ? `<p class="te-probe ${probe.disagrees ? 'is-off' : ''}"><strong>${probe.disagrees ? 'Probes and models disagree.' : 'Probes and models agree:'}</strong> ${esc(probe.text)}</p>` : ''}
+      </div>
+      <div>
+        <h4 class="label">Where they agree and differ</h4>
+        <ul class="te-notes">${agreementNotes(list, c, task, roleId).map((n) => `<li>${n}</li>`).join('')}</ul>
+      </div>
+    </div>
+    <div class="te-vrows">${list.map(({ model, a }) => `
+      <div class="te-vrow">
+        <div class="te-vrow-head">${modelChip(model)}${patternChip(a.pattern)}${autoScale(a.autonomy_level)}
+          <span class="te-vrow-nums"><span>${fmt(a.speedup, 2)}× faster</span><span>${fmt(a.time_saved_pct)}% saved</span><span>${esc(a.confidence)} confidence</span>${c.critic?.[model] != null ? `<span title="Critic score from tools/synthesize.py: specific lenses, graded evidence, numbers that hang together; higher is better">critic ${fmt(c.critic[model], 1)}</span>` : ''}</span></div>
+        <p class="small muted">${esc(a.pattern_why)}</p>
+      </div>`).join('')}</div>
+  </section>`;
+}
+
+function words(s) { return new Set(String(s ?? '').toLowerCase().match(/[a-zÀ-ɏ]{3,}/g)?.filter((w) => !STOP.has(w)) ?? []); }
+function overlap(texts) {
+  // Mean Jaccard overlap of content words between every pair: a rough sameness signal, not agreement.
+  const sets = texts.map(words).filter((s) => s.size);
+  if (sets.length < 2) return null;
+  let sum = 0; let n = 0;
+  for (let i = 0; i < sets.length; i++) for (let j = i + 1; j < sets.length; j++) {
+    const inter = [...sets[i]].filter((w) => sets[j].has(w)).length;
+    sum += inter / (sets[i].size + sets[j].size - inter); n++;
+  }
+  return Math.round(100 * sum / n);
+}
+
+function lensSection(list, c) {
+  const value = (a, k) => (k === 'human_edge' ? a.human_edge : a.lenses?.[k]);
+  return `<section class="card te-section" id="lenses">
+    <span class="te-eyebrow">Rung 4 · reimagine</span>
+    <h3>Seven lenses, side by side</h3>
+    <p class="small muted te-lede">Each lens asked from the point of view of the person doing the task. Word overlap is the share of content words two answers share, averaged over the pairs: high means the models say much the same thing; low means different wording and often different ideas, worth reading side by side.${c.source === 'synthesis' ? ' The strongest line per lens comes from the synthesis.' : ''}</p>
+    <div class="te-compare" style="--cols:${list.length}">
+      <div class="te-h">Lens</div>${list.map(({ model }) => `<div class="te-h">${modelChip(model)}</div>`).join('')}
+      ${LENSES.map(([k, label, q]) => {
+        const texts = list.map(({ a }) => { const v = value(a, k); return Array.isArray(v) ? v.join(' ') : v; });
+        const ov = overlap(texts);
+        const best = c.best?.[k];
+        return `<div class="te-lens">${label}<small>${q}</small>${ov != null ? `<div class="te-overlap">word overlap ${ov}%</div>` : ''}</div>
+          ${list.map(({ model, a }) => cell(model, value(a, k), best && (best.model === model || best.by === model))).join('')}`;
+      }).join('')}
+    </div>
+  </section>`;
+}
+
+function practiceSection(list, c) {
+  if (!state.practiceModel || !list.some((x) => x.model === state.practiceModel)) {
+    state.practiceModel = (list.find((x) => x.model === c.practiceModel) ?? list.find((x) => x.a.pattern === c.pattern) ?? list[0]).model;
+  }
+  return `<section class="card te-section" id="practice">
+    <span class="te-eyebrow">Rung 4 · how it works in practice</span>
+    <h3>Trigger, steps, human gate, systems</h3>
+    <div class="te-tabs" role="tablist" aria-label="Model">${list.map(({ model, a }) => `
+      <button class="te-tab" role="tab" type="button" data-model="${esc(model)}" aria-selected="${model === state.practiceModel}" aria-controls="practice-panel">${esc(modelName(model))} · ${esc(PATTERNS[a.pattern] ?? a.pattern)}</button>`).join('')}</div>
+    <div id="practice-panel" role="tabpanel">${practicePanel(list.find((x) => x.model === state.practiceModel).a)}</div>
+  </section>`;
+}
+
+function practicePanel(a) {
+  const p = a.in_practice ?? {};
+  const nodes = [
+    { kind: 'trigger', label: 'Trigger', text: p.trigger, mark: '▶' },
+    ...(p.steps ?? []).map((s, i) => ({ kind: 'step', label: `Step ${i + 1}`, text: s, mark: i + 1 })),
+    { kind: 'gate', label: 'Human gate', text: p.human_gate, mark: '✓' },
+    { kind: 'log', label: 'Logs to', text: p.logs_to, mark: '■' },
+  ].filter((n) => n.text);
+  const systems = p.systems ?? [];
+  return `<div class="te-practice">
+    <ol class="te-flow">${nodes.map((n) => `<li data-kind="${n.kind}"><span class="te-mark" aria-hidden="true">${n.mark}</span>
+      <span class="te-node-label">${n.label}</span><p class="te-node-text">${esc(n.text)}</p></li>`).join('')}</ol>
+    <div class="te-side">
+      <h4>Systems</h4>
+      <ul class="te-chips">${systems.map((s) => `<li class="te-chip ${HAVE.test(s) && !NEW.test(s) ? 'is-have' : 'is-new'}">${esc(s)}</li>`).join('')}</ul>
+      <p class="xs muted"><span class="te-chip is-have">teal</span> Noordhaven has it today · <span class="te-chip is-new">gold</span> to add</p>
+      <h4>Data needed</h4>
+      <ul class="te-plain">${(p.data_needed ?? []).map((d) => `<li>${esc(d)}</li>`).join('')}</ul>
+      <h4>Why this pattern</h4>
+      <p class="small">${esc(a.pattern_why)}</p>
+      <p class="small muted">${autoScale(a.autonomy_level)} · ${fmt(a.speedup, 2)}× faster · ${fmt(a.time_saved_pct)}% saved</p>
+    </div>
+  </div>`;
+}
+
+function wirePractice(list) {
+  const tabs = [...document.querySelectorAll('.te-tab')];
+  const select = (model, focus = false) => {
+    state.practiceModel = model;
+    tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.model === model)));
+    $('#practice-panel').innerHTML = practicePanel(list.find((x) => x.model === model).a);
+    if (focus) tabs.find((t) => t.dataset.model === model)?.focus();
+  };
+  tabs.forEach((t, i) => {
+    t.tabIndex = t.getAttribute('aria-selected') === 'true' ? 0 : -1;
+    t.addEventListener('click', () => { select(t.dataset.model); tabs.forEach((x) => { x.tabIndex = x === t ? 0 : -1; }); });
+    t.addEventListener('keydown', (e) => {
+      if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+      const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      tabs.forEach((x) => { x.tabIndex = x === next ? 0 : -1; });
+      select(next.dataset.model, true);
+    });
+  });
+}
+
+function todaySection(list) {
+  return `<section class="card te-section" id="today">
+    <span class="te-eyebrow">Rung 4 · the task today, as each model sees it</span>
+    <h3>Where the time goes now</h3>
+    <div class="te-anatomy">${list.map(({ model, a }) => {
+      const an = a.anatomy ?? {};
+      const total = SEGMENTS.reduce((s, k) => s + (an[k] ?? 0), 0) || 1;
+      return `${modelChip(model)}<div class="te-stack" role="img" aria-label="${esc(SEGMENTS.map((k) => `${k} ${an[k] ?? 0}%`).join(', '))}">${SEGMENTS.map((k) => `<span data-seg="${k}" style="width:${(an[k] ?? 0) / total * 100}%" title="${k} ${an[k] ?? 0}%"></span>`).join('')}</div>`;
+    }).join('')}</div>
+    <div class="te-legend">${SEGMENTS.map((k) => `<span data-seg="${k}">${k}</span>`).join('')}</div>
+    <div class="te-today" style="--cols:${list.length}">${list.map(({ model, a }) => {
+      const t = a.today ?? {};
+      return `<div class="te-today-card">${modelChip(model)}
+        <h4>Trigger</h4><p>${esc(t.trigger)}</p>
+        <h4>Steps</h4><ol>${(t.steps ?? []).map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
+        <h4>Drudgery</h4><ul>${(t.drudgery ?? []).map((s) => `<li>${esc(s)}</li>`).join('')}</ul>
+        <h4>Time sinks</h4><p>${esc(t.time_sinks)}</p>
+        <h4>Systems</h4><p>${esc((t.systems ?? []).join(', '))}</p></div>`;
+    }).join('')}</div>
+  </section>`;
+}
+
+function evidenceSection(list) {
+  return `<section class="card te-section" id="evidence">
+    <span class="te-eyebrow">Evidence grades</span>
+    <h3>What each claim rests on</h3>
+    <p class="small muted te-lede">${['E0', 'E1', 'E2', 'E3', 'E4'].map(gradeTag).join(' ')} imagined · model knowledge · a named product does this · a documented case · measured here. In-memory runs had no web access, so a product or case named here still needs checking (rung 5).</p>
+    <div class="te-today" style="--cols:${list.length}">${list.map(({ model, a }) => {
+      const ev = a.evidence ?? [];
+      const counts = {};
+      ev.forEach((e) => { counts[e.grade] = (counts[e.grade] ?? 0) + 1; });
+      return `<div class="te-today-card">${modelChip(model)}
+        <div class="te-gradecount" style="margin-top:8px">${Object.keys(counts).sort().map((g) => `${gradeTag(g)}<span class="xs muted">×${counts[g]}</span>`).join(' ') || '<span class="xs muted">no evidence given</span>'}</div>
+        <ul class="te-ev">${ev.map((e) => `<li>${gradeTag(e.grade)}<span>${esc(e.claim)}<span class="te-src">${esc(e.source)}</span></span></li>`).join('')}</ul></div>`;
+    }).join('')}</div>
+  </section>`;
+}
+
+function union(list, key) {
+  const seen = new Map();
+  for (const { model, a } of list) {
+    for (const item of a[key] ?? []) {
+      const norm = item.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+      if (!seen.has(norm)) seen.set(norm, { text: item, models: [] });
+      seen.get(norm).models.push(model);
+    }
+  }
+  return [...seen.values()];
+}
+
+function risksSection(list, c) {
+  const fromSynth = (xs) => xs.map((x) => (typeof x === 'string' ? { text: x, models: [] } : { text: x.text ?? x.question ?? '', models: [].concat(x.models ?? x.model ?? []) }));
+  const risks = Array.isArray(c.risks) && c.risks.length ? fromSynth(c.risks) : union(list, 'risks');
+  const questions = Array.isArray(c.questions) && c.questions.length
+    ? fromSynth(c.questions)
+    : union(list, 'research_questions');
+  const item = (x) => `<li>${esc(x.text)}${x.models.map((m) => modelChip(m)).join('')}</li>`;
+  return `<section class="card te-section" id="risks">
+    <span class="te-eyebrow">Rung 5 input · what would confirm or kill the idea</span>
+    <h3>Risks and research questions</h3>
+    <div class="te-two">
+      <div><h4 class="label">Risks (${risks.length})</h4><ul class="te-union">${risks.map(item).join('')}</ul></div>
+      <div><h4 class="label">Research questions (${questions.length})</h4><ul class="te-union">${questions.map(item).join('')}</ul></div>
+    </div>
+  </section>`;
+}
+
+/* ------------------------------------------------------------ main */
+
+async function render() {
+  if (!state.role || !state.roles.has(state.role) || state.roles.get(state.role).team !== state.team) {
+    const team = state.data.teams.find((t) => t.id === state.team);
+    const withAnswers = team.roles.find((r) => Object.values(state.runs[state.variant] ?? {}).some((fs) => fs.some((f) => f.role === r.id)));
+    state.role = (withAnswers ?? team.roles[0]).id;
+  }
+  if (!state.runs[state.variant]) state.variant = Object.keys(state.runs)[0] ?? 'inmemory';
+  renderMeta();
+  renderSidebar();
+  if (!state.loaded.has(`${state.variant}|${state.role}`)) $('#detail').innerHTML = '<p class="loading">Loading the answers for this role…</p>';
+  await Promise.all(Object.keys(state.runs).map((v) => loadRole(v, state.role)));
+  renderList();
+  if (state.task) renderTask(); else renderRole();
+}
+
+function wire() {
+  $('#team-mode').addEventListener('change', (e) => go({ team: e.target.value, role: null, task: null }));
+  $('#role').addEventListener('change', (e) => go({ role: e.target.value, task: null }));
+  $('#class-mode').addEventListener('change', (e) => { state.cls = e.target.value; renderList(); });
+  $('#q').addEventListener('input', (e) => { state.q = e.target.value; renderList(); });
+  document.addEventListener('click', async (e) => {
+    const a = e.target.closest('a[data-task]');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    await go({ task: a.dataset.task || null });
+    $('#detail-title')?.focus({ preventScroll: true });
+    if (matchMedia('(max-width: 960px)').matches) $('#detail').scrollIntoView({ block: 'start' });
+    else window.scrollTo({ top: 0 });
+  });
+  $('#refresh').addEventListener('click', async () => {
+    $('#refresh').textContent = 'Checking…';
+    state.loaded.clear(); state.answers.clear(); state.roleBlocks.clear();
+    state.runs = await discoverRuns();
+    await loadSynthesis();
+    ingestSynth();
+    await render();
+    $('#refresh').textContent = 'Check for new answers';
+  });
+  addEventListener('popstate', () => { readUrl(); render(); });
+}
+
+async function main() {
+  // teams.json and the folder listings load side by side; the guessing fallback waits for the roles.
+  state.ready = fetch('../data/teams.json').then((r) => r.json()).then((data) => {
+    state.data = data;
+    for (const team of data.teams) for (const r of team.roles) state.roles.set(r.id, { ...r, team: team.id });
+  });
+  try {
+    [, state.runs] = await Promise.all([state.ready, discoverRuns(), loadSynthesis()]);
+  } catch (error) {
+    $('#source-meta').innerHTML = `<span class="error">Could not load ../data/teams.json. Serve this folder from its root: python3 -m http.server 8790.</span>`;
+    throw error;
+  }
+  ingestSynth();
+  readUrl();
+  wire();
+  await render();
+  history.replaceState(null, '', href());
+}
+
+main();
+</script>
+</body>
+</html>

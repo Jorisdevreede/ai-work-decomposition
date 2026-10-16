@@ -1,0 +1,969 @@
+{
+ "tasks": [
+  {
+   "uid": "43-1011.00:9725",
+   "short": "Check office supply stocks and arrange replenishment within budget.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check cupboards and record quantities of frequently used supplies.",
+     "actor": "office supervisor",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "stock list"
+     ],
+     "outputs": [
+      "stock count"
+     ],
+     "handoff_to": "office supervisor",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check receipts and outstanding orders in the {PROCUREMENT}.",
+     "actor": "office supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "stock count",
+      "purchase order",
+      "goods receipt"
+     ],
+     "outputs": [
+      "stock position"
+     ],
+     "handoff_to": "office supervisor",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Calculate replenishment quantities and estimated costs in the {SPREADSHEET}.",
+     "actor": "office supervisor",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "stock position",
+      "reorder rules",
+      "supplier catalogue",
+      "budget balance"
+     ],
+     "outputs": [
+      "replenishment proposal"
+     ],
+     "handoff_to": "budget holder",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Review need and approve the purchase requisition in the {PROCUREMENT}.",
+     "actor": "budget holder",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "replenishment proposal",
+      "budget balance",
+      "approval limits"
+     ],
+     "outputs": [
+      "approved requisition"
+     ],
+     "handoff_to": "purchasing officer",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "budget holder"
+    },
+    {
+     "id": "s5",
+     "what": "Check supplier terms and release the purchase order through the {PROCUREMENT}.",
+     "actor": "purchasing officer",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "approved requisition",
+      "supplier catalogue",
+      "supplier terms"
+     ],
+     "outputs": [
+      "purchase order"
+     ],
+     "handoff_to": "external",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "purchasing officer"
+    }
+   ],
+   "design": "Configure stock counts, reorder rules and catalogue requisitions in the {PROCUREMENT}, including outstanding orders and budget checks. The budget holder approves the requisition, and the purchasing officer checks the prepared order before release.",
+   "previous_blocker": "Cupboard quantities were disconnected from purchase records. Small, irregular purchases did not justify a separate implementation.",
+   "enabler_now": "Existing purchasing configuration can handle thresholds and approvals. AI-assisted coding reduces the effort of small imports or missing connectors; no model is needed for quantities.",
+   "still_hard": "Unrecorded withdrawals, shared cupboards and supplier substitutions can make the stock position wrong.",
+   "human_edge": "Recognise unusual demand, challenge unnecessary purchases and choose acceptable substitutes.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly adjustment of reorder points for high-use support supplies"
+   },
+   "altitude": "The supervisor spends less time calculating orders and more time resolving shortages and checking demand changes. Existing budget and purchasing approval limits still determine decision rights.",
+   "reach": [
+    {
+     "role": "customer service representative",
+     "task": "Record withdrawals and flag supplies needed for customer correspondence.",
+     "learn": "Understand consumption patterns, stock units and the operational effect of shortages."
+    }
+   ],
+   "build_days": {
+    "coding": "0-3",
+    "integration": "2-5",
+    "testing_rollout": "3-5",
+    "consent_and_access": "2-6"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Stock thresholds, catalogue matching, arithmetic and purchasing approvals can use deterministic configuration.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Physical stock checks remain necessary where withdrawals are not recorded.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The scope is ordinary office and customer support supplies, rather than warehouse inventory.",
+    "The {PROCUREMENT} supports catalogues, requisitions and configurable approvals.",
+    "Time shares are estimates of combined participant effort, excluding waiting time.",
+    "Access estimates cover purchasing permissions and review of any personal data recorded."
+   ],
+   "unknowns": [
+    "Which stock records and purchasing features are available?",
+    "Who can approve requisitions and release orders?",
+    "Are withdrawals recorded, and who performs physical counts?",
+    "Would named withdrawal records trigger employee consultation under applicable national rules?"
+   ],
+   "research_questions": [
+    "Can existing stock and purchasing configuration replace the calculation workbook?",
+    "Which supplies need physical counting rather than a usage estimate?"
+   ],
+   "new_work": [
+    "Review low-stock exceptions and supplier substitutions.",
+    "Maintain pack sizes, reorder points and catalogue prices.",
+    "Reconcile physical counts with recorded receipts and withdrawals.",
+    "Check failed imports and approval routing."
+   ],
+   "time_saved_pct": 61,
+   "speedup": 2.56
+  },
+  {
+   "uid": "43-1011.00:9727",
+   "short": "Coordinate office services and changes while maintaining customer support coverage.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Agree service needs, constraints and acceptable disruption with affected teams.",
+     "actor": "office supervisor",
+     "today_means": "meeting_call",
+     "systems": [],
+     "inputs": [
+      "service request",
+      "coverage requirements",
+      "budget balance"
+     ],
+     "outputs": [
+      "service brief"
+     ],
+     "handoff_to": "office supervisor",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Prepare a service plan and responsibilities in the {DOCS}.",
+     "actor": "office supervisor",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "service brief",
+      "service checklist"
+     ],
+     "outputs": [
+      "service plan"
+     ],
+     "handoff_to": "office supervisor",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Request supplier quotations and clarify scope through the {EMAIL}.",
+     "actor": "office supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "service plan",
+      "approved supplier list"
+     ],
+     "outputs": [
+      "supplier quotation",
+      "scope clarification"
+     ],
+     "handoff_to": "budget holder",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 65,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "office supervisor"
+    },
+    {
+     "id": "s4",
+     "what": "Compare service trade-offs and approve supplier and scope.",
+     "actor": "budget holder",
+     "today_means": "meeting_call",
+     "systems": [],
+     "inputs": [
+      "supplier quotation",
+      "scope clarification",
+      "service plan",
+      "budget balance"
+     ],
+     "outputs": [
+      "approved service scope"
+     ],
+     "handoff_to": "purchasing officer",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "supplier-to-contract",
+     "approver": "budget holder"
+    },
+    {
+     "id": "s5",
+     "what": "Prepare and release the service purchase order in the {PROCUREMENT}.",
+     "actor": "purchasing officer",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "approved service scope",
+      "supplier quotation",
+      "supplier terms"
+     ],
+     "outputs": [
+      "purchase order"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "purchasing officer"
+    },
+    {
+     "id": "s6",
+     "what": "Coordinate access, timing and progress through the {EMAIL}.",
+     "actor": "office supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "purchase order",
+      "service plan",
+      "coverage requirements"
+     ],
+     "outputs": [
+      "service schedule",
+      "progress update"
+     ],
+     "handoff_to": "facilities coordinator",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "facilities-and-workplace",
+     "approver": "office supervisor"
+    },
+    {
+     "id": "s7",
+     "what": "Inspect completion with affected teams and accept or request corrections.",
+     "actor": "facilities coordinator",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "approved service scope",
+      "progress update",
+      "acceptance checklist"
+     ],
+     "outputs": [
+      "service acceptance",
+      "correction list"
+     ],
+     "handoff_to": "office supervisor",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "facilities-and-workplace",
+     "approver": "facilities coordinator"
+    }
+   ],
+   "design": "A structured brief in the {WORKFLOW} feeds a template generator for service plans in the {DOCS}, with tasks and dependencies in the {PROJECT}. Configure quotation reminders and purchasing handoffs through the {EMAIL} and {PROCUREMENT}; people approve commitments, access arrangements and completion.",
+   "previous_blocker": "Service changes are infrequent and varied. Plans, quotations and responsibilities are spread across documents and correspondence.",
+   "enabler_now": "Reusable service templates and existing task workflows cover much of the coordination. Small deterministic generators and connectors are cheaper to build with AI-assisted coding.",
+   "still_hard": "Relocations, security changes and asset disposal need different expertise. Suppliers and teams must negotiate disruption and access.",
+   "human_edge": "Balance service continuity, staff needs and supplier commitments when a standard checklist cannot settle the trade-off.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Move-readiness assessment for reception and telephone coverage"
+   },
+   "altitude": "The supervisor spends less time assembling plans and chasing routine updates. They can recommend disruption windows using clearer dependencies; authority over contracts, security and budgets remains with the designated roles.",
+   "reach": [
+    {
+     "role": "receptionist",
+     "task": "Plan visitor handling during office moves or service interruptions.",
+     "learn": "Map visitor routes, accessibility needs and temporary contact arrangements."
+    },
+    {
+     "role": "switchboard operator",
+     "task": "Prepare telephone coverage during office service changes.",
+     "learn": "Identify call-routing dependencies, fallback contacts and acceptable outage windows."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-7",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Structured intake, document templates, reminders and task dependencies can reduce coordination paperwork without a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Supplier selection, access decisions and physical acceptance still require accountable human judgement.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The supervisor coordinates routine office services and refers specialist decisions to facilities or security roles.",
+    "The estimate covers a small library of service types, rather than every office change.",
+    "Time shares cover participant effort, excluding supplier lead times.",
+    "Consent and access estimates include permissions and initial employee consultation where national rules apply; formal procedures can take longer."
+   ],
+   "unknowns": [
+    "Which services are delegated to the supervisor?",
+    "Which purchasing and facilities workflows already exist?",
+    "Which changes require facilities, security or employee representative approval?",
+    "Which supplier and site-access information may be shared externally?"
+   ],
+   "research_questions": [
+    "Which recurring service types share enough steps for one template?",
+    "Can task status and purchase order status be linked without duplicate entry?"
+   ],
+   "new_work": [
+    "Maintain service templates, dependencies and acceptance criteria.",
+    "Handle overdue tasks and disputed scope.",
+    "Review generated plans for local constraints.",
+    "Maintain supplier contacts and access permissions."
+   ],
+   "time_saved_pct": 31,
+   "speedup": 1.46
+  },
+  {
+   "uid": "43-1011.00:9728",
+   "short": "Arrange maintenance and repairs, coordinate access and confirm completion.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Inspect the reported issue and identify urgency or need for specialist assessment.",
+     "actor": "office supervisor",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "fault report",
+      "equipment details"
+     ],
+     "outputs": [
+      "maintenance brief"
+     ],
+     "handoff_to": "office supervisor",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Log the fault and equipment reference in the {HELPDESK}.",
+     "actor": "office supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "HELPDESK"
+     ],
+     "inputs": [
+      "maintenance brief",
+      "equipment details"
+     ],
+     "outputs": [
+      "maintenance ticket"
+     ],
+     "handoff_to": "office supervisor",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Request availability and a quotation from the responsible provider through the {EMAIL}.",
+     "actor": "office supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "maintenance ticket",
+      "service contract",
+      "approved supplier list"
+     ],
+     "outputs": [
+      "supplier quotation",
+      "service availability"
+     ],
+     "handoff_to": "budget holder",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "facilities-and-workplace",
+     "approver": "office supervisor"
+    },
+    {
+     "id": "s4",
+     "what": "Review repair cost and authorise the service order in the {PROCUREMENT}.",
+     "actor": "budget holder",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "supplier quotation",
+      "service contract",
+      "approval limits",
+      "maintenance ticket"
+     ],
+     "outputs": [
+      "approved service order"
+     ],
+     "handoff_to": "office supervisor",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "budget holder"
+    },
+    {
+     "id": "s5",
+     "what": "Book the provider by phone and agree access and service interruption.",
+     "actor": "office supervisor",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "approved service order",
+      "service availability",
+      "coverage requirements"
+     ],
+     "outputs": [
+      "service booking",
+      "access arrangement"
+     ],
+     "handoff_to": "external",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "facilities-and-workplace",
+     "approver": "office supervisor"
+    },
+    {
+     "id": "s6",
+     "what": "Check operation after repair and accept completion or request further work.",
+     "actor": "office supervisor",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "maintenance ticket",
+      "service report",
+      "acceptance checklist"
+     ],
+     "outputs": [
+      "service acceptance",
+      "correction list"
+     ],
+     "handoff_to": "facilities coordinator",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "facilities-and-workplace",
+     "approver": "office supervisor"
+    }
+   ],
+   "design": "Configure maintenance intake, equipment references, provider routing and reminders in the {HELPDESK}, with approved service orders linked from the {PROCUREMENT}. The {WORKFLOW} prepares requests and booking details using the {EMAIL} and {CALENDAR}; the supervisor handles physical assessment, commitments and acceptance.",
+   "previous_blocker": "Equipment details, contracts and booking conversations were separate. Occasional repairs did not justify a dedicated implementation.",
+   "enabler_now": "Existing ticket forms and routing rules cover the routine work. Small integrations can reuse equipment details and approved orders without a model.",
+   "still_hard": "A physical fault may need specialist diagnosis. Providers may only accept phone bookings, and access windows can conflict with customer support coverage.",
+   "human_edge": "Recognise urgency, involve qualified specialists and judge whether service has actually been restored.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Monthly repair-versus-replace review for equipment with recurring faults"
+   },
+   "altitude": "The supervisor spends less time copying details and chasing appointments, with more time for recurring faults and disruption planning. Repair spending and replacement decisions remain subject to existing approval limits.",
+   "reach": [
+    {
+     "role": "computer user support specialist",
+     "task": "Triage equipment faults and distinguish technical failures from facilities problems.",
+     "learn": "Understand support boundaries, useful diagnostic evidence and escalation criteria."
+    },
+    {
+     "role": "receptionist",
+     "task": "Arrange provider arrival and access.",
+     "learn": "Understand visitor procedures and what access details a provider actually needs."
+    }
+   ],
+   "build_days": {
+    "coding": "1-4",
+    "integration": "2-5",
+    "testing_rollout": "3-6",
+    "consent_and_access": "2-7"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Ticket configuration, provider routing, reminders and prepared requests can reduce maintenance administration.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Physical fault assessment, specialist diagnosis and acceptance limit automation of the complete task.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The {HELPDESK} accepts facilities tickets as well as other internal requests.",
+    "The supervisor arranges repairs and does not perform specialist repair work.",
+    "Urgent faults follow an existing escalation procedure rather than waiting for a routine quotation.",
+    "Access estimates include provider permissions and review of personal or site-access information."
+   ],
+   "unknowns": [
+    "Are equipment references, warranties and service contracts recorded?",
+    "Which providers support structured requests or booking links?",
+    "Which repairs need prior spending approval?",
+    "Which national rules or employee consultation requirements affect changes to site-access procedures?"
+   ],
+   "research_questions": [
+    "Can provider routing be determined from equipment category and service contract?",
+    "Which booking steps can existing provider channels support?",
+    "Can service acceptance update the ticket without entering the same details twice?"
+   ],
+   "new_work": [
+    "Maintain equipment references, provider routing and service contracts.",
+    "Handle failed requests and missed appointments.",
+    "Review recurring faults and incomplete repairs.",
+    "Check that restricted access details are removed when no longer needed."
+   ],
+   "time_saved_pct": 25,
+   "speedup": 1.33
+  },
+  {
+   "uid": "43-1011.00:9731",
+   "short": "Plan practical storage layouts for office supplies, records and support equipment.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Walk the storage area and measure shelving, routes and fixed obstructions.",
+     "actor": "office supervisor",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "storage request",
+      "existing layout"
+     ],
+     "outputs": [
+      "site measurements",
+      "site constraints"
+     ],
+     "handoff_to": "office supervisor",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compile item dimensions, weights and usage rates in the {SPREADSHEET}.",
+     "actor": "office supervisor",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "stock list",
+      "item specifications",
+      "usage history"
+     ],
+     "outputs": [
+      "storage profile"
+     ],
+     "handoff_to": "office supervisor",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Draw layout options in drawing software in the {OTHER}.",
+     "actor": "office supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "site measurements",
+      "site constraints",
+      "storage profile",
+      "layout rules"
+     ],
+     "outputs": [
+      "layout options"
+     ],
+     "handoff_to": "facilities coordinator",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Walk through options with users and approve a practical layout.",
+     "actor": "facilities coordinator",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "layout options",
+      "site constraints",
+      "layout rules"
+     ],
+     "outputs": [
+      "approved layout",
+      "layout corrections"
+     ],
+     "handoff_to": "office supervisor",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "facilities-and-workplace",
+     "approver": "facilities coordinator"
+    },
+    {
+     "id": "s5",
+     "what": "Publish the approved plan and storage labels in the {DOCS}.",
+     "actor": "office supervisor",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "approved layout",
+      "storage profile"
+     ],
+     "outputs": [
+      "storage plan",
+      "storage labels"
+     ],
+     "handoff_to": "facilities coordinator",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    }
+   ],
+   "design": "A small deterministic generator on the {DATA_PLATFORM} uses verified measurements, item profiles from the {SPREADSHEET} and explicit layout rules to produce scaled options in the {DOCS}. It checks encoded clearances and capacity limits, then produces plans and labels from the version approved after a physical walkthrough.",
+   "previous_blocker": "The task is infrequent, and dimensions and constraints are rarely ready for computation. A bespoke layout tool previously cost more than repeated manual drawing.",
+   "enabler_now": "AI-assisted coding makes a narrow drawing and constraint-checking generator affordable. Existing drawing software should be configured first if it already supports the required rules.",
+   "still_hard": "Measurements, shelf ratings and handling needs must be verified. Encoded checks cannot establish complete safety or practical usability.",
+   "human_edge": "Judge reach, handling effort, accessibility and whether people can use the proposed layout comfortably.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Occasional layout projects need less redrawing and labelling. The supervisor gains more options to discuss, while approval rights remain with the facilities role; the wider working week changes little.",
+   "reach": [
+    {
+     "role": "correspondence clerk",
+     "task": "Retrieve and replenish stationery and stored correspondence materials.",
+     "learn": "Observe retrieval frequency, item grouping and handling difficulties before choosing locations."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "1-4",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Verified geometry and explicit placement rules can support deterministic layout options, capacity checks and label generation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Physical validation is still needed for handling, accessibility and constraints missing from the data.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The scope is a small office storage area rather than industrial warehouse design.",
+    "The generator uses a limited set of shelving and item types.",
+    "Physical relocation is a separate service activity.",
+    "Consent and access estimates cover drawings, site access and initial consultation where national workplace rules apply."
+   ],
+   "unknowns": [
+    "Are accurate plans, item dimensions and shelf ratings available?",
+    "Does existing drawing software already provide suitable layout checks?",
+    "Who approves changes to routes, shelving and storage loads?",
+    "Which national rules and employee consultation requirements apply to the proposed physical changes?"
+   ],
+   "research_questions": [
+    "Can existing drawing configuration meet the need more cheaply than a custom generator?",
+    "Which constraints can be checked computationally, and which require site inspection?",
+    "Does the frequency of layout work justify maintaining a generator?"
+   ],
+   "new_work": [
+    "Verify measurements and item specifications before generation.",
+    "Maintain layout rules and shelving definitions.",
+    "Review options against actual handling conditions.",
+    "Keep approved plans and labels aligned with physical changes."
+   ],
+   "time_saved_pct": 32,
+   "speedup": 1.48
+  }
+ ],
+ "role": {
+  "altitude": "The supervisor spends less time calculating replenishment, preparing service paperwork and redrawing plans. More time goes to service continuity, physical checks and supplier exceptions; delegated spending and facilities authority determine any increase in decision rights.",
+  "reach": [
+   "Connect supply availability with customer service representatives' daily work.",
+   "Coordinate reception and telephone coverage during office changes.",
+   "Use technical support triage to route equipment faults correctly.",
+   "Observe correspondence clerks' retrieval work before changing storage layouts."
+  ],
+  "skills_to_grow": [
+   "Configure structured intake, approval routes and exception rules.",
+   "Read stock, purchasing and repair data critically.",
+   "Compare supplier scope, cost and service disruption.",
+   "Validate physical layouts and recognise when specialist advice is required.",
+   "Manage access and personal data under GDPR and applicable national rules."
+  ],
+  "ambitious_version": "Provide a small office service planning function that links supply availability, recurring equipment faults and planned disruptions to customer support coverage, with clear recommendations for existing budget and facilities decision-makers."
+ },
+ "job_code": "43-1011.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 163,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "text(await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":4000}));\n"
+  ],
+  "job": {
+   "code": "43-1011.00",
+   "title": "First-Line Supervisors of Office and Administrative Support Workers",
+   "tasks": 28,
+   "function": "Customer support"
+  }
+ }
+}

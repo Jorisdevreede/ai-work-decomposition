@@ -1,0 +1,851 @@
+{
+ "role_id": "people-analyst",
+ "role": {
+  "altitude": "The analyst stops rebuilding monthly packs and stitching exports, and owns the HR metric layer instead: definitions, the AFAS extract, the checks, who sees what, and the verified answers that managers and Copilot read from. They decide which metrics get published, at what minimum group size, and which data-quality breaks block a release.",
+  "reach": [
+   "HR Administrator: correcting AFAS records flagged by the nightly checks (missing end dates, open sick reports, wrong cost centres)",
+   "FP&A Analyst: sharing one headcount and FTE definition between the HR and finance Power BI models",
+   "Recruiter: reading pipeline-stage data from Recruitee for time to hire and offer acceptance by site",
+   "HR Business Partner: turning site-level 90-day retention and verzuim trends into questions for site managers"
+  ],
+  "skills_to_grow": [
+   "Semantic model design in Power BI/Fabric with row-level security and minimum group sizes",
+   "Version-controlled data pipelines (Python or Fabric notebooks, PBIP in git) built with AI coding tools",
+   "Writing and testing data-quality rules and reconciliation tests against AFAS payroll totals",
+   "GDPR Art. 9 and WOR 27 basics, enough to prepare a works-council consent request",
+   "Prompting and checking bounded model steps: narrative drafts and source summaries with checks on the figures"
+  ],
+  "ambitious_version": "A governed HR metric layer on Fabric that joins AFAS, Recruitee, Studytube and the three agency portals every night. Each site manager sees 90-day retention, verzuim rate, week-one onboarding and flex use for their own site, with a checked narrative, and can ask Copilot questions on verified answers. The analyst spends the time saved on the North Star question: why hires at Venlo leave before day 90 while Tilburg's stay."
+ },
+ "tasks": [
+  {
+   "uid": "15-2051.01:16136",
+   "short": "Track how HR's internal customers (site and team managers) use HR reports and where their hiring and flex demand is rising.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export Power BI usage, open vacancies and agency flex orders",
+     "actor": "people-analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "Power BI",
+      "Recruitee",
+      "Staffing agency portals"
+     ],
+     "inputs": [
+      "Power BI activity log",
+      "vacancy list",
+      "flex order export"
+     ],
+     "outputs": [
+      "raw demand exports"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Combine the exports per site and team in Excel",
+     "actor": "people-analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "raw demand exports",
+      "org unit list"
+     ],
+     "outputs": [
+      "team demand overview"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Spot teams with rising demand, long-open vacancies or unused reports",
+     "actor": "people-analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "team demand overview"
+     ],
+     "outputs": [
+      "demand signals"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Mail HRBPs and recruiters a short summary per site",
+     "actor": "people-analyst",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook"
+     ],
+     "inputs": [
+      "demand signals"
+     ],
+     "outputs": [
+      "site demand summary"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "notification",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "demand signals table for one site, with last month's values",
+      "output": "five-line plain summary per site in a Teams post",
+      "check": "every number in the text is matched against the table by code; mismatch blocks the post",
+      "stop": "two attempts, then the table is sent without text",
+      "why_not_simpler": "a fixed template cannot say which of several moving signals matters most this week"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Answer follow-up questions from HRBPs and managers",
+     "actor": "people-analyst",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "site demand summary"
+     ],
+     "outputs": [
+      "answers"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    }
+   ],
+   "design": "A scheduled Python job on Fabric pulls the Power BI activity log, Recruitee vacancies and agency flex orders nightly and joins them to AFAS org units. A Power BI demand dashboard flags thresholds (vacancy open over 30 days, flex hours up 20%) and a weekly Teams post with a checked short narrative goes to each HRBP. Report usage is shown per site or team, never per named manager.",
+   "previous_blocker": "The agency portals only gave CSV exports in three formats and the Power BI activity log needed admin scripting, so a weekly Excel merge was the cheapest route.",
+   "enabler_now": "AI coding makes the three portal parsers and the activity-log pull a few days of work, and Fabric gives a governed place to run them.",
+   "still_hard": "Agency portal exports change format without notice, and agreeing which demand signal counts as 'rising' with HRBPs takes several rounds.",
+   "human_edge": "Knowing that a spike in Venlo flex orders is a seasonal client contract and not a retention problem, and choosing which site to raise with the HR Director.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly instead of monthly decision per site on whether to open permanent vacancies or keep using flex workers"
+   },
+   "altitude": "The analyst checks one dashboard on Monday and spends the time on two or three sites that show a real change. They decide the thresholds and which signals reach HRBPs.",
+   "reach": [
+    {
+     "role": "recruiter",
+     "task": "Prioritising open vacancies",
+     "learn": "Which Recruitee pipeline stages stall per site, so demand signals match the recruiter's real workload"
+    },
+    {
+     "role": "hrbp",
+     "task": "Workforce planning talks with site managers",
+     "learn": "Which signal managers act on, so the weekly post carries fewer, better flags"
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "4-8",
+    "testing_rollout": "3-5",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Copilot in Power BI can summarise reports and answer questions on a semantic model on Fabric F2+ or Premium; it can misinterpret data without a prepared model",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Faster access to HR information does not by itself lead to better decisions",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "A tool able to observe behaviour or performance needs works-council consent; report usage logs per manager can qualify",
+     "grade": "E3",
+     "source": "[S11]"
+    },
+    {
+     "claim": "Power BI exposes an activity log through an admin API",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "'Customers' here means HR's internal customers: site and team managers, plus the three staffing agencies as suppliers",
+    "Noordhaven has or will buy Fabric F2+ or Power BI Premium capacity",
+    "Recruitee API access is included in the current subscription"
+   ],
+   "unknowns": [
+    "Whether the three agency portals offer an API or only file exports",
+    "Whether the OR already consented to Power BI usage logging",
+    "Who holds Power BI tenant admin rights today"
+   ],
+   "research_questions": [
+    "Do HRBPs change any staffing decision based on the current monthly overview, and which signal triggered it?",
+    "Can all three agency portals deliver flex orders in a machine-readable form at least weekly?",
+    "Will the OR accept usage reporting at team level with a minimum group of five?"
+   ],
+   "time_saved_pct": 83,
+   "speedup": 5.8
+  },
+  {
+   "uid": "15-2051.01:16144",
+   "short": "Design and build Power BI models, datasets and Excel tools on AFAS and other HR data for HR and managers.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather the need from HR Director or HRBP in a meeting",
+     "actor": "people-analyst",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "report request"
+     ],
+     "outputs": [
+      "report spec"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Design the data model and AFAS extract (GetConnectors, tables)",
+     "actor": "people-analyst",
+     "today_means": "document",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "report spec",
+      "AFAS data dictionary"
+     ],
+     "outputs": [
+      "data model design"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Build the semantic model, DAX measures and report pages",
+     "actor": "people-analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "Power BI"
+     ],
+     "inputs": [
+      "data model design"
+     ],
+     "outputs": [
+      "Power BI semantic model",
+      "HR dashboard"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Test figures against AFAS screens and payroll totals",
+     "actor": "people-analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "Power BI semantic model",
+      "payroll journal"
+     ],
+     "outputs": [
+      "reconciliation result"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 10,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Document measures, set row-level security and publish",
+     "actor": "people-analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "Power BI",
+      "SharePoint"
+     ],
+     "inputs": [
+      "Power BI semantic model"
+     ],
+     "outputs": [
+      "metric definitions",
+      "published report"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Move HR models to Power BI project files (PBIP) in git on Fabric, with the AFAS extract as a versioned Python or Dataflow job. The analyst writes specs and builds with AI coding tools and Copilot for DAX, automated tests reconcile headcount and FTE against AFAS payroll totals on every change, and a script generates the metric definitions page from the model.",
+   "previous_blocker": "Power BI files were binary and hand-built, so tests and documentation were manual, and one analyst had no time to write code around them.",
+   "enabler_now": "PBIP text formats plus AI coding let one person generate tests, DAX and documentation quickly; Copilot in Power BI writes DAX on a prepared model.",
+   "still_hard": "Agreeing definitions (what counts as a hire, a transfer, 90-day retention for flex-to-permanent) with HR and finance, and keeping special-category data out of models managers can open.",
+   "human_edge": "Translating a vague question from the HR Director into the right metric, and refusing measures that would expose individuals or absence causes.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A shared, documented HR metric layer that FP&A and HRBPs build their own reports on"
+   },
+   "altitude": "The analyst builds in days what took weeks and spends more time in the request conversation. They gain the right to set the official definition of each HR metric across HR and finance.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Headcount and personnel cost forecasting",
+     "learn": "How FP&A defines FTE and cost centres, so both models report the same headcount"
+    },
+    {
+     "role": "hr-admin",
+     "task": "Entering mutations in AFAS",
+     "learn": "Which AFAS fields are reliably filled, so the model does not depend on empty ones"
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "3-6",
+    "testing_rollout": "3-6",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Copilot in Power BI writes DAX and answers on a semantic model; non-English chat is not officially supported",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Text-to-SQL cut query writing from about 10 to 3 minutes at Uber, but hallucinated tables and columns remain",
+     "grade": "E3",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Personal data processing systems need works-council consent under WOR 27(1)(k)",
+     "grade": "E3",
+     "source": "[S11]"
+    },
+    {
+     "claim": "Power BI project files (PBIP) store models as text that can be kept in git",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "AFAS GetConnectors are available for the needed tables",
+    "Fabric capacity is available or can be bought",
+    "IT allows a git repository for HR models"
+   ],
+   "unknowns": [
+    "Current Power BI licence and capacity tier",
+    "Whether IT governs Fabric workspaces and who approves new ones",
+    "Whether an existing OR agreement covers the HR Power BI dashboards"
+   ],
+   "research_questions": [
+    "How many report requests per quarter are new metrics versus variants of existing ones?",
+    "Do automated reconciliations against payroll totals catch the errors managers complain about today?",
+    "Can the AFAS extract be rebuilt in the governed platform without breaking the nightly finance refresh?"
+   ],
+   "time_saved_pct": 60,
+   "speedup": 2.5
+  },
+  {
+   "uid": "11-3121.00:993",
+   "short": "Compile monthly HR statistics from AFAS: hires, transfers, appraisals and absence rates, and keep the records clean.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export employee, contract and absence data from AFAS",
+     "actor": "people-analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "AFAS extract"
+     ],
+     "outputs": [
+      "HR data export"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Check and correct data quality in Excel, chase HR admin",
+     "actor": "people-analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "Outlook"
+     ],
+     "inputs": [
+      "HR data export"
+     ],
+     "outputs": [
+      "data quality issues"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 10,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Calculate hires, transfers, appraisal completion, verzuim rate and frequency",
+     "actor": "people-analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "HR data export"
+     ],
+     "outputs": [
+      "HR statistics"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Build the monthly report pack in Excel and PowerPoint",
+     "actor": "people-analyst",
+     "today_means": "document",
+     "systems": [
+      "Excel",
+      "PowerPoint"
+     ],
+     "inputs": [
+      "HR statistics"
+     ],
+     "outputs": [
+      "monthly HR report"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 5,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Write commentary and send to HR Director and site management",
+     "actor": "people-analyst",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook"
+     ],
+     "inputs": [
+      "monthly HR report"
+     ],
+     "outputs": [
+      "report commentary"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "month's HR statistics per site with prior month and same month last year",
+      "output": "half-page commentary on movements over a set threshold",
+      "check": "code checks every figure and site name against the statistics table; no individual names or absence causes allowed",
+      "stop": "two drafts, then the analyst writes it",
+      "why_not_simpler": "choosing which of many movements to explain and phrasing it plainly varies each month"
+     },
+     "authority": "draft",
+     "human_gate": true
+    }
+   ],
+   "design": "The nightly AFAS extract feeds a Power BI semantic model with fixed measures for hires, transfers, appraisal completion and verzuim percentage and frequency per site (rates and durations only, minimum group of five). Deterministic checks run after each refresh and post missing end dates or open sick reports to the HR admin queue; a paginated report subscription replaces the Excel/PowerPoint pack, with a checked draft commentary the analyst edits.",
+   "previous_blocker": "The checks and calculations lived in the analyst's Excel workbooks, and the AFAS extract was built for finance, not for HR rules like Poortwachter timelines.",
+   "enabler_now": "AI coding makes it quick to turn the Excel logic into tested measures and check scripts; Power BI subscriptions and paginated reports are already in the licence.",
+   "still_hard": "Some records are wrong at source (late sick reports, missing transfer dates), so the HR admin must still correct them; appraisal data may not be in AFAS at all.",
+   "human_edge": "Explaining why verzuim rose at one site and deciding what the HR Director should hear, without exposing a small team or an individual case.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Verzuim and 90-day retention per site available and correct by working day 2 instead of mid-month"
+   },
+   "altitude": "The monthly pack goes from about two days of work to an hour of review. The analyst decides which data breaks block publication and owns the verzuim and retention definitions.",
+   "reach": [
+    {
+     "role": "hr-admin",
+     "task": "Registering absence and contract mutations in AFAS",
+     "learn": "Why records arrive late, so checks flag the cause, not just the gap"
+    },
+    {
+     "role": "payroll",
+     "task": "Month close of payroll",
+     "learn": "Payroll's cut-off dates, so the report reconciles to the same headcount"
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "3-5",
+    "testing_rollout": "4-6",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Absence data is health data under GDPR Art. 9",
+     "grade": "E3",
+     "source": "[S13]"
+    },
+    {
+     "claim": "The Dutch AP fined a firm partly for recording the cause of sick leave",
+     "grade": "E3",
+     "source": "[S14]"
+    },
+    {
+     "claim": "Personal data systems and tools able to observe performance need works-council consent",
+     "grade": "E3",
+     "source": "[S11]"
+    },
+    {
+     "claim": "Power BI supports report subscriptions and paginated reports",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Appraisal status is recorded in AFAS or can be exported",
+    "The current Excel logic for verzuim matches the CAO and Poortwachter definitions HR uses",
+    "HR admins accept a check queue in Teams or AFAS workflow"
+   ],
+   "unknowns": [
+    "Where performance appraisals are recorded today",
+    "Whether AFAS sick-report fields contain free-text causes that must be excluded",
+    "Which sites have teams under five people"
+   ],
+   "research_questions": [
+    "How many hours did the last three monthly packs take, and where did corrections happen?",
+    "Do the deterministic checks find the same issues the analyst finds by hand over two months in parallel?",
+    "Does the HR Director use the commentary, or only the figures?"
+   ],
+   "time_saved_pct": 91,
+   "speedup": 11.11
+  },
+  {
+   "uid": "15-2051.01:16141",
+   "short": "Follow labour-market, CAO and regional trends around Rotterdam, Tilburg and Venlo and write what they mean for HR strategy.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect labour market, CAO and agency news from public sources",
+     "actor": "people-analyst",
+     "today_means": "document",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "CBS and UWV figures",
+      "CAO news",
+      "sector reports"
+     ],
+     "outputs": [
+      "trend sources"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 10,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "new CAO texts, sector and agency publications fetched weekly",
+      "output": "one-line summaries with figure, date, region and source link",
+      "check": "each figure must appear verbatim in the source text; items without a link are dropped",
+      "stop": "one pass per document, maximum 30 documents a week; failures go to a list for the analyst",
+      "why_not_simpler": "CAO texts and sector reports are free text in varied formats; statistics with APIs are fetched without a model"
+     },
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Put the figures per region and job group in Excel",
+     "actor": "people-analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "trend sources"
+     ],
+     "outputs": [
+      "regional trend table"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Compare with own time to hire, wages and turnover per site",
+     "actor": "people-analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "Power BI",
+      "Recruitee"
+     ],
+     "inputs": [
+      "regional trend table",
+      "HR statistics"
+     ],
+     "outputs": [
+      "trend comparison"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Write a short strategy note with implications",
+     "actor": "people-analyst",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "PowerPoint"
+     ],
+     "inputs": [
+      "trend comparison"
+     ],
+     "outputs": [
+      "trend note"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "trend comparison and the week's source summaries",
+      "output": "one-page note with sources and stated caveats",
+      "check": "code verifies every figure against the tables and every claim has a source link; no causal claims without a source",
+      "stop": "two drafts, then the analyst writes it",
+      "why_not_simpler": "the note must link outside figures to Noordhaven's sites in prose"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Discuss implications with the HR Director and HRBPs",
+     "actor": "people-analyst",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "trend note"
+     ],
+     "outputs": [
+      "strategy actions"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    }
+   ],
+   "design": "A weekly Python job on the data platform fetches CBS StatLine and UWV open data for the three regions, and a bounded model step summarises new CAO texts and sector publications with links. A Power BI page sets these next to Noordhaven's own time to hire, offer acceptance and turnover per site, and a draft note with checked figures goes to the analyst for edit before the HR Director's meeting.",
+   "previous_blocker": "Sources were scattered PDFs, web pages and tables, and summarising them took hours, so it was done ad hoc before strategy meetings.",
+   "enabler_now": "Open statistics APIs plus a cheap model step that summarises free text with source checks make a weekly scan affordable.",
+   "still_hard": "Public data lags months and rarely matches Noordhaven's job groups; judging cause and effect stays with people, as trend reports themselves warn.",
+   "human_edge": "Judging whether a regional shortage of drivers or order pickers should change Noordhaven's pay, agency mix or hiring plan, and arguing it with the HR Director.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Site managers in Rotterdam, Tilburg and Venlo get a quarterly regional labour-market brief for their own site"
+   },
+   "altitude": "The analyst reads a weekly digest instead of searching, and spends the time on the implications. They gain a regular slot in HR strategy discussions instead of ad hoc requests.",
+   "reach": [
+    {
+     "role": "cnb",
+     "task": "Benchmarking pay against the CAO and the regional market",
+     "learn": "Which wage scales are hardest to fill at, so the scan watches those job groups"
+    },
+    {
+     "role": "recruiter",
+     "task": "Choosing channels and agencies per vacancy",
+     "learn": "Which regional signals show up first in Recruitee pipeline drop-off"
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "2-5",
+    "testing_rollout": "3-5",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Workday's own report says its data does not establish how much of a decline AI caused; trend reports need caveats",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "Faster access to information does not by itself lead to better decisions",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "CBS StatLine and UWV publish regional labour-market data that can be fetched by API or download",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Public sources are mostly Dutch; the model step reads Dutch text",
+    "The internal comparison uses only aggregated site data, so little new consent is needed"
+   ],
+   "unknowns": [
+    "Which external sources the HR Director trusts today",
+    "Whether paid sector reports (e.g. from the employers' association) may be processed by a model under their licence",
+    "How often strategy decisions use trend input today"
+   ],
+   "research_questions": [
+    "Over the last year, which strategy decisions used external trend data, and how late was it?",
+    "Do the weekly summaries match the source on a sample of 50 items checked by the analyst?",
+    "Do regional CBS/UWV job groups map well enough to Noordhaven's warehouse and transport roles?"
+   ],
+   "time_saved_pct": 69,
+   "speedup": 3.23
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 101,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

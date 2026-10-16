@@ -1,0 +1,410 @@
+{
+ "tasks": [
+  {
+   "uid": "43-3021.00:23239",
+   "short": "Check signatures and required details on the occasional cheque received for payment.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Inspect the cheque for required fields, signature presence and legibility.",
+     "actor": "billing clerk",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "cheque",
+      "cheque acceptance rules"
+     ],
+     "outputs": [
+      "cheque checklist"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Cheque image and required-field schema.",
+      "output": "Field values, image locations and missing-field flags; signature presence only.",
+      "check": "Validate dates, amount agreement and required fields; retain image references. Never infer signature authenticity.",
+      "stop": "One extraction and one retry for unreadable fields; unresolved fields go to the billing clerk.",
+      "why_not_simpler": "Handwriting and variable layouts require document reading. Use existing capture configuration if it passes local validation."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compare payee, amount and payment reference with the receivable and payment instructions.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "cheque checklist",
+      "receivable record",
+      "payment instructions"
+     ],
+     "outputs": [
+      "cheque comparison"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Assess signature concerns and alterations; decide whether to clear or query the cheque.",
+     "actor": "billing clerk",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "cheque",
+      "cheque checklist",
+      "cheque comparison",
+      "cheque acceptance rules"
+     ],
+     "outputs": [
+      "cheque disposition"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "billing clerk"
+    },
+    {
+     "id": "s4",
+     "what": "Record the disposition and route unresolved concerns to the finance team.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "cheque disposition"
+     ],
+     "outputs": [
+      "cheque verification record",
+      "cheque exception"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Store cheque images in the {DOCS}; bounded extraction prepares a checklist, and deterministic rules compare it with the {ERP}. The billing clerk approves the disposition before the {WORKFLOW} records it and routes exceptions; encourage bank transfers through existing payment instructions to reduce future cheque handling.",
+   "previous_blocker": "Cheques are uncommon in many European companies. Low volume, handwriting and limited access to authoritative signature records weaken the case for bespoke automation.",
+   "enabler_now": "Existing capture components and faster integration development can reduce transcription and comparison effort. They do not establish signature authenticity.",
+   "still_hard": "Recognising forgery, confirming signing authority and handling bank-specific acceptance requirements remain difficult. A short manual checklist may cost less at very low volume.",
+   "human_edge": "The clerk recognises suspicious context and obtains authoritative confirmation instead of treating a signature image as proof.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The clerk spends less time copying cheque details and more time resolving questionable payments. Existing acceptance and escalation rights remain unchanged.",
+   "reach": [
+    {
+     "role": "bill and account collector",
+     "task": "Coordinate replacement payment when a cheque cannot be accepted.",
+     "learn": "Learn debtor communication, dispute handling and the limits of collection authority."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "2-5",
+    "testing_rollout": "3-6",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS Profit supports deterministic bank-line matching using payment references, IBANs or invoice numbers; this does not verify cheque signatures.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Cheque field extraction needs local validation; signature presence must be separated from authenticity.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The proposed time shares, remaining effort and build ranges are planning estimates, not measured results.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This is a conditional workflow for companies that still receive cheques; many mid-size European companies rarely do.",
+    "Today's verification stops at an internal disposition; depositing the cheque and posting settlement are separate tasks.",
+    "The clerk has delegated authority for routine acceptance and escalates uncertainty under existing policy.",
+    "GDPR applies to cheque images and payer data. Apply EU AI Act obligations where relevant and assess employee consultation under national rules.",
+    "Build ranges assume one receivables integration, existing document storage and a small capture service."
+   ],
+   "unknowns": [
+    "Actual cheque volume, countries, currencies and bank acceptance requirements.",
+    "Whether cheque acceptance can be discontinued.",
+    "Available capture features, integration access and representative cheque samples.",
+    "Who may approve exceptions and whether authoritative signature records are available.",
+    "Retention requirements and applicable national consultation procedures."
+   ],
+   "research_questions": [
+    "Does existing capture software reliably read local cheque formats and flag uncertainty?",
+    "Which checks does the receiving bank perform, and which remain the company's responsibility?",
+    "Does cheque volume justify capture integration over a configured checklist?"
+   ],
+   "new_work": [
+    "Review extracted fields and every acceptance disposition.",
+    "Resolve unreadable fields, mismatches and signature concerns.",
+    "Maintain acceptance rules, access permissions and retention settings.",
+    "Sample extraction accuracy after format or capture changes."
+   ],
+   "time_saved_pct": 66,
+   "speedup": 2.96
+  },
+  {
+   "uid": "43-3021.00:23249",
+   "short": "Clear minor printer or scanner faults and report equipment problems requiring repair.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the equipment error and consult the printer or scanner fault guide.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "equipment error",
+      "fault guide"
+     ],
+     "outputs": [
+      "fault assessment"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Clear an accessible jam or perform another permitted minor repair.",
+     "actor": "billing clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "fault assessment",
+      "fault guide"
+     ],
+     "outputs": [
+      "repair attempt"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 45,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Test the equipment and decide whether normal billing work can resume.",
+     "actor": "billing clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "repair attempt",
+      "fault assessment"
+     ],
+     "outputs": [
+      "equipment test result"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Send unresolved fault details and business impact to repair personnel.",
+     "actor": "billing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "fault assessment",
+      "repair attempt",
+      "equipment test result"
+     ],
+     "outputs": [
+      "repair request"
+     ],
+     "handoff_to": "repair coordinator",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "facilities-and-workplace",
+     "approver": "billing clerk"
+    }
+   ],
+   "design": "Configure error-code lookup in the {HELPDESK}, linked to approved fault guides in the {DOCS}. The clerk performs permitted physical checks, then confirms a prefilled internal repair request that the {HELPDESK} routes to the repair coordinator.",
+   "previous_blocker": "Physical intervention cannot be automated through office software. Equipment guides and repair contacts are often separate from the billing workflow.",
+   "enabler_now": "Existing knowledge articles, asset forms and ticket routing can remove guide searching and repeated fault descriptions. No model loop is needed.",
+   "still_hard": "Jams, worn parts and intermittent faults require physical inspection. Older equipment may provide little usable diagnostic information.",
+   "human_edge": "The clerk judges whether a simple intervention is appropriate and whether the equipment actually works afterward.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Physical troubleshooting remains part of the clerk's week, with less searching and reporting. No additional repair or spending authority is gained.",
+   "reach": [
+    {
+     "role": "budget analyst",
+     "task": "Compare recurring equipment downtime with repair and replacement costs.",
+     "learn": "Learn to measure downtime, distinguish repair costs from disruption costs and compare replacement options."
+    }
+   ],
+   "build_days": {
+    "coding": "0-1",
+    "integration": "0-2",
+    "testing_rollout": "1-3",
+    "consent_and_access": "1-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Configured knowledge articles, asset forms and routing can reduce fault-reporting effort; physical jam clearance remains manual.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The digest supplies no documented equipment-repair automation case for billing clerks.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The proposed time shares, remaining effort and build ranges are planning estimates, not measured results.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The equipment is an office printer or scanner, represented by {OTHER}, rather than specialist machinery.",
+    "Time shares describe a fault requiring escalation; successful minor repairs end after the equipment test.",
+    "A usable {HELPDESK} and approved fault guides already exist; direct diagnostic telemetry is unnecessary.",
+    "The repair request goes to an internal coordinator; authorising external repairs remains a separate action.",
+    "GDPR applies to named ticket records. Assess employee consultation under national rules if new logging changes staff monitoring; no model is proposed."
+   ],
+   "unknowns": [
+    "Equipment types, fault frequency and permitted clerk interventions.",
+    "Availability and quality of fault guides and asset records.",
+    "Existing {HELPDESK} access and repair routing arrangements.",
+    "Whether ticket logging changes employee-data practices or requires consultation under national rules."
+   ],
+   "research_questions": [
+    "Can existing {HELPDESK} configuration provide error-code lookup and prefilled repair forms?",
+    "Which recurring faults should bypass clerk troubleshooting and go directly to repair personnel?"
+   ],
+   "new_work": [
+    "Keep equipment guides, asset details and repair routing current.",
+    "Confirm fault descriptions and test results before submitting repair requests.",
+    "Review recurring faults with the repair coordinator."
+   ],
+   "time_saved_pct": 26,
+   "speedup": 1.34
+  }
+ ],
+ "role": {
+  "altitude": "For these two supplemental tasks, the clerk gains time from document preparation and fault reporting. Payment acceptance judgement and physical equipment work remain human responsibilities, with existing decision rights unchanged.",
+  "reach": [
+   "Support bill and account collectors with clear replacement-payment cases.",
+   "Help budget analysts assess recurring equipment disruption."
+  ],
+  "skills_to_grow": [
+   "Review document extraction against original evidence.",
+   "Handle payment exceptions and recognise limits of signature verification.",
+   "Use structured equipment diagnostics and repair requests.",
+   "Measure exception volumes and downtime before proposing further automation."
+  ],
+  "ambitious_version": "Help the finance manager assess whether retiring cheque acceptance and reducing paper-dependent billing would remove more work than further automating these small tasks."
+ },
+ "job_code": "43-3021.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 80,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r=await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":2500});text(r.output)\n"
+  ],
+  "job": {
+   "code": "43-3021.00",
+   "title": "Billing and Posting Clerks",
+   "tasks": 26,
+   "function": "Finance"
+  }
+ }
+}

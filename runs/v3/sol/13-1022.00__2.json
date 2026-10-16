@@ -1,0 +1,1185 @@
+{
+ "tasks": [
+  {
+   "uid": "13-1022.00:20710",
+   "short": "Choose merchandise, agree buying quantities and place orders within approved budgets.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Review sales, stock, outstanding orders and available buying budget.",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "OPS_SYSTEM",
+      "BI"
+     ],
+     "inputs": [
+      "sales records",
+      "stock records",
+      "purchase orders",
+      "buying budget"
+     ],
+     "outputs": [
+      "buying needs"
+     ],
+     "handoff_to": "none",
+     "share_pct": 18,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compare supplier quotes, delivery dates, minimum quantities and commercial terms.",
+     "actor": "buyer",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "buying needs",
+      "supplier quotes",
+      "supplier contracts"
+     ],
+     "outputs": [
+      "quote comparison"
+     ],
+     "handoff_to": "none",
+     "share_pct": 17,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Supplier quotes and contract passages for the shortlisted merchandise.",
+      "output": "Source-linked prices, units, minimum quantities, lead times and terms.",
+      "check": "Validate currencies, units and arithmetic; flag missing terms; buyer checks consequential fields against sources.",
+      "stop": "One extraction and one repair attempt per quote; unresolved fields return to the buyer.",
+      "why_not_simpler": "Supplier documents express terms in inconsistent tables and free text; calculations remain deterministic."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "buyer"
+    },
+    {
+     "id": "s3",
+     "what": "Choose products, suppliers and quantities against margin, demand and assortment priorities.",
+     "actor": "buyer",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "buying needs",
+      "quote comparison",
+      "assortment plan"
+     ],
+     "outputs": [
+      "buying decision"
+     ],
+     "handoff_to": "procurement clerk",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Create a purchase order from the buying decision and agreed supplier terms.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "buying decision",
+      "supplier contracts",
+      "supplier records"
+     ],
+     "outputs": [
+      "draft purchase order"
+     ],
+     "handoff_to": "purchasing manager",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve the purchase commitment under delegated spending limits.",
+     "actor": "purchasing manager",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "draft purchase order",
+      "buying budget",
+      "approval policy"
+     ],
+     "outputs": [
+      "approved purchase order"
+     ],
+     "handoff_to": "procurement clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "purchasing manager"
+    },
+    {
+     "id": "s6",
+     "what": "Send the approved purchase order to the supplier.",
+     "actor": "procurement clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "approved purchase order"
+     ],
+     "outputs": [
+      "issued purchase order"
+     ],
+     "handoff_to": "external",
+     "share_pct": 8,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "purchasing manager"
+    },
+    {
+     "id": "s7",
+     "what": "Record the supplier confirmation and resolve changed quantities or dates.",
+     "actor": "buyer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "issued purchase order",
+      "supplier confirmation"
+     ],
+     "outputs": [
+      "confirmed purchase order",
+      "order exceptions"
+     ],
+     "handoff_to": "warehouse team",
+     "share_pct": 7,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "integration",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Supplier confirmation and the issued purchase order.",
+      "output": "Proposed confirmation fields and differences from the order.",
+      "check": "Match supplier and order identifiers; compare quantities, dates and prices; buyer approves changes.",
+      "stop": "One extraction and one repair attempt; ambiguous confirmations enter the exception queue.",
+      "why_not_simpler": "Email confirmations contain free text; structured portal confirmations use direct field mapping."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "buyer"
+    }
+   ],
+   "design": "A reusable dashboard on the {DATA_PLATFORM} combines {ERP} sales, {OPS_SYSTEM} stock and {PROCUREMENT} commitments into buying scenarios. Bounded extraction turns documents in {DOCS} and confirmations in {EMAIL} into checked fields; configured {PROCUREMENT} flows create and issue orders after recorded approval. Changes to an approved order invalidate its approval before another external commitment.",
+   "previous_blocker": "Sales, stock and supplier terms sit in different places. Assortment choices depend on commercial judgement, while connecting the supporting records required bespoke work.",
+   "enabler_now": "Existing approval features and accessible exports can handle much of the process. AI-assisted coding reduces connector and scenario-tool development effort; bounded extraction handles variable documents.",
+   "still_hard": "New-product demand, substitutes, supplier reliability and changing tastes remain uncertain. Incorrect units or stale stock can make a plausible buying scenario wrong.",
+   "human_edge": "The buyer balances customer appeal, downside risk and supplier trust when historical sales do not settle the choice.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Twice-weekly assortment reallocation between fast-selling and slow-selling merchandise."
+   },
+   "altitude": "The week shifts from assembling comparisons to reviewing assortment risks and testing smaller buying commitments. Spending authority remains unchanged; a wider trial budget needs explicit delegation.",
+   "reach": [
+    {
+     "role": "purchasing manager",
+     "task": "Recommend category budget reallocations.",
+     "learn": "Open-to-buy planning, working-capital exposure and portfolio margin."
+    },
+    {
+     "role": "procurement clerk",
+     "task": "Improve order confirmation exception handling.",
+     "learn": "Item identifiers, unit conversions and purchase-order amendment controls."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "5-12",
+    "testing_rollout": "5-8",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Sales, stock, budget and order comparisons can use deterministic calculations and dashboards.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Pactum supports procurement policy checks and negotiation within Coupa; this demonstrates adjacent procurement capability.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "The vendor-reported SUEZ case describes reduced requisition review work; it does not establish retail buying savings.",
+     "grade": "E3",
+     "source": "[S5]"
+    }
+   ],
+   "assumptions": [
+    "Step shares and remaining time are planning estimates, not measured savings.",
+    "Structured sales and stock support the input prior; judgement remains central to product selection.",
+    "The mailbox share reflects order issuance and confirmations, not every supplier interaction.",
+    "Existing approval configuration is reused where available; recorded approval covers issuance without a second approval.",
+    "Build ranges describe a limited category pilot and can share connectors with the other tasks.",
+    "GDPR applies to supplier contacts and EU AI Act applicability depends on intended use. National rules govern any employee consultation; the design does not require employee monitoring."
+   ],
+   "unknowns": [
+    "Available connectors, export rights and item identifiers across the customer's systems.",
+    "Actual purchasing approval limits and who may amend an approved order.",
+    "Share of quotes and confirmations received as structured records.",
+    "Sales, stock and outstanding-order data quality and freshness.",
+    "Applicable national consultation requirements and employee representative arrangements."
+   ],
+   "research_questions": [
+    "Which standard purchasing interfaces support order amendments and approval invalidation?",
+    "Which extraction checks best detect unit and currency mistakes in supplier quotes?"
+   ],
+   "new_work": [
+    "Review extracted commercial terms and changed confirmations.",
+    "Investigate stock, identifier and unit-conversion exceptions.",
+    "Maintain connectors, comparison rules and approval routing.",
+    "Compare buying scenarios with actual sell-through and margin."
+   ],
+   "time_saved_pct": 66,
+   "speedup": 2.98
+  },
+  {
+   "uid": "13-1022.00:20715",
+   "short": "Work with suppliers to source or develop products that meet commercial and quality requirements.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Prepare product requirements from assortment gaps, customer needs and target costs.",
+     "actor": "buyer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "assortment plan",
+      "sales records",
+      "customer feedback",
+      "quality requirements"
+     ],
+     "outputs": [
+      "product brief"
+     ],
+     "handoff_to": "none",
+     "share_pct": 12,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Approved assortment goals, customer feedback and quality requirements.",
+      "output": "A product brief with sourced requirements and explicit open questions.",
+      "check": "Use a fixed brief schema; verify target costs and required fields; buyer approves the brief.",
+      "stop": "One draft and one revision; unsupported requirements remain blank for the buyer.",
+      "why_not_simpler": "Customer feedback and assortment intentions need synthesis; fixed fields and calculations use templates."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "start",
+     "workflow": "supplier-to-contract",
+     "approver": "buyer"
+    },
+    {
+     "id": "s2",
+     "what": "Send the brief and request proposals, samples and feasibility information.",
+     "actor": "buyer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "product brief",
+      "supplier shortlist"
+     ],
+     "outputs": [
+      "supplier request"
+     ],
+     "handoff_to": "external",
+     "share_pct": 8,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "buyer"
+    },
+    {
+     "id": "s3",
+     "what": "Provide proposals, technical details and product samples.",
+     "actor": "external",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "supplier request"
+     ],
+     "outputs": [
+      "supplier proposal",
+      "product sample",
+      "technical specification"
+     ],
+     "handoff_to": "buyer",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Assess samples for quality, usability, presentation and fit with the assortment.",
+     "actor": "buyer",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "product sample",
+      "product brief",
+      "technical specification"
+     ],
+     "outputs": [
+      "sample assessment"
+     ],
+     "handoff_to": "quality specialist",
+     "share_pct": 22,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Discuss product changes, feasibility, price and delivery trade-offs with the supplier.",
+     "actor": "buyer",
+     "today_means": "meeting_call",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "sample assessment",
+      "supplier proposal",
+      "quality requirements"
+     ],
+     "outputs": [
+      "development agreement",
+      "meeting notes"
+     ],
+     "handoff_to": "none",
+     "share_pct": 28,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Confirm the revised specification and agreed acceptance conditions.",
+     "actor": "buyer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "development agreement",
+      "meeting notes",
+      "technical specification",
+      "sample assessment"
+     ],
+     "outputs": [
+      "approved product specification"
+     ],
+     "handoff_to": "external",
+     "share_pct": 12,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Existing specification, buyer-written notes and agreed development changes.",
+      "output": "A revised specification with a source-linked change list.",
+      "check": "Buyer checks every changed requirement; unresolved quality questions go to the quality specialist.",
+      "stop": "One draft and one revision; conflicting notes prevent approval and return to the buyer.",
+      "why_not_simpler": "Negotiated changes arrive in free text; document versioning and unchanged fields remain deterministic."
+     },
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "supplier-to-contract",
+     "approver": "buyer"
+    },
+    {
+     "id": "s7",
+     "what": "Track agreed sample revisions, tests and delivery milestones.",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "PROJECT"
+     ],
+     "inputs": [
+      "approved product specification",
+      "development agreement"
+     ],
+     "outputs": [
+      "development tracker",
+      "milestone reminders"
+     ],
+     "handoff_to": "quality specialist",
+     "share_pct": 8,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    }
+   ],
+   "design": "A product-development record in {PROJECT} links briefs, sample assessments and versioned specifications in {DOCS}. Bounded drafting prepares briefs and specification changes, while configured {WORKFLOW} routes approved requests through {EMAIL} and tracks milestones. Physical assessment and supplier discussions stay with the buyer and relevant specialists.",
+   "previous_blocker": "Requirements and agreements are scattered across documents and conversations. Supplier development also depends on physical samples and trust, which software cannot settle.",
+   "enabler_now": "Templates, version control and milestone workflows already exist. Bounded drafting can turn approved notes into consistent documents, and AI-assisted coding makes the connecting records easier to build.",
+   "still_hard": "Samples may differ from production batches. Testing, intellectual property, safety requirements and supplier capability need specialist judgement and contractual clarity.",
+   "human_edge": "The buyer notices product appeal and negotiates feasible compromises without weakening essential quality requirements.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A supplier product-development brief and sample-review service for small suppliers."
+   },
+   "altitude": "The buyer spends more time assessing samples and resolving design trade-offs, with less document chasing. Decision rights remain unchanged; formal product release still follows existing quality and commercial authority.",
+   "reach": [
+    {
+     "role": "purchasing agent",
+     "task": "Translate development agreements into supplier acceptance requirements.",
+     "learn": "Specification control, acceptance criteria and contractual remedies."
+    },
+    {
+     "role": "purchasing manager",
+     "task": "Recommend which supplier development projects should receive funding.",
+     "learn": "Development portfolio assessment and supplier capability evaluation."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "2-6",
+    "testing_rollout": "4-7",
+    "consent_and_access": "2-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Records, document versions and milestone reminders can support supplier product development deterministically.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Bounded drafting can prepare briefs and specification changes from approved sources, subject to human review.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The documented Australian report failure illustrates why generated document claims require source checks.",
+     "grade": "E3",
+     "source": "[S27]"
+    }
+   ],
+   "assumptions": [
+    "Step shares and remaining time are planning estimates; they exclude waiting for samples and laboratory tests.",
+    "Supplier contribution is shown to preserve the handoff; its effort is not counted as buyer time saved.",
+    "The people-and-judgement prior fits sample assessment and supplier discussion; preparation and paperwork can still change.",
+    "Buyer-written notes are sufficient; recording conversations is not required.",
+    "The buyer approves external requests and revised specifications; specialist release requirements remain separate.",
+    "GDPR applies to contact details. EU AI Act applicability and any consultation under national rules must be checked for the deployed use."
+   ],
+   "unknowns": [
+    "Which products require specialist testing or formal release approval.",
+    "Who may approve specification changes and make supplier commitments.",
+    "Supplier access to shared records and restrictions on confidential designs.",
+    "Existing document templates, version controls and project workflows.",
+    "Applicable national consultation requirements."
+   ],
+   "research_questions": [
+    "Which document comparison methods reliably expose changed numeric product requirements?",
+    "Which standard product-development fields transfer well between supplier categories?"
+   ],
+   "new_work": [
+    "Review drafted requirements and specification changes.",
+    "Maintain brief templates and acceptance checklists.",
+    "Resolve conflicting notes and overdue supplier milestones.",
+    "Manage document permissions and supplier access."
+   ],
+   "time_saved_pct": 30,
+   "speedup": 1.43
+  },
+  {
+   "uid": "13-1022.00:68",
+   "short": "Check merchandise invoices and approve payment or returns under agreed terms.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Register the supplier invoice and route it to the responsible buyer.",
+     "actor": "finance team",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "supplier invoice",
+      "supplier records"
+     ],
+     "outputs": [
+      "registered invoice"
+     ],
+     "handoff_to": "buyer",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Retrieve the purchase order, goods receipt and relevant contract terms.",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT",
+      "OPS_SYSTEM",
+      "DOCS"
+     ],
+     "inputs": [
+      "registered invoice",
+      "purchase orders",
+      "goods receipts",
+      "supplier contracts"
+     ],
+     "outputs": [
+      "invoice evidence pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Compare invoiced prices and quantities with orders, receipts and agreed allowances.",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "invoice evidence pack",
+      "matching policy"
+     ],
+     "outputs": [
+      "invoice match result"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Resolve price, receipt or quality discrepancies with suppliers and warehouse staff.",
+     "actor": "buyer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "invoice match result",
+      "quality report",
+      "supplier contracts"
+     ],
+     "outputs": [
+      "discrepancy resolution",
+      "return proposal"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve invoice payment or merchandise return within delegated authority.",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "invoice match result",
+      "discrepancy resolution",
+      "return proposal",
+      "approval policy"
+     ],
+     "outputs": [
+      "payment authorization",
+      "return authorization"
+     ],
+     "handoff_to": "procurement clerk",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "buyer"
+    },
+    {
+     "id": "s6",
+     "what": "Record payment authorization and notify the finance team.",
+     "actor": "procurement clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "payment authorization"
+     ],
+     "outputs": [
+      "payment status notice"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 4,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Send the approved return request and instructions to the supplier and warehouse.",
+     "actor": "procurement clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "return authorization",
+      "return proposal"
+     ],
+     "outputs": [
+      "return request"
+     ],
+     "handoff_to": "warehouse team",
+     "share_pct": 6,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "buyer"
+    }
+   ],
+   "design": "Configured matching in the {ERP} checks invoices against {PROCUREMENT} orders and {OPS_SYSTEM} receipts, with a linked evidence pack from {DOCS}. A configured approval flow presents exceptions to the buyer, records payment or return authorization and sends approved notices through {EMAIL}. Finance retains its separate payment-release control, and approval changes invalidate pending notices.",
+   "previous_blocker": "Matching features often cover clean invoices, but missing receipts and scattered quality evidence force manual investigation. Payment and return authority also need explicit separation from data preparation.",
+   "enabler_now": "Existing matching and approval configuration can handle routine cases. Faster connector development can bring receipt and quality evidence into the same view without adding a model.",
+   "still_hard": "Partial deliveries, rebates, damaged goods and disputed acceptance require judgement. Supplier credits and physical returns may remain unresolved after the initial authorization.",
+   "human_edge": "The buyer decides whether a discrepancy warrants payment, a negotiated adjustment or a return while protecting the supplier relationship.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A weekly supplier discrepancy review that identifies recurring shortages and invoice errors."
+   },
+   "altitude": "The buyer reviews evidence-backed exceptions and recurring supplier problems instead of retrieving routine records. Payment-release rights remain with finance; no new financial authority is assumed.",
+   "reach": [
+    {
+     "role": "procurement clerk",
+     "task": "Track return requests through receipt of supplier credits.",
+     "learn": "Credit-note matching, return identifiers and unresolved-balance reporting."
+    },
+    {
+     "role": "purchasing manager",
+     "task": "Recommend corrective action for suppliers with recurring discrepancies.",
+     "learn": "Supplier performance measures, dispute patterns and escalation thresholds."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "4-9",
+    "testing_rollout": "5-9",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Invoice-to-order-to-receipt matching and approval routing are established finance-system capabilities.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Transporeon checks freight invoices against agreed rates; this supports rate-checking capability, not merchandise-return decisions.",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "Pactum's documented SUEZ case concerns requisition review, so its reported savings are not an invoice-authorization forecast.",
+     "grade": "E3",
+     "source": "[S5]"
+    }
+   ],
+   "assumptions": [
+    "Step shares describe effort across a mixed queue; payment and return notices are alternative branches.",
+    "Remaining time estimates exclude later bank release, physical shipping and credit settlement.",
+    "Existing invoice intake supports structured invoices or validated document capture; unsupported files enter an exception queue.",
+    "The judgement prior fits disputes, but routine matching and routing have greater rule coverage.",
+    "Supplier bank details cannot be changed through this workflow.",
+    "GDPR applies to personal data in invoices and contacts. EU AI Act obligations depend on actual AI use; this proposed flow is deterministic.",
+    "Access estimates include national consultation review where required, without assuming employee monitoring."
+   ],
+   "unknowns": [
+    "Invoice formats and existing intake, matching and approval capabilities.",
+    "Customer matching tolerances, rebate treatment and partial-delivery rules.",
+    "Who can authorize payment, returns and supplier credits.",
+    "Receipt completeness and availability of quality evidence.",
+    "Separation of buyer authorization from finance payment release.",
+    "Applicable access and national consultation requirements."
+   ],
+   "research_questions": [
+    "Which standard interfaces expose partial receipts and credit-note links consistently?",
+    "Which matching configurations support quantity discrepancies without concealing unresolved quality disputes?"
+   ],
+   "new_work": [
+    "Handle failed matches and missing receipts.",
+    "Maintain tolerances, approval limits and routing.",
+    "Review recurring discrepancy reports.",
+    "Monitor duplicate invoices, connector failures and unresolved supplier credits."
+   ],
+   "time_saved_pct": 68,
+   "speedup": 3.17
+  },
+  {
+   "uid": "13-1022.00:72",
+   "short": "Agree buying priorities and budgets with store or merchandise managers.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather store sales, stock, commitments and remaining buying budget.",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "OPS_SYSTEM",
+      "BI"
+     ],
+     "inputs": [
+      "sales records",
+      "stock records",
+      "purchase orders",
+      "buying budget"
+     ],
+     "outputs": [
+      "store buying summary"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read managers' requests and collect local demand concerns.",
+     "actor": "buyer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CHAT"
+     ],
+     "inputs": [
+      "store requests",
+      "customer feedback",
+      "store buying summary"
+     ],
+     "outputs": [
+      "consultation brief"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Selected store requests and customer feedback, with the store buying summary.",
+      "output": "Source-linked requests grouped by product, store, urgency and unresolved question.",
+      "check": "Preserve each request and its source; flag conflicting requests; buyer checks priorities and omissions.",
+      "stop": "One classification and one repair attempt; ambiguous requests stay open for discussion.",
+      "why_not_simpler": "Managers express local needs in free text; structured request forms use deterministic grouping."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "plan-to-forecast",
+     "approver": "buyer"
+    },
+    {
+     "id": "s3",
+     "what": "Prepare buying options showing margin, stock coverage and budget effects.",
+     "actor": "buyer",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "consultation brief",
+      "store buying summary",
+      "quote comparison"
+     ],
+     "outputs": [
+      "buying scenarios"
+     ],
+     "handoff_to": "store manager",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Discuss local demand, operational constraints and competing buying priorities.",
+     "actor": "buyer",
+     "today_means": "meeting_call",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "consultation brief",
+      "buying scenarios"
+     ],
+     "outputs": [
+      "consultation notes"
+     ],
+     "handoff_to": "merchandise manager",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Agree budget allocations and which purchases should proceed.",
+     "actor": "merchandise manager",
+     "today_means": "meeting_call",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "consultation notes",
+      "buying scenarios",
+      "buying budget"
+     ],
+     "outputs": [
+      "approved buying priorities"
+     ],
+     "handoff_to": "buyer",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "plan-to-forecast",
+     "approver": "merchandise manager"
+    },
+    {
+     "id": "s6",
+     "what": "Record agreed priorities, update buying plans and assign follow-up actions.",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "PROJECT",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "approved buying priorities"
+     ],
+     "outputs": [
+      "assortment plan",
+      "buying actions"
+     ],
+     "handoff_to": "procurement clerk",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    }
+   ],
+   "design": "A shared {BI} view combines {ERP} budgets and sales with {OPS_SYSTEM} stock and {PROCUREMENT} commitments. A bounded loop groups selected requests from {EMAIL} and {CHAT}, while deterministic scenarios show the consequences of each option. Managers agree allocations in conversation, then configured {WORKFLOW} updates {PROJECT} actions and the buying plan.",
+   "previous_blocker": "Store context arrives separately from financial and stock data. Spreadsheet scenarios take preparation, while final priorities depend on local knowledge and competing goals.",
+   "enabler_now": "Shared datasets and reusable scenario calculations can remove repeated preparation. Bounded classification can organize free-text requests without deciding which store should receive budget.",
+   "still_hard": "Local demand signals may conflict with historical sales. Managers must negotiate scarce stock, budget and operational capacity, and forecasts remain uncertain.",
+   "human_edge": "The buyer draws out local knowledge and builds agreement on trade-offs that store-level numbers cannot resolve.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "A monthly store-specific buying review for small stores without a dedicated merchandise planner."
+   },
+   "altitude": "The buyer enters discussions with current scenarios and spends more time testing managers' assumptions. Budget approval stays with the merchandise manager; the buyer gains capacity to prepare store-specific proposals.",
+   "reach": [
+    {
+     "role": "purchasing manager",
+     "task": "Prepare cross-store allocation recommendations.",
+     "learn": "Budget governance, scenario analysis and facilitation of competing priorities."
+    },
+    {
+     "role": "purchasing agent",
+     "task": "Check supplier feasibility for proposed store buying plans.",
+     "learn": "Minimum-order quantities, lead-time constraints and consolidated ordering."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-8",
+    "testing_rollout": "4-7",
+    "consent_and_access": "2-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Budget, stock coverage and margin scenarios can be calculated deterministically from governed records.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "A bounded classification loop can organize requests while leaving prioritization and budget agreement to people.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Step shares and remaining time are estimates; meeting duration varies with the decision.",
+    "Conversation remains the largest single step, consistent with the communication prior.",
+    "Preparation is visible despite the low-drudgery prior; email is one source of requests, not the whole consultation.",
+    "Approved priorities can be captured in structured fields, so follow-up does not require automatic meeting transcription.",
+    "The solution reuses sales, stock and order connectors from the buying task where possible.",
+    "GDPR applies to personal data in messages. EU AI Act applicability depends on intended use; this design does not score employees.",
+    "National rules determine whether employee consultation is required; access ranges include that review where applicable."
+   ],
+   "unknowns": [
+    "Who owns store budgets and approves cross-store reallocations.",
+    "Frequency and format of store requests and consultation meetings.",
+    "Availability of store-level sales, stock and committed-budget records.",
+    "Which small stores lack merchandise planning support.",
+    "Permissions for selected messages and applicable national consultation requirements."
+   ],
+   "research_questions": [
+    "Which stock-coverage measures work reliably with intermittent store demand?",
+    "Which scenario formats help managers compare margin, availability and budget consequences?"
+   ],
+   "new_work": [
+    "Review request grouping and omitted local context.",
+    "Maintain scenario assumptions and budget definitions.",
+    "Resolve stale records and inconsistent store identifiers.",
+    "Track whether agreed buying actions improved availability and sell-through."
+   ],
+   "time_saved_pct": 45,
+   "speedup": 1.81
+  }
+ ],
+ "role": {
+  "altitude": "The buyer's week shifts toward assortment decisions, sample assessment, supplier discussions and store trade-offs. Better evidence supports recommendations; spending, product-release and budget rights change only through explicit delegation.",
+  "reach": [
+   "Purchasing manager: prepare category and cross-store budget recommendations.",
+   "Purchasing agent: turn commercial decisions into clear supplier acceptance requirements.",
+   "Procurement clerk: improve order, return and credit exception handling."
+  ],
+  "skills_to_grow": [
+   "Assortment economics and open-to-buy planning.",
+   "Demand uncertainty and scenario interpretation.",
+   "Supplier development and acceptance criteria.",
+   "Data quality, unit conversions and approval controls.",
+   "Source checking for extracted terms and drafted specifications.",
+   "Facilitation of store and supplier trade-offs."
+  ],
+  "ambitious_version": "Run a merchandise improvement service that combines frequent assortment reallocations, small-supplier development support and store-specific buying reviews. Begin with existing approval rights and seek explicit delegation for any expanded trial budget."
+ },
+ "job_code": "13-1022.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 190,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3000});text(r.output)\n"
+  ],
+  "job": {
+   "code": "13-1022.00",
+   "title": "Wholesale and Retail Buyers, Except Farm Products",
+   "tasks": 16,
+   "function": "Procurement"
+  }
+ }
+}

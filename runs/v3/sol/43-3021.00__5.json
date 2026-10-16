@@ -1,0 +1,975 @@
+{
+ "tasks": [
+  {
+   "uid": "43-3021.00:23241",
+   "short": "Record costs and shipments, check supporting evidence, and post accounting entries.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve shipment and cost records for the posting period.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "ERP"
+     ],
+     "inputs": [
+      "posting period",
+      "shipment records",
+      "cost records"
+     ],
+     "outputs": [
+      "posting source records"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read supporting documents and identify missing shipment or cost details.",
+     "actor": "billing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "posting source records",
+      "delivery evidence",
+      "cost evidence"
+     ],
+     "outputs": [
+      "supported posting records",
+      "missing evidence list"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Delivery and cost documents linked to posting source records.",
+      "output": "Evidence fields with document references and a missing evidence list.",
+      "check": "Validate identifiers, dates, amounts and duplicate references against source records. Require a source location for each extracted field.",
+      "stop": "One extraction and one repair attempt per document. Missing, conflicting or unreadable evidence goes to the billing clerk.",
+      "why_not_simpler": "Structured records need no model. Some supporting documents have variable layouts and free text."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "billing clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Assign account codes, cost centres and posting dates.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "supported posting records",
+      "coding rules"
+     ],
+     "outputs": [
+      "coded posting records"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Compare posting totals with source totals and check duplicate entries.",
+     "actor": "billing clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "ERP"
+     ],
+     "inputs": [
+      "coded posting records",
+      "posting source records",
+      "existing journal entries"
+     ],
+     "outputs": [
+      "posting control report"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Resolve mismatches and approve exceptions within delegated accounting limits.",
+     "actor": "billing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "ERP"
+     ],
+     "inputs": [
+      "posting control report",
+      "missing evidence list",
+      "coding rules"
+     ],
+     "outputs": [
+      "approved posting records",
+      "exception decisions"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "record-to-report",
+     "approver": "billing clerk"
+    },
+    {
+     "id": "s6",
+     "what": "Post approved entries and retain journal references.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "approved posting records"
+     ],
+     "outputs": [
+      "journal entries",
+      "posting audit trail"
+     ],
+     "handoff_to": "none",
+     "share_pct": 7,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "File separate copies of posted records and supporting documents.",
+     "actor": "billing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "journal entries",
+      "delivery evidence",
+      "cost evidence"
+     ],
+     "outputs": [
+      "posting archive"
+     ],
+     "handoff_to": "none",
+     "share_pct": 3,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    }
+   ],
+   "design": "An integration brings shipment and cost records from the {OPS_SYSTEM} into the {ERP}, where configured rules code entries and check totals. A bounded extraction loop reads supporting documents in the {DOCS}; the {WORKFLOW} routes unresolved evidence and coding exceptions to the billing clerk before posting. Journal references link to retained evidence, removing separate filing.",
+   "previous_blocker": "Records and evidence arrived separately. Small differences in identifiers and document layouts made integration costly.",
+   "enabler_now": "Existing posting controls can be configured, while AI coding speeds the connectors and validation code. Bounded extraction handles the remaining document variation.",
+   "still_hard": "Missing delivery evidence, disputed costs and unusual accounting treatment still need investigation. Posting permissions and period controls require careful testing.",
+   "human_edge": "The clerk establishes what actually happened when shipment records, costs and supporting evidence disagree.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily decisions on unresolved shipment-to-ledger differences"
+   },
+   "altitude": "The week shifts from entry and filing to evidence exceptions and daily reconciliation. With delegated limits, the clerk can clear routine differences sooner; material accounting decisions remain with the accountant.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Investigate shipment cut-off differences at period close.",
+     "learn": "Accruals, cut-off rules and how operational events map to ledger entries."
+    },
+    {
+     "role": "business intelligence analyst",
+     "task": "Report recurring missing-evidence patterns.",
+     "learn": "Record identifiers, data quality measures and reconciliation reporting."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "6-15",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS Profit extracts invoice fields and identifies suppliers. This supports document extraction feasibility, not shipment accounting coverage.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "AFAS Profit matches bank lines using record identifiers and sends misses to a person.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Configured coding, control totals and duplicate checks can automate standard postings when source records are reliable.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Time shares and remaining percentages are planning estimates, not measured savings.",
+    "Most source records are structured, but supporting documents take disproportionate reading time.",
+    "The spreadsheet connects operational totals to accounting totals; it is not the primary ledger.",
+    "Configured controls can release routine entries under existing delegated authority.",
+    "GDPR applies to personal data in evidence. Access is restricted and extraction uses only necessary fields.",
+    "Access estimates include checking applicable national consultation rules."
+   ],
+   "unknowns": [
+    "Available interfaces and stable shipment identifiers.",
+    "Current coding rules, posting limits and materiality thresholds.",
+    "Frequency of missing evidence and accounting exceptions.",
+    "Whether linked evidence satisfies the customer's retention requirements.",
+    "Applicable national employee consultation requirements."
+   ],
+   "research_questions": [
+    "Can the existing {ERP} configure all required coding and reconciliation controls?",
+    "Which extraction checks catch document errors before they affect postings?"
+   ],
+   "new_work": [
+    "Review extracted fields that fail validation.",
+    "Investigate missing evidence and conflicting records.",
+    "Maintain coding mappings and source identifiers.",
+    "Monitor connector failures and duplicate prevention."
+   ],
+   "time_saved_pct": 81,
+   "speedup": 5.26
+  },
+  {
+   "uid": "43-3021.00:23248",
+   "short": "Check billing equipment, clear simple faults, and arrange support when needed.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check printer and scanner status in the office-equipment console.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "equipment status",
+      "billing schedule"
+     ],
+     "outputs": [
+      "equipment status check"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Inspect printer and scanner output for jams, missing pages or poor quality.",
+     "actor": "billing clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "equipment status check",
+      "sample output"
+     ],
+     "outputs": [
+      "equipment fault details"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Clear simple equipment faults and run a test.",
+     "actor": "billing clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "equipment fault details",
+      "equipment instructions"
+     ],
+     "outputs": [
+      "equipment test result"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Report unresolved faults and request equipment support.",
+     "actor": "billing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "equipment fault details",
+      "equipment test result",
+      "equipment register"
+     ],
+     "outputs": [
+      "equipment support request"
+     ],
+     "handoff_to": "support technician",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure status alerts in the {OTHER} office-equipment console and route persistent faults to the {HELPDESK} with equipment identifiers. A short form adds the clerk's physical observations and test result, while the {HELPDESK} suppresses duplicate requests. Physical checks and simple repairs stay with the clerk.",
+   "previous_blocker": "Checking was cheap and equipment status was separate from support records. Physical faults were not fully visible in the console.",
+   "enabler_now": "Existing alerts and ticket templates can remove repeated status checking and report writing. AI coding can cheaply connect equipment identifiers where configuration falls short.",
+   "still_hard": "A status signal cannot reliably detect every output defect or clear a jam. Older equipment may expose little usable telemetry.",
+   "human_edge": "The clerk sees whether the equipment produces complete, readable billing output and knows when to stop using it.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The clerk spends less time checking healthy devices and writing fault reports. Physical troubleshooting and decision rights remain unchanged.",
+   "reach": [
+    {
+     "role": "business intelligence analyst",
+     "task": "Summarise equipment downtime affecting billing deadlines.",
+     "learn": "Fault codes, incident timestamps and how to distinguish repeated alerts from separate failures."
+    },
+    {
+     "role": "financial manager",
+     "task": "Assess whether recurring equipment failures justify replacement.",
+     "learn": "Downtime costs, service costs and basic replacement appraisal."
+    }
+   ],
+   "build_days": {
+    "coding": "0-3",
+    "integration": "1-5",
+    "testing_rollout": "2-4",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Office-equipment status alerts and templated support requests can reduce routine checking and reporting.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Physical inspection and fault clearing still require a person when devices lack suitable sensors or actuators.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Equipment means office printers and scanners used for billing, not industrial plant.",
+    "The task remains relevant where physical documents are still handled.",
+    "At least some devices already expose status alerts.",
+    "Physical inspection dominates more than the supplied screen-heavy prior suggests.",
+    "Time shares and remaining percentages are estimates.",
+    "The solution monitors equipment, not employee performance."
+   ],
+   "unknowns": [
+    "Equipment types and available status interfaces.",
+    "Whether equipment monitoring already belongs to a support team.",
+    "Frequency and causes of billing equipment failures.",
+    "Existing support access and alert permissions."
+   ],
+   "research_questions": [
+    "Which faults can existing device alerts detect reliably?",
+    "Can existing {HELPDESK} configuration deduplicate equipment incidents?"
+   ],
+   "new_work": [
+    "Maintain equipment identifiers and support routing.",
+    "Tune noisy alerts.",
+    "Add physical observations to unresolved incidents.",
+    "Review faults missed by device status signals."
+   ],
+   "time_saved_pct": 43,
+   "speedup": 1.75
+  },
+  {
+   "uid": "43-3021.00:23257",
+   "short": "Revise billing manuals after approved rate, rule or regulatory changes.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect rate amendments, policy changes and regulatory notices.",
+     "actor": "billing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "rate amendment",
+      "policy amendment",
+      "regulatory notice"
+     ],
+     "outputs": [
+      "amendment pack"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "compliance-and-risk",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compare amendments with current manual sections and list affected instructions.",
+     "actor": "billing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "amendment pack",
+      "billing manual"
+     ],
+     "outputs": [
+      "manual change map"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "An amendment pack and the current billing manual.",
+      "output": "Affected sections, proposed changes and source references.",
+      "check": "Every proposed change must cite an amendment passage and a current manual section. Flag conflicting dates and missing sections.",
+      "stop": "One comparison and one repair pass per amendment pack. Unclear scope goes to the accountant.",
+      "why_not_simpler": "Free-text amendments and instructions use different wording. Exact text comparison cannot establish the affected sections."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "compliance-and-risk",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Decide applicability, effective dates and required billing treatment.",
+     "actor": "accountant",
+     "today_means": "meeting_call",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "amendment pack",
+      "manual change map"
+     ],
+     "outputs": [
+      "approved change instructions"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "accountant"
+    },
+    {
+     "id": "s4",
+     "what": "Revise manual text, rate tables and worked examples.",
+     "actor": "billing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "billing manual",
+      "approved change instructions",
+      "approved rate table"
+     ],
+     "outputs": [
+      "draft billing manual",
+      "manual change log"
+     ],
+     "handoff_to": "financial controller",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Current manual sections, approved change instructions and approved rate tables.",
+      "output": "Revised prose and a change log with source references.",
+      "check": "Code inserts rates and calculates examples. Compare dates, amounts and obligations with approved instructions; reject unsupported additions.",
+      "stop": "One draft and one correction pass per section. Unresolved contradictions return to the billing clerk.",
+      "why_not_simpler": "Tables and calculations are deterministic. Explanatory prose needs controlled rewriting across differently worded sections."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve revised instructions and worked examples for publication.",
+     "actor": "financial controller",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft billing manual",
+      "manual change log",
+      "approved change instructions"
+     ],
+     "outputs": [
+      "approved billing manual"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "financial controller"
+    },
+    {
+     "id": "s6",
+     "what": "Publish the approved version and archive superseded instructions.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "approved billing manual",
+      "billing manual"
+     ],
+     "outputs": [
+      "published billing manual",
+      "manual version history"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Notify affected colleagues of changed instructions and effective dates.",
+     "actor": "billing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "published billing manual",
+      "manual change log",
+      "recipient list"
+     ],
+     "outputs": [
+      "manual change notice"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    }
+   ],
+   "design": "The {WORKFLOW} collects amendments from registered sources into the {DOCS} and prepares a cited change map through a bounded reading loop. After the accountant approves applicability, deterministic generators update tables and examples, while a bounded drafting loop revises prose. The financial controller approves the manual before configured versioning and {EMAIL} notifications take effect.",
+   "previous_blocker": "Manuals mixed rates, examples and prose. Finding every affected passage and preserving approval history took careful manual work.",
+   "enabler_now": "Document comparison and constrained drafting can prepare revisions. AI coding makes the table generators, validation checks and approval flow cheaper to build.",
+   "still_hard": "Regulatory applicability and transitional rules require accountable interpretation. The change must also agree with actual billing configuration.",
+   "human_edge": "The accountant decides how a change applies, and the clerk recognises instructions that colleagues could misunderstand.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A billing change impact brief with affected instructions and worked examples"
+   },
+   "altitude": "Amendment weeks contain less searching and formatting, leaving time to test examples and explain operational effects. The clerk gains responsibility for preparing impact briefs; legal and accounting approval stays with the existing approvers.",
+   "reach": [
+    {
+     "role": "compliance officer",
+     "task": "Prepare an impact brief for a billing rule change.",
+     "learn": "Source authority, effective dates, transitional provisions and evidence of approval."
+    },
+    {
+     "role": "tax preparer",
+     "task": "Validate billing examples affected by tax treatment changes.",
+     "learn": "Tax applicability and how invoice examples reconcile to approved tax rules."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "2-6",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-6"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Cited document comparison and bounded drafting can prepare manual revisions, while people approve applicability and publication.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "EU VAT reforms can require billing procedure changes. Applicability and implementation timing need separate review.",
+     "grade": "E1",
+     "source": "[S10]"
+    },
+    {
+     "claim": "Rate tables and worked examples can be generated and checked deterministically from approved inputs.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The manual has an identifiable current version and named approvers.",
+    "Regulatory monitoring supplies notices; this design does not establish that every relevant notice has been found.",
+    "Time shares include participating approvers and are estimates.",
+    "Judgement takes more time than the supplied decision-time prior suggests because applicability and release are distinct decisions.",
+    "EU law applies; national billing and employment rules require local interpretation.",
+    "Model use requires appropriate AI literacy and GDPR controls where documents contain personal data."
+   ],
+   "unknowns": [
+    "Authoritative sources for rate, policy and regulatory amendments.",
+    "Who approves legal applicability and manual publication.",
+    "Manual formats, version controls and current approval records.",
+    "Whether manual revisions are linked to changes in the {ERP}.",
+    "Applicable access and national consultation requirements."
+   ],
+   "research_questions": [
+    "Can existing {DOCS} configuration provide versioning and publication approvals?",
+    "How should approved examples be checked against the billing configuration?"
+   ],
+   "new_work": [
+    "Check source references and omissions in change maps.",
+    "Review drafted prose for altered meaning.",
+    "Maintain rate generators and example checks.",
+    "Keep registered sources and notification recipients current.",
+    "Verify that published instructions match implemented billing rules."
+   ],
+   "time_saved_pct": 54,
+   "speedup": 2.2
+  },
+  {
+   "uid": "43-3021.00:23250",
+   "short": "Weigh paper statement envelopes, determine postage, and apply stamps or metered postage.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Weigh prepared statement envelopes on a postal scale.",
+     "actor": "billing clerk",
+     "today_means": "paper_phone",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "statement envelopes"
+     ],
+     "outputs": [
+      "envelope weights"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 35,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Look up postage by weight, destination and service.",
+     "actor": "billing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "envelope weights",
+      "recipient addresses",
+      "postal tariff",
+      "delivery service"
+     ],
+     "outputs": [
+      "postage amounts"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Affix stamps or apply postage with a postage meter.",
+     "actor": "billing clerk",
+     "today_means": "paper_phone",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "statement envelopes",
+      "postage amounts"
+     ],
+     "outputs": [
+      "postage-paid statement envelopes"
+     ],
+     "handoff_to": "mailroom clerk",
+     "share_pct": 45,
+     "fate": "person_does",
+     "remaining_pct": 35,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure statement delivery from the {ERP} through the {EMAIL} for eligible recipients, using validated destinations and recorded delivery preferences in the {WORKFLOW}. This removes weighing and postage for those statements; remaining paper statements use the {OTHER} postage-meter system with configured tariffs. Failed electronic deliveries enter an exception queue for the billing clerk.",
+   "previous_blocker": "Paper delivery was the established route, and recipient preferences were incomplete. Automating physical envelope handling required equipment investment.",
+   "enabler_now": "Existing electronic delivery and postage tariff configuration can remove much of the work without robotics. AI coding can cheaply connect delivery preferences, dispatch records and failure handling.",
+   "still_hard": "Some recipients need paper, and some statement types may require particular delivery evidence under national rules. Invalid addresses and delivery failures need follow-up.",
+   "human_edge": "The clerk identifies recipients who cannot use the normal delivery route and arranges a workable alternative.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Statement delivery assurance for failed electronic deliveries"
+   },
+   "altitude": "The week contains fewer envelopes and more delivery exceptions. With delegated authority, the clerk can select a fallback route after a failed delivery; routine postal spending limits remain unchanged.",
+   "reach": [
+    {
+     "role": "bill and account collector",
+     "task": "Resolve statement delivery failures before starting payment reminders.",
+     "learn": "Delivery evidence, contact verification and the distinction between non-delivery and non-payment."
+    },
+    {
+     "role": "compliance officer",
+     "task": "Validate delivery and retention requirements for statement types.",
+     "learn": "National notice requirements, accessibility needs and evidence of dispatch."
+    }
+   ],
+   "build_days": {
+    "coding": "1-4",
+    "integration": "3-8",
+    "testing_rollout": "3-7",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Electronic statement delivery removes physical weighing and postage for eligible recipients.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Postage calculation is deterministic when weight, destination, service and current tariffs are known.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This describes the paper branch of billing work, which may be small in a mid-size company.",
+    "For planning only, 65% of current paper statements are assumed eligible for electronic delivery.",
+    "The 35% remaining time for weighing and affixing postage reflects reduced paper volume, not faster physical handling.",
+    "A postage meter supports configured tariffs and weight input.",
+    "Routine postage uses existing spending authority and needs no separate approval per envelope.",
+    "Electronic destinations and delivery preferences are validated before dispatch.",
+    "Time shares are estimates. Recipient validation and failed-delivery handling create additional work.",
+    "GDPR applies to recipient details and statements. National delivery requirements vary.",
+    "Employee consultation is included where national rules require it for the workflow change."
+   ],
+   "unknowns": [
+    "Actual paper volume and the share eligible for electronic delivery.",
+    "Statement types with mandatory delivery or proof requirements.",
+    "Recipient preferences, accessibility needs and address quality.",
+    "Available postage equipment and tariff configuration.",
+    "Current authority for changing delivery routes and approving exceptional postal costs.",
+    "Applicable national consultation requirements."
+   ],
+   "research_questions": [
+    "Which national rules require paper delivery or retained dispatch proof for these statement types?",
+    "Can the existing {ERP} record electronic dispatch and detect failed delivery?",
+    "Can existing postage equipment calculate rates without manual tariff lookup?"
+   ],
+   "new_work": [
+    "Validate recipient destinations and delivery preferences.",
+    "Handle failed electronic deliveries and paper fallback.",
+    "Update postal tariffs and check unusual charges.",
+    "Maintain dispatch evidence and recipient access controls."
+   ],
+   "time_saved_pct": 72,
+   "speedup": 3.57
+  }
+ ],
+ "role": {
+  "altitude": "The billing clerk spends more time resolving evidence gaps, explaining billing changes and securing statement delivery. Posting exceptions and fallback delivery decisions can be delegated within clear limits; accounting interpretation and material approvals remain with finance approvers.",
+  "reach": [
+   "Help accountants investigate shipment cut-off and reconciliation differences.",
+   "Prepare billing change impact briefs with compliance officers.",
+   "Help bill and account collectors resolve non-delivery before collection activity.",
+   "Work with business intelligence analysts on recurring evidence and delivery failures."
+  ],
+  "skills_to_grow": [
+   "Accounting cut-off, coding and reconciliation controls.",
+   "Document evidence validation and bounded model-output review.",
+   "Regulatory source checking and clear procedural writing.",
+   "Delivery evidence, recipient preferences and exception handling.",
+   "Basic integration monitoring and data quality reporting."
+  ],
+  "ambitious_version": "Become a billing operations analyst who recommends fixes to recurring source-data and delivery problems, tests the billing effects of approved rule changes, and receives delegated authority to clear routine reconciliation and delivery exceptions."
+ },
+ "job_code": "43-3021.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 203,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "text(await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3500}));\n"
+  ],
+  "job": {
+   "code": "43-3021.00",
+   "title": "Billing and Posting Clerks",
+   "tasks": 26,
+   "function": "Finance"
+  }
+ }
+}

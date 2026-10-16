@@ -1,0 +1,1139 @@
+{
+ "tasks": [
+  {
+   "uid": "43-5032.00:2728",
+   "short": "Receive service requests, clarify requirements and prepare work orders for dispatch.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read emailed service requests and identify the requested work.",
+     "actor": "dispatcher",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "service request"
+     ],
+     "outputs": [
+      "request fields"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Service request text and attachments.",
+      "output": "Request fields with source passages and explicit missing values.",
+      "check": "Validate required fields, formats and source support; flag conflicting instructions.",
+      "stop": "One extraction and one repair attempt per request; send unresolved fields to the dispatcher.",
+      "why_not_simpler": "Requests describe locations, faults and access instructions in varied free text."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check customer, site and equipment details against existing records.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "CRM"
+     ],
+     "inputs": [
+      "request fields",
+      "customer record",
+      "equipment record"
+     ],
+     "outputs": [
+      "validated request"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Call the requester to resolve missing details, urgency and access arrangements.",
+     "actor": "dispatcher",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "validated request"
+     ],
+     "outputs": [
+      "clarified request"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Determine service scope, priority and required skills or equipment.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "clarified request",
+      "service rules"
+     ],
+     "outputs": [
+      "service requirements"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Enter the work order using the agreed service requirements.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "service requirements",
+      "validated request"
+     ],
+     "outputs": [
+      "draft work order"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Check the completed order and release it to the dispatch queue.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "draft work order"
+     ],
+     "outputs": [
+      "work order"
+     ],
+     "handoff_to": "dispatcher",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "dispatcher"
+    }
+   ],
+   "design": "A reusable intake template in {WORKFLOW} receives requests from {EMAIL}; a bounded extraction loop proposes fields and deterministic checks match records in {CRM} and {OPS_SYSTEM}. Configured forms generate the draft work order, while the dispatcher resolves ambiguity and approves release to the dispatch queue.",
+   "previous_blocker": "Request formats vary, reference records disagree and connecting the mailbox to operational records took bespoke work.",
+   "enabler_now": "Existing forms and interfaces handle structured requests; bounded extraction handles variable text, and AI-assisted coding reduces adapter development effort.",
+   "still_hard": "Ambiguous urgency, incomplete site information and unreliable reference records still require operational judgement.",
+   "human_edge": "Recognising when a routine request conceals a dangerous fault, unrealistic promise or sensitive customer situation.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A request-readiness check that identifies missing access details before scheduling."
+   },
+   "altitude": "The dispatcher spends less time copying requests and more time resolving unclear work before it reaches crews. They can return incomplete requests for clarification; spending and service-promise authority do not automatically expand.",
+   "reach": [
+    {
+     "role": "project management specialist",
+     "task": "Check whether incoming work is sufficiently defined for scheduling.",
+     "learn": "Scope boundaries, acceptance criteria and dependency checks."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-10",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "PDF order extraction is an existing capability; applying it to service requests needs local validation.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Integrated operational systems already maintain transport and warehouse records.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Deterministic matching, required-field checks and work-order templates can handle structured intake.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline is a mobile service operation within a company of 200 to 2,000 staff.",
+    "Some requests arrive through email, while operational records already reside in {OPS_SYSTEM}.",
+    "Time shares, remaining effort and build ranges are planning estimates, not measured outcomes.",
+    "The reusable intake schema can be prepared independently; live processing requires authorised company access.",
+    "GDPR applies to personal data; EU AI Act applicability depends on the implemented use."
+   ],
+   "unknowns": [
+    "Actual request channels, volumes and attachment formats.",
+    "Available interfaces and customer or equipment identifiers.",
+    "Local priority rules and who may release work orders.",
+    "Applicable national rules and employee consultation arrangements."
+   ],
+   "research_questions": [
+    "Which existing {OPS_SYSTEM} intake features cover the required fields?",
+    "Which request ambiguities cause the most dispatch rework?",
+    "Can extraction preserve every safety-relevant instruction in a representative sample?"
+   ],
+   "new_work": [
+    "Review extracted fields and resolve unmatched records.",
+    "Maintain intake schemas, validation rules and connector mappings.",
+    "Sample released orders for omitted instructions and incorrect priorities.",
+    "Maintain access controls and request-data retention."
+   ],
+   "time_saved_pct": 60,
+   "speedup": 2.5
+  },
+  {
+   "uid": "43-5032.00:2731",
+   "short": "Maintain dispatch records for requests, completed work, charges, expenses and inventory movements.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Record crew updates, work completion and service details against the work order.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "work order",
+      "service update"
+     ],
+     "outputs": [
+      "service record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Transfer charge, expense and parts details into the relevant financial records.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "ERP"
+     ],
+     "inputs": [
+      "service record",
+      "parts usage",
+      "expense record",
+      "rate card"
+     ],
+     "outputs": [
+      "draft charge record",
+      "inventory movement"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Compare entries with supporting records and investigate missing or conflicting details.",
+     "actor": "dispatcher",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "service record",
+      "draft charge record",
+      "supporting document"
+     ],
+     "outputs": [
+      "reconciled dispatch record",
+      "record exception"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Approve operational corrections and release charge details for finance processing.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "ERP"
+     ],
+     "inputs": [
+      "reconciled dispatch record",
+      "record exception"
+     ],
+     "outputs": [
+      "approved dispatch record",
+      "charge record"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "dispatcher"
+    },
+    {
+     "id": "s5",
+     "what": "File supporting documents and link them to the dispatch record.",
+     "actor": "dispatcher",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "supporting document",
+      "approved dispatch record"
+     ],
+     "outputs": [
+      "dispatch evidence file"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Copy dispatch totals into the shared shift summary.",
+     "actor": "dispatcher",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "approved dispatch record"
+     ],
+     "outputs": [
+      "shift summary"
+     ],
+     "handoff_to": "operations manager",
+     "share_pct": 10,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure {OPS_SYSTEM} to capture structured service events once, link evidence in {DOCS} and transfer validated charge and inventory details to {ERP}. Deterministic reconciliation sends discrepancies to an approval queue, while a saved operational view replaces the duplicate shift workbook in {SPREADSHEET}.",
+   "previous_blocker": "Work-order identifiers, financial codes and supporting documents were disconnected, making manual copying the practical bridge.",
+   "enabler_now": "Configured event capture and deterministic adapters can reuse existing records; AI-assisted coding makes company-specific mappings cheaper to build.",
+   "still_hard": "Late crew updates, disputed charges, accounting cut-offs and incorrect parts usage still need investigation.",
+   "human_edge": "Distinguishing a missing update from a disputed service outcome and deciding which evidence supports a correction.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Review unresolved charge exceptions each shift instead of waiting for billing preparation."
+   },
+   "altitude": "The dispatcher becomes an exception investigator rather than a duplicate record keeper. They gain visibility of unresolved charge evidence; finance retains accounting and invoice approval rights.",
+   "reach": [
+    {
+     "role": "shipping, receiving and inventory clerk",
+     "task": "Reconcile parts issued, used and returned against a service job.",
+     "learn": "Inventory transaction types, units of measure and correction controls."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Operational transport systems already combine multiple categories of logistics records.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Integrated creation and signing of transport documents demonstrates linked operational evidence.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "A vendor customer case reports reduced invoicing administration; it does not establish dispatcher-specific savings.",
+     "grade": "E3",
+     "source": "[S7]"
+    },
+    {
+     "claim": "Identifier-based reconciliation and duplicate prevention need deterministic rules rather than a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Crews can supply structured completion, parts and expense events; missing events remain exceptions.",
+    "Supporting documents can be linked using a work-order identifier without interpreting their free text.",
+    "The shift workbook duplicates information available from operational records.",
+    "Time shares, remaining effort and build ranges are estimates; no crew work is assumed to disappear.",
+    "GDPR requires appropriate access and retention; employee logging may require consultation under national rules."
+   ],
+   "unknowns": [
+    "Which records are authoritative for charges, inventory and completion.",
+    "Whether crew event capture is already available and used reliably.",
+    "Financial posting permissions, approval limits and retention requirements.",
+    "Whether the shift summary contains unique information that must be retained.",
+    "Applicable employee consultation and access requirements."
+   ],
+   "research_questions": [
+    "Can existing {OPS_SYSTEM} configuration replace the duplicate workbook?",
+    "Which reconciliation checks detect financially material errors?",
+    "How will retries avoid duplicate inventory movements and charge records?"
+   ],
+   "new_work": [
+    "Investigate missing events, duplicates and mismatched financial codes.",
+    "Maintain rate mappings and reconciliation tolerances.",
+    "Monitor failed transfers and reconcile transfer totals.",
+    "Review document access, retention and correction logs."
+   ],
+   "time_saved_pct": 87,
+   "speedup": 7.69
+  },
+  {
+   "uid": "43-5032.00:2724",
+   "short": "Coordinate repairs and recovery plans when vehicles or equipment interrupt scheduled service.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive the breakdown call and establish immediate service and safety implications.",
+     "actor": "dispatcher",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "breakdown report"
+     ],
+     "outputs": [
+      "incident record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check equipment history, warranty, assigned jobs and available replacement resources.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "incident record",
+      "equipment record",
+      "dispatch schedule"
+     ],
+     "outputs": [
+      "recovery brief"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Call maintenance providers to establish repair availability, likely delays and alternatives.",
+     "actor": "dispatcher",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "recovery brief",
+      "approved provider list"
+     ],
+     "outputs": [
+      "repair options"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Choose repair or replacement by comparing downtime, service commitments and cost.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "repair options",
+      "recovery brief",
+      "spending limits"
+     ],
+     "outputs": [
+      "recovery plan"
+     ],
+     "handoff_to": "operations manager",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 75,
+     "block": "judgement_step",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "ticket-to-resolution",
+     "approver": "dispatcher"
+    },
+    {
+     "id": "s5",
+     "what": "Approve exceptional spending or service trade-offs beyond the dispatcher's delegated limits.",
+     "actor": "operations manager",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "recovery plan",
+      "spending limits"
+     ],
+     "outputs": [
+      "recovery approval"
+     ],
+     "handoff_to": "dispatcher",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "operations manager"
+    },
+    {
+     "id": "s6",
+     "what": "Book the selected repair and communicate equipment location and access details.",
+     "actor": "dispatcher",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "recovery plan",
+      "recovery approval",
+      "equipment record"
+     ],
+     "outputs": [
+      "repair instruction"
+     ],
+     "handoff_to": "maintenance provider",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "dispatcher"
+    },
+    {
+     "id": "s7",
+     "what": "Revise affected jobs and resource assignments around the expected repair window.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "recovery plan",
+      "dispatch schedule",
+      "repair instruction"
+     ],
+     "outputs": [
+      "recovery schedule"
+     ],
+     "handoff_to": "dispatcher",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s8",
+     "what": "Confirm technical clearance before returning repaired equipment to service.",
+     "actor": "maintenance supervisor",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "repair completion record"
+     ],
+     "outputs": [
+      "maintenance release"
+     ],
+     "handoff_to": "dispatcher",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "ticket-to-resolution",
+     "approver": "maintenance supervisor"
+    }
+   ],
+   "design": "Configured views in {OPS_SYSTEM} assemble the incident, equipment history and affected jobs; deterministic comparisons show recovery options and feasible schedule revisions. A flow in {WORKFLOW} prepares repair instructions for approval and sends them through {EMAIL}, while provider negotiation, exceptional spending and technical clearance remain human decisions.",
+   "previous_blocker": "Repair coordination combines incomplete fault information, uncertain provider availability and service trade-offs across separate records.",
+   "enabler_now": "Existing records can feed a reusable recovery brief, while inexpensive deterministic code compares scenarios and prepares the paperwork.",
+   "still_hard": "Diagnosis, uncertain repair times, supplier commitments and competing customer consequences remain situational.",
+   "human_edge": "Securing a credible repair commitment and choosing which disruption the operation can tolerate.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "An incident recovery brief comparing repair and replacement before a booking decision."
+   },
+   "altitude": "The dispatcher spends more time negotiating recovery and less time assembling histories or rewriting schedules. They gain clearer choices within existing delegated limits; exceptional spending and technical clearance keep their current approvers.",
+   "reach": [
+    {
+     "role": "business continuity planner",
+     "task": "Define fallback resources for the loss of a critical vehicle or equipment type.",
+     "learn": "Recovery priorities, dependency mapping and minimum service levels."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Deterministic constraint checks can compare recovery schedules, but repair uncertainty still requires human judgement.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Operational systems offer an existing base for transport and resource records; this does not prove repair coordination automation.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "A vendor case documents benefits from appointment scheduling in freight operations, an adjacent rather than equivalent use.",
+     "grade": "E3",
+     "source": "[S9]"
+    }
+   ],
+   "assumptions": [
+    "The scope is coordination and administration; physical diagnosis and repair are excluded.",
+    "Provider negotiation remains a conversation, so no model loop is required.",
+    "Exceptional approval is conditional; its share represents average effort across repair incidents.",
+    "Routine plans within delegated limits bypass exceptional spending approval.",
+    "Schedule revisions enter the normal dispatch release process before crews act.",
+    "Time shares, remaining effort and build ranges are estimates.",
+    "GDPR and applicable national rules govern personal data and changed working arrangements."
+   ],
+   "unknowns": [
+    "Actual spending limits and escalation responsibilities.",
+    "Availability and quality of equipment history and replacement-resource records.",
+    "Provider booking channels, cancellation terms and access requirements.",
+    "Who is authorised to certify equipment for return to service.",
+    "Applicable employee consultation requirements for schedule changes."
+   ],
+   "research_questions": [
+    "Which recovery choices can be compared using reliable cost and downtime inputs?",
+    "Can existing {OPS_SYSTEM} views assemble the recovery brief?",
+    "How should the system handle uncertain repair estimates without creating false commitments?"
+   ],
+   "new_work": [
+    "Maintain provider contacts, spending limits and fallback-resource rules.",
+    "Resolve failed bookings and changes to repair estimates.",
+    "Check that schedule revisions reach the normal release queue.",
+    "Record technical clearance and review unresolved incidents."
+   ],
+   "time_saved_pct": 34,
+   "speedup": 1.5
+  },
+  {
+   "uid": "43-5032.00:2730",
+   "short": "Track crew and equipment availability, identify service risks and coordinate schedule changes.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Inspect location and job-status screens for crew availability, delays and idle equipment.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "location event",
+      "service update",
+      "dispatch schedule",
+      "maintenance release"
+     ],
+     "outputs": [
+      "resource status"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Contact crews when location or availability is missing, stale or inconsistent.",
+     "actor": "dispatcher",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "resource status"
+     ],
+     "outputs": [
+      "status confirmation"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Calculate busy time, waiting time and available capacity in the shift workbook.",
+     "actor": "dispatcher",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "resource status",
+      "status confirmation",
+      "shift roster"
+     ],
+     "outputs": [
+      "utilisation view"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Compare open jobs with available crews, equipment, qualifications and remaining working time.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "HCM"
+     ],
+     "inputs": [
+      "work order",
+      "utilisation view",
+      "shift roster",
+      "recovery schedule",
+      "service requirements"
+     ],
+     "outputs": [
+      "schedule candidates"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Choose reassignments after considering service urgency, crew context and customer commitments.",
+     "actor": "dispatcher",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "schedule candidates",
+      "status confirmation"
+     ],
+     "outputs": [
+      "schedule revision"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "dispatcher"
+    },
+    {
+     "id": "s6",
+     "what": "Transmit changed assignments and practical instructions to the affected crews.",
+     "actor": "dispatcher",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "schedule revision",
+      "work order"
+     ],
+     "outputs": [
+      "dispatch instruction"
+     ],
+     "handoff_to": "field worker",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "dispatcher"
+    },
+    {
+     "id": "s7",
+     "what": "Acknowledge the assignment or report a practical obstacle.",
+     "actor": "field worker",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "dispatch instruction"
+     ],
+     "outputs": [
+      "assignment acknowledgement",
+      "service update"
+     ],
+     "handoff_to": "dispatcher",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure {OPS_SYSTEM} to show fresh resource status and acknowledge assignments; deterministic jobs on {DATA_PLATFORM} calculate utilisation and feasible schedule candidates using authorised roster data from {HCM}. The dispatcher approves reassignments and instruction release, while stale data, infeasible jobs and missing acknowledgements enter an exception queue in {WORKFLOW}.",
+   "previous_blocker": "Location feeds, crew updates and rosters were disconnected, while scheduling rules were held in dispatchers' experience.",
+   "enabler_now": "Existing event feeds, configurable alerts and deterministic solvers can be joined more cheaply with AI-assisted coding; no autonomous agent is needed.",
+   "still_hard": "Stale signals, uncertain job duration and unrecorded crew constraints can make a mathematically feasible schedule impractical.",
+   "human_edge": "Understanding why a crew appears idle and balancing customer urgency with safe, workable assignments.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Reassess threatened service windows whenever a material delay or equipment outage occurs."
+   },
+   "altitude": "The dispatcher moves from repeatedly scanning screens to reviewing a ranked exception queue and feasible alternatives. They can propose earlier recovery within existing dispatch authority; employment and disciplinary decisions remain outside this tool.",
+   "reach": [
+    {
+     "role": "logistics analyst",
+     "task": "Identify recurring capacity bottlenecks by time window and resource type.",
+     "learn": "Event-data quality, queue measures and the difference between utilisation and service performance."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "10-20",
+    "testing_rollout": "7-15",
+    "consent_and_access": "10-40"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Operational transport systems provide an existing foundation for dispatch records and resource coordination.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "A documented vendor case reports reduced truck turnaround through appointment scheduling; it does not validate workforce tracking.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "AI used for certain worker allocation, monitoring or evaluation purposes can fall within Annex III employment provisions.",
+     "grade": "E2",
+     "source": "[S14]"
+    },
+    {
+     "claim": "In the Netherlands, working-time arrangements and certain employee monitoring systems involve works-council consent provisions.",
+     "grade": "E2",
+     "source": "[S17]"
+    },
+    {
+     "claim": "Freshness checks, utilisation calculations and constraint-based schedule candidates can use deterministic technology.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Operational location or check-in data already exists; new tracking hardware is outside these build estimates.",
+    "The baseline includes a supplementary capacity workbook, not spreadsheet-based dispatch throughout.",
+    "The scheduler uses explicit operational constraints rather than inferred personality or behavioural scores.",
+    "Qualification and availability data is limited to what dispatch genuinely needs.",
+    "GDPR applies to identifiable location and activity data; employee agreement alone is not assumed to establish a lawful basis.",
+    "National consultation and employment rules vary; EU AI Act classification depends on the final system and purpose.",
+    "Time shares and remaining effort are estimates; the final acknowledgement step includes adjacent worker effort.",
+    "Consultation and access ranges are provisional and can extend the rollout calendar."
+   ],
+   "unknowns": [
+    "Location-data coverage, freshness, lawful basis and retention policy.",
+    "Whether off-duty tracking can be disabled.",
+    "Actual working-time, break, qualification and assignment constraints.",
+    "Available mobile acknowledgement features and roster interfaces.",
+    "Applicable national consultation requirements and existing employee agreements.",
+    "Current delegated reassignment authority."
+   ],
+   "research_questions": [
+    "Which operational exceptions can existing {OPS_SYSTEM} alerts already detect?",
+    "How often do stale events create false capacity signals?",
+    "Does the proposed scheduling component qualify as an AI system, and which obligations apply?",
+    "Which utilisation measures help dispatch without encouraging unsafe speed or unfair comparisons?"
+   ],
+   "new_work": [
+    "Resolve stale signals, missed acknowledgements and infeasible schedule candidates.",
+    "Maintain qualifications, working-time constraints and alert thresholds.",
+    "Monitor connector reliability and suppress duplicate alerts.",
+    "Review location-data access, retention and employee consultation commitments.",
+    "Check whether suggested assignments systematically disadvantage particular groups or shifts."
+   ],
+   "time_saved_pct": 76,
+   "speedup": 4.08
+  }
+ ],
+ "role": {
+  "altitude": "The dispatcher spends less of the week entering records, scanning screens and assembling recovery paperwork. More time goes to clarifying requests, negotiating repairs and approving workable schedule changes; decision rights expand only through explicit delegation.",
+  "reach": [
+   "Project management specialist: improve request readiness and scope definition.",
+   "Shipping, receiving and inventory clerk: reconcile job-level parts movements.",
+   "Business continuity planner: define practical fallback resources.",
+   "Logistics analyst: investigate recurring capacity bottlenecks."
+  ],
+  "skills_to_grow": [
+   "Define reusable operational records and identifiers.",
+   "Translate dispatch constraints into testable rules.",
+   "Read exception queues and assess data freshness.",
+   "Compare recovery scenarios under uncertainty.",
+   "Understand employee-data access and consultation requirements."
+  ],
+  "ambitious_version": "Provide a service-recovery desk that spots threatened commitments early, prepares feasible alternatives and coordinates approved action across crews, maintenance and customer-facing teams."
+ },
+ "job_code": "43-5032.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 223,
+  "attempts": 1,
+  "checks": [
+   "43-5032.00:2724 s4: judgement step marked deterministic",
+   "43-5032.00:2730 s5: judgement step marked deterministic"
+  ],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3500});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-5032.00",
+   "title": "Dispatchers, Except Police, Fire, and Ambulance",
+   "tasks": 12,
+   "function": "Office and operations"
+  }
+ }
+}

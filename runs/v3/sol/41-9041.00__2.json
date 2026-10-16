@@ -1,0 +1,946 @@
+{
+ "tasks": [
+  {
+   "uid": "41-9041.00:4627",
+   "short": "Keep contact, account and order records accurate after calls.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Find the contact and check account details in the {CRM}.",
+     "actor": "telemarketer",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM",
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "contact identifier",
+      "call metadata"
+     ],
+     "outputs": [
+      "account context"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Write the call note and update contact details in the {CRM}.",
+     "actor": "telemarketer",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "account context",
+      "call notes"
+     ],
+     "outputs": [
+      "contact record",
+      "call outcome"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Call notes, existing account fields and, where permitted, a call transcript.",
+      "output": "Proposed contact changes and a concise call outcome.",
+      "check": "Show supporting text for each change; validate field types; telemarketer approves before saving.",
+      "stop": "One draft per call, maximum 8,000 input tokens; missing or conflicting facts return to manual entry.",
+      "why_not_simpler": "Free-text notes express commitments and corrections that fixed field mappings cannot reliably extract."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "lead-to-opportunity",
+     "approver": "telemarketer"
+    },
+    {
+     "id": "s3",
+     "what": "Enter and check order details in the {CRM}.",
+     "actor": "telemarketer",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "account context",
+      "order details"
+     ],
+     "outputs": [
+      "approved order record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "opportunity-to-order",
+     "approver": "telemarketer"
+    },
+    {
+     "id": "s4",
+     "what": "Re-enter approved order details in the {ERP}.",
+     "actor": "telemarketer",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "approved order record"
+     ],
+     "outputs": [
+      "order handover"
+     ],
+     "handoff_to": "order clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Resolve duplicate contacts and conflicting account details in the {CRM}.",
+     "actor": "telemarketer",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "contact record",
+      "record exception"
+     ],
+     "outputs": [
+      "corrected contact record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure linked call and account screens in the {TELEPHONY} and {CRM}, with validated order forms. A bounded extractor proposes note-based changes for approval; an integration sends approved order records to the {ERP} with duplicate protection and an exception queue.",
+   "previous_blocker": "Separate screens encouraged rekeying, while free-text notes resisted field mapping. Standard record features often existed but were not connected.",
+   "enabler_now": "Existing configuration handles most fields. AI-assisted coding can reduce connector development effort, while bounded extraction can propose changes from notes.",
+   "still_hard": "Ambiguous identities, conflicting customer statements and order corrections need people. Recordings add GDPR obligations and may require employee consultation under national rules; Dutch monitoring arrangements have specific works-council requirements.",
+   "human_edge": "Recognise when a stated commitment is uncertain and resolve conflicting customer information without damaging trust.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "An order-readiness check that identifies missing fulfilment details before handover."
+   },
+   "altitude": "The week contains fewer updates and more record exceptions and order-readiness checks. Under an agreed mandate, the telemarketer can return incomplete handovers for clarification; pricing and fulfilment authority do not automatically expand.",
+   "reach": [
+    {
+     "role": "order clerk",
+     "task": "Check whether an order contains everything needed for fulfilment.",
+     "learn": "Required order fields, amendment procedures and the point at which an order becomes binding."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-30"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Verint Wrap Up Bot writes call summaries to customer records, supporting the bounded extraction pattern.",
+     "grade": "E2",
+     "source": "[S7]"
+    },
+    {
+     "claim": "The AXA Health service-desk case reports a 60-second handle-time reduction. It is a vendor claim in a different setting, not a telemarketing forecast.",
+     "grade": "E3",
+     "source": "[S7]"
+    },
+    {
+     "claim": "Validated forms and idempotent record integrations can remove rekeying without autonomous agents.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "GDPR applies to personal call records; large-scale recording calls for a DPIA. Employee consultation requirements depend on national rules.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline uses the {CRM} for contacts and a separate {ERP} for order handover.",
+    "Step shares and remaining time are planning estimates, not measured savings.",
+    "Notes are sufficient for the first version; recording is optional.",
+    "Build ranges include access review and applicable consultation; formal processes may extend elapsed time."
+   ],
+   "unknowns": [
+    "Available interfaces, licences and stable contact and order identifiers.",
+    "Whether order handover already synchronises automatically.",
+    "Permitted use, retention and languages of notes or recordings.",
+    "Applicable national consultation requirements and existing approvals."
+   ],
+   "research_questions": [
+    "Which native record-linking and validation features cover the current workflow?",
+    "Which fields cause most rework, and can reviewers reliably detect incorrect extraction?"
+   ],
+   "new_work": [
+    "Review proposed changes and correct unsupported commitments.",
+    "Resolve failed transfers, duplicates and conflicting identifiers.",
+    "Maintain field mappings, extraction checks and retention settings."
+   ],
+   "time_saved_pct": 78,
+   "speedup": 4.44
+  },
+  {
+   "uid": "41-9041.00:4625",
+   "short": "Answer inbound calls from people responding to advertisements.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Answer the call and establish why the caller is calling.",
+     "actor": "telemarketer",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "inbound call"
+     ],
+     "outputs": [
+      "caller request"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Find the campaign and existing contact in the {CRM}.",
+     "actor": "telemarketer",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "caller request",
+      "contact identifier",
+      "campaign identifier"
+     ],
+     "outputs": [
+      "account context",
+      "campaign context"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Look up current offer terms and approved answers in the {DOCS}.",
+     "actor": "telemarketer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "caller request",
+      "campaign context",
+      "approved offer terms"
+     ],
+     "outputs": [
+      "answer references"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Explain the offer, answer questions and agree the next action.",
+     "actor": "telemarketer",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "caller request",
+      "account context",
+      "answer references"
+     ],
+     "outputs": [
+      "call outcome",
+      "agreed next action"
+     ],
+     "handoff_to": "none",
+     "share_pct": 50,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Record the agreed callback or referral in the {CRM}.",
+     "actor": "telemarketer",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "call outcome",
+      "agreed next action"
+     ],
+     "outputs": [
+      "follow-up request"
+     ],
+     "handoff_to": "sales representative",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "telemarketer"
+    }
+   ],
+   "design": "Configure the {TELEPHONY} to open matching campaign and contact context in the {CRM}. Link each campaign to current answers in the {DOCS}, then use a short validated form to route the agreed follow-up through the {CRM}.",
+   "previous_blocker": "Campaign information, account records and offer documents were maintained separately. Finding the right version interrupted the conversation.",
+   "enabler_now": "Call metadata, campaign links and existing search features can provide context without a model. Small configuration and integration changes can be built and checked more quickly.",
+   "still_hard": "Caller identity may be uncertain, and advertised offers can be misunderstood. The person must explain limitations, recognise vulnerability and avoid promises outside their authority.",
+   "human_edge": "Listen for the actual question, adjust the explanation and recognise when a sale is inappropriate.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A first-call offer-fit check with a complete referral brief for specialist advice."
+   },
+   "altitude": "More of the week goes to understanding callers and preparing useful referrals. With agreed criteria, the telemarketer can select the referral route; commercial exceptions still go to the authorised role.",
+   "reach": [
+    {
+     "role": "sales representative",
+     "task": "Qualify an enquiry before a specialist sales conversation.",
+     "learn": "Qualification criteria, scope limits and what makes a referral actionable."
+    }
+   ],
+   "build_days": {
+    "coding": "1-3",
+    "integration": "3-7",
+    "testing_rollout": "3-6",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Call-context screens, campaign-linked reference material and structured routing are established configuration patterns.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Human selling and explanation remain central; this design changes preparation and handover rather than delegating the conversation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "GDPR applies to contact lookup and enquiry records. An inbound enquiry does not establish unrestricted permission for later marketing.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Campaign identifiers or dedicated inbound numbers support reliable campaign matching.",
+    "Approved offer terms exist and have a named content owner.",
+    "The prior's conversation-heavy estimate is retained, with phone calls represented as meeting_call.",
+    "Build ranges are estimates and cover access review and any applicable national consultation."
+   ],
+   "unknowns": [
+    "Reliability of campaign attribution and contact matching.",
+    "Which offer explanations and referral decisions the telemarketer may make.",
+    "Current document version controls and language coverage.",
+    "Whether configured context screens are already available."
+   ],
+   "research_questions": [
+    "Which lookups interrupt calls most often?",
+    "Can campaign links and ordinary search retrieve the correct terms without a model?"
+   ],
+   "new_work": [
+    "Maintain campaign-to-document links and offer expiry dates.",
+    "Correct ambiguous contact matches and misrouted referrals.",
+    "Review whether referral briefs answer the receiving role's questions."
+   ],
+   "time_saved_pct": 38,
+   "speedup": 1.6
+  },
+  {
+   "uid": "41-9041.00:4618",
+   "short": "Deliver approved telephone sales or donation appeals and handle responses.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check contact eligibility and suppression flags in the {CRM}.",
+     "actor": "telemarketer",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "contact record",
+      "consent record",
+      "suppression record",
+      "campaign rules"
+     ],
+     "outputs": [
+      "contact eligibility"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "campaign-to-lead",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Find the approved script and offer terms in the {DOCS}.",
+     "actor": "telemarketer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "campaign context",
+      "approved script",
+      "approved offer terms"
+     ],
+     "outputs": [
+      "call guide"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Deliver the sales or donation appeal by telephone.",
+     "actor": "telemarketer",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "contact eligibility",
+      "call guide"
+     ],
+     "outputs": [
+      "customer response"
+     ],
+     "handoff_to": "none",
+     "share_pct": 45,
+     "fate": "person_does",
+     "remaining_pct": 95,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Address objections and decide whether to continue, refer or stop.",
+     "actor": "telemarketer",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "customer response",
+      "call guide"
+     ],
+     "outputs": [
+      "call outcome",
+      "agreed next action"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Record the disposition and any opt-out in the {CRM}.",
+     "actor": "telemarketer",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "call outcome",
+      "agreed next action"
+     ],
+     "outputs": [
+      "call disposition",
+      "suppression record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "campaign-to-lead",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure a fail-closed eligibility check in the {CRM} before the {TELEPHONY} enables an outbound call. Display the current approved script from the {DOCS} and use structured dispositions that immediately propagate opt-outs; the telemarketer conducts the appeal and handles objections.",
+   "previous_blocker": "Permission evidence, suppression lists and script versions were scattered. Automating the persuasive conversation also offered uncertain value compared with improving its supporting controls.",
+   "enabler_now": "Existing campaign rules and document links handle most preparation. Small integrations can enforce suppression consistently without generating persuasive speech.",
+   "still_hard": "Consent scope and national calling rules need correct interpretation. Persuasion, refusal and vulnerability require situational judgement; reliable eligibility depends on the quality of permission records.",
+   "human_edge": "Hear hesitation, accept refusal and adapt the explanation without applying inappropriate pressure.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "An explicit suitability-and-stop decision during each appeal."
+   },
+   "altitude": "Preparation shrinks modestly; most time remains in live conversations. An agreed mandate can let the telemarketer end unsuitable appeals and refer complex needs without seeking a supervisor for each case.",
+   "reach": [
+    {
+     "role": "sales supervisor",
+     "task": "Review whether a script supports clear explanations and appropriate stopping decisions.",
+     "learn": "Script approval criteria, escalation boundaries and qualitative coaching."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "3-8",
+    "testing_rollout": "4-8",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "The digest's Netherlands-specific ACM source states that, from 1 July 2026, covered recipients require explicit prior consent, including existing customers. This is not an EU-wide calling rule.",
+     "grade": "E1",
+     "source": "[S8]"
+    },
+    {
+     "claim": "Structured eligibility rules, approved script selection and suppression updates can use existing configuration without a language model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "GDPR and the EU AI Act apply across the EU; calling and employee-consultation requirements also depend on national rules.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The campaign has approved scripts, terms and a documented permission policy.",
+    "Missing or conflicting permission evidence blocks outbound calling.",
+    "Live conversation dominates the baseline, consistent with the priors.",
+    "No voice bot, call recording or employee scoring is introduced.",
+    "Build ranges are estimates and include access, policy validation and applicable national consultation."
+   ],
+   "unknowns": [
+    "Countries, recipient categories and campaign purposes covered.",
+    "Completeness and provenance of consent and suppression records.",
+    "Whether the {TELEPHONY} can enforce eligibility at dial time.",
+    "The telemarketer's current authority to stop or refer an appeal."
+   ],
+   "research_questions": [
+    "Can native campaign controls enforce every applicable eligibility condition?",
+    "Where do scripts leave telemarketers uncertain about stopping or referring?"
+   ],
+   "new_work": [
+    "Maintain eligibility rules and approved script versions.",
+    "Investigate blocked contacts with incomplete permission evidence.",
+    "Check suppression propagation and review suitability-related escalations."
+   ],
+   "time_saved_pct": 30,
+   "speedup": 1.43
+  },
+  {
+   "uid": "41-9041.00:4626",
+   "short": "Respond to customer correspondence and follow up initial sales contacts.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Review due follow-ups and channel permissions in the {CRM}.",
+     "actor": "telemarketer",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "follow-up request",
+      "consent record",
+      "suppression record"
+     ],
+     "outputs": [
+      "eligible follow-up queue"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Collect customer correspondence from the {EMAIL} and previous contact notes.",
+     "actor": "telemarketer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CRM"
+     ],
+     "inputs": [
+      "eligible follow-up queue",
+      "customer correspondence",
+      "call outcome"
+     ],
+     "outputs": [
+      "follow-up context"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Draft a written response or call brief using approved material in the {DOCS}.",
+     "actor": "telemarketer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "follow-up context",
+      "approved offer terms",
+      "response template"
+     ],
+     "outputs": [
+      "response draft",
+      "call brief"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Linked correspondence, contact notes, approved terms and an approved response template.",
+      "output": "A response draft or call brief with references for factual claims and explicit unresolved questions.",
+      "check": "Validate names, amounts and dates against source fields; flag unsupported claims and commercial exceptions.",
+      "stop": "One draft per follow-up, maximum 8,000 input tokens; unresolved facts remain blank for the telemarketer.",
+      "why_not_simpler": "Customer questions and previous commitments vary in free text; fixed templates cover only routine acknowledgements."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Review and send the written response through the {EMAIL}.",
+     "actor": "telemarketer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "response draft",
+      "follow-up context"
+     ],
+     "outputs": [
+      "sent response"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "lead-to-opportunity",
+     "approver": "telemarketer"
+    },
+    {
+     "id": "s5",
+     "what": "Make the follow-up call and agree the next action.",
+     "actor": "telemarketer",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "call brief",
+      "eligible follow-up queue"
+     ],
+     "outputs": [
+      "call outcome",
+      "agreed next action"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Record the outcome and schedule the next action in the {CRM}.",
+     "actor": "telemarketer",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "sent response",
+      "call outcome",
+      "agreed next action"
+     ],
+     "outputs": [
+      "call disposition",
+      "follow-up request"
+     ],
+     "handoff_to": "sales representative",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "lead-to-opportunity",
+     "approver": "telemarketer"
+    }
+   ],
+   "design": "Use the {CRM} to generate a channel-eligible follow-up queue and link relevant correspondence from the {EMAIL}. A bounded drafting step uses approved material in the {DOCS}; the telemarketer approves written dispatch, conducts calls and confirms the next action in the {CRM}.",
+   "previous_blocker": "Mail threads and contact notes were disconnected, and written replies required manual assembly. Simple sequences could schedule contact but could not reliably interpret individual correspondence.",
+   "enabler_now": "Deterministic linking and scheduling handle the queue. Bounded drafting can turn linked context into a reviewable response without independent outreach.",
+   "still_hard": "Old correspondence can contain superseded promises or sensitive details. Correct channel permission, negotiation and unusual commitments still require judgement and sometimes escalation.",
+   "human_edge": "Judge timing and tone, recognise when follow-up is unwelcome and negotiate the next step honestly.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Prospects awaiting answers to complex questions that previously fell outside routine follow-up."
+   },
+   "altitude": "The week shifts from assembling context and chasing reminders toward answering unresolved questions. Within agreed limits, the telemarketer can choose the next useful action and request specialist input; discount authority does not follow automatically.",
+   "reach": [
+    {
+     "role": "sales representative",
+     "task": "Develop a qualified next step from an unresolved prospect question.",
+     "learn": "Needs discovery, qualification criteria and when specialist input changes the opportunity."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Due-date queues, channel checks and structured next-action records are established workflow patterns.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "A bounded model can draft from approved source material, with human approval at dispatch; this digest supplies no measured telemarketing follow-up case.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The Netherlands-specific consent restriction in the digest must be considered for covered telephone follow-ups; it must not be generalised to every European jurisdiction or channel.",
+     "grade": "E1",
+     "source": "[S8]"
+    }
+   ],
+   "assumptions": [
+    "The baseline includes both written and telephone follow-ups; an individual case may use only one branch.",
+    "The mail-share prior is weak; correspondence retrieval and written responses justify a larger share here.",
+    "Simple acknowledgements use fixed templates; only context-dependent drafting uses a model.",
+    "Paper letters, where needed, use the same reviewed draft with manual dispatch.",
+    "Build ranges and time shares are estimates; access review and applicable national consultation are included."
+   ],
+   "unknowns": [
+    "Actual mix of calls, written replies and paper correspondence.",
+    "Rules distinguishing requested responses from further marketing.",
+    "Quality of correspondence-to-contact matching and approved response material.",
+    "Which commitments require a sales manager's approval."
+   ],
+   "research_questions": [
+    "What proportion of replies can fixed templates handle?",
+    "Which context omissions most often cause incorrect or repeated follow-ups?",
+    "Can reviewers detect superseded promises and unsupported claims in sample drafts?"
+   ],
+   "new_work": [
+    "Review drafts before dispatch and resolve missing facts.",
+    "Correct linked correspondence and channel-permission exceptions.",
+    "Maintain response templates, source material and follow-up rules."
+   ],
+   "time_saved_pct": 64,
+   "speedup": 2.78
+  }
+ ],
+ "role": {
+  "altitude": "The role remains centred on live customer conversations. Less record entry and preparation creates room for qualification, unresolved questions and complete handovers; any wider referral or stopping authority needs an explicit mandate.",
+  "reach": [
+   "Order clerk: assess order readiness and prevent incomplete handovers.",
+   "Sales representative: qualify enquiries and develop useful next steps.",
+   "Sales supervisor: improve scripts and escalation guidance from recurring customer questions."
+  ],
+  "skills_to_grow": [
+   "Needs discovery and clear explanations.",
+   "Consent scope, suppression handling and channel eligibility.",
+   "Checking drafts against source facts and customer commitments.",
+   "Order-readiness checks and specialist referral briefs.",
+   "Recognising vulnerability, refusal and unsuitable offers."
+  ],
+  "ambitious_version": "A telephone sales and enquiry specialist who resolves routine questions, qualifies complex needs and hands over complete opportunities, supported by configured records, deterministic workflows and narrowly bounded drafting."
+ },
+ "job_code": "41-9041.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 179,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3000});text(r.output)\n"
+  ],
+  "job": {
+   "code": "41-9041.00",
+   "title": "Telemarketers",
+   "tasks": 12,
+   "function": "Sales and account management"
+  }
+ }
+}

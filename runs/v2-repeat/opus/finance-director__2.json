@@ -1,0 +1,873 @@
+{
+ "role_id": "finance-director",
+ "role": {
+  "altitude": "The Finance Director spends less time pulling AFAS, Rabobank and agency figures into Excel and checking them. More time goes to running the finance control system: which jobs and model steps are allowed to run, what thresholds they use, which logs the auditor can rebuild, and who signs off. The weekly cycle becomes reviewing exceptions and making decisions, with less time spent assembling reports.",
+  "reach": [
+   "controller: month-close calendar and audit adjustments; learn where the close loses days",
+   "fpa: driver-based forecast and budget model; learn which drivers move forecast accuracy",
+   "collections: weekly dunning and credit-stop decisions; learn which customers pay late and why",
+   "payroll: CAO wage indexation and flex worker cost; learn how labour cost moves through the budget"
+  ],
+  "skills_to_grow": [
+   "Specifying rules and thresholds for automated finance jobs and reviewing their logs",
+   "Reading model-drafted commentary critically and tracing each figure back to its source",
+   "AI governance in finance: an approved tool list, shadow AI policy, and audit trails the auditor accepts",
+   "Scenario thinking on cash and the bank facility using a rolling 13-week forecast"
+  ],
+  "ambitious_version": "A governed finance data layer combines AFAS, CAMT.053 bank files and the agency portals into a daily cash position, a rolling 13-week cash forecast and a monthly status pack with drafted commentary. The Finance Director uses it to update the forecast every week instead of every quarter, and to show the bank and the management team a forecast they trust. It also supports closing the month in fewer days."
+ },
+ "tasks": [
+  {
+   "uid": "11-3031.00:21321",
+   "short": "Assess Noordhaven's current and future financial position from AFAS, bank and agency data for management and the bank.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pull ledger, receivables, payables, bank balances and flex costs from systems",
+     "actor": "fpa",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Rabobank",
+      "Power BI",
+      "Staffing agency portals"
+     ],
+     "inputs": [
+      "general ledger export",
+      "bank statement",
+      "agency invoice"
+     ],
+     "outputs": [
+      "financial data extract"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Build Excel model of margins, cash and rolling forecast",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "financial data extract",
+      "forecast drivers"
+     ],
+     "outputs": [
+      "rolling forecast",
+      "ratio pack"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Explain variances against budget and last forecast",
+     "actor": "finance-director",
+     "today_means": "document",
+     "systems": [
+      "Excel",
+      "Word"
+     ],
+     "inputs": [
+      "rolling forecast",
+      "ratio pack",
+      "budget"
+     ],
+     "outputs": [
+      "variance commentary"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Variance table above set thresholds, with the underlying GL lines and controller close notes",
+      "output": "Draft commentary per variance, with each figure referencing its source line",
+      "check": "Code checks that every number in the text matches the variance table; the FD edits and signs",
+      "stop": "One draft per variance line, at most two retries if the number check fails, then the line is flagged 'write manually'",
+      "why_not_simpler": "Explaining causes means reading free-text close notes and journal descriptions, which fixed templates cannot summarise"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Judge outlook, scenarios and bank covenant headroom",
+     "actor": "finance-director",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "rolling forecast",
+      "variance commentary",
+      "bank facility terms"
+     ],
+     "outputs": [
+      "financial status assessment"
+     ],
+     "handoff_to": "external",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Present status to management team and bank",
+     "actor": "finance-director",
+     "today_means": "meeting_call",
+     "systems": [
+      "PowerPoint",
+      "Teams"
+     ],
+     "inputs": [
+      "financial status assessment"
+     ],
+     "outputs": [
+      "management decision"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "A scheduled Python job on a governed data platform loads AFAS (GL, receivables, payables), Rabobank CAMT.053 files and agency portal invoices every night. It calculates the ratio pack and a driver-based rolling forecast and feeds a Power BI status dashboard. A bounded model step drafts variance commentary from close notes, every figure is checked against the table, and the FD edits it before the pack goes to the management team or the bank.",
+   "previous_blocker": "Data sat in AFAS, bank files and three agency portals with no shared model, so each assessment meant rebuilding Excel by hand. Free-text explanations could not be automated.",
+   "enabler_now": "AI-assisted coding makes the integration and forecast job a matter of weeks, not months. Language models can draft commentary from close notes when every number is checked by code.",
+   "still_hard": "Forecast drivers such as seasonal flex volume and shipper demand need judgement. Drafted commentary can sound right and still miss the real cause. More reporting capacity also tends to produce more reports.",
+   "human_edge": "Deciding what the numbers mean for the bank facility and the business, and standing behind that judgement in front of the bank and the management team.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Re-forecast cash and results every week instead of every quarter"
+   },
+   "altitude": "The FD stops assembling the pack and starts each week from a dashboard with draft commentary. They gain the right to set forecast drivers and commentary thresholds, which the FP&A analysts then run.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Maintaining forecast drivers and the rolling forecast",
+     "learn": "Which drivers actually move forecast accuracy"
+    },
+    {
+     "role": "controller",
+     "task": "Close notes and journal explanations",
+     "learn": "Which close notes are good enough to feed commentary"
+    }
+   ],
+   "build_days": {
+    "coding": "8-15",
+    "integration": "5-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Executive reporting takes about 32 hours a month, and the most AI-mature teams spend more time on it, not less",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Data quality is the top barrier to AI in finance (40.4%)",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Agents that prepare accounting work leave review, judgement and decisions with the accounting team",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "75% of Dutch CFOs cannot explain an AI-driven decision, which supports keeping figures traceable",
+     "grade": "E3",
+     "source": "[S5]"
+    },
+    {
+     "claim": "A Python job can read AFAS data through its GetConnectors and parse CAMT.053 bank files",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "AFAS GetConnectors are available for GL, receivables and payables",
+    "Rabobank provides CAMT.053 statement files",
+    "FP&A maintains the forecast drivers"
+   ],
+   "unknowns": [
+    "Noordhaven's bank covenants and how often the bank asks for reporting",
+    "Whether a governed data platform already exists beyond the Power BI extract",
+    "How the agency portals can be accessed (API, export or none)"
+   ],
+   "research_questions": [
+    "Does a weekly rolling forecast measurably improve forecast accuracy over three months compared with today's process?",
+    "Can the commentary check catch every wrong figure in 50 historical variance lines?",
+    "Can all three agency portals deliver invoice data automatically?"
+   ],
+   "time_saved_pct": 53,
+   "speedup": 2.12
+  },
+  {
+   "uid": "11-3031.00:21326",
+   "short": "Review receivables ageing and collection status to see what is overdue and what to escalate.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export open receivables ageing from AFAS into Excel",
+     "actor": "collections",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "open receivables list"
+     ],
+     "outputs": [
+      "ageing report"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Check recent receipts in bank statements against open items",
+     "actor": "collections",
+     "today_means": "system_screen",
+     "systems": [
+      "Rabobank",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "bank statement",
+      "ageing report"
+     ],
+     "outputs": [
+      "updated ageing report"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Review ageing, DSO, top overdue customers and promises to pay",
+     "actor": "finance-director",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "Power BI"
+     ],
+     "inputs": [
+      "updated ageing report",
+      "dunning notes"
+     ],
+     "outputs": [
+      "collection review"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Decide escalation, credit stop or bad-debt provision with collections",
+     "actor": "finance-director",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "collection review"
+     ],
+     "outputs": [
+      "credit stop decision",
+      "provision proposal"
+     ],
+     "handoff_to": "collections",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Write weekly collection summary for the management team",
+     "actor": "finance-director",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook"
+     ],
+     "inputs": [
+      "collection review",
+      "dunning notes"
+     ],
+     "outputs": [
+      "collection summary"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Top-10 overdue table and the dunning notes logged in AFAS for those customers",
+      "output": "Half-page summary: status per customer, promises to pay, proposed actions",
+      "check": "Amounts and customer names are compared with the table by code; the FD approves before sending",
+      "stop": "One draft per week, regenerated at most twice on a failed check, otherwise the table is sent without text",
+      "why_not_simpler": "Dunning notes are free text from the collections officer and need to be summarised"
+     },
+     "authority": "draft",
+     "human_gate": true
+    }
+   ],
+   "design": "A nightly job matches AFAS open items with Rabobank CAMT.053 receipts and publishes an ageing and DSO page in the existing Power BI finance report. A notification goes to the FD and the collections officer when a customer passes a set overdue amount or age. A bounded model step drafts the weekly management summary from the dunning notes, and credit stops and provisions stay FD decisions.",
+   "previous_blocker": "Payment status lagged a day behind in AFAS, and dunning notes lived in mail and free-text fields, so the review needed a hand-built Excel sheet.",
+   "enabler_now": "The CAMT.053 parsing and matching code is quick to build with AI coding. The Power BI report already exists, and a model can summarise dunning notes under a strict number check.",
+   "still_hard": "Partial payments and disputed invoices make matching unclear. The provision decision depends on knowing the customer. Some sole-trader customers are natural persons, so automated credit scoring of them would be high-risk under the EU AI Act.",
+   "human_edge": "Deciding when to stop delivering to a valued shipper and having that conversation with sales and the customer.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily credit-stop and escalation decisions on threshold alerts instead of a weekly review"
+   },
+   "altitude": "The FD stops reading ageing sheets and only acts on alerts and a short weekly summary. They gain the right to set the overdue thresholds that trigger escalation.",
+   "reach": [
+    {
+     "role": "collections",
+     "task": "Dunning and logging promises to pay",
+     "learn": "Which customers keep their promises and which do not"
+    },
+    {
+     "role": "bookkeeper",
+     "task": "Allocating receipts to open items",
+     "learn": "Why some receipts cannot be matched"
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "3-6",
+    "testing_rollout": "3-6",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "81% of Dutch finance professionals explain DSO after the fact, and only 12% plan cash-in more than 30 days ahead",
+     "grade": "E3",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Scoring the creditworthiness of natural persons is high-risk AI under Annex III 5(b)",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "Reconciliation can run with people handling only the exceptions, while cash allocation needs human approval",
+     "grade": "E3",
+     "source": "[S3]"
+    },
+    {
+     "claim": "Power BI can show ageing and DSO from an AFAS extract",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Dunning notes are recorded in AFAS rather than only in Outlook",
+    "The nightly Power BI extract can include open receivables"
+   ],
+   "unknowns": [
+    "How many customers are sole traders (natural persons)",
+    "The current DSO and the bad-debt write-offs of the past year",
+    "Whether the collections officer works from AFAS dunning or from their own Excel sheet"
+   ],
+   "research_questions": [
+    "Does daily matching against CAMT.053 cut unexplained items in the ageing report by more than half?",
+    "Do threshold alerts lead to earlier action and lower DSO over one quarter?",
+    "Are dunning notes complete enough to summarise without asking the collections officer?"
+   ],
+   "time_saved_pct": 74,
+   "speedup": 3.92
+  },
+  {
+   "uid": "11-3031.00:21323",
+   "short": "Evaluate finance processes and systems and recommend changes to procedures, systems, budgets or controls.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect process facts: close days, manual journals, audit adjustments, touchless invoices",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "close calendar",
+      "journal log",
+      "audit findings"
+     ],
+     "outputs": [
+      "process metrics"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Talk with controller, accountants and bookkeepers about bottlenecks",
+     "actor": "finance-director",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "process metrics"
+     ],
+     "outputs": [
+      "bottleneck list"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Weigh options: AFAS configuration, e-invoicing, SBR filing, AI tool policy",
+     "actor": "finance-director",
+     "today_means": "document",
+     "systems": [
+      "SharePoint",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "bottleneck list",
+      "regulatory change"
+     ],
+     "outputs": [
+      "option assessment"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Write recommendation memo with cost, budget and control impact",
+     "actor": "finance-director",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "SharePoint"
+     ],
+     "inputs": [
+      "option assessment",
+      "process metrics"
+     ],
+     "outputs": [
+      "recommendation memo"
+     ],
+     "handoff_to": "external",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Option assessment notes, process metrics and current procedures from SharePoint",
+      "output": "Memo draft with problem, options, costs, control changes and an implementation plan",
+      "check": "Every metric is linked to the dashboard and every procedure reference to a SharePoint file; the FD rewrites the recommendation",
+      "stop": "One draft and one revision per memo, after which the FD writes it",
+      "why_not_simpler": "The memo combines free-text notes and procedures into prose, which a template cannot do"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Present and agree changes with management team, and the works council where staff are affected",
+     "actor": "finance-director",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams",
+      "PowerPoint"
+     ],
+     "inputs": [
+      "recommendation memo"
+     ],
+     "outputs": [
+      "approved change"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "A process dashboard on the finance data platform tracks close days, manual journals, audit adjustments and touchless AP rate from AFAS logs, so evidence is always current. A bounded model step drafts recommendation memos from the FD's notes and SharePoint procedures, with links to every metric and source. The judgement and the agreement with the management team and works council stay with the FD.",
+   "previous_blocker": "Process metrics were not measured continuously. Each review began with a manual data hunt, and the memo writing took a lot of time.",
+   "enabler_now": "AFAS workflow and journal data can be turned into a process dashboard quickly with AI coding. Memo drafting from notes is reliable enough when the FD reviews it.",
+   "still_hard": "Choosing between options such as the Peppol network, SBR filing tooling and agent use depends on regulation that is still moving. Change needs people to come along, and works council consent where work or monitoring changes.",
+   "human_edge": "Choosing which control trade-offs Noordhaven accepts and getting the team, the auditor and the works council behind the change.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A finance AI governance register: approved tools, thresholds, logs and owners that the auditor can review"
+   },
+   "altitude": "The FD moves from occasional process reviews to owning the finance control system, including which automations run under which limits. They gain the right to approve or switch off automated steps.",
+   "reach": [
+    {
+     "role": "controller",
+     "task": "Running the month close",
+     "learn": "Where the close loses days and why"
+    },
+    {
+     "role": "bookkeeper",
+     "task": "Processing supplier invoices",
+     "learn": "Why invoices need manual handling"
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "3-6",
+    "testing_rollout": "3-5",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "The cabinet plans B2B e-invoicing from 1 July 2030 and digital reporting from 1 July 2031, with role-based access and access logs",
+     "grade": "E3",
+     "source": "[S6]"
+    },
+    {
+     "claim": "AFAS Profit sends and receives Peppol invoices",
+     "grade": "E2",
+     "source": "[S7]"
+    },
+    {
+     "claim": "AFAS cannot file accounts with KVK via SBR for large companies",
+     "grade": "E2",
+     "source": "[S11]"
+    },
+    {
+     "claim": "Shadow AI is best handled by giving staff an approved tool, not only by blocking",
+     "grade": "E3",
+     "source": "[S4]"
+    },
+    {
+     "claim": "66% of CFOs report central AI controls against 45% of managers",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Advisors recommend timestamped logs and an AI governance lead in finance",
+     "grade": "E3",
+     "source": "[S3]"
+    }
+   ],
+   "assumptions": [
+    "AFAS journal and workflow logs can be exported",
+    "The works council must be consulted when process changes affect how staff work or are monitored"
+   ],
+   "unknowns": [
+    "Noordhaven's turnover, which decides whether CSRD applies",
+    "How many audit adjustments the auditor made last year",
+    "Which AI tools finance staff already use informally"
+   ],
+   "research_questions": [
+    "Can the AFAS logs provide reliable close-day and touchless AP figures without manual work?",
+    "Does the auditor accept the governance register and logs as evidence of control?",
+    "Which SBR filing route and which Peppol setup fit Noordhaven before 2030?"
+   ],
+   "time_saved_pct": 41,
+   "speedup": 1.69
+  },
+  {
+   "uid": "11-3031.00:21315",
+   "short": "Evaluate cost data, including flex labour and CAO wage increases, to plan the annual budget.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Extract actual costs by cost centre, payroll and agency invoices",
+     "actor": "fpa",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Staffing agency portals"
+     ],
+     "inputs": [
+      "general ledger export",
+      "payroll cost report",
+      "agency invoice"
+     ],
+     "outputs": [
+      "cost actuals"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Normalise flex costs, CAO increases and seasonality in Excel",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "cost actuals",
+      "CAO wage table",
+      "agency rate card"
+     ],
+     "outputs": [
+      "cost baseline"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Collect budget input from site and department managers by mail",
+     "actor": "fpa",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Excel"
+     ],
+     "inputs": [
+      "cost baseline"
+     ],
+     "outputs": [
+      "budget submissions"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 5,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Analyse cost drivers and challenge budget holders",
+     "actor": "finance-director",
+     "today_means": "meeting_call",
+     "systems": [
+      "Excel",
+      "Teams"
+     ],
+     "inputs": [
+      "budget submissions",
+      "cost baseline"
+     ],
+     "outputs": [
+      "budget proposal"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Present and agree budget with management team",
+     "actor": "finance-director",
+     "today_means": "meeting_call",
+     "systems": [
+      "PowerPoint",
+      "Teams"
+     ],
+     "inputs": [
+      "budget proposal"
+     ],
+     "outputs": [
+      "approved budget"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "A scheduled job combines AFAS cost actuals, payroll costs and agency portal invoices into a cost baseline. CAO indexation and agency rates are applied from maintained tables, and seasonal flex volume is applied by site. Budget holders enter figures in AFAS budgeting or a simple input form instead of mailing Excel files. A Power BI page flags submissions that deviate from the baseline, so the FD's time goes to challenging and deciding.",
+   "previous_blocker": "Flex costs came from three agency portals in different formats, and CAO changes were applied by hand. Budget input arrived as loose Excel files.",
+   "enabler_now": "AI coding makes the portal integrations and the indexation rules cheap to build. AFAS and Power BI are already in place for input and review.",
+   "still_hard": "Agency portals may have no API. Next season's flex volume depends on shipper contracts that are not in the data. Budget holders negotiate.",
+   "human_edge": "Challenging site managers on their cost plans and deciding where Noordhaven takes risk in the budget.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A quarterly reforecast of the cost budget by site instead of a single annual budget"
+   },
+   "altitude": "The FD stops consolidating spreadsheets and spends budget season in challenge sessions with a pre-flagged deviation list. They gain the right to set the indexation and seasonality assumptions centrally.",
+   "reach": [
+    {
+     "role": "payroll",
+     "task": "Applying CAO wage increases",
+     "learn": "How labour cost per site will move"
+    },
+    {
+     "role": "fpa",
+     "task": "Building the budget baseline",
+     "learn": "Which cost lines drift from plan"
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "5-12",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "83% of finance executives say usage-based AI pricing pushed spend over budget, so run cost needs a cap",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "AFAS Profit has budgeting functions for entering budgets by cost centre",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "CAO wage increases can be applied as a deterministic rule table",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "AFAS budgeting is licensed or can be added",
+    "Agency rate cards are available in a structured form",
+    "The payroll specialist maintains the CAO wage table"
+   ],
+   "unknowns": [
+    "Whether the three agencies offer exports or APIs for hours and invoices",
+    "How many budget holders there are across the three sites",
+    "Whether the AFAS budgeting module is in Noordhaven's licence"
+   ],
+   "research_questions": [
+    "Does an automated baseline match last year's hand-built baseline within 1% per cost centre?",
+    "Will site managers use AFAS budget entry instead of mailing Excel files?",
+    "Can flex volume by season be predicted well enough from two years of agency hours?"
+   ],
+   "time_saved_pct": 70,
+   "speedup": 3.28
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 123,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

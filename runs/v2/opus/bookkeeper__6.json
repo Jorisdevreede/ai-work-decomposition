@@ -1,0 +1,619 @@
+{
+ "role_id": "bookkeeper",
+ "role": {
+  "altitude": "The three bookkeepers stop keying and copying numbers between AFAS, Excel and mail. They own the mapping tables, VAT code rules, stock valuation rules and supplier data the jobs run on, work the exception queues, and sign off before anything posts, pays or is filed.",
+  "reach": [
+   "FP&A Analyst: how the budget model and its drivers are built, so budget input arrives in the shape FP&A uses",
+   "Accountant: month-end journals and the VAT account reconciliation, so stock and VAT postings close without rework",
+   "Controller: the audit trail and approval rules the external auditor checks",
+   "Credit and Collections Officer: customer account status and dispute reasons, which sit in the same AFAS ledgers"
+  ],
+  "skills_to_grow": [
+   "Maintaining mapping and rule tables (ledger to budget line, VAT code rules, stock valuation) as governed data",
+   "Working an exception queue and fixing the cause in master data, not only the single case",
+   "Basic SQL or Power Query to check job output against AFAS",
+   "Dutch tax rules behind the checks: reverse charge, ICP, inlenersaansprakelijkheid and the g-rekening"
+  ],
+  "ambitious_version": "Finance runs a small set of scheduled jobs on a governed data platform next to AFAS: budget packs, stock valuation and VAT/ICP pre-checks are ready the day the data closes. The bookkeepers spend their time on exceptions and on supplier and rule quality, which helps take a day or more off the month close."
+ },
+ "tasks": [
+  {
+   "uid": "43-3031.00:2507",
+   "short": "Gather actuals, prior budgets and site estimates into the budget workbook for FP&A.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export actuals and prior budget from AFAS and Power BI into Excel",
+     "actor": "bookkeeper",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Power BI",
+      "Excel"
+     ],
+     "inputs": [
+      "general ledger export",
+      "prior budget"
+     ],
+     "outputs": [
+      "actuals workbook"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Ask site managers by mail for expected costs, flex hours and revenue",
+     "actor": "bookkeeper",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Excel"
+     ],
+     "inputs": [
+      "budget request template"
+     ],
+     "outputs": [
+      "site budget estimates"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 10,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Map ledger accounts and cost centres to budget lines, fill template",
+     "actor": "bookkeeper",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "actuals workbook",
+      "site budget estimates",
+      "account mapping table"
+     ],
+     "outputs": [
+      "budget pack draft"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Check totals and explain big differences against last year",
+     "actor": "bookkeeper",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "budget pack draft",
+      "prior budget"
+     ],
+     "outputs": [
+      "variance notes"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "budget lines whose change versus prior year passes a set threshold, with the site estimate comments",
+      "output": "one-line draft explanation per flagged line, marked 'from site comment' or 'unknown'",
+      "check": "totals and thresholds are computed in code; the model only words reasons found in the site comments, and every note is shown next to its numbers for the bookkeeper",
+      "stop": "one pass per flagged line, at most 50 lines; if no site comment exists the line is marked 'ask site' and goes to the person",
+      "why_not_simpler": "the reasons sit in free-text mail and comments from site managers; a rule cannot turn them into a short note"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Send the budget pack to FP&A and answer their questions",
+     "actor": "bookkeeper",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "SharePoint"
+     ],
+     "inputs": [
+      "budget pack draft",
+      "variance notes"
+     ],
+     "outputs": [
+      "budget pack"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "notification",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    }
+   ],
+   "design": "A scheduled Python job on the governed data platform reads the AFAS general ledger and prior budget, applies a maintained account-to-budget-line mapping and writes the budget pack to SharePoint. Site estimates come in through a Microsoft Forms or Power Apps entry screen with reminders, and a bounded model step drafts variance notes from site comments for the bookkeeper to check before FP&A gets the pack.",
+   "previous_blocker": "Inputs come from many site managers by mail in their own formats, and the mapping lived in one person's spreadsheet. Building and keeping a pipeline for a task of about 30 hours per FTE a year was not worth it.",
+   "enabler_now": "AI-assisted coding makes a small mapping job and entry form a matter of days, and the AFAS extract already exists for Power BI. A language model can draft the short variance notes from free-text comments.",
+   "still_hard": "Site managers still send late or vague estimates, and judging whether an estimate is realistic stays with FP&A and the controller. The mapping table must be kept up to date when cost centres change.",
+   "human_edge": "Knowing which site estimate is padded or missing a known event, such as a new customer contract or a peak season flex plan, and calling the site manager about it.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A refreshed budget-versus-actual pack every month instead of only at the yearly and quarterly budget rounds, so FP&A can reforecast sooner."
+   },
+   "altitude": "The bookkeeper no longer builds the workbook; they own the mapping table, check flagged lines and talk to sites about missing input. FP&A remains the owner of the budget.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Build the forecast and budget model",
+     "learn": "Which drivers (flex hours, volumes per customer) FP&A uses, so the pack delivers them directly."
+    },
+    {
+     "role": "controller",
+     "task": "Approve the budget pack",
+     "learn": "Which checks the controller expects before sign-off."
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "2-4",
+    "testing_rollout": "3-5",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Budget compilation from ledger data and a mapping table is routine deterministic work in spreadsheet or scripting tools.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "AFAS data is already extracted nightly for Power BI dashboards at Noordhaven.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The bookkeepers compile inputs; FP&A owns the budget model and the controller approves it.",
+    "The nightly AFAS extract used for Power BI includes the general ledger by cost centre.",
+    "Budget rounds happen yearly with quarterly updates."
+   ],
+   "unknowns": [
+    "How many people send budget input and in what format today.",
+    "Whether a governed data platform exists or Power BI dataflows must serve as the platform.",
+    "Whether FP&A wants the pack in Excel or directly in a planning model."
+   ],
+   "research_questions": [
+    "How many hours per budget round go to collecting and chasing site input versus mapping and checking?",
+    "Is the account-to-budget-line mapping stable across years, or rebuilt each round?",
+    "Would FP&A use a monthly refreshed pack, or does the budget cycle stay yearly regardless?"
+   ],
+   "time_saved_pct": 86,
+   "speedup": 7.14
+  },
+  {
+   "uid": "43-3031.00:2511",
+   "short": "Record stock of packaging, pallets and consumables in the ledger and reconcile it to counts.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect stock counts and movement lists from the three sites",
+     "actor": "bookkeeper",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Excel"
+     ],
+     "inputs": [
+      "stock count list",
+      "warehouse system export"
+     ],
+     "outputs": [
+      "stock movement list"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Value stock and key movements into Excel and AFAS",
+     "actor": "bookkeeper",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "stock movement list",
+      "purchase invoice lines",
+      "price list"
+     ],
+     "outputs": [
+      "stock valuation"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Reconcile the stock ledger to counts and chase differences",
+     "actor": "bookkeeper",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit",
+      "Outlook"
+     ],
+     "inputs": [
+      "stock valuation",
+      "stock count list",
+      "general ledger export"
+     ],
+     "outputs": [
+      "stock difference list"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Post the month-end stock and pallet journal",
+     "actor": "bookkeeper",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "stock valuation",
+      "stock difference list"
+     ],
+     "outputs": [
+      "stock journal"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "A scheduled job reads count and movement exports from the warehouse systems and purchase lines from AFAS, values stock with fixed rules and produces a draft stock journal through the AFAS connector. Differences above a tolerance show on a Power BI page per site, and the bookkeeper approves the journal before it posts.",
+   "previous_blocker": "Counts arrive by mail as site spreadsheets in different layouts, and stock is a side task with small volume, so nobody built an interface.",
+   "enabler_now": "Cheap custom code for file parsing and the AFAS connectors, plus the existing Power BI setup, make a small reconciliation job affordable.",
+   "still_hard": "Count quality at the sites, missing movements, and pallet exchanges with customers and carriers that are not recorded anywhere structured.",
+   "human_edge": "Deciding with the site manager whether a difference is a counting error, a booking error or a real loss, and what to write off.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Monthly stock and pallet balances per site instead of quarterly, so write-offs are found while they can still be traced."
+   },
+   "altitude": "The bookkeeper stops typing counts and checks a difference list instead; they own the valuation rules and tolerances and approve the journal.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Month-end close journals",
+     "learn": "How the stock journal feeds the balance sheet and which accruals depend on it."
+    },
+    {
+     "role": "controller",
+     "task": "Audit file for stock",
+     "learn": "What evidence the auditor asks for on stock and pallet balances."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-6",
+    "testing_rollout": "3-5",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Stock valuation and reconciliation to counts is rule-based and needs no model at run time.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "AFAS Profit has a ledger and connectors (GetConnector/UpdateConnector) for reading and posting journals.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Customer stock is held in a warehouse management system outside finance; this task covers Noordhaven's own stock (packaging, pallets, fuel, spare parts) and its value in the ledger.",
+    "Warehouse systems can export counts and movements as files."
+   ],
+   "unknowns": [
+    "Which warehouse management system each site runs and whether it has an API or file export.",
+    "Whether pallet exchange balances with customers are tracked, and where.",
+    "The yearly value of stock differences written off."
+   ],
+   "research_questions": [
+    "What share of the time goes to retyping counts versus investigating differences?",
+    "Can each site produce a count export in one fixed layout?",
+    "Are stock differences material enough for the auditor to want a monthly reconciliation?"
+   ],
+   "time_saved_pct": 86,
+   "speedup": 7.02
+  },
+  {
+   "uid": "43-3031.00:2510",
+   "short": "Prepare and file VAT and ICP returns, statistics and agency liability papers to Belastingdienst and others.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Run VAT and ICP reports for the period in AFAS",
+     "actor": "bookkeeper",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "general ledger export"
+     ],
+     "outputs": [
+      "VAT report",
+      "ICP report"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Check VAT codes, reverse charge and intra-EU purchases line by line",
+     "actor": "bookkeeper",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "VAT report",
+      "purchase invoice lines",
+      "supplier master data"
+     ],
+     "outputs": [
+      "VAT exception list"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "invoice lines that fail a VAT rule (code does not fit supplier country, VAT number or ledger account), with the invoice text",
+      "output": "proposed VAT code and a one-line reason quoted from the invoice",
+      "check": "the proposal must be one of the allowed AFAS VAT codes and consistent with supplier country and VAT number; no change posts without the bookkeeper accepting it",
+      "stop": "one pass per flagged line; lines where the model is unsure or the invoice text is missing go to the person; at most a few hundred lines per period",
+      "why_not_simpler": "rules find the suspicious lines, but deciding the right code often needs reading the invoice text (services versus goods, place of supply)"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Collect agency payment-behaviour statements and check g-rekening payments",
+     "actor": "bookkeeper",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Staffing agency portals",
+      "Rabobank"
+     ],
+     "inputs": [
+      "agency invoice",
+      "payment-behaviour statement",
+      "payment batch"
+     ],
+     "outputs": [
+      "liability file"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Fill and submit the VAT return, ICP and CBS forms",
+     "actor": "bookkeeper",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Belastingdienst portal"
+     ],
+     "inputs": [
+      "VAT report",
+      "ICP report",
+      "VAT exception list"
+     ],
+     "outputs": [
+      "VAT return",
+      "ICP return"
+     ],
+     "handoff_to": "external",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Archive filings, reconcile the VAT account, answer tax office questions",
+     "actor": "bookkeeper",
+     "today_means": "document",
+     "systems": [
+      "SharePoint",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "VAT return",
+      "general ledger export"
+     ],
+     "outputs": [
+      "filing archive"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    }
+   ],
+   "design": "Use the VAT and ICP reporting and digital submission already in AFAS, and add a scheduled rule job that flags suspicious VAT lines, with a bounded model step that proposes a code from the invoice text for the bookkeeper to accept. A small tracker on SharePoint or the data platform requests and records agency payment-behaviour statements and checks each agency payment batch for the g-rekening split, alerting the bookkeeper to gaps.",
+   "previous_blocker": "VAT checks need reading invoices for edge cases, and agency liability papers arrive by mail on no fixed schedule, so the work stayed manual in Excel and Outlook.",
+   "enabler_now": "Rule jobs on AFAS data are cheap to build now, and a model can read invoice text to propose a VAT code within a fixed list. Coming e-invoicing and 5-day reporting pressure make early checks worth more.",
+   "still_hard": "Unusual cross-border cases and corrections of earlier periods need tax knowledge. Filing is irreversible and the company carries the liability, so a person must approve every submission.",
+   "human_edge": "Signing for a filing to the tax office and judging grey cases (place of supply, corrections, agency liability) with the controller or tax adviser.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A continuous VAT and agency-liability check that runs weekly, ready for the coming Dutch e-invoicing reporting with its short deadlines."
+   },
+   "altitude": "The bookkeeper reviews a short exception list and approves filings instead of checking every line; they own the VAT rule table and the agency liability file.",
+   "reach": [
+    {
+     "role": "payroll",
+     "task": "Wage tax and pension fund returns",
+     "learn": "How payroll filings and agency hours link, since pension and wage tax forms sit with payroll, not the bookkeeper."
+    },
+    {
+     "role": "controller",
+     "task": "Tax compliance and audit",
+     "learn": "Which VAT positions the controller wants escalated."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "3-5",
+    "testing_rollout": "5-8",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Noordhaven can be held liable for agencies' unpaid wage tax and VAT, limited by payment-behaviour statements, records and paying part into the g-rekening.",
+     "grade": "E3",
+     "source": "[S10]"
+    },
+    {
+     "claim": "Own VAT codes and exceptions per administration block fully automatic invoice processing.",
+     "grade": "E3",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Dutch B2B e-invoicing from 1 July 2030 and reporting from 1 July 2031 are planned, not law yet.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "Buyers may need to report intra-EU and reverse-charge purchases within 5 days of receipt.",
+     "grade": "E2",
+     "source": "[S8]"
+    },
+    {
+     "claim": "AFAS Profit can prepare and submit the VAT and ICP returns digitally.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Workers' compensation forms do not exist in the Netherlands; wage tax and pension fund returns are done by payroll.",
+    "The bookkeeper prepares VAT, ICP and CBS returns; the controller approves them.",
+    "Noordhaven has intra-EU purchases (for example fuel, equipment or transport services)."
+   ],
+   "unknowns": [
+    "Whether VAT returns are filed monthly or quarterly.",
+    "Whether a tax adviser reviews the returns today.",
+    "How the three agencies deliver payment-behaviour statements and whether a g-rekening split is applied now."
+   ],
+   "research_questions": [
+    "How many VAT lines per period fail a simple rule check, and how many of those are real errors?",
+    "Did the last tax audit or year-end audit find VAT or agency liability issues?",
+    "Is the g-rekening share paid correctly on every agency invoice today?"
+   ],
+   "time_saved_pct": 74,
+   "speedup": 3.77
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 142,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

@@ -1,0 +1,1008 @@
+{
+ "tasks": [
+  {
+   "uid": "43-9041.00:23313",
+   "short": "Prepare claim documents, check completeness and obtain missing information.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve claim documents and the policy record from the insurance case system.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "claim reference"
+     ],
+     "outputs": [
+      "claim documents",
+      "policy record"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read supporting documents and enter facts into the insurance case system.",
+     "actor": "claims clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "claim documents",
+      "policy record"
+     ],
+     "outputs": [
+      "claim data"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "crud_app",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Unstructured claim documents; structured submissions bypass the model.",
+      "output": "Claim fields with document references and unresolved fields.",
+      "check": "Validate field types, policy identifiers and dates; show source passages for clerk review.",
+      "stop": "One extraction and one repair attempt per document; unresolved fields return to the clerk.",
+      "why_not_simpler": "Forms and mappings handle structured inputs; varied narratives and attachments still require reading."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "claims clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Prepare the claim form and supporting document list.",
+     "actor": "claims clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "claim data",
+      "claim documents",
+      "claim template"
+     ],
+     "outputs": [
+      "claim form",
+      "supporting document list"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Check required fields, signatures and consistency against the policy record.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "claim form",
+      "supporting document list",
+      "policy record"
+     ],
+     "outputs": [
+      "completeness report"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "ticket-to-resolution",
+     "approver": "claims clerk"
+    },
+    {
+     "id": "s5",
+     "what": "Contact the policyholder about missing facts and record their explanation.",
+     "actor": "claims clerk",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY",
+      "OTHER"
+     ],
+     "inputs": [
+      "completeness report",
+      "claim form"
+     ],
+     "outputs": [
+      "clarification note",
+      "additional claim documents"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 65,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Save the completed claim pack and pass it to the claims handler.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "claim form",
+      "completeness report",
+      "clarification note",
+      "additional claim documents"
+     ],
+     "outputs": [
+      "claim pack"
+     ],
+     "handoff_to": "claims handler",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure the insurance case system in {OTHER} to retrieve records, populate forms in {DOCS}, check required evidence and route completed packs. A bounded extractor on {DATA_PLATFORM} handles varied attachments, with field review before posting; the clerk receives a missing-information checklist for policyholder conversations.",
+   "previous_blocker": "Document formats varied, required evidence differed by claim type, and records were poorly connected.",
+   "enabler_now": "Existing form builders and validation rules cover much of the work. Bounded extraction handles remaining documents, while AI-assisted coding can shorten connector development.",
+   "still_hard": "Missing evidence, contradictory accounts and unusual policy wording remain difficult. GDPR requires controlled access and a lawful basis, including applicable conditions for health data.",
+   "human_edge": "Help distressed policyholders explain events and distinguish an absent document from an unclear account.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Assisted claim completion appointments for policyholders who struggle with digital forms"
+   },
+   "altitude": "The clerk spends less time copying facts and more time resolving incomplete claims. They gain authority to offer assisted completion appointments within agreed service limits, not to decide coverage.",
+   "reach": [
+    {
+     "role": "office clerk",
+     "task": "Design an accessible document intake checklist.",
+     "learn": "Plain-language forms, alternative submission routes and document accessibility."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Paperbox organises insurance emails and attachments into case files.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "VKG has a documented case automating claims correspondence; it does not establish this task's savings.",
+     "grade": "E3",
+     "source": "[S13]"
+    },
+    {
+     "claim": "Templates, required-field rules and a bounded extractor can support claim-pack preparation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The company processes insurance claims using an insurance case system represented by {OTHER}.",
+    "Shares and remaining-time estimates describe a typical task mix, not measured savings.",
+    "Document-heavy priors fit this task; clarification calls take more time than the weak mail prior suggests.",
+    "Build ranges cover a narrow pilot and may overlap; national consultation requirements vary."
+   ],
+   "unknowns": [
+    "Claim types, required evidence and document languages.",
+    "Available templates, validation features and read/write access in {OTHER}.",
+    "Proportion of structured submissions and incomplete claims.",
+    "Applicable national rules, employee consultation requirements and health-data access conditions."
+   ],
+   "research_questions": [
+    "Which completeness checks can existing configuration handle?",
+    "How accurately can extraction preserve facts and flag contradictions on representative documents?"
+   ],
+   "new_work": [
+    "Review extracted fields and unresolved completeness checks.",
+    "Maintain claim templates and evidence requirements.",
+    "Monitor access controls, extraction errors and connector failures.",
+    "Offer assisted completion appointments."
+   ],
+   "time_saved_pct": 79,
+   "speedup": 4.82
+  },
+  {
+   "uid": "43-9041.00:23314",
+   "short": "Calculate a proposed claim amount from evidence and policy terms.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve the claim pack and policy terms from the insurance case system.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "claim reference"
+     ],
+     "outputs": [
+      "claim pack",
+      "policy record"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read estimates and invoices, then enter loss amounts into the insurance case system.",
+     "actor": "claims clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "claim pack"
+     ],
+     "outputs": [
+      "loss amounts"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "crud_app",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Repair estimates, supplier invoices and other loss evidence.",
+      "output": "Itemised amounts, currencies, tax fields and source references.",
+      "check": "Reconcile line items to totals; check duplicates, currencies and claim identifiers; review ambiguous amounts.",
+      "stop": "One extraction and one repair attempt per document; failed reconciliation returns to the clerk.",
+      "why_not_simpler": "Structured feeds use mappings; varied estimates and scanned evidence need document reading."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "claims clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Apply policy limits, deductibles and valuation rules to calculate the proposed amount.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "loss amounts",
+      "policy record",
+      "valuation rules"
+     ],
+     "outputs": [
+      "claim calculation",
+      "calculation exceptions"
+     ],
+     "handoff_to": "claims handler",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Resolve disputed valuation or unclear policy treatment with the claims handler.",
+     "actor": "claims handler",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "claim calculation",
+      "calculation exceptions",
+      "claim pack",
+      "policy record"
+     ],
+     "outputs": [
+      "approved valuation",
+      "claim calculation"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "ticket-to-resolution",
+     "approver": "claims handler"
+    },
+    {
+     "id": "s5",
+     "what": "Record the calculation and its supporting explanation in the insurance case system.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "claim calculation",
+      "approved valuation"
+     ],
+     "outputs": [
+      "recorded claim calculation"
+     ],
+     "handoff_to": "claims handler",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure versioned calculation rules in the insurance case system in {OTHER}, using verified loss amounts and policy terms. A bounded extractor on {DATA_PLATFORM} reads residual documents from {DOCS}; unclear valuation goes to a claims handler, and the calculation remains a proposal until settlement approval.",
+   "previous_blocker": "Amounts arrived in documents, policy versions were difficult to map, and calculation tools did not explain exceptions.",
+   "enabler_now": "Existing calculation engines and validation rules already handle arithmetic. Better document extraction and faster connector development can close input gaps.",
+   "still_hard": "Depreciation, causation, disputed repair scope and unusual policy terms need expertise. GDPR Article 22 conditions must be assessed before any solely automated decision with significant effects; this design does not automate refusals.",
+   "human_edge": "Explain a disputed valuation and recognise when a technically correct formula gives an unsupported result.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily prioritisation of valuation exceptions by financial exposure and claimant delay"
+   },
+   "altitude": "Routine arithmetic leaves the clerk's queue, while handlers spend more time on disputed evidence. The clerk can prioritise valuation referrals within agreed limits; settlement authority does not change.",
+   "reach": [
+    {
+     "role": "management analyst",
+     "task": "Analyse recurring valuation exceptions and propose rule improvements.",
+     "learn": "Exception sampling, financial exposure analysis and policy-version comparison."
+    }
+   ],
+   "build_days": {
+    "coding": "4-9",
+    "integration": "5-12",
+    "testing_rollout": "8-15",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Shift Claims supports claims triage and automation of claims or parts of claims.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "A documented motor-claims case automates eligible claims under restricted conditions; it does not establish general valuation coverage.",
+     "grade": "E3",
+     "source": "[S10]"
+    },
+    {
+     "claim": "Claim arithmetic can use deterministic rules while disputed valuation remains with a handler.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Routine calculations use {OTHER}; local spreadsheet workarounds are possible but not assumed.",
+    "The handler step represents exception time averaged across the task mix.",
+    "The judgement prior concerns valuation and policy interpretation, not arithmetic.",
+    "Estimates exclude rebuilding a full policy calculation engine; national consultation requirements vary."
+   ],
+   "unknowns": [
+    "Existing calculation features and completeness of versioned policy rules.",
+    "Claim mix, valuation disputes and settlement authority limits.",
+    "Use of spreadsheets for unusual calculations.",
+    "Whether life or health pricing enters scope, triggering separate EU AI Act assessment."
+   ],
+   "research_questions": [
+    "Which calculations can be configured without custom code?",
+    "Can historical cases be replayed with correct policy versions and explainable results?"
+   ],
+   "new_work": [
+    "Review ambiguous extracted amounts.",
+    "Maintain and test policy-version rules.",
+    "Investigate calculation differences and valuation exceptions.",
+    "Check rule changes against representative historical claims."
+   ],
+   "time_saved_pct": 79,
+   "speedup": 4.76
+  },
+  {
+   "uid": "43-9041.00:23315",
+   "short": "Match incoming information to a claim and attach it to the case file.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open incoming claim correspondence and download attachments from the shared mailbox.",
+     "actor": "claims clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "claim correspondence"
+     ],
+     "outputs": [
+      "incoming claim documents"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 20,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Find the matching claim in the insurance case system.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "incoming claim documents",
+      "claim reference"
+     ],
+     "outputs": [
+      "matched claim reference"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Correspondence without a valid structured claim reference.",
+      "output": "Candidate claim identifiers with source passages.",
+      "check": "Use exact references first; corroborate extracted identifiers against case records; never match by name alone.",
+      "stop": "One extraction attempt; multiple or uncorroborated matches enter a clerk queue.",
+      "why_not_simpler": "Exact matching handles most references; identifiers embedded in free text require reading."
+     },
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Identify document type and check whether the file already exists.",
+     "actor": "claims clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "incoming claim documents",
+      "matched claim reference"
+     ],
+     "outputs": [
+      "document metadata",
+      "duplicate status"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Documents without reliable type metadata.",
+      "output": "An allowed document category or unknown.",
+      "check": "Validate against the category list; compute exact duplicate hashes deterministically; preserve changed versions.",
+      "stop": "One classification attempt; unknown categories return to the clerk.",
+      "why_not_simpler": "Sender rules and metadata cover standard documents; varied correspondence lacks consistent labels."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Upload documents and metadata to the insurance case file.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "incoming claim documents",
+      "matched claim reference",
+      "document metadata",
+      "duplicate status"
+     ],
+     "outputs": [
+      "updated claim file",
+      "attachment receipt"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Notify the claims handler that new evidence is available.",
+     "actor": "claims clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "OTHER"
+     ],
+     "inputs": [
+      "attachment receipt",
+      "updated claim file"
+     ],
+     "outputs": [
+      "evidence notification"
+     ],
+     "handoff_to": "claims handler",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    }
+   ],
+   "design": "Connect {EMAIL} directly to the insurance case system in {OTHER} and {DOCS}, removing manual downloads and uploads. Exact identifiers and duplicate checks run first; bounded extraction and classification handle residual documents, while ambiguous matches wait for clerk resolution before attachment.",
+   "previous_blocker": "The mailbox and case file were separate, references were inconsistent, and duplicate handling was weak.",
+   "enabler_now": "Mailbox ingestion, case-system configuration and deterministic matching already exist. Small extraction loops can handle references buried in text.",
+   "still_hard": "One email can concern several claims, and changed documents can resemble duplicates. Wrong-case attachment exposes personal data, so uncertain matches must remain unposted.",
+   "human_edge": "Resolve ambiguous ownership and understand when a revised document changes the case.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Missing-evidence alerts for claims handlers before scheduled case reviews"
+   },
+   "altitude": "The clerk works an ambiguity queue instead of moving files. They can correct document categories and case links within access limits, and flag missing evidence for handlers.",
+   "reach": [
+    {
+     "role": "file clerk",
+     "task": "Improve claim-file indexing and retention categories.",
+     "learn": "Document versioning, access boundaries and retention schedules."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "3-8",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Paperbox organises insurance mail and attachments into case files.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "VKG documents automation of claims correspondence and improved service-level compliance.",
+     "grade": "E3",
+     "source": "[S13]"
+    },
+    {
+     "claim": "Exact references, duplicate hashes and idempotent attachment writes reduce manual filing.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "A shared mailbox is a material intake channel, so mail time exceeds the supplied weak prior.",
+    "Existing ingestion configuration supports attachments and receipt checks.",
+    "Ambiguous matches are resolved before the write step; routine exact matches need no separate approval.",
+    "This task shares intake components with claim preparation; savings must not be added twice."
+   ],
+   "unknowns": [
+    "Current intake channels and share already attached automatically.",
+    "Case-system ingestion features, identifiers and attachment limits.",
+    "Frequency of multi-claim correspondence and revised documents.",
+    "Retention rules and applicable national employee consultation requirements."
+   ],
+   "research_questions": [
+    "What proportion of documents can be matched using exact references alone?",
+    "Can attachment retries avoid duplicates while preserving document versions?"
+   ],
+   "new_work": [
+    "Resolve ambiguous case matches and unknown categories.",
+    "Correct attachment mistakes through an audited process.",
+    "Maintain sender mappings, category rules and retention settings.",
+    "Monitor ingestion failures and missing attachment receipts."
+   ],
+   "time_saved_pct": 93,
+   "speedup": 14.81
+  },
+  {
+   "uid": "43-9041.00:23316",
+   "short": "Route approved claims for payment or investigation and confirm receipt.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open the claim pack and calculation in the insurance case system.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "claim pack",
+      "recorded claim calculation"
+     ],
+     "outputs": [
+      "routing checklist"
+     ],
+     "handoff_to": "claims handler",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Approve settlement or select further investigation within delegated authority.",
+     "actor": "claims handler",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "claim pack",
+      "recorded claim calculation",
+      "routing checklist"
+     ],
+     "outputs": [
+      "settlement approval",
+      "investigation decision"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "ticket-to-resolution",
+     "approver": "claims handler"
+    },
+    {
+     "id": "s3",
+     "what": "Prepare the payment instruction or investigation referral packet.",
+     "actor": "claims clerk",
+     "today_means": "document",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "settlement approval",
+      "investigation decision",
+      "claim pack",
+      "recorded claim calculation"
+     ],
+     "outputs": [
+      "payment instruction",
+      "investigation referral"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Send approved payment instructions to the finance system.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "ERP"
+     ],
+     "inputs": [
+      "payment instruction",
+      "settlement approval"
+     ],
+     "outputs": [
+      "payment request",
+      "transmission receipt"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "treasury-and-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Send investigation referrals and permitted evidence to the assigned investigator.",
+     "actor": "claims clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "investigation referral",
+      "investigation decision"
+     ],
+     "outputs": [
+      "investigation request",
+      "transmission receipt"
+     ],
+     "handoff_to": "claims investigator",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "claims handler"
+    },
+    {
+     "id": "s6",
+     "what": "Record transmission receipts and chase failed or unacknowledged handoffs.",
+     "actor": "claims clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "ERP",
+      "EMAIL"
+     ],
+     "inputs": [
+      "payment request",
+      "investigation request",
+      "transmission receipt"
+     ],
+     "outputs": [
+      "claim routing status",
+      "handoff exception"
+     ],
+     "handoff_to": "claims clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "ticket-to-resolution",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure approval and referral templates in the insurance case system in {OTHER}, then send approved payment requests to {ERP} through a logged, duplicate-safe integration. Investigation referrals use an approved recipient and evidence list through {WORKFLOW}; handlers approve external disclosure, while receipts and timed exception alerts update the case.",
+   "previous_blocker": "Approval evidence, payment records and investigation correspondence lived in separate systems, with manual checks for delivery.",
+   "enabler_now": "Approval workflows and template generation are established capabilities. Deterministic connectors can carry approval identifiers, prevent duplicate requests and reconcile receipts.",
+   "still_hard": "Recipient identity, changed bank details, disclosure scope and delegated authority remain sensitive. GDPR applies to referrals; national rules vary, and actual payment release remains a separate finance action.",
+   "human_edge": "Choose proportionate investigation and challenge unsupported suspicion without treating a flag as proof.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily escalation of stalled payment and investigation handoffs by claimant impact"
+   },
+   "altitude": "The clerk spends more time resolving failed handoffs and less time assembling packets. They gain authority to escalate stalled cases and request missing acknowledgements, while settlement and payment-release rights remain with their current owners.",
+   "reach": [
+    {
+     "role": "project management specialist",
+     "task": "Coordinate investigation milestones and overdue handoffs.",
+     "learn": "Dependency tracking, escalation thresholds and sensitive-information sharing."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "5-12",
+    "testing_rollout": "6-12",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Shift Claims supports claims triage and automation of parts of the claims process.",
+     "grade": "E2",
+     "source": "[S6]"
+    },
+    {
+     "claim": "DNB's documented 2021 review found flagged claims reaching people in the six insurers reviewed.",
+     "grade": "E3",
+     "source": "[S15]"
+    },
+    {
+     "claim": "Approval-linked requests, duplicate prevention and receipt reconciliation can automate transmission without automating settlement judgement.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Payment and investigation are alternative branches; their shares represent an aggregate task mix.",
+    "Investigation may involve an external investigator, so disclosure has its own gate.",
+    "Sending to {ERP} creates a payment request, not a bank transfer.",
+    "Build ranges include access and applicable national consultation; individual productivity monitoring is outside scope."
+   ],
+   "unknowns": [
+    "Current settlement limits, approval roles and payment-release controls.",
+    "Whether investigators are internal or external and which channels they accept.",
+    "Available receipts, retry behaviour and duplicate controls in {ERP} and {OTHER}.",
+    "Applicable national consultation requirements and permitted disclosure scope."
+   ],
+   "research_questions": [
+    "Can every transmitted request be traced to a valid approval and acknowledged receipt?",
+    "Which referral fields and attachments require disclosure review?"
+   ],
+   "new_work": [
+    "Review external referral recipients and evidence scope.",
+    "Resolve failed transmissions and missing acknowledgements.",
+    "Maintain authority limits, routing rules and referral templates.",
+    "Reconcile payment requests and test duplicate prevention."
+   ],
+   "time_saved_pct": 78,
+   "speedup": 4.55
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts from copying documents and moving packets to resolving incomplete evidence, ambiguous records and stalled handoffs. Clerks can prioritise exceptions and offer assisted completion; claims handlers retain substantive settlement judgement and finance retains payment release.",
+  "reach": [
+   "File clerk: improve indexing, versioning and retention.",
+   "Management analyst: analyse valuation exceptions and financial exposure.",
+   "Project management specialist: coordinate investigation dependencies and escalations."
+  ],
+  "skills_to_grow": [
+   "Evidence checking and policy-version awareness.",
+   "Accessible communication with distressed policyholders.",
+   "Exception prioritisation and clear escalation.",
+   "Workflow configuration and connector monitoring.",
+   "GDPR-aware document access and disclosure."
+  ],
+  "ambitious_version": "Create a claim completion and handoff service that helps less digitally able policyholders, identifies missing evidence early and escalates delays with a clear audit trail."
+ },
+ "job_code": "43-9041.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 195,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3000});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-9041.00",
+   "title": "Insurance Claims and Policy Processing Clerks",
+   "tasks": 25,
+   "function": "Office and operations"
+  }
+ }
+}

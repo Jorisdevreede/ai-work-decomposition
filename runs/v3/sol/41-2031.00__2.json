@@ -1,0 +1,790 @@
+{
+ "tasks": [
+  {
+   "uid": "41-2031.00:701",
+   "short": "Answer customer questions about the store and its merchandise.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Listen to the question and clarify the customer's situation.",
+     "actor": "retail salesperson",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "customer question"
+     ],
+     "outputs": [
+      "clarified question"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Look up product facts, availability, or store policies.",
+     "actor": "retail salesperson",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "OPS_SYSTEM",
+      "DOCS"
+     ],
+     "inputs": [
+      "clarified question",
+      "product catalogue",
+      "stock record",
+      "store policy"
+     ],
+     "outputs": [
+      "answer references"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "read, draft",
+      "input": "Clarified question, exact product identifiers, current stock record, and approved policy passages.",
+      "output": "Short answer draft with references and unresolved points.",
+      "check": "Validate product identifiers, policy dates, prices, and stock deterministically. The salesperson checks cited passages.",
+      "stop": "One retrieval and one repair pass. Missing or conflicting evidence returns references and an escalation prompt.",
+      "why_not_simpler": "Exact lookups handle structured questions. Varied customer wording and questions spanning several documents need bounded interpretation."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Explain the answer and check whether it resolves the question.",
+     "actor": "retail salesperson",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "clarified question",
+      "answer references"
+     ],
+     "outputs": [
+      "customer answer"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 45,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Resolve questions requiring an exception or specialist knowledge.",
+     "actor": "retail supervisor",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "clarified question",
+      "answer references"
+     ],
+     "outputs": [
+      "exception decision"
+     ],
+     "handoff_to": "retail salesperson",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "retail supervisor"
+    }
+   ],
+   "design": "Configure exact lookups across the {ECOMMERCE}, {OPS_SYSTEM}, and approved {DOCS}, then add a bounded drafting loop for questions spanning sources. The salesperson checks references and delivers the answer; exception decisions remain with the retail supervisor.",
+   "previous_blocker": "Facts sit in separate screens, while customer questions rarely use catalogue or policy wording.",
+   "enabler_now": "Existing search and data interfaces support exact lookups. AI-assisted coding reduces integration effort, and bounded models can assemble referenced drafts.",
+   "still_hard": "Stock freshness, conflicting policies, and identifying the correct product variant. Sensitive exceptions still need a person.",
+   "human_edge": "Notice confusion, understand the customer's real concern, and explain uncertainty without making unsupported promises.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The week contains fewer searches and fewer interruptions to colleagues. The salesperson gains time for difficult questions; exception authority does not change.",
+   "reach": [
+    {
+     "role": "order clerk",
+     "task": "Check availability and delivery status for customer enquiries.",
+     "learn": "Read stock reservations, delivery statuses, and the limits of availability promises."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-12",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-8"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Retail assistance can interpret customer questions and compare merchandise attributes and delivery information.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Fixed flows plus FAQ retrieval have supported retail service enquiries in a documented deployment.",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "The proposed internal assistant, time shares, remaining effort, and build ranges are estimates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline is an assisted store sale, with most conversation happening face to face.",
+    "The stock record is in {OPS_SYSTEM}; a till or product-information system would use {OTHER} if appropriate.",
+    "Drafts remain internal. Human review time is included in lookup effort; the salesperson delivers the external answer.",
+    "GDPR applies to customer information. Access work includes retention choices and consultation under national rules where applicable.",
+    "Build ranges estimate working effort for a narrow pilot with existing interfaces, not elapsed approval time."
+   ],
+   "unknowns": [
+    "Which systems contain authoritative product, stock, and policy information?",
+    "What interfaces and permissions are available?",
+    "Which question categories require supervisor approval?",
+    "How much lookup time and escalation effort occurs today?"
+   ],
+   "research_questions": [
+    "What proportion of real questions can exact lookup or fixed answers resolve?",
+    "Can referenced drafts preserve the correct product variant and all material policy qualifications?"
+   ],
+   "new_work": [
+    "Review references before using drafts.",
+    "Route missing or conflicting answers to source owners.",
+    "Maintain source versions, access controls, and interface mappings.",
+    "Sample incorrect answers without creating individual staff performance scores."
+   ],
+   "time_saved_pct": 22,
+   "speedup": 1.29
+  },
+  {
+   "uid": "41-2031.00:696",
+   "short": "Stay current on promotions, payment and exchange policies, and security practices.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Attend the shift briefing on promotions, policy changes, and security reminders.",
+     "actor": "retail salesperson",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "promotion notice",
+      "policy update",
+      "security procedure"
+     ],
+     "outputs": [
+      "briefing notes"
+     ],
+     "handoff_to": "none",
+     "share_pct": 45,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "learning-to-certified",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read current notices and check detailed rules relevant to the shift.",
+     "actor": "retail salesperson",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "briefing notes",
+      "promotion notice",
+      "store policy",
+      "security procedure"
+     ],
+     "outputs": [
+      "policy questions"
+     ],
+     "handoff_to": "retail supervisor",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 65,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "learning-to-certified",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Clarify conflicting rules and discuss how to handle unusual situations.",
+     "actor": "retail supervisor",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "policy questions",
+      "store policy",
+      "security procedure"
+     ],
+     "outputs": [
+      "policy clarification"
+     ],
+     "handoff_to": "retail salesperson",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "learning-to-certified",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Record completion or acknowledge required updates.",
+     "actor": "retail salesperson",
+     "today_means": "system_screen",
+     "systems": [
+      "LMS"
+     ],
+     "inputs": [
+      "policy update",
+      "policy clarification"
+     ],
+     "outputs": [
+      "update acknowledgement"
+     ],
+     "handoff_to": "retail supervisor",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "learning-to-certified",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure versioned notices in the {DOCS}, filtered by store, role, and effective date, with links to exact changed clauses. Use the {LMS} for required acknowledgements and reminders; the salesperson still confirms completion, and briefings focus on practical questions.",
+   "previous_blocker": "Briefings and notices repeat information without reliably showing what changed or when it applies.",
+   "enabler_now": "Versioning, audience filters, effective dates, and acknowledgement workflows are standard configuration capabilities. Small connectors are cheaper to build with AI-assisted coding.",
+   "still_hard": "Reading a notice does not prove understanding. Promotions overlap, and security judgement cannot be reduced to an acknowledgement.",
+   "human_edge": "Recognise when a rule does not fit the situation and practise a safe response with colleagues.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The salesperson spends less time finding current rules and repeating acknowledgements. Policy and security decision rights stay with the existing authorised roles.",
+   "reach": [
+    {
+     "role": "retail supervisor",
+     "task": "Prepare shift briefings around changes that staff must apply.",
+     "learn": "Check effective dates, distinguish policy from guidance, and use short practical scenarios."
+    }
+   ],
+   "build_days": {
+    "coding": "1-3",
+    "integration": "2-5",
+    "testing_rollout": "3-6",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Versioned notices, targeted distribution, and acknowledgements can be configured without a model loop.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "National employee consultation requirements can cover staff-data and monitoring systems; the digest documents Dutch provisions.",
+     "grade": "E2",
+     "source": "[S18]"
+    },
+    {
+     "claim": "The baseline time allocation, remaining effort, and build ranges are planning estimates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The company already publishes approved notices and uses {LMS} acknowledgements for some required updates.",
+    "Acknowledgement means a person's explicit confirmation; opening a notice is not treated as completion.",
+    "Only approved text and deterministic change markers are displayed. No model is needed.",
+    "GDPR applies to acknowledgement records. National rules determine employee consultation requirements.",
+    "Build ranges cover working effort, including access and consultation preparation; formal consultation may take longer."
+   ],
+   "unknowns": [
+    "Where are approved notices and policy versions maintained?",
+    "Which updates require acknowledgement or demonstrated understanding?",
+    "Which national rules and employee representation arrangements apply?",
+    "Can existing {DOCS} and {LMS} configuration provide the required filtering?"
+   ],
+   "research_questions": [
+    "Does showing exact changes improve recall compared with the current briefing?",
+    "Which security topics require practical rehearsal rather than reading?"
+   ],
+   "new_work": [
+    "Assign effective dates and audiences to approved notices.",
+    "Retire expired promotions and superseded procedures.",
+    "Handle unclear rules and missing acknowledgements.",
+    "Maintain retention and access settings for acknowledgement records."
+   ],
+   "time_saved_pct": 24,
+   "speedup": 1.31
+  },
+  {
+   "uid": "41-2031.00:706",
+   "short": "Demonstrate merchandise and help customers try it safely.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Establish what the customer wants to try and their experience.",
+     "actor": "retail salesperson",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "customer question",
+      "selected product"
+     ],
+     "outputs": [
+      "demonstration scope"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check operating instructions and relevant safety limits.",
+     "actor": "retail salesperson",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "demonstration scope",
+      "product instructions"
+     ],
+     "outputs": [
+      "demonstration checklist"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Prepare the demonstration item and check the immediate surroundings.",
+     "actor": "retail salesperson",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "demonstration checklist",
+      "demonstration item"
+     ],
+     "outputs": [
+      "prepared demonstration item"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Demonstrate the product and explain the controls or handling.",
+     "actor": "retail salesperson",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "prepared demonstration item",
+      "demonstration scope"
+     ],
+     "outputs": [
+      "product demonstration"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 45,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Try the product with guidance and ask follow-up questions.",
+     "actor": "customer",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "product demonstration",
+      "prepared demonstration item"
+     ],
+     "outputs": [
+      "customer trial",
+      "follow-up questions"
+     ],
+     "handoff_to": "retail salesperson",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure product-code links to approved demonstration instructions and checklists in the {DOCS}. The salesperson checks the physical setup, demonstrates the item, and guides the customer's trial.",
+   "previous_blocker": "Instructions may be lengthy or difficult to match to the exact display model. The demonstration itself requires physical interaction.",
+   "enabler_now": "Product-code links and reusable checklist templates are straightforward configuration. No model breakthrough is required.",
+   "still_hard": "Physical preparation, situational safety, and helping a customer learn through practice. Digital preparation saves only a small part of this task.",
+   "human_edge": "Adjust pace, notice unsafe handling, and let the customer build confidence through hands-on practice.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The week changes slightly: preparation is easier, while demonstrations remain hands-on. No new decision rights are gained.",
+   "reach": [
+    {
+     "role": "product promoter",
+     "task": "Prepare a short demonstration for a particular customer need.",
+     "learn": "Sequence the demonstration, check the setup, and use customer practice to confirm understanding."
+    }
+   ],
+   "build_days": {
+    "coding": "0-2",
+    "integration": "1-3",
+    "testing_rollout": "2-5",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Exact product links and approved checklists can reduce instruction retrieval without automating physical demonstrations.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The proposed four-percent task-time saving is an estimate from the step allocation, not a documented case.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The task includes the customer's trial time while the salesperson remains engaged.",
+    "The retailer offers merchandise suitable for a supervised demonstration.",
+    "Approved operating and safety instructions exist for the exact model.",
+    "No customer recording, biometric analysis, or staff scoring is introduced.",
+    "GDPR applies if personal information is stored; this design requires none.",
+    "Build ranges estimate a small product-category pilot using existing document access."
+   ],
+   "unknowns": [
+    "Which merchandise needs demonstrations, and which requires trained or authorised staff?",
+    "Are current instructions available for each display model?",
+    "How often do staff need to consult instructions?",
+    "What physical setup checks are required?"
+   ],
+   "research_questions": [
+    "Can a product-code link consistently select the correct model instructions?",
+    "Which checklist items improve preparation without distracting from physical safety checks?"
+   ],
+   "new_work": [
+    "Maintain links between display models and approved instructions.",
+    "Update checklists when models or safety instructions change.",
+    "Report missing instructions and unsuitable demonstration equipment."
+   ],
+   "time_saved_pct": 4,
+   "speedup": 1.04
+  },
+  {
+   "uid": "41-2031.00:702",
+   "short": "Explain merchandise features, use, operation, and care to customers.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Identify the product and what the customer needs to understand.",
+     "actor": "retail salesperson",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "selected product",
+      "customer question"
+     ],
+     "outputs": [
+      "care requirements"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check specifications, operating instructions, and care guidance for the exact product.",
+     "actor": "retail salesperson",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "care requirements",
+      "product specifications",
+      "product instructions"
+     ],
+     "outputs": [
+      "answer references"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Explain relevant features, operating steps, care requirements, and limitations.",
+     "actor": "retail salesperson",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "care requirements",
+      "answer references"
+     ],
+     "outputs": [
+      "customer explanation"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 55,
+     "fate": "person_does",
+     "remaining_pct": 95,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Check understanding and point out instructions the customer can consult later.",
+     "actor": "retail salesperson",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "customer explanation",
+      "product instructions"
+     ],
+     "outputs": [
+      "confirmed understanding",
+      "instruction reference"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure exact product lookup in the {DOCS} and use a deterministic template to assemble product-specific care cards from approved passages. The salesperson checks the selected instructions, explains them, and offers a printed card or public link for later reference.",
+   "previous_blocker": "Instructions are spread across manuals and leaflets, with inconsistent product identifiers. Preparing a concise handout takes extra effort.",
+   "enabler_now": "Stable product identifiers, document indexing, and template assembly support a small deterministic tool. AI-assisted coding can speed up the document mappings.",
+   "still_hard": "Source documents may omit practical details or contain conflicting versions. The salesperson must judge whether the customer understands safety-critical instructions.",
+   "human_edge": "Relate instructions to the customer's situation and recognise when explanation or specialist advice is still needed.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Product-specific take-home care cards"
+   },
+   "altitude": "Less time goes into finding instructions and preparing follow-up material. The salesperson can offer a reusable care card within approved guidance; technical and safety policy authority stays unchanged.",
+   "reach": [
+    {
+     "role": "product promoter",
+     "task": "Prepare a clear product-use handout for a demonstration.",
+     "learn": "Select approved passages, preserve warnings, and check that the handout matches the exact model."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "2-6",
+    "testing_rollout": "3-7",
+    "consent_and_access": "1-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Template assembly can produce care cards from approved product passages without generating new technical advice.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Retail assistance depends on the quality of seller product data.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Time shares, remaining effort, and build ranges are estimates for the proposed design.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This task covers verbal explanation; physical demonstration is accounted for separately.",
+    "The pilot uses approved passages that can be selected by product and topic without rewriting.",
+    "Care cards retain applicable warnings and link to full instructions.",
+    "The salesperson checks the card before handing it to the customer; this is part of the manual external action.",
+    "Public instruction links avoid collecting customer contact details. GDPR applies if identifiable delivery records are added.",
+    "Build ranges estimate working effort for one product category with available source documents."
+   ],
+   "unknowns": [
+    "Are manuals current, reusable, and mapped to exact product variants?",
+    "Which care topics need specialist approval?",
+    "Can approved passages be reused without losing essential context?",
+    "Would customers prefer printed cards or public links?"
+   ],
+   "research_questions": [
+    "Does a care card improve customer understanding and later recall?",
+    "Can deterministic passage selection preserve every applicable warning across product variants?"
+   ],
+   "new_work": [
+    "Approve reusable care passages and maintain product mappings.",
+    "Check cards when manuals or product variants change.",
+    "Handle questions that approved instructions do not answer.",
+    "Remove outdated cards and repair broken public links."
+   ],
+   "time_saved_pct": 13,
+   "speedup": 1.15
+  }
+ ],
+ "role": {
+  "altitude": "Retail sales remains a customer-facing job. Faster reference lookup and simpler preparation leave more attention for explanation, supervised trials, and difficult questions; pricing, policy, and safety exception rights stay with authorised roles.",
+  "reach": [
+   "Order clerk: interpret availability and delivery statuses before making customer promises.",
+   "Retail supervisor: turn current policy changes into practical briefing questions.",
+   "Product promoter: prepare demonstrations and approved product-care handouts."
+  ],
+  "skills_to_grow": [
+   "Match exact product variants to authoritative instructions.",
+   "Check references, effective dates, and stock freshness.",
+   "Explain limitations clearly and confirm customer understanding.",
+   "Recognise when a question needs supervisor or specialist judgement."
+  ],
+  "ambitious_version": "Become a stronger product adviser who combines reliable reference tools with hands-on teaching and product-specific take-home care guidance."
+ },
+ "job_code": "41-2031.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 151,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:2200});text(r.output)\n"
+  ],
+  "job": {
+   "code": "41-2031.00",
+   "title": "Retail Salespersons",
+   "tasks": 24,
+   "function": "Sales and account management"
+  }
+ }
+}

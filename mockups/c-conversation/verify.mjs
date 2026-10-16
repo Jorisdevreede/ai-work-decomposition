@@ -1,0 +1,140 @@
+import { createRequire } from 'node:module';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+const require=createRequire(import.meta.url);
+const {chromium}=require('/Users/Joris.deVreede/.npm/_npx/420ff84f11983ee5/node_modules/playwright');
+const dir=path.dirname(fileURLToPath(import.meta.url));
+const qa=path.join(dir,'qa');
+await mkdir(qa,{recursive:true});
+const base='http://localhost:8790/mockups/c-conversation/index.html';
+const results={checkedAt:new Date().toISOString(),browser:'Chrome (isolated headless context)',viewports:[],routes:[],interactions:[],console:[],pageErrors:[],failedRequests:[],externalRequests:[]};
+const browser=await chromium.launch({headless:true,channel:'chrome'});
+async function capture(page,target) {
+  await page.mouse.move(1,1);
+  await page.waitForFunction(()=>!document.querySelector('.toast.visible'));
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  await page.evaluate(()=>{document.activeElement?.blur();window.scrollTo({top:0,behavior:'instant'});});
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  await page.screenshot({path:target,fullPage:true,animations:'disabled'});
+}
+try {
+  for(const width of [1440,390]) {
+    const context=await browser.newContext({viewport:{width,height:width===1440?1000:844},reducedMotion:'reduce'});
+    const page=await context.newPage();
+    page.on('console',m=>{if(['error','warning'].includes(m.type()))results.console.push({width,level:m.type(),text:m.text()});});
+    page.on('pageerror',e=>results.pageErrors.push({width,message:e.message}));
+    page.on('requestfailed',r=>results.failedRequests.push({width,url:r.url(),failure:r.failure()}));
+    page.on('request',r=>{if(!r.url().startsWith('http://localhost:8790/')&&!r.url().startsWith('data:'))results.externalRequests.push(r.url());});
+    for(const route of ['setup','goal','team','role','opportunities','plan','modules','module']) {
+      await page.goto(`${base}#/${route}`);
+      await page.locator('h1').waitFor();
+      await page.evaluate(()=>document.fonts.ready);
+      await page.evaluate(()=>window.scrollTo(0,0));
+      const size=await page.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth}));
+      assert.ok(size.scrollWidth<=width,`${route} at ${width}: horizontal overflow ${size.scrollWidth}`);
+      assert.ok(await page.locator('main').innerText(),`${route} has content`);
+      assert.doesNotMatch(await page.locator('body').innerText(),/\b\d{2}-\d{4}\.\d{2}\b|Task trace:|O\*NET|tasks? (?:1885[234]|268[79])/i,`No visible raw task references on ${route}`);
+      results.routes.push({width,route,title:await page.title(),overflow:false});
+      const name=route==='setup'?`home-${width}.png`:route==='team'?`team-twin-${width}.png`:`qa/${route}-${width}.png`;
+      await capture(page,path.join(dir,name));
+    }
+    await page.goto(`${base}#/setup`);
+    await page.locator('[data-action=show-upload]').click();
+    await page.locator('[data-action=extract-sample]').click();
+    assert.equal(await page.locator('[data-action=use-extraction]').isDisabled(),true);
+    await page.locator('#check-payroll').check();
+    await page.locator('[data-action=use-extraction]').click();
+    assert.equal(await page.locator('.roster-row').count(),6);
+    results.interactions.push({width,check:'Sample extraction requires the low-confidence payroll check',passed:true});
+    await page.locator('[data-action=show-voice]').click();
+    await page.locator('[data-action=play-voice]').click();
+    await page.locator('[data-action=use-voice]').waitFor();
+    assert.equal(await page.locator('.voice-roster>span').count(),6);
+    await page.locator('[data-action=use-voice]').click();
+    results.interactions.push({width,check:'Scripted voice transcript and extracted roster fill in',passed:true});
+    await page.locator('[data-action=edit-role]').first().click();
+    await page.locator('[name=people]').fill('Femke van Dijk');
+    await page.locator('#roster-form button[type=submit]').click();
+    assert.match(await page.locator('.roster-row').first().innerText(),/Femke van Dijk/);
+    await page.locator('[data-action=show-manual]').first().click();
+    await page.locator('[name=role]').fill('People operations partner');
+    await page.locator('[name=people]').fill('Jules');
+    await page.locator('[name=fte]').fill('0.5');
+    await page.locator('#roster-form button[type=submit]').click();
+    assert.equal(await page.locator('.roster-row').count(),7);
+    results.interactions.push({width,check:'Manual role entry and existing roster edits save',passed:true});
+    await page.locator('[data-action=confirm-setup]').click();
+    await page.locator('.goal-map').waitFor();
+    assert.match(await page.locator('h1').innerText(),/clearer future/);
+    assert.match(await page.locator('.north-star-block').innerText(),/Requests Resolved Right First Time/);
+    assert.equal(await page.locator('.north-star-inputs>div').count(),4);
+    await page.locator('.bottom-action a[href="#/module"]').click();
+    await page.locator('.canvas [data-action=start-sort]').click();
+    for(const pile of ['human','amplify','human','remove','amplify']) await page.locator(`.canvas [data-action=sort-card][data-pile=${pile}]`).click();
+    assert.equal(await page.locator('.review-row').count(),5);
+    await page.locator('#review-1').selectOption('remove');
+    await page.locator('.canvas [data-action=complete-sort]').click();
+    assert.match(await page.locator('.completion').innerText(),/five task priorities/);
+    await capture(page,path.join(qa,`module-complete-${width}.png`));
+    await page.locator('.completion a[href="#/goal"]').click();
+    await page.locator('.goal-map').waitFor();
+    assert.match(await page.locator('.goal-summary').innerText(),/4 of 5 parts informed/);
+    assert.match(await page.locator('.goal-row').first().innerText(),/Evidence added/);
+    results.interactions.push({width,check:'Card sorting completes, review changes persist, and goal evidence updates',passed:true});
+    await page.goto(`${base}#/opportunities`);
+    await page.locator('#opportunity-sort').selectOption('value');
+    assert.match(await page.locator('.opportunity-button').first().innerText(),/One trusted employee record/);
+    await page.locator('[data-action=open-opportunity][data-id=records]').click();
+    assert.match(await page.locator('#opportunity-detail').innerText(),/Remove the step/);
+    assert.equal(await page.locator('.legend-list>div').count(),9);
+    await page.locator('#opportunity-detail a').click();
+    await page.locator('.plan-quarter').first().waitFor();
+    assert.match(await page.locator('h1').innerText(),/buildable/);
+    await page.locator('.trace-links a[href="#/opportunities?id=records"]').first().click();
+    await page.locator('#opportunity-detail').waitFor();
+    assert.match(await page.locator('#opportunity-detail h2').innerText(),/trusted employee record/);
+    results.interactions.push({width,check:'Opportunity sorting, nine-approach legend and plan trace links work',passed:true});
+    await page.goto(`${base}#/modules?open=north`);
+    assert.equal(await page.locator('#module-north').getAttribute('open'),'');
+    assert.equal(await page.locator('.workshop-part').count(),8);
+    const ns=['ns-game','ns-inventory','ns-assumptions','ns-confidence','ns-statement','ns-template','ns-bet','ns-context'];
+    for(const id of ns) {
+      const item=page.locator(`#module-${id}`);
+      await item.locator(':scope>summary').click();
+      assert.ok(await item.locator('.format').innerText());
+      assert.match(await item.locator('.module-body').innerText(),/Output/);
+      await item.locator(':scope>summary').click();
+    }
+    await page.locator('.workshop-part').first().locator('summary').click();
+    assert.match(await page.locator('.workshop-part').first().innerText(),/No prescribed output/);
+    await capture(page,path.join(qa,`north-star-library-${width}.png`));
+    results.interactions.push({width,check:'Eight source-aligned North Star modules carry format tags and outputs; live bundle has eight agenda parts',passed:true});
+    await page.goto(`${base}#/goal`);
+    if(width===390)await page.locator('[data-view=conversation]').click();
+    await page.locator('#message').fill('What stays human?');
+    await page.locator('#chat-form button[type=submit]').click();
+    assert.match(await page.locator('.message.agent').last().innerText(),/Trust|trust/);
+    await page.locator('[data-chat-target=team]').click();
+    await page.locator('.amplification').waitFor();
+    assert.match(await page.locator('h1').innerText(),/More room/);
+    if(width===390) {
+      await page.locator('[data-view=conversation]').click();
+      assert.equal(await page.locator('.conversation').isVisible(),true);
+      await capture(page,path.join(qa,'conversation-390.png'));
+      await page.locator('[data-view=canvas]').click();
+      assert.equal(await page.locator('.canvas').isVisible(),true);
+    }
+    results.interactions.push({width,check:'Conversation answers, agent suggestions and mobile view switching work',passed:true});
+    results.viewports.push({width,height:width===1440?1000:844,passed:true});
+    await context.close();
+  }
+  assert.equal(results.console.length,0,'Console must be clean');
+  assert.equal(results.pageErrors.length,0,'No JS exceptions');
+  assert.equal(results.failedRequests.length,0,'No failed requests');
+  assert.equal(results.externalRequests.length,0,'No external dependencies or requests');
+  results.passed=true;
+} catch(error) { results.passed=false; results.failure=error.stack; process.exitCode=1; }
+finally { await browser.close(); await writeFile(path.join(qa,'browser-results.json'),JSON.stringify(results,null,2)); }
+console.log(JSON.stringify({passed:results.passed,routes:results.routes.length,interactions:results.interactions.length,console:results.console,pageErrors:results.pageErrors,failure:results.failure},null,2));

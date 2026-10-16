@@ -1,0 +1,748 @@
+{
+ "role_id": "bookkeeper",
+ "tasks": [
+  {
+   "uid": "43-3031.00:2509",
+   "short": "Match purchase orders and goods receipts to supplier invoices in AFAS, then book and route them for approval.",
+   "today": {
+    "trigger": "Supplier invoice arrives as PDF in the AP mailbox or on a staffing agency portal.",
+    "steps": [
+     "Open the PDF from the shared Outlook AP mailbox",
+     "Look up the order in AFAS and check quantities, prices and VAT",
+     "Compare agency invoices with approved flex hours from the portal",
+     "Enter header and lines in AFAS and route to the budget holder",
+     "Email the supplier or site manager when something does not match"
+    ],
+    "systems": [
+     "Outlook",
+     "AFAS Profit",
+     "Staffing agency portals",
+     "Excel"
+    ],
+    "drudgery": [
+     "Retyping invoice lines",
+     "Chasing site managers for goods receipt confirmation",
+     "Checking flex hours line by line against agency invoices"
+    ],
+    "time_sinks": "Agency invoices with hundreds of hour lines and invoices without an order number."
+   },
+   "anatomy": {
+    "gather": 30,
+    "transform": 30,
+    "decide": 15,
+    "create": 5,
+    "communicate": 15,
+    "coordinate": 5
+   },
+   "lenses": {
+    "faster": "OCR plus an LLM reads the invoice and a matching rule does the three-way match; the bookkeeper only opens invoices that fail tolerance.",
+    "autonomous": "Every new invoice in the AP mailbox is read, matched and booked as a draft entry in AFAS without anyone starting it.",
+    "ambitious": "Check every agency hour line against the approved shift roster and the CAO rates, not a sample, and recover overbilling.",
+    "joy": "No retyping; what is left is solving real mismatches with suppliers and sites.",
+    "options": "For an unmatched invoice the tool proposes the three most likely orders or cost centres with reasons.",
+    "altitude": "The bookkeeper sets the tolerances, supplier rules and exception queues and reviews the match rate weekly.",
+    "reach": [
+     "Credit and Collections Officer: supplier statement disputes",
+     "Controller: spend analysis per site"
+    ]
+   },
+   "human_edge": "Judging whether a price difference is agreed, knowing which site manager to ask, and keeping supplier relationships good.",
+   "pattern": "agent_with_gate",
+   "pattern_why": "Reading PDFs needs a model, matching is rules, and exceptions need tools and follow-up; a person approves anything outside tolerance.",
+   "autonomy_level": 4,
+   "in_practice": {
+    "trigger": "New invoice in the AP mailbox or a new invoice file on an agency portal.",
+    "steps": [
+     "Extract supplier, order number, lines, VAT and IBAN from the PDF",
+     "Match against AFAS orders and receipts, and agency invoices against approved hours",
+     "Book matched invoices within tolerance as draft entries for approval",
+     "Put mismatches in a queue with the difference explained",
+     "Draft the question to the supplier or site manager for the bookkeeper to send"
+    ],
+    "human_gate": "Bookkeeper releases invoices outside tolerance, new suppliers and any changed IBAN; budget holder approval in AFAS stays.",
+    "systems": [
+     "Outlook",
+     "AFAS Profit",
+     "Staffing agency portals",
+     "OCR/invoice capture tool"
+    ],
+    "data_needed": [
+     "Purchase orders and goods receipts",
+     "Approved flex hours per agency",
+     "Supplier master data and IBANs",
+     "Tolerance rules"
+    ],
+    "logs_to": "AFAS audit trail plus a match log per invoice in SharePoint"
+   },
+   "time_saved_pct": 70,
+   "speedup": 3.3,
+   "confidence": "high",
+   "evidence": [
+    {
+     "claim": "Invoice capture with automatic two- and three-way PO matching is sold as standard AP automation.",
+     "grade": "E2",
+     "source": "Esker, Medius AP automation products"
+    },
+    {
+     "claim": "LLMs extract invoice fields reliably from varied PDF layouts.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "risks": [
+    "Fake or changed IBAN on an invoice passed automatically (payment fraud)",
+    "Agency hour data on portals not in a usable export format",
+    "Budget holders approving blindly because the tool already matched"
+   ],
+   "research_questions": [
+    "What share of last quarter's invoices carried a valid order number?",
+    "Can the three agency portals export approved hours as CSV or API?",
+    "Which capture tools have a tested AFAS Profit connector?"
+   ]
+  },
+  {
+   "uid": "43-3031.00:2489",
+   "short": "Post debits and credits in AFAS and keep running totals and checks in Excel.",
+   "today": {
+    "trigger": "Daily batches of invoices, bank lines and memorial entries to book.",
+    "steps": [
+     "Collect source documents for the day",
+     "Post entries in AFAS memorial or purchase journals",
+     "Total batches in Excel and check against AFAS",
+     "Correct errors found in totals"
+    ],
+    "systems": [
+     "AFAS Profit",
+     "Excel"
+    ],
+    "drudgery": [
+     "Manual control totals in Excel",
+     "Hunting a small difference in a batch"
+    ],
+    "time_sinks": "Finding why an Excel total and the AFAS total differ by a few euros."
+   },
+   "anatomy": {
+    "gather": 20,
+    "transform": 45,
+    "decide": 15,
+    "create": 10,
+    "communicate": 5,
+    "coordinate": 5
+   },
+   "lenses": {
+    "faster": "Entries are generated by rules from source data and control totals are computed by AFAS reports instead of Excel.",
+    "autonomous": "Recurring entries (rent, leases, depreciation, accruals) post on schedule and a check flags any batch that does not balance.",
+    "ambitious": "Daily soft close: the ledger is correct every day, not only at month end.",
+    "joy": "No more adding up columns twice; time goes to the entries that need thought.",
+    "options": "For an unusual entry the tool shows two or three account and cost centre options with past examples.",
+    "altitude": "The bookkeeper owns the posting rules and recurring entry templates and checks the exceptions report.",
+    "reach": [
+     "Accountant: accrual and depreciation runs",
+     "Controller: daily balance checks"
+    ]
+   },
+   "human_edge": "Choosing the right account for unusual items and spotting entries that look correct but make no business sense.",
+   "pattern": "deterministic_software",
+   "pattern_why": "Debit and credit logic and totals are fixed rules on structured data; no model is needed to run it.",
+   "autonomy_level": 4,
+   "in_practice": {
+    "trigger": "Scheduled daily run and month-end calendar.",
+    "steps": [
+     "Generate recurring and rule-based entries in AFAS via import or connector",
+     "Run balance and control-total checks automatically",
+     "Flag unbalanced or unusual entries to the bookkeeper",
+     "Bookkeeper corrects and releases the batch"
+    ],
+    "human_gate": "Bookkeeper releases flagged batches; Controller signs off the posting rules.",
+    "systems": [
+     "AFAS Profit",
+     "Power BI"
+    ],
+    "data_needed": [
+     "Chart of accounts and cost centres",
+     "Recurring entry schedule",
+     "Posting rules"
+    ],
+    "logs_to": "AFAS journal audit trail and a run log in SharePoint"
+   },
+   "time_saved_pct": 60,
+   "speedup": 2.5,
+   "confidence": "medium",
+   "evidence": [
+    {
+     "claim": "AFAS Profit supports periodic entries and data import through connectors.",
+     "grade": "E2",
+     "source": "AFAS Profit (model knowledge of product features)"
+    }
+   ],
+   "risks": [
+    "A wrong rule repeats an error every day until noticed",
+    "Less hands-on knowledge of the ledger among junior staff"
+   ],
+   "research_questions": [
+    "How many entries per month are recurring or rule-based today?",
+    "How much time goes into Excel control totals per week?",
+    "Does AFAS internal control reporting replace the Excel checks?"
+   ]
+  },
+  {
+   "uid": "43-3031.00:2490",
+   "short": "Code invoices and costs to the right ledger account, cost centre and site, and keep the records complete.",
+   "today": {
+    "trigger": "Each invoice, expense and bank line that needs coding.",
+    "steps": [
+     "Read the document and decide account, cost centre and site",
+     "Enter coding in AFAS",
+     "Ask colleagues when the cost type is unclear",
+     "Summarise totals per site in Excel for the Controller"
+    ],
+    "systems": [
+     "AFAS Profit",
+     "Excel",
+     "Outlook"
+    ],
+    "drudgery": [
+     "Coding the same suppliers the same way every month",
+     "Building site summaries by hand"
+    ],
+    "time_sinks": "Unclear invoices (mixed sites, mixed cost types) and rework after Controller review."
+   },
+   "anatomy": {
+    "gather": 20,
+    "transform": 40,
+    "decide": 20,
+    "create": 10,
+    "communicate": 5,
+    "coordinate": 5
+   },
+   "lenses": {
+    "faster": "A model proposes coding from invoice text and coding history; the bookkeeper confirms only low-confidence ones.",
+    "autonomous": "Coding for known suppliers with stable history is applied automatically and summaries come from Power BI.",
+    "ambitious": "Consistent cost coding across Rotterdam, Tilburg and Venlo so cost per pallet per site can be compared properly for the first time.",
+    "joy": "Repetitive coding goes; left is fixing the chart of accounts and helping managers read their costs.",
+    "options": "Show top three coding suggestions with confidence and the past invoices they are based on.",
+    "altitude": "The bookkeeper maintains the coding rules and reviews a monthly sample of auto-coded lines.",
+    "reach": [
+     "Controller: cost centre reporting",
+     "FP&A Analyst: actuals per site for the forecast"
+    ]
+   },
+   "human_edge": "Knowing what a cost really is for and how a site manager will read it.",
+   "pattern": "llm_step",
+   "pattern_why": "Free-text invoice lines to a structured account and cost centre, inside a deterministic booking flow with confidence thresholds.",
+   "autonomy_level": 3,
+   "in_practice": {
+    "trigger": "Invoice or bank line arrives without coding.",
+    "steps": [
+     "Model reads description, supplier and history",
+     "Proposes account, cost centre, site and VAT code with confidence",
+     "High-confidence known patterns are applied, the rest queued",
+     "Bookkeeper confirms or corrects; corrections feed the history"
+    ],
+    "human_gate": "Bookkeeper confirms low-confidence and new-supplier coding; monthly sample checked by the Controller.",
+    "systems": [
+     "AFAS Profit",
+     "Power BI"
+    ],
+    "data_needed": [
+     "12 to 24 months of coded entries",
+     "Chart of accounts and cost centre list"
+    ],
+    "logs_to": "AFAS entry with suggestion and confidence stored in a coding log"
+   },
+   "time_saved_pct": 60,
+   "speedup": 2.5,
+   "confidence": "medium",
+   "evidence": [
+    {
+     "claim": "Bookkeeping tools learn coding from history and pre-fill ledger accounts.",
+     "grade": "E2",
+     "source": "Basecone, Yuki (Dutch bookkeeping software)"
+    },
+    {
+     "claim": "LLMs classify invoice lines to a chart of accounts with good accuracy given examples.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "risks": [
+    "Silent miscoding that shifts costs between sites",
+    "VAT code errors leading to wrong BTW returns"
+   ],
+   "research_questions": [
+    "What share of invoices come from suppliers with stable coding history?",
+    "How many coding corrections did the Controller make last quarter?",
+    "Is the cost centre structure the same across the three sites?"
+   ]
+  },
+  {
+   "uid": "43-3031.00:2506",
+   "short": "Move totals from sub-ledgers, agency files and Excel sheets into the general ledger in AFAS.",
+   "today": {
+    "trigger": "Weekly and month-end transfers from sub-administrations and external files.",
+    "steps": [
+     "Export data from agency portals and Excel sheets",
+     "Reformat into an AFAS import layout or type it in",
+     "Post the summary entries in the general ledger",
+     "Check the totals match the source"
+    ],
+    "systems": [
+     "Excel",
+     "AFAS Profit",
+     "Staffing agency portals",
+     "SharePoint"
+    ],
+    "drudgery": [
+     "Copy-pasting between files",
+     "Reformatting columns every month"
+    ],
+    "time_sinks": "Source files that change layout without warning."
+   },
+   "anatomy": {
+    "gather": 25,
+    "transform": 55,
+    "decide": 5,
+    "create": 5,
+    "communicate": 5,
+    "coordinate": 5
+   },
+   "lenses": {
+    "faster": "Fixed scripts convert each source into the AFAS import format and post it; the step becomes a click.",
+    "autonomous": "Files dropped in a SharePoint folder are converted, validated and posted as a draft journal.",
+    "ambitious": "Remove the Excel layer altogether so every GL figure traces back to its source line.",
+    "joy": "Nobody misses copy-paste; left is checking that the totals make sense.",
+    "options": "When a layout changes, an LLM proposes the column mapping for the bookkeeper to confirm.",
+    "altitude": "The bookkeeper owns the interface list and mappings and fixes them when sources change.",
+    "reach": [
+     "People Analytics and HRIS Analyst: data pipelines into Power BI",
+     "Accountant: intercompany and site transfers"
+    ]
+   },
+   "human_edge": "Recognising when a source total is wrong before it reaches the ledger.",
+   "pattern": "deterministic_software",
+   "pattern_why": "Structured input, fixed mapping, checkable totals; build with AI coding help and run without a model.",
+   "autonomy_level": 4,
+   "in_practice": {
+    "trigger": "File arrives in a SharePoint drop folder or on a schedule.",
+    "steps": [
+     "Validate file layout and totals",
+     "Map to AFAS import format",
+     "Post as draft journal in AFAS",
+     "Send a reconciliation summary to the bookkeeper"
+    ],
+    "human_gate": "Bookkeeper releases the draft journal; mapping changes need Controller approval.",
+    "systems": [
+     "SharePoint",
+     "AFAS Profit",
+     "Power Automate or a small script"
+    ],
+    "data_needed": [
+     "Source file specs",
+     "Account mapping tables"
+    ],
+    "logs_to": "Import log in SharePoint and AFAS audit trail"
+   },
+   "time_saved_pct": 75,
+   "speedup": 4,
+   "confidence": "high",
+   "evidence": [
+    {
+     "claim": "AFAS Profit accepts journal entries via import and connectors (UpdateConnectors).",
+     "grade": "E2",
+     "source": "AFAS Profit"
+    }
+   ],
+   "risks": [
+    "Silent failure when a source layout changes",
+    "Script owned by one person with no documentation"
+   ],
+   "research_questions": [
+    "How many distinct sources feed the GL by hand today?",
+    "Who will maintain the scripts when the bookkeeper is away?",
+    "How often did source layouts change in the past year?"
+   ]
+  },
+  {
+   "uid": "43-3031.00:2496",
+   "short": "Reconcile bank, supplier and customer accounts and report differences to the Controller.",
+   "today": {
+    "trigger": "Daily Rabobank statements, monthly supplier statements and month-end close.",
+    "steps": [
+     "Import Rabobank statements into AFAS",
+     "Match bank lines to open items by hand where automatic matching fails",
+     "Compare supplier statements with AFAS open items",
+     "List differences in Excel and email the Controller or supplier"
+    ],
+    "systems": [
+     "Rabobank",
+     "AFAS Profit",
+     "Excel",
+     "Outlook"
+    ],
+    "drudgery": [
+     "Matching customer payments with wrong or missing references",
+     "Ticking off supplier statements line by line"
+    ],
+    "time_sinks": "Partial payments and payments covering several invoices."
+   },
+   "anatomy": {
+    "gather": 25,
+    "transform": 30,
+    "decide": 20,
+    "create": 5,
+    "communicate": 15,
+    "coordinate": 5
+   },
+   "lenses": {
+    "faster": "Rules match most bank lines; an LLM reads payment remarks and remittance emails for the rest.",
+    "autonomous": "Each morning the bank file is matched and a difference list is ready before the bookkeeper starts.",
+    "ambitious": "Reconcile every supplier statement every month instead of only the big suppliers.",
+    "joy": "No more ticking off lists; left is the investigation of real differences.",
+    "options": "For an unmatched payment, propose the likely invoice combinations that add up to the amount.",
+    "altitude": "The bookkeeper tunes the matching rules and owns the reconciliation status in Power BI.",
+    "reach": [
+     "Credit and Collections Officer: cash application and dispute follow-up",
+     "Controller: balance sheet reconciliations"
+    ]
+   },
+   "human_edge": "Deciding what a difference means and whether to write off, chase or escalate it.",
+   "pattern": "agent_with_gate",
+   "pattern_why": "Matching is rules, but unclear references, remittance emails and follow-up need reading and tools; write-offs need a person.",
+   "autonomy_level": 4,
+   "in_practice": {
+    "trigger": "New Rabobank statement (CAMT.053) or supplier statement received.",
+    "steps": [
+     "Auto-match bank lines on amount, reference and IBAN",
+     "LLM reads remarks and remittance mails for unmatched lines",
+     "Propose matches and invoice combinations",
+     "Queue differences with explanation and draft supplier query"
+    ],
+    "human_gate": "Bookkeeper confirms proposed matches; write-offs above a threshold go to the Controller.",
+    "systems": [
+     "Rabobank",
+     "AFAS Profit",
+     "Outlook",
+     "Power BI"
+    ],
+    "data_needed": [
+     "Bank statements",
+     "Open items AR and AP",
+     "Remittance advice emails"
+    ],
+    "logs_to": "AFAS matching history and difference log in SharePoint"
+   },
+   "time_saved_pct": 60,
+   "speedup": 2.5,
+   "confidence": "medium",
+   "evidence": [
+    {
+     "claim": "AFAS Profit imports bank statements and matches payments to open items automatically.",
+     "grade": "E2",
+     "source": "AFAS Profit"
+    },
+    {
+     "claim": "Cash application tools use AI to match payments to invoices.",
+     "grade": "E2",
+     "source": "HighRadius cash application"
+    }
+   ],
+   "risks": [
+    "Wrong match hides an unpaid invoice",
+    "Over-reliance makes small recurring differences invisible"
+   ],
+   "research_questions": [
+    "What share of bank lines match automatically in AFAS today?",
+    "How many supplier statements are reconciled per month now?",
+    "Are remittance advices mostly email, PDF or portal?"
+   ]
+  },
+  {
+   "uid": "43-3031.00:18561",
+   "short": "Book the AFAS payroll journal, pay net wages and taxes, and check agency flex costs.",
+   "today": {
+    "trigger": "Monthly and four-weekly payroll runs by the Payroll Specialist.",
+    "steps": [
+     "Receive the payroll journal from AFAS payroll",
+     "Check it against headcount and last period",
+     "Prepare the net wage and loonheffing payment batch in Rabobank",
+     "Reconcile payroll liabilities (tax, pension, CAO funds)"
+    ],
+    "systems": [
+     "AFAS Profit",
+     "Rabobank",
+     "Excel"
+    ],
+    "drudgery": [
+     "Rebuilding the same variance checks every run",
+     "Reconciling pension and fund payables by hand"
+    ],
+    "time_sinks": "Explaining differences between periods with shift allowances and flex peaks."
+   },
+   "anatomy": {
+    "gather": 20,
+    "transform": 30,
+    "decide": 20,
+    "create": 5,
+    "communicate": 15,
+    "coordinate": 10
+   },
+   "lenses": {
+    "faster": "Variance checks per cost centre and liability reconciliations run automatically after each payroll run.",
+    "autonomous": "After the payroll run closes, the journal is posted as draft and the variance report goes to the bookkeeper and Payroll Specialist.",
+    "ambitious": "Total labour cost per site per week, own staff plus flex, available to managers for the first time.",
+    "joy": "No repeat spreadsheet checks; left is explaining real changes.",
+    "options": "Show the variance split by cause: headcount, overtime, shift allowance, flex.",
+    "altitude": "The bookkeeper designs the payroll control set and reviews it with the Payroll Specialist.",
+    "reach": [
+     "Payroll Specialist: pre-run checks",
+     "FP&A Analyst: labour cost forecast"
+    ]
+   },
+   "human_edge": "Payment release responsibility, confidentiality of pay data and judgement on unusual variances.",
+   "pattern": "deterministic_software",
+   "pattern_why": "Payroll journals and liabilities are structured; checks are fixed rules. Pay data stays out of general LLM tools.",
+   "autonomy_level": 3,
+   "in_practice": {
+    "trigger": "Payroll run closed in AFAS.",
+    "steps": [
+     "Post payroll journal as draft",
+     "Run variance and liability checks",
+     "Build payment batch for review",
+     "Send exceptions to bookkeeper and Payroll Specialist"
+    ],
+    "human_gate": "Four-eyes release of the Rabobank payment batch; Payroll Specialist confirms variances.",
+    "systems": [
+     "AFAS Profit",
+     "Rabobank",
+     "Power BI"
+    ],
+    "data_needed": [
+     "Payroll journal",
+     "Headcount per cost centre",
+     "Liability balances"
+    ],
+    "logs_to": "AFAS audit trail and payroll control checklist in SharePoint"
+   },
+   "time_saved_pct": 45,
+   "speedup": 1.8,
+   "confidence": "medium",
+   "evidence": [
+    {
+     "claim": "AFAS Profit integrates payroll with the general ledger and produces the payroll journal.",
+     "grade": "E2",
+     "source": "AFAS Profit"
+    }
+   ],
+   "risks": [
+    "AVG/GDPR: pay data exposed beyond need-to-know",
+    "Payment errors on net wages hit employees directly"
+   ],
+   "research_questions": [
+    "Which payroll checks are done today and how long do they take?",
+    "Is the payroll-to-GL posting already automatic in AFAS?",
+    "Who holds the Rabobank release rights and is four-eyes enforced?"
+   ]
+  },
+  {
+   "uid": "43-3031.00:2491",
+   "short": "Create customer invoices for warehousing and transport, and send statements and reminders.",
+   "today": {
+    "trigger": "Month end and shipment completion; customer contract terms.",
+    "steps": [
+     "Collect storage, handling and transport volumes from operations",
+     "Apply contract rates and surcharges in Excel",
+     "Create invoices in AFAS and email them",
+     "Send account statements and first reminders"
+    ],
+    "systems": [
+     "AFAS Profit",
+     "Excel",
+     "Outlook",
+     "SharePoint"
+    ],
+    "drudgery": [
+     "Applying contract rates by hand",
+     "Re-sending invoices to the right customer address"
+    ],
+    "time_sinks": "Collecting volume data from three sites and checking surcharges like fuel."
+   },
+   "anatomy": {
+    "gather": 30,
+    "transform": 30,
+    "decide": 10,
+    "create": 15,
+    "communicate": 10,
+    "coordinate": 5
+   },
+   "lenses": {
+    "faster": "Rate cards in a table and volume exports from the WMS produce invoice lines automatically.",
+    "autonomous": "At month end invoices are generated as drafts; statements and first reminders go out on schedule.",
+    "ambitious": "Bill every billable activity (extra handling, waiting time) that now slips through, lowering DSO and revenue leakage.",
+    "joy": "No manual rate maths; left is customer contact on disputes.",
+    "options": "An LLM drafts reminder texts in different tones per customer history.",
+    "altitude": "The bookkeeper maintains rate cards and billing rules and reviews draft runs.",
+    "reach": [
+     "Credit and Collections Officer: first-line dunning",
+     "Accountant: revenue accruals"
+    ]
+   },
+   "human_edge": "Knowing customer agreements not yet in the system and handling disputes with tact.",
+   "pattern": "deterministic_software",
+   "pattern_why": "Volumes times contracted rates is rule-based; only reminder wording benefits from a model.",
+   "autonomy_level": 4,
+   "in_practice": {
+    "trigger": "Month end or shipment closed in operations.",
+    "steps": [
+     "Pull volumes per customer from operational exports",
+     "Apply rate card and surcharges",
+     "Create draft invoices in AFAS",
+     "Bookkeeper reviews outliers, then send",
+     "Statements and reminders follow a schedule"
+    ],
+    "human_gate": "Bookkeeper approves invoices with outliers versus last month; credit notes approved by the Controller.",
+    "systems": [
+     "AFAS Profit",
+     "Outlook",
+     "warehouse/transport system exports"
+    ],
+    "data_needed": [
+     "Customer contracts and rate cards",
+     "Volume data per site"
+    ],
+    "logs_to": "AFAS sales journal and billing run log"
+   },
+   "time_saved_pct": 55,
+   "speedup": 2.2,
+   "confidence": "medium",
+   "evidence": [
+    {
+     "claim": "AFAS Profit supports subscription and project-based invoicing with automated reminders.",
+     "grade": "E2",
+     "source": "AFAS Profit"
+    }
+   ],
+   "risks": [
+    "Wrong rate card billed to many customers at once",
+    "Customer complaints if reminders go out on disputed invoices"
+   ],
+   "research_questions": [
+    "What share of billable activities is captured today?",
+    "Are contract rates stored anywhere structured?",
+    "Can operations deliver volume data per customer automatically?"
+   ]
+  },
+  {
+   "uid": "43-3031.00:2514",
+   "short": "Enter purchase orders for sites and check and book staff expense claims.",
+   "today": {
+    "trigger": "Requests from site managers by email and expense claims submitted by staff.",
+    "steps": [
+     "Receive purchase requests by email or Teams",
+     "Create the PO in AFAS with supplier and budget",
+     "Check expense receipts against policy",
+     "Book and pay approved expenses"
+    ],
+    "systems": [
+     "Outlook",
+     "Teams",
+     "AFAS Profit",
+     "SharePoint"
+    ],
+    "drudgery": [
+     "Retyping requests from emails",
+     "Checking receipts against the expense policy"
+    ],
+    "time_sinks": "Incomplete requests and missing receipts."
+   },
+   "anatomy": {
+    "gather": 25,
+    "transform": 30,
+    "decide": 15,
+    "create": 10,
+    "communicate": 15,
+    "coordinate": 5
+   },
+   "lenses": {
+    "faster": "An LLM turns an email request into a draft PO and reads receipts against the expense policy.",
+    "autonomous": "Requests via a form create draft POs; expenses within policy are booked after manager approval.",
+    "ambitious": "All spend through POs, so commitments are visible to FP&A before invoices arrive.",
+    "joy": "No more chasing missing details; left is advising sites on suppliers.",
+    "options": "Propose preferred suppliers and earlier prices for each request.",
+    "altitude": "The bookkeeper owns the request form, policy rules and the exceptions queue.",
+    "reach": [
+     "Controller: purchase compliance",
+     "FP&A Analyst: committed spend in forecast"
+    ]
+   },
+   "human_edge": "Judging policy edge cases and saying no to colleagues tactfully.",
+   "pattern": "llm_step",
+   "pattern_why": "Unstructured requests and receipts become structured POs and checks inside a fixed approval flow.",
+   "autonomy_level": 3,
+   "in_practice": {
+    "trigger": "Purchase request form or expense claim submitted.",
+    "steps": [
+     "Extract items, supplier, amount and cost centre",
+     "Check budget and expense policy",
+     "Create draft PO or expense entry in AFAS",
+     "Send to approver; flag policy exceptions"
+    ],
+    "human_gate": "Budget holder approves POs; bookkeeper decides policy exceptions.",
+    "systems": [
+     "Microsoft Forms/Outlook",
+     "AFAS Profit",
+     "SharePoint"
+    ],
+    "data_needed": [
+     "Expense policy",
+     "Supplier list and prices",
+     "Budgets per cost centre"
+    ],
+    "logs_to": "AFAS workflow history"
+   },
+   "time_saved_pct": 50,
+   "speedup": 2,
+   "confidence": "medium",
+   "evidence": [
+    {
+     "claim": "Expense tools read receipts and check them against policy.",
+     "grade": "E2",
+     "source": "SAP Concur"
+    }
+   ],
+   "risks": [
+    "Policy checks too strict or too lax without tuning",
+    "Sites bypassing the PO flow"
+   ],
+   "research_questions": [
+    "How many POs and expense claims per month, and how many incomplete?",
+    "Does AFAS workflow already cover expense approval?",
+    "Will site managers use a request form?"
+   ]
+  }
+ ],
+ "role": {
+  "altitude": "From entering and matching transactions to running the AP/AR automation: owning matching rules, coding rules, interfaces and exception queues, and reporting match rates and differences to the Controller.",
+  "reach": [
+   "Credit and Collections Officer: cash application and first-line dunning",
+   "Accountant: recurring entries, accruals and balance sheet reconciliations",
+   "FP&A Analyst: actuals and committed spend feeds",
+   "Payroll Specialist: payroll control checks"
+  ],
+  "ceiling_note": "Out of roughly 1,600 hours per FTE these eight tasks are about 400; perhaps 220 to 250 of those can go. The ceiling is exceptions, supplier and customer relationships, fraud and payment release responsibility, and the quality of AFAS master data and agency data.",
+  "skills_to_grow": [
+   "Designing and testing rules and tolerances",
+   "AFAS connectors and Power Automate basics",
+   "Exception analysis and process improvement",
+   "Payment fraud controls",
+   "Power BI reporting"
+  ],
+  "ambitious_version": "A daily soft close: every invoice, bank line and agency hour checked on the day it arrives, full flex-cost audit against rosters and CAO rates, and a ledger the Controller can trust any day, cutting close time and DSO."
+ },
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "inmemory",
+  "seconds": 100,
+  "attempts": 1,
+  "warnings": []
+ }
+}

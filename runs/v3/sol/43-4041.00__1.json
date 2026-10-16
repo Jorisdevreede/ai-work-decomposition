@@ -1,0 +1,1089 @@
+{
+ "tasks": [
+  {
+   "uid": "43-4041.00:23297",
+   "short": "Maintain customer charge and payment records and resolve allocation exceptions.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check approved charge batches against supporting invoices in the {ERP}.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "charge batch",
+      "customer invoice"
+     ],
+     "outputs": [
+      "validated charge batch"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Enter validated charges into customer accounts in the {ERP}.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "validated charge batch",
+      "customer account"
+     ],
+     "outputs": [
+      "updated charge ledger"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Download transactions from the {BANK}.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "BANK"
+     ],
+     "inputs": [
+      "bank account",
+      "statement period"
+     ],
+     "outputs": [
+      "bank transactions"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Match receipts to open invoices and record allocations in the {ERP}.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "bank transactions",
+      "updated charge ledger",
+      "open invoices"
+     ],
+     "outputs": [
+      "payment allocations",
+      "allocation exceptions"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Investigate ambiguous receipts through the {EMAIL} and propose supported corrections.",
+     "actor": "credit clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "allocation exceptions",
+      "payment allocations",
+      "customer remittance"
+     ],
+     "outputs": [
+      "adjustment proposal"
+     ],
+     "handoff_to": "finance supervisor",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve and record nonstandard ledger adjustments in the {ERP}.",
+     "actor": "finance supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "adjustment proposal",
+      "adjustment policy"
+     ],
+     "outputs": [
+      "approved ledger adjustment"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "finance supervisor"
+    },
+    {
+     "id": "s7",
+     "what": "Copy balances and unresolved items into a tracking workbook in the {SPREADSHEET}.",
+     "actor": "credit clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "updated charge ledger",
+      "payment allocations",
+      "allocation exceptions",
+      "approved ledger adjustment"
+     ],
+     "outputs": [
+      "balance tracker"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure the {ERP} to import approved charges, receive transactions from the {BANK}, and allocate payments using exact references and approved matching rules. Keep ambiguous items in an {ERP} exception queue with supporting evidence, supervisor approval for nonstandard adjustments, and a live balance view that replaces the duplicate tracker.",
+   "previous_blocker": "Existing import and matching features were incompletely configured. Inconsistent references and unclear exception ownership encouraged manual re-entry.",
+   "enabler_now": "Established import formats and matching rules handle routine records. AI-assisted coding can reduce connector and validation work without introducing a model into accounting decisions.",
+   "still_hard": "Split payments, disputed invoices, duplicate receipts, and unexplained deductions need investigation. GDPR access and retention controls still apply; employee consultation depends on national rules and whether monitoring changes.",
+   "human_edge": "Establish why money moved, distinguish a customer dispute from an allocation error, and support an adjustment with evidence.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily prioritisation of unresolved payment allocations by customer impact."
+   },
+   "altitude": "The week shifts from copying transactions to resolving ambiguous receipts and preventing repeat errors. Posting and adjustment decision rights remain unchanged unless explicitly delegated.",
+   "reach": [
+    {
+     "role": "customer service representative",
+     "task": "Explain whether a customer's payment has been received and allocated.",
+     "learn": "Read allocation states, distinguish receipt from settlement, and explain unresolved balances."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "4-10",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Charge imports, exact payment matching, duplicate prevention, and exception queues are established deterministic patterns.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Exact documents order imports and stock synchronisation, supporting the integration pattern rather than proving payment reconciliation.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "The step shares, remaining time, and build ranges are planning estimates, not measured results.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The company uses the {ERP} as the customer accounting record.",
+    "The baseline includes manual batch handling and a small duplicate tracker; companies with configured matching already have less work to remove.",
+    "Only unambiguous, balanced matches post automatically; all other receipts enter the exception queue.",
+    "The build configures existing posting controls and does not replace the accounting ledger."
+   ],
+   "unknowns": [
+    "Which charge imports, bank feeds, and matching features are already enabled?",
+    "What proportion of receipts have reliable invoice references?",
+    "Who may approve adjustments, and which thresholds apply?",
+    "Are interfaces, test accounts, and representative transaction samples available?",
+    "Does the change trigger employee consultation under applicable national rules?"
+   ],
+   "research_questions": [
+    "Can existing {ERP} configuration replace custom integration entirely?",
+    "Which matching rules achieve acceptable precision on historical transactions?",
+    "How will retries, reversals, duplicate imports, and partial payments be tested?"
+   ],
+   "new_work": [
+    "Resolve the exception queue and monitor its age.",
+    "Maintain matching rules and customer reference mappings.",
+    "Review failed imports, duplicate alerts, and reconciliation totals.",
+    "Maintain access permissions and adjustment audit trails."
+   ],
+   "time_saved_pct": 84,
+   "speedup": 6.45
+  },
+  {
+   "uid": "43-4041.00:23298",
+   "short": "Assemble credit evidence, calculate financial indicators, and prepare a reasoned credit assessment.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve customer balances and payment history from the {ERP}.",
+     "actor": "credit analyst",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "credit application",
+      "customer account"
+     ],
+     "outputs": [
+      "account history"
+     ],
+     "handoff_to": "credit analyst",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Assemble investigation reports and financial documents from the {DOCS}.",
+     "actor": "credit analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "credit application",
+      "credit evidence pack",
+      "financial statements"
+     ],
+     "outputs": [
+      "indexed evidence pack"
+     ],
+     "handoff_to": "credit analyst",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Read reports in the {DOCS} and extract relevant facts with source references.",
+     "actor": "credit analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "indexed evidence pack"
+     ],
+     "outputs": [
+      "verified credit facts",
+      "evidence gaps"
+     ],
+     "handoff_to": "credit analyst",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Indexed reports and financial documents for one applicant.",
+      "output": "Candidate facts with source passages, dates, units, and unresolved contradictions.",
+      "check": "Validate schema, applicant identity, source location, dates, and numerical consistency; an analyst verifies material facts.",
+      "stop": "One extraction and one repair pass per document, capped at 30 documents per case; unreadable or larger packs go to manual review.",
+      "why_not_simpler": "Structured fields use direct mappings; variable narrative reports need bounded language extraction."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "credit analyst"
+    },
+    {
+     "id": "s4",
+     "what": "Calculate ratios, exposure, and payment trends in the {SPREADSHEET}.",
+     "actor": "credit analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "verified credit facts",
+      "account history",
+      "calculation policy"
+     ],
+     "outputs": [
+      "financial indicators"
+     ],
+     "handoff_to": "credit analyst",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Assess repayment evidence, inconsistencies, and uncertainty against credit policy using the {DOCS}.",
+     "actor": "credit analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "verified credit facts",
+      "financial indicators",
+      "evidence gaps",
+      "credit policy"
+     ],
+     "outputs": [
+      "assessment conclusions"
+     ],
+     "handoff_to": "credit analyst",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Write and approve a sourced assessment memo in the {DOCS}.",
+     "actor": "credit analyst",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "assessment conclusions",
+      "verified credit facts",
+      "financial indicators",
+      "assessment template"
+     ],
+     "outputs": [
+      "credit assessment"
+     ],
+     "handoff_to": "credit decision maker",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Analyst-authored conclusions, verified facts, calculated indicators, and an assessment template.",
+      "output": "A sourced memo expressing the analyst's conclusions and outstanding uncertainty.",
+      "check": "Check every figure against calculated data and every factual claim against evidence; the analyst approves the released memo.",
+      "stop": "One draft and one revision, capped at 2,000 words; unresolved discrepancies return the template to the analyst.",
+      "why_not_simpler": "Templates handle fixed sections, but case-specific explanations need bounded drafting from human conclusions."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "credit analyst"
+    }
+   ],
+   "design": "A job on the {DATA_PLATFORM} joins authorised history from the {ERP} to an indexed evidence pack in the {DOCS}, then calculates indicators with versioned formulas. Bounded loops extract sourced facts and draft the analyst's conclusions into a memo; the analyst verifies material evidence and approves the assessment before it reaches the credit decision maker.",
+   "previous_blocker": "Evidence arrives in different formats and periods. Document interpretation, calculations, and credit judgment are often mixed in one manual process.",
+   "enabler_now": "Document extraction can produce constrained, source-linked fields, while ordinary code performs calculations and consistency checks. This improves preparation without requiring automated credit judgment.",
+   "still_hard": "Evidence may be stale, contradictory, or incomplete, and ratios do not settle repayment capacity. GDPR decision safeguards and EU AI Act classification require review of the actual use; human review must have substance rather than merely endorse an automated score.",
+   "human_edge": "Weigh contradictory evidence, understand unusual financial circumstances, and defend a proportionate assessment.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly evidence freshness decisions for open credit applications."
+   },
+   "altitude": "The analyst spends more time testing explanations and requesting decisive evidence, with less time assembling packs and formatting memos. Credit approval limits remain unchanged.",
+   "reach": [
+    {
+     "role": "first-line administrative supervisor",
+     "task": "Triage application backlogs by missing evidence and review complexity.",
+     "learn": "Distinguish a documentation delay from a material credit concern without treating queue priority as a credit decision."
+    }
+   ],
+   "build_days": {
+    "coding": "6-12",
+    "integration": "5-12",
+    "testing_rollout": "8-18",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Rossum documents extraction, rule checks, and exception routing for order documents; this is an adjacent pattern, not validation of credit assessment.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "The SCHUFA judgment shows that a score strongly relied upon by a lender can itself constitute an automated decision.",
+     "grade": "E3",
+     "source": "[S13]"
+    },
+    {
+     "claim": "Deterministic calculations with human credit judgment are a plausible design; the proposed savings and build ranges remain estimates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The task produces an assessment, while final credit authorisation is a separate action.",
+    "The baseline mixes business credit cases with some individual applicants; personal-data safeguards apply where relevant.",
+    "Models extract facts and express human conclusions; they do not generate credit scores or recommend acceptance.",
+    "Build ranges cover a limited deployment under existing credit policy, not a new regulated scoring service.",
+    "Documents are available electronically and may lawfully be processed for the stated purpose."
+   ],
+   "unknowns": [
+    "Are applicants individuals, businesses, or both?",
+    "Which document types, languages, currencies, and reporting periods occur?",
+    "Who verifies facts, signs assessments, and makes final credit decisions?",
+    "Does the intended implementation fall within EU AI Act high-risk creditworthiness provisions?",
+    "Which GDPR safeguards and national credit rules apply to the actual process?",
+    "What additional compliance, procurement, or consultation lead time is required?"
+   ],
+   "research_questions": [
+    "Which documents already provide structured exports that remove the need for extraction?",
+    "Can source-linked extraction reliably detect period, currency, and applicant mismatches?",
+    "What evidence must an analyst see to challenge a draft assessment effectively?",
+    "Which representative cases expose material errors before rollout?"
+   ],
+   "new_work": [
+    "Verify extracted facts and resolve conflicting sources.",
+    "Maintain formulas, templates, and evidence freshness rules.",
+    "Evaluate extraction errors across document formats and applicant groups.",
+    "Maintain source lineage, access controls, and model processing arrangements."
+   ],
+   "time_saved_pct": 74,
+   "speedup": 3.77
+  },
+  {
+   "uid": "43-4041.00:23299",
+   "short": "Request external credit information and handle reciprocal reference disclosures.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Verify applicant identity, enquiry purpose, and permission against the case in the {CRM}.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "credit application",
+      "identity evidence",
+      "enquiry policy"
+     ],
+     "outputs": [
+      "verified enquiry request"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Request and retrieve reports through a credit bureau service in {OTHER}.",
+     "actor": "credit clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "verified enquiry request",
+      "service entitlement"
+     ],
+     "outputs": [
+      "bureau report",
+      "enquiry receipt"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 10,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "credit clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Contact bank references through the {TELEPHONY} to clarify missing or conflicting information.",
+     "actor": "credit clerk",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "verified enquiry request",
+      "bureau report",
+      "reference contact"
+     ],
+     "outputs": [
+      "reference notes"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "File reports and reference notes against the applicant in the {DOCS}.",
+     "actor": "credit clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "bureau report",
+      "enquiry receipt",
+      "reference notes"
+     ],
+     "outputs": [
+      "credit evidence pack"
+     ],
+     "handoff_to": "credit analyst",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Prepare a reciprocal reference using permitted account facts and a template in the {DOCS}.",
+     "actor": "credit clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "reference request",
+      "account history",
+      "disclosure policy",
+      "reference template"
+     ],
+     "outputs": [
+      "draft reference reply"
+     ],
+     "handoff_to": "credit supervisor",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Approve recipient, permission, and disclosed facts before releasing the reply through the {EMAIL}.",
+     "actor": "credit supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "draft reference reply",
+      "reference request",
+      "disclosure policy"
+     ],
+     "outputs": [
+      "released reference reply",
+      "disclosure receipt"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "credit supervisor"
+    }
+   ],
+   "design": "A controlled connector on the {DATA_PLATFORM} submits approved enquiries to the credit bureau service in {OTHER}, records receipts, and files results in the {DOCS} against the {CRM} case. A fixed-field generator prepares reciprocal references from permitted account facts, and the {WORKFLOW} releases them through the {EMAIL} only after recipient and disclosure approval.",
+   "previous_blocker": "Separate service logins, licensing restrictions, identity mismatches, and unclear disclosure permissions prevented reliable straight-through handling.",
+   "enabler_now": "Where licensed interfaces exist, connectors and fixed-field templates remove rekeying and copying. No language model is needed for standard requests or replies.",
+   "still_hard": "Access rights do not establish a lawful purpose for every enquiry or disclosure. GDPR, contractual restrictions, and national confidentiality rules still require case-specific checks; informal references may remain unavailable or disputed.",
+   "human_edge": "Establish whether a request is legitimate, resolve identity ambiguity, and decide what information may fairly and lawfully be shared.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Applicant credit-reference correction tracking."
+   },
+   "altitude": "The clerk spends more time resolving disputed or missing reference information and less time moving reports between records. Disclosure authority remains with the designated approver.",
+   "reach": [
+    {
+     "role": "correspondence clerk",
+     "task": "Prepare factual reference replies and acknowledge correction requests.",
+     "learn": "Apply disclosure limits, verify recipients, and distinguish factual corrections from credit judgments."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "8-20",
+    "testing_rollout": "6-12",
+    "consent_and_access": "8-25"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Licensed data retrieval, identity matching, request logging, and fixed-field replies can use deterministic integrations.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Rossum documents checked data transfer into business systems, supporting the integration pattern but not bureau access or reciprocal disclosure.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "No digest source demonstrates this complete credit-reference workflow; feasibility, costs, and time estimates need local validation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The statement's 'potential creditors' means applicants or counterparties seeking credit; the intended population needs confirmation.",
+    "External credit information and reciprocal disclosures are distinct branches; shares represent a blended workload.",
+    "At least one external service offers a licensed interface or structured file exchange.",
+    "Reciprocal replies use approved factual fields, without free-text opinions or automatic disclosure.",
+    "The proposed correction-tracking service records progress and ownership; it does not alter external bureau data."
+   ],
+   "unknowns": [
+    "Which external services are used, and what interface and redistribution rights are licensed?",
+    "What permits each enquiry and each reciprocal disclosure?",
+    "Which identifiers reliably distinguish applicants?",
+    "Which recipients, fields, and channels are approved for reference replies?",
+    "Who owns correction requests involving external providers?",
+    "What access, contracting, consultation, and retention requirements apply?"
+   ],
+   "research_questions": [
+    "Can existing {CRM} or {WORKFLOW} connectors handle the licensed service?",
+    "How should ambiguous identity matches be stopped before an external enquiry?",
+    "Can a fixed-field reply meet normal requests without narrative drafting?",
+    "Which service restrictions prevent automated filing or reuse?"
+   ],
+   "new_work": [
+    "Maintain service credentials, entitlements, and connector mappings.",
+    "Review failed requests and ambiguous identity matches.",
+    "Maintain disclosure field lists and recipient verification procedures.",
+    "Handle applicant correction requests and preserve enquiry and disclosure logs."
+   ],
+   "time_saved_pct": 62,
+   "speedup": 2.67
+  },
+  {
+   "uid": "43-4041.00:23300",
+   "short": "Interview credit applicants to clarify financial circumstances and complete the credit evidence record.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Review the application and prepare missing-data questions using the {DOCS}.",
+     "actor": "credit clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "credit application",
+      "credit evidence pack",
+      "interview checklist"
+     ],
+     "outputs": [
+      "interview agenda"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Arrange the interview through the {EMAIL} and {CALENDAR}.",
+     "actor": "credit clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CALENDAR"
+     ],
+     "inputs": [
+      "interview agenda",
+      "applicant contact",
+      "interviewer availability"
+     ],
+     "outputs": [
+      "interview appointment",
+      "preparation checklist"
+     ],
+     "handoff_to": "applicant",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "meetings-and-calendar",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Verify identity and explain the interview purpose over the {TELEPHONY}.",
+     "actor": "credit clerk",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "credit application",
+      "identity checklist",
+      "interview appointment"
+     ],
+     "outputs": [
+      "identity check record"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Discuss income, obligations, and unclear evidence with the applicant over the {TELEPHONY}.",
+     "actor": "credit clerk",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "interview agenda",
+      "identity check record",
+      "credit evidence pack"
+     ],
+     "outputs": [
+      "interview notes"
+     ],
+     "handoff_to": "credit clerk",
+     "share_pct": 40,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Write and verify the financial interview record in the {DOCS}.",
+     "actor": "credit clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "interview notes",
+      "credit application",
+      "interview record template"
+     ],
+     "outputs": [
+      "verified interview record",
+      "evidence gaps"
+     ],
+     "handoff_to": "credit analyst",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Typed interview notes, existing application fields, and the interview record template.",
+      "output": "A structured draft distinguishing applicant statements, documented facts, and unresolved questions.",
+      "check": "Link statements to notes, preserve uncertainty, validate numbers, and require interviewer approval before filing.",
+      "stop": "One draft and one revision, capped at 5,000 input words; unclear notes or unresolved facts return to manual completion.",
+      "why_not_simpler": "Direct mappings handle form fields; variable typed explanations need bounded drafting into a consistent record."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "credit clerk"
+    },
+    {
+     "id": "s6",
+     "what": "Send the applicant a missing-evidence checklist through the {EMAIL}.",
+     "actor": "credit clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "verified interview record",
+      "evidence gaps",
+      "evidence request template"
+     ],
+     "outputs": [
+      "evidence request"
+     ],
+     "handoff_to": "applicant",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure the {WORKFLOW} to build an interview agenda from missing application fields, arrange appointments through the {CALENDAR}, and send preparation checklists through the {EMAIL}. The clerk conducts the conversation, then a bounded drafting loop turns typed notes into a verified record in the {DOCS}; routine evidence requests use approved fields and templates.",
+   "previous_blocker": "Preparation and paperwork were treated as inseparable from the interview. Notes varied between interviewers, while scheduling and follow-up required separate manual actions.",
+   "enabler_now": "Forms, scheduling flows, and checklist rules are established capabilities. A small drafting loop can structure typed notes while keeping factual verification with the interviewer.",
+   "still_hard": "Applicants may misunderstand questions, lack documents, or need sensitive explanations and accessible support. GDPR requires proportionate collection and controlled processing; recording or employee monitoring would add consultation questions under national rules, and creditworthiness automation would require EU AI Act assessment.",
+   "human_edge": "Build trust, ask proportionate follow-up questions, recognise misunderstanding, and let applicants explain circumstances in their own words.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Applicant-controlled interview preparation pack."
+   },
+   "altitude": "The clerk has more time for clarification and assisted completion, with less scheduling and note formatting. Authority over credit decisions does not change.",
+   "reach": [
+    {
+     "role": "customer service representative",
+     "task": "Help an applicant understand evidence requirements before an interview.",
+     "learn": "Explain document requirements accessibly, protect financial information, and escalate questions requiring credit judgment."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "4-9",
+    "testing_rollout": "5-10",
+    "consent_and_access": "4-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Scheduling, missing-field checklists, and template notifications can use existing workflow configuration.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Drafting structured records from typed notes is a bounded model use; credit-interview accuracy and savings are not demonstrated by the digest.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The NBER study found productivity gains for assisted support agents, providing adjacent evidence rather than a credit-interview outcome estimate.",
+     "grade": "E3",
+     "source": "[S8]"
+    }
+   ],
+   "assumptions": [
+    "The telephone route is shown; in-person interviews retain the same preparation and recordkeeping changes.",
+    "The baseline uses typed notes and does not require call recording.",
+    "The preparation pack lets applicants review known fields and identify missing documents without requiring self-service completion.",
+    "Routine notifications contain approved requests and no credit acceptance, rejection, or new assessment.",
+    "Conversation time falls only modestly because clarification remains central."
+   ],
+   "unknowns": [
+    "How many interviews occur by telephone, in person, or with accessibility support?",
+    "Which questions and identity checks are mandatory?",
+    "Are applications structured enough to generate a reliable missing-data agenda?",
+    "Can typed notes be processed in the permitted environment?",
+    "Who approves interview records and handles disputed statements?",
+    "What access and employee consultation requirements apply under national rules?"
+   ],
+   "research_questions": [
+    "Which questions can disappear because reliable answers already exist in the application?",
+    "Can applicants use the preparation pack without digital access or specialist financial knowledge?",
+    "Does drafting preserve qualifications and distinguish applicant statements from verified evidence?",
+    "Do interviewers detect omissions during realistic record-review exercises?"
+   ],
+   "new_work": [
+    "Review draft interview records and correct unsupported statements.",
+    "Maintain question lists, accessible preparation materials, and evidence templates.",
+    "Handle scheduling exceptions and applicants needing assisted completion.",
+    "Monitor drafting quality, processing permissions, and record retention."
+   ],
+   "time_saved_pct": 42,
+   "speedup": 1.73
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts toward evidence quality, allocation exceptions, careful applicant conversations, and defensible credit analysis. Credit decisions and sensitive disclosures retain explicit human authority; automation alone grants no additional decision rights.",
+  "reach": [
+   "Customer service representatives: explain payment status and application evidence requirements.",
+   "Correspondence clerks: prepare controlled factual references and correction acknowledgements.",
+   "First-line administrative supervisors: triage evidence bottlenecks and coordinate exception handling."
+  ],
+  "skills_to_grow": [
+   "Configure matching rules, forms, templates, and exception queues.",
+   "Read financial indicators and trace them to source evidence.",
+   "Review extracted facts and drafted records without rubber-stamping.",
+   "Apply GDPR safeguards, disclosure permissions, and relevant national rules.",
+   "Conduct accessible interviews and explain uncertainty clearly.",
+   "Monitor integration failures and maintain auditable records."
+  ],
+  "ambitious_version": "Provide an applicant evidence service that combines preparation checklists, correction tracking, and clear explanations of missing information. Credit analysts retain assessment authority, while clerks gain a defined coordination role across applicants, finance, and external reference providers."
+ },
+ "job_code": "43-4041.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 260,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3000});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-4041.00",
+   "title": "Credit Authorizers, Checkers, and Clerks",
+   "tasks": 16,
+   "function": "Customer support"
+  }
+ }
+}

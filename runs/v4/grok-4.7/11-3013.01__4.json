@@ -1,0 +1,872 @@
+{
+ "job_code": "11-3013.01",
+ "tasks": [
+  {
+   "uid": "11-3013.01:21288",
+   "short": "Determine severity from stored threat counts",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Load incident counts by threat type",
+     "actor": "security manager",
+     "today_means": "system_screen",
+     "systems": [
+      "BI"
+     ],
+     "inputs": [
+      "threat count"
+     ],
+     "outputs": [
+      "count table"
+     ],
+     "handoff_to": "none",
+     "share_pct": 22,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Draft vulnerability analyses from stored counts",
+     "actor": "security manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "count table"
+     ],
+     "outputs": [
+      "draft analyses"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "Draft vulnerability analyses that cite only stored threat counts.",
+      "input": "Threat type id and incident count for the period.",
+      "output": "Analysis lines that each cite a threat type id.",
+      "check": "Every line cites a stored count, and no severity is added.",
+      "stop": "Stop when the period has no counts.",
+      "why_not_simpler": "A matrix cannot show which count a line came from."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Determine severity and consequence",
+     "actor": "security manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft analyses"
+     ],
+     "outputs": [
+      "severity decision"
+     ],
+     "handoff_to": "operations director",
+     "share_pct": 33,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "File the vulnerability analysis",
+     "actor": "security manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "severity decision"
+     ],
+     "outputs": [
+      "filed analysis"
+     ],
+     "handoff_to": "operations director",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "compliance-and-risk",
+     "approver": "security manager",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "Incident counts by threat type are loaded on {BI}. A draft analysis cites only those counts. The security manager determines severity and consequence. A count is not a severity.",
+   "previous_blocker": "Threat tables were rebuilt by hand before each review.",
+   "enabler_now": "Counts can be queried by threat type and period.",
+   "still_hard": "Severity, criticality, and the effect on delivery stay a determination.",
+   "human_edge": "The manager knows which count is not the risk that matters.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A closed period can be analysed the same week, and a draft with no counts is not filed."
+   },
+   "altitude": "The week is the severity decision, not the recount.",
+   "reach": [
+    {
+     "role": "operations director",
+     "task": "Read the filed analysis",
+     "learn": "Which threat was judged severe"
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "2-4",
+    "testing_rollout": "2-3",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "The source pack says security work in this group is ticket and incident-log configuration, and that the judgement stays with a person. Counts can be listed. Severity is not a formula in the source pack.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "The work starts when a review period closes and ends when the manager files the severity decision.",
+    "A count has a threat type id, a period, and an integer, produced by the incident log. A type with no rows is shown as zero only if the log confirms zero.",
+    "Time a system already spends running is not counted as the security manager's effort.",
+    "A draft that cites an identifier which is not in the store is discarded.",
+    "The incremental hours retire stale drafts when source rows change."
+   ],
+   "unknowns": [
+    "Whether incidents are already coded by threat type."
+   ],
+   "research_questions": [
+    "Who sets what counts as a severe consequence for this firm?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Determining severity is already in the decision step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Retire an analysis when a count is corrected.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "severity the manager determined for that period",
+     "approval_step_id": "s3",
+     "approver": "security manager"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 21.5,
+    "high": 40.5,
+    "basis": "Saving falls when threat types are not coded. Severity stays a determination. The range is below that case."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 61.6,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 59.6,
+   "speedup": 2.475248,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "11-3013.01:21287",
+   "short": "Examine the property against security policies",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "List the physical examinations still due",
+     "actor": "security manager",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "examination due row"
+     ],
+     "outputs": [
+      "due list"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "facilities-and-workplace",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Conduct the examinations on the property",
+     "actor": "security manager",
+     "today_means": "in_person",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "due list"
+     ],
+     "outputs": [
+      "examination notes"
+     ],
+     "handoff_to": "none",
+     "share_pct": 60,
+     "fate": "person_does",
+     "remaining_pct": 92,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "facilities-and-workplace",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Note compliance with security policies",
+     "actor": "security manager",
+     "today_means": "in_person",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "examination notes",
+      "security policy"
+     ],
+     "outputs": [
+      "compliance note"
+     ],
+     "handoff_to": "duty lead",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "facilities-and-workplace",
+     "approver": "security manager",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "Due physical examinations are listed from the {OPS_SYSTEM}. Conducting them on the property stays with the security manager. Compliance with security policies is noted from what was seen, not from the due list.",
+   "previous_blocker": "Due walks were a paper rota, and findings were retyped later.",
+   "enabler_now": "A due list can show which place has not been walked.",
+   "still_hard": "The examination itself, and whether it complies, stays on the property.",
+   "human_edge": "The manager sees a gap the last note did not mention.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The due list is current. The walk and the compliance note stay in person.",
+   "reach": [
+    {
+     "role": "duty lead",
+     "task": "Fix a gap the examination noted",
+     "learn": "Which place failed"
+    }
+   ],
+   "build_days": {
+    "coding": "1-3",
+    "integration": "1-2",
+    "testing_rollout": "1-2",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "The source pack says security work in this group is ticket and incident-log configuration, and that the judgement stays with a person. A due list does not examine a building.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "The work starts when an examination falls due and ends when the manager notes compliance.",
+    "A due row has a place id and a date, produced by the last examination. A place with no row is not marked examined.",
+    "Time a system already spends running is not counted as the security manager's effort.",
+    "A draft that cites an identifier which is not in the store is discarded.",
+    "The incremental hours retire stale drafts when source rows change."
+   ],
+   "unknowns": [
+    "Whether examination dates are already stored by place."
+   ],
+   "research_questions": [
+    "Which policies each place is checked against?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The walk is already in the examination step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s2"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Reopen a note if the place changes after the walk.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3",
+     "approved_version": "compliance note from that examination",
+     "approval_step_id": "s3",
+     "approver": "security manager"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 9.5,
+    "high": 17.9,
+    "basis": "Saving falls when due dates are paper. The examination stays on the property. The range is below that case."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 27.3,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 26.3,
+   "speedup": 1.356852,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "11-3013.01:21300",
+   "short": "Decide compliance of security policies and programs",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Compare stored procedures with government requirements",
+     "actor": "security manager",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "procedure",
+      "government requirement"
+     ],
+     "outputs": [
+      "date compare"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Draft gaps against internal security policies",
+     "actor": "security manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "date compare"
+     ],
+     "outputs": [
+      "draft gaps"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "Draft gaps that cite only stored policies and requirements.",
+      "input": "Policy id and requirement id with their dates.",
+      "output": "Gap lines that cite both ids.",
+      "check": "Every line cites a stored policy and a stored requirement.",
+      "stop": "Stop when either id is missing.",
+      "why_not_simpler": "A date compare alone cannot explain the gap in words the manager will use."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Decide compliance with security directives",
+     "actor": "security manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft gaps"
+     ],
+     "outputs": [
+      "compliance decision"
+     ],
+     "handoff_to": "operations director",
+     "share_pct": 40,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "File the compliance decision",
+     "actor": "security manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "compliance decision"
+     ],
+     "outputs": [
+      "filed compliance note"
+     ],
+     "handoff_to": "operations director",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "compliance-and-risk",
+     "approver": "security manager",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "Procedure dates are compared with stored government requirements. A draft gap cites internal security policies and those requirements. The security manager decides compliance with the directives. A date gap is not a breach.",
+   "previous_blocker": "Compliance was a periodic reread of two binders.",
+   "enabler_now": "Policies and requirements can be stored with dates and ids.",
+   "still_hard": "Whether a program complies stays a decision.",
+   "human_edge": "The manager knows a directive the date compare does not capture.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A changed requirement can be compared the same week, and an unchecked gap is not filed as a breach."
+   },
+   "altitude": "The week is the compliance decision, not the search for the current text.",
+   "reach": [
+    {
+     "role": "operations director",
+     "task": "Read the filed compliance note",
+     "learn": "Which program was judged non-compliant"
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "2-4",
+    "testing_rollout": "2-3",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Comparing stored dates is deterministic. The source pack says security work in this group is ticket and incident-log configuration, and that the judgement stays with a person. Compliance is still decided by a person.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "The work starts when policies or requirements change and ends when the manager files the compliance decision.",
+    "A procedure and a requirement each have an id and a date, produced by the document store. A text that is not stored is not compared.",
+    "Time a system already spends running is not counted as the security manager's effort.",
+    "A draft that cites an identifier which is not in the store is discarded.",
+    "The incremental hours retire stale drafts when source rows change."
+   ],
+   "unknowns": [
+    "Whether government requirements are stored with stable ids."
+   ],
+   "research_questions": [
+    "Which directives this firm treats as binding?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The compliance decision is already in the decision step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Retire a gap when a policy date changes.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "compliance decision the manager made for those ids",
+     "approval_step_id": "s3",
+     "approver": "security manager"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 20.2,
+    "high": 38.1,
+    "basis": "Saving falls when requirements are not stored. A date gap is not filed as a breach. The range is below that case."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 58.0,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 56.0,
+   "speedup": 2.272727,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "11-3013.01:21289",
+   "short": "Coordinate security with public agencies",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Assemble stored facts for the agency",
+     "actor": "security manager",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "incident row"
+     ],
+     "outputs": [
+      "facts pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 18,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Coordinate security operations with public enforcement",
+     "actor": "security manager",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "facts pack"
+     ],
+     "outputs": [
+      "coordination notes"
+     ],
+     "handoff_to": "agency",
+     "share_pct": 47,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Record what the agencies agreed",
+     "actor": "security manager",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "coordination notes"
+     ],
+     "outputs": [
+      "agreed note"
+     ],
+     "handoff_to": "agency",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Send the agreed note to the agency",
+     "actor": "security manager",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "agreed note"
+     ],
+     "outputs": [
+      "sent note"
+     ],
+     "handoff_to": "agency",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "compliance-and-risk",
+     "approver": "security manager",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "Stored incident facts are assembled from the {OPS_SYSTEM}. Coordinating operations with public enforcement, fire, and other agencies stays a conversation. Only the note the manager agreed is sent.",
+   "previous_blocker": "Agency calls started from memory, and the follow-up mail drifted.",
+   "enabler_now": "Incident facts can be assembled before the call.",
+   "still_hard": "What to tell an agency, and what was agreed, stays the manager's.",
+   "human_edge": "The manager knows what must not leave the firm.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The call starts from a facts pack. Nothing is sent until the manager agrees the note.",
+   "reach": [
+    {
+     "role": "agency",
+     "task": "Act on the sent note",
+     "learn": "What was agreed and what was withheld"
+    }
+   ],
+   "build_days": {
+    "coding": "1-3",
+    "integration": "1-3",
+    "testing_rollout": "1-3",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "The source pack says security work in this group is ticket and incident-log configuration, and that the judgement stays with a person. Sending a note outside the firm waits for the manager.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "The work starts when an agency coordination is needed and ends when the agreed note is sent.",
+    "A fact has an incident id and a text the manager has already marked shareable. An unmarked fact is not put in the pack.",
+    "Time a system already spends running is not counted as the security manager's effort.",
+    "A draft that cites an identifier which is not in the store is discarded.",
+    "The incremental hours retire stale drafts when source rows change."
+   ],
+   "unknowns": [
+    "Which facts the firm is allowed to send to which agency."
+   ],
+   "research_questions": [
+    "Is fire coordination a different path from law enforcement?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "The call is already in the coordination step.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s2"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Correct a sent note if the agreement was mis-recorded.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "note the manager agreed for that agency",
+     "approval_step_id": "s3",
+     "approver": "security manager"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 16.1,
+    "high": 30.4,
+    "basis": "Saving falls when facts are not stored. The call stays. An unmarked fact is not sent. The range is below that case."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 45.7,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 44.7,
+   "speedup": 1.808318,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "Threat counts are not a severity. Property examinations stay physical. A compliance gap is filed only after the manager decides. Agency notes leave only when the manager agrees.",
+  "reach": [
+   "The director sees the filed severity, not the count.",
+   "An agency receives only the agreed note."
+  ],
+  "skills_to_grow": [
+   "Do not treat a zero count as proof nothing happened.",
+   "Do not send a fact the manager did not mark."
+  ],
+  "ambitious_version": "A changed requirement is compared the same week, and an unchecked gap is not called a breach."
+ },
+ "_meta": {
+  "model": "grok-4.7",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "11-3013.01",
+   "title": "Security Managers",
+   "tasks": 28,
+   "function": "Management"
+  },
+  "digest": "research/digests-minor/11-3.md",
+  "digest_sha256": "d23d15e0646362d4ce91ca7c19f7997524316c2a7c1ccd94092a25ae82108282",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-15T15:28:36"
+ }
+}

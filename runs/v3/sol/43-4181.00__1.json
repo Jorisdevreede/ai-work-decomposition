@@ -1,0 +1,993 @@
+{
+ "tasks": [
+  {
+   "uid": "43-4181.00:9750",
+   "short": "Make and confirm transportation and accommodation reservations.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the travel request and identify booking details.",
+     "actor": "reservation agent",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "travel request",
+      "travel requirements"
+     ],
+     "outputs": [
+      "booking details"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Travel request and confirmed travel requirements.",
+      "output": "Structured booking details with source passages and missing fields.",
+      "check": "Validate dates, passenger counts and locations; agent verifies extracted facts.",
+      "stop": "One extraction and one correction attempt; unresolved fields return to the agent.",
+      "why_not_simpler": "Requests contain free text. Structured requests bypass the loop."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "reservation agent"
+    },
+    {
+     "id": "s2",
+     "what": "Search availability and fares in reservation system {OTHER}.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "booking details"
+     ],
+     "outputs": [
+      "fare quote",
+      "available itineraries"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Discuss trade-offs and agree an itinerary with the customer.",
+     "actor": "reservation agent",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "available itineraries",
+      "fare quote",
+      "travel requirements"
+     ],
+     "outputs": [
+      "selected itinerary"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Enter passenger details and create a provisional hold in reservation system {OTHER}.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "selected itinerary",
+      "booking details"
+     ],
+     "outputs": [
+      "provisional booking"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Check final terms and commit the booking in reservation system {OTHER}.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "provisional booking",
+      "selected itinerary",
+      "payment status"
+     ],
+     "outputs": [
+      "booking record"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "reservation agent"
+    },
+    {
+     "id": "s6",
+     "what": "Send the booking confirmation and travel documents.",
+     "actor": "reservation agent",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "booking record"
+     ],
+     "outputs": [
+      "booking confirmation",
+      "travel documents"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "A {WORKFLOW} intake validates booking details and queries the reservation system {OTHER}; a bounded extraction loop handles free-text requests from {EMAIL}. Existing reservation controls create permitted holds, require agent approval before commitment, and send confirmations through {EMAIL} after successful booking.",
+   "previous_blocker": "Supplier access, changing fares and duplicate entry between requests and reservation records made the connections costly. Many booking functions already exist.",
+   "enabler_now": "Existing reservation controls handle transactions. AI-assisted coding lowers the effort of building adapters, validation rules and confirmation templates.",
+   "still_hard": "Supplier interfaces differ. Inventory can change between quote and commitment, and partial failures need careful recovery.",
+   "human_edge": "Explain real trade-offs, negotiate alternatives and protect customers whose needs do not fit standard fare rules.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A connection-risk review for complex itineraries before ticket commitment."
+   },
+   "altitude": "The week shifts from rekeying bookings to handling difficult itineraries and failed transactions. No new commercial decision rights arise unless fare and rebooking limits are delegated.",
+   "reach": [
+    {
+     "role": "customer service representative",
+     "task": "Prepare alternatives when a confirmed journey is disrupted.",
+     "learn": "Disruption policies, connection constraints and the limits of rebooking authority."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "8-20",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Existing lodging software supports customer self-service and automated operational steps; this does not establish transport-booking coverage.",
+     "grade": "E2",
+     "source": "[S7]"
+    },
+    {
+     "claim": "Free-text transaction extraction with master-data checks and exception routing exists in order management.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Reservation holds, fare validation and confirmation generation can use deterministic transaction logic where interfaces permit.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The setting is a customer-facing travel or transport business with 200 to 2,000 staff.",
+    "Travel requirements are established upstream; this task covers booking execution.",
+    "Only reversible, fee-free holds run without agent approval.",
+    "Time shares and remaining time are planning estimates, not measured savings.",
+    "Access work includes GDPR controls and employee consultation under applicable national rules."
+   ],
+   "unknowns": [
+    "Which reservation and supplier interfaces permit searches, holds and commitments?",
+    "Which bookings require payment before confirmation?",
+    "What fare limits and commitment authority do agents currently have?",
+    "Which national employee consultation requirements apply?"
+   ],
+   "research_questions": [
+    "Can supplier operations be retried without creating duplicate bookings?",
+    "Can final prices and cancellation terms be checked immediately before commitment?"
+   ],
+   "new_work": [
+    "Review extracted booking details and commitment previews.",
+    "Recover expired holds, partial bookings and failed confirmations.",
+    "Maintain supplier mappings, fare checks and retry rules."
+   ],
+   "time_saved_pct": 72,
+   "speedup": 3.6
+  },
+  {
+   "uid": "43-4181.00:9757",
+   "short": "Discuss customer requirements and travel preferences.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the customer profile and previous travel preferences.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "customer profile",
+      "previous travel requirements"
+     ],
+     "outputs": [
+      "customer context"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Discuss purpose, budget, timing, flexibility and practical travel needs.",
+     "actor": "reservation agent",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "customer context",
+      "travel request"
+     ],
+     "outputs": [
+      "conversation notes"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 55,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Turn conversation notes into a draft requirements summary.",
+     "actor": "reservation agent",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "conversation notes"
+     ],
+     "outputs": [
+      "draft travel requirements"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Agent-written conversation notes and a fixed requirements schema.",
+      "output": "Draft requirements with priorities, uncertainties and source passages.",
+      "check": "Agent checks meaning, missing needs and unsupported inferences; schema validates fields.",
+      "stop": "One draft and one correction attempt; agent completes unresolved fields.",
+      "why_not_simpler": "Narrative notes express priorities and qualifications that fixed field mappings cannot reliably recover."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "reservation agent"
+    },
+    {
+     "id": "s4",
+     "what": "Confirm priorities and resolve conflicting requirements with the customer.",
+     "actor": "reservation agent",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "draft travel requirements"
+     ],
+     "outputs": [
+      "travel requirements"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Save confirmed requirements against the customer record.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "travel requirements"
+     ],
+     "outputs": [
+      "customer profile",
+      "booking brief"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "A configured {CRM} view presents relevant customer context and a short requirements form. A bounded loop turns agent-written notes into a draft for review, then {WORKFLOW} saves the customer-confirmed requirements and creates the booking brief without duplicate entry.",
+   "previous_blocker": "The difficult part is discovering priorities through conversation. Notes and customer records often use different structures.",
+   "enabler_now": "Existing forms cover fixed facts, while a small model loop can structure narrative notes. AI-assisted coding makes the record connection cheaper to build.",
+   "still_hard": "Customers may be uncertain or reveal conflicting needs. Accessibility and health-related details require careful, limited handling.",
+   "human_edge": "Build trust, hear hesitation and help customers make trade-offs they can accept.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A customer-confirmed accessibility brief that travels with the booking."
+   },
+   "altitude": "The agent spends less time rewriting notes and more time clarifying difficult needs. Recommendation quality improves, but booking and pricing authority do not change.",
+   "reach": [
+    {
+     "role": "receptionist and information clerk",
+     "task": "Prepare arrival assistance from confirmed practical requirements.",
+     "learn": "Accessible-service arrangements, minimal information sharing and escalation routes."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "2-6",
+    "testing_rollout": "3-6",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Structured intake, requirements summaries and record updates can support a human travel-preference conversation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "A documented support-assistant study found productivity gains, but does not establish gains for travel-preference interviews.",
+     "grade": "E3",
+     "source": "[S8]"
+    }
+   ],
+   "assumptions": [
+    "The baseline is an assisted telephone consultation; counter consultations follow similar boundaries.",
+    "The loop uses typed notes rather than new call recording.",
+    "Only necessary practical requirements are retained, with appropriate GDPR handling.",
+    "Time shares and remaining time are planning estimates, not measured savings.",
+    "Access estimates include employee consultation where national rules require it."
+   ],
+   "unknowns": [
+    "Where are customer preferences currently stored?",
+    "Which practical requirements must suppliers receive?",
+    "What lawful basis, retention periods and access restrictions apply to sensitive details?",
+    "Does the employer already record calls or consult employees about these tools?"
+   ],
+   "research_questions": [
+    "Does a short structured form remove enough rewriting to make the model loop unnecessary?",
+    "Can summary review detect omitted qualifications without lengthening the consultation?"
+   ],
+   "new_work": [
+    "Check summaries for omitted priorities and invented assumptions.",
+    "Remove outdated preferences and unnecessary sensitive details.",
+    "Maintain requirements fields and supplier handoff formats."
+   ],
+   "time_saved_pct": 25,
+   "speedup": 1.33
+  },
+  {
+   "uid": "43-4181.00:9751",
+   "short": "Prepare customer invoices and take payment.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve billable booking details from reservation system {OTHER}.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "booking record",
+      "fare quote"
+     ],
+     "outputs": [
+      "billing details"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Enter billing details and generate the invoice.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "billing details",
+      "customer profile",
+      "billing rules"
+     ],
+     "outputs": [
+      "draft customer invoice"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Check invoice totals and approve billing exceptions within delegated limits.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "draft customer invoice",
+      "billing rules"
+     ],
+     "outputs": [
+      "customer invoice",
+      "billing exception"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "reservation agent"
+    },
+    {
+     "id": "s4",
+     "what": "Send the customer invoice and payment instructions.",
+     "actor": "reservation agent",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "customer invoice"
+     ],
+     "outputs": [
+      "payment request"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Take customer-authorised payment through payment terminal {OTHER}.",
+     "actor": "reservation agent",
+     "today_means": "in_person",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "payment request"
+     ],
+     "outputs": [
+      "payment status",
+      "payment reference"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "customer"
+    },
+    {
+     "id": "s6",
+     "what": "Record the payment reference and issue the receipt.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "customer invoice",
+      "payment status",
+      "payment reference"
+     ],
+     "outputs": [
+      "payment record",
+      "customer receipt"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "An integration transfers booking charges from the reservation system {OTHER} into configured invoice templates and billing rules in {ERP}. {WORKFLOW} routes billing exceptions for approval, sends a payment request through {EMAIL}, and records authenticated results from the payment service {OTHER} before issuing a receipt.",
+   "previous_blocker": "Most capabilities already exist, but booking references, invoice lines and payment references may not be connected. Billing exceptions discourage unattended processing.",
+   "enabler_now": "Configured invoicing and customer-authorised payment flows cover the standard path. AI-assisted coding reduces the cost of mappings and reliable payment-event handling.",
+   "still_hard": "Travel tax treatment, deposits, split payments and failed transactions need precise rules. Cash payments retain physical handling.",
+   "human_edge": "Resolve disputed charges and explain payment problems without pressuring the customer.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Routine invoice preparation and payment posting largely leave the agent's week. The agent handles billing exceptions within existing limits; financial approval rights do not change.",
+   "reach": [
+    {
+     "role": "credit authorizer and checker",
+     "task": "Investigate unmatched payments before a booking deadline expires.",
+     "learn": "Payment statuses, duplicate prevention, settlement timing and escalation limits."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "5-12",
+    "testing_rollout": "4-8",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Existing lodging software provides automatic charge routing; this supports part of the proposed billing flow.",
+     "grade": "E2",
+     "source": "[S7]"
+    },
+    {
+     "claim": "Invoice calculations, payment references and authenticated payment-event processing can use deterministic rules.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline includes counter card payments; online payment links can replace agent handling for suitable customers.",
+    "The customer's authorisation remains required even when agent handling falls to zero.",
+    "Standard invoices pass fixed checks; the human gate applies to billing exceptions.",
+    "Exceptions beyond agent limits go to the finance team.",
+    "Time estimates exclude payment processing fees and assume no material cash-payment workload.",
+    "Access estimates include GDPR controls and any consultation required by national rules."
+   ],
+   "unknowns": [
+    "Can booking charges be exported with stable invoice references?",
+    "What share of payments is cash, card, bank transfer or split payment?",
+    "Which tax treatments and billing exceptions occur?",
+    "Which payment and invoice corrections require finance approval?"
+   ],
+   "research_questions": [
+    "Can existing configuration connect invoices and payment results without custom code?",
+    "How are duplicate events, reversals and interrupted payments handled?"
+   ],
+   "new_work": [
+    "Review billing exceptions and disputed amounts.",
+    "Investigate unmatched, reversed and duplicate payment events.",
+    "Maintain charge mappings, tax rules and payment credentials."
+   ],
+   "time_saved_pct": 97,
+   "speedup": 33.33
+  },
+  {
+   "uid": "43-4181.00:9752",
+   "short": "Answer questions about schedules, accommodations, procedures and policies.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read the inquiry and identify the question and relevant booking.",
+     "actor": "reservation agent",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "travel inquiry"
+     ],
+     "outputs": [
+      "inquiry details"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Customer inquiry and an approved list of inquiry types.",
+      "output": "Inquiry type, extracted search fields or a handover reason.",
+      "check": "Require an allowed type and valid fields; verify identity separately before private record access.",
+      "stop": "One classification attempt; ambiguous, unsupported or incomplete requests go to an agent.",
+      "why_not_simpler": "Free-text questions vary. Menu selections and exact matches bypass the loop."
+     },
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check live schedules, availability or booking facts in reservation system {OTHER}.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "inquiry details",
+      "booking record"
+     ],
+     "outputs": [
+      "current travel facts"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Find the applicable procedure or policy.",
+     "actor": "reservation agent",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "inquiry details",
+      "policy library"
+     ],
+     "outputs": [
+      "applicable policy"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Prepare an answer using the travel facts and applicable policy.",
+     "actor": "reservation agent",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "inquiry details",
+      "current travel facts",
+      "applicable policy"
+     ],
+     "outputs": [
+      "draft service answer"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Check and send the routine answer.",
+     "actor": "reservation agent",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "draft service answer"
+     ],
+     "outputs": [
+      "service answer"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Discuss uncertain answers, special circumstances or policy exceptions with the customer.",
+     "actor": "reservation agent",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "travel inquiry",
+      "current travel facts",
+      "applicable policy"
+     ],
+     "outputs": [
+      "resolved inquiry",
+      "escalation request"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    }
+   ],
+   "design": "An answer desk in {HELPDESK} classifies free-text inquiries, retrieves live facts from the reservation system {OTHER}, and selects versioned policies from {DOCS}. Deterministic templates send supported answers through {EMAIL}; missing facts, conflicting policies and requests for exceptions reach a reservation agent with the evidence attached.",
+   "previous_blocker": "Answers combine live travel data with policies held elsewhere. Static answers become unreliable when schedules or conditions change.",
+   "enabler_now": "Maintained knowledge articles, live lookups and existing routing cover the standard path. A bounded classifier handles varied wording without generating unrestricted policy advice.",
+   "still_hard": "Urgent disruption questions and contradictory supplier information need people. Accurate policy ownership and live-data freshness remain ongoing costs.",
+   "human_edge": "Recognise distress, explain uncertainty and negotiate a practical next step when the published answer is insufficient.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "After-hours customers seeking routine schedule and procedure information."
+   },
+   "altitude": "The agent handles fewer repeated questions and more uncertain journeys and policy exceptions. Existing escalation and exception-approval rights remain unchanged.",
+   "reach": [
+    {
+     "role": "correspondence clerk",
+     "task": "Maintain approved answers for recurring travel questions.",
+     "learn": "Policy versioning, source attribution, plain-language writing and handover criteria."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "4-10",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Knowledge-base answering with a pre-filled request when an answer is unavailable exists today.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Customer-question automation can use integrations to retrieve records and perform supported actions.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Customer-facing AI interactions require applicable transparency disclosures.",
+     "grade": "E2",
+     "source": "[S18]"
+    },
+    {
+     "claim": "Live lookups and approved answer templates can serve supported travel inquiries without free-form generation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline combines written inquiries with telephone handling of complex cases.",
+    "Lookup steps apply when the question needs those sources; shares average across the inquiry mix.",
+    "Automatic answers use approved templates, current sources and validated fields.",
+    "A failed source check or unsupported question triggers human handover.",
+    "Customer-facing AI is disclosed, and GDPR access and retention controls apply.",
+    "Time estimates are unmeasured; access estimates include consultation under applicable national rules."
+   ],
+   "unknowns": [
+    "What proportion of inquiries has a stable, approved answer?",
+    "Which live schedule and booking interfaces are available?",
+    "Who approves policy wording and handles conflicting supplier advice?",
+    "What after-hours human escalation service exists?",
+    "Which employee consultation requirements apply to routing or reporting changes?"
+   ],
+   "research_questions": [
+    "How accurately can supported questions be separated from questions needing human judgement?",
+    "What freshness limits prevent outdated schedule or policy answers?",
+    "Can current configuration provide sufficient routing before custom classification is built?"
+   ],
+   "new_work": [
+    "Maintain approved answers, source dates and policy versions.",
+    "Handle unsupported inquiries and failed live-data checks.",
+    "Sample sent answers for incorrect routing and stale facts.",
+    "Review handover delays and update supported inquiry types."
+   ],
+   "time_saved_pct": 82,
+   "speedup": 5.56
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts toward difficult itineraries, customer conversations and transaction exceptions. Preparation and paperwork shrink around those conversations; commercial and financial authority changes only through explicit delegation.",
+  "reach": [
+   "Customer service representative: prepare disruption alternatives from confirmed booking facts.",
+   "Receptionist and information clerk: coordinate practical arrival assistance.",
+   "Correspondence clerk: maintain sourced, approved travel answers.",
+   "Credit authorizer and checker: investigate unmatched payments before booking deadlines."
+  ],
+  "skills_to_grow": [
+   "Read fare conditions and assess connection risks.",
+   "Clarify customer priorities and practical accessibility needs.",
+   "Review extracted requirements against source notes.",
+   "Understand booking, payment and retry states.",
+   "Maintain concise policies and reliable escalation criteria.",
+   "Handle personal data with appropriate access and retention."
+  ],
+  "ambitious_version": "A travel service specialist who resolves complex journeys, offers connection-risk reviews and creates reliable accessibility briefs, supported by routine booking, billing and inquiry automation."
+ },
+ "job_code": "43-4181.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 187,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r=await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3500});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-4181.00",
+   "title": "Reservation and Transportation Ticket Agents and Travel Clerks",
+   "tasks": 19,
+   "function": "Customer support"
+  }
+ }
+}

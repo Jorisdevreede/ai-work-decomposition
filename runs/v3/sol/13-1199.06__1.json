@@ -1,0 +1,985 @@
+{
+ "tasks": [
+  {
+   "uid": "13-1199.06:15718",
+   "short": "Fulfil online orders through warehouse packing or transfer to fulfilment partners.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check paid orders, stock and delivery requirements; select fulfilment route.",
+     "actor": "order coordinator",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "paid order",
+      "stock record",
+      "fulfilment rules"
+     ],
+     "outputs": [
+      "fulfilment order"
+     ],
+     "handoff_to": "fulfilment team",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Transfer partner orders and check acceptance.",
+     "actor": "order coordinator",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "fulfilment order"
+     ],
+     "outputs": [
+      "partner acceptance"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Pick warehouse orders, check items and pack parcels with required documentation.",
+     "actor": "warehouse team",
+     "today_means": "in_person",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "fulfilment order",
+      "stock record",
+      "packing slip",
+      "customer invoice"
+     ],
+     "outputs": [
+      "packed parcel"
+     ],
+     "handoff_to": "warehouse team",
+     "share_pct": 45,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Hand packed parcels to the carrier and obtain collection evidence.",
+     "actor": "warehouse team",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "packed parcel"
+     ],
+     "outputs": [
+      "collection evidence"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Record dispatch or partner shipment confirmation against the order.",
+     "actor": "order coordinator",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "PARTNER_PORTAL",
+      "ECOMMERCE"
+     ],
+     "inputs": [
+      "collection evidence",
+      "partner shipment confirmation",
+      "fulfilment order"
+     ],
+     "outputs": [
+      "shipment record"
+     ],
+     "handoff_to": "customer service team",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Agree remedies for shortages, damaged items or rejected partner orders.",
+     "actor": "order coordinator",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "fulfilment order",
+      "fulfilment exception",
+      "remedy policy"
+     ],
+     "outputs": [
+      "agreed remedy"
+     ],
+     "handoff_to": "fulfilment team",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure routing in the {OPS_SYSTEM} and connect it to the {ECOMMERCE} and {PARTNER_PORTAL}, with duplicate protection and acceptance checks. Generate packing documents and consolidate dispatch events into a shipment record; a {WORKFLOW} exception queue supports human remedies while warehouse handling stays physical.",
+   "previous_blocker": "Partner interfaces, inconsistent order identifiers and physical handling prevented one continuous flow. Much routine routing was already available in standard software.",
+   "enabler_now": "Existing routing features and deterministic connectors can remove repeated entry. AI coding can shorten connector development, but partner access and operational testing still take time.",
+   "still_hard": "Packing, damage checks and carrier handover remain physical. Partner acknowledgements may lag, and sending an order twice can cause duplicate shipments.",
+   "human_edge": "Judge whether an item is safe to ship and negotiate a workable remedy when stock or delivery promises fail.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily fulfilment cutoff adjustments using backlog and confirmed dispatch capacity."
+   },
+   "altitude": "The coordinator spends less time transferring orders and checking statuses. With delegated operating limits, they can adjust daily routing and cutoffs; purchasing and refund authority remain separately assigned.",
+   "reach": [
+    {
+     "role": "marketing manager",
+     "task": "Set promotion timing against available fulfilment capacity.",
+     "learn": "Translate stock availability, backlog and carrier cutoffs into a realistic campaign capacity limit."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "7-15",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Structured order routing, partner transfer and shipment updates usually need rules and integrations rather than a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Physical picking, packing and carrier handover remain human work without separate warehouse automation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The baseline covers the merchant's fulfilment team, including warehouse labour, rather than only a desk-based merchant.",
+    "Partner transfer and warehouse packing are alternative branches; shares are illustrative averages across the order mix.",
+    "Routine partner transfers follow approved commercial and fulfilment rules.",
+    "Packing slips and shipping labels already have a standard generation process.",
+    "Access estimates include privacy review and any consultation required under national rules; no employee scoring is proposed."
+   ],
+   "unknowns": [
+    "The proportion of warehouse, manufacturer-direct and distributor orders.",
+    "Available partner interfaces, acknowledgement quality and duplicate controls.",
+    "Actual labour shares, exception rates and authority for remedies.",
+    "Applicable national consultation requirements and existing agreements."
+   ],
+   "research_questions": [
+    "Which acknowledgement and retry patterns best prevent duplicate shipments across partner interfaces?",
+    "Which existing routing features can cover split orders and partial acceptance?"
+   ],
+   "new_work": [
+    "Resolve unaccepted transfers and missing shipment events.",
+    "Maintain routing rules, partner mappings and packing templates.",
+    "Review duplicate prevention and recover failed integrations."
+   ],
+   "time_saved_pct": 36,
+   "speedup": 1.56
+  },
+  {
+   "uid": "13-1199.06:15731",
+   "short": "Receive customer payments, reconcile settlements and resolve payment exceptions.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check payment statuses before releasing paid orders.",
+     "actor": "online merchant",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE"
+     ],
+     "inputs": [
+      "customer order",
+      "payment status"
+     ],
+     "outputs": [
+      "payment clearance"
+     ],
+     "handoff_to": "fulfilment team",
+     "share_pct": 15,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Capture authorised payments according to the configured capture policy.",
+     "actor": "system",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "OTHER"
+     ],
+     "inputs": [
+      "customer order",
+      "payment authorisation",
+      "capture policy"
+     ],
+     "outputs": [
+      "paid order",
+      "payment transaction"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Match payment-service settlements, fees and bank receipts to recorded transactions.",
+     "actor": "finance team",
+     "today_means": "spreadsheet",
+     "systems": [
+      "ERP",
+      "BANK",
+      "OTHER",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "payment transaction",
+      "settlement report",
+      "bank statement"
+     ],
+     "outputs": [
+      "payment reconciliation",
+      "payment exception"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 45,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Investigate unmatched payments, failed captures and disputed transaction details.",
+     "actor": "finance team",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "ECOMMERCE",
+      "OTHER"
+     ],
+     "inputs": [
+      "payment exception",
+      "payment reconciliation",
+      "payment transaction"
+     ],
+     "outputs": [
+      "payment correction proposal"
+     ],
+     "handoff_to": "finance lead",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve exceptional captures, refunds or settlement corrections requiring financial authority.",
+     "actor": "finance lead",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "ECOMMERCE",
+      "OTHER"
+     ],
+     "inputs": [
+      "payment correction proposal",
+      "payment authority limits"
+     ],
+     "outputs": [
+      "approved payment correction"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "finance lead"
+    }
+   ],
+   "design": "Configure payment capture in the {ECOMMERCE} using the payment service represented by {OTHER}, and let validated payment events supply fulfilment clearance. A deterministic job matches transactions, fees and settlements to the {BANK} and {ERP}, with an evidence queue for exceptions and approval on exceptional financial actions.",
+   "previous_blocker": "Capture was often already automated, while settlement identifiers, net fees and refunds made reconciliation harder across systems.",
+   "enabler_now": "Standard exports, event interfaces and configurable matching rules support deterministic reconciliation. AI coding can accelerate adapters without changing payment authorisation requirements.",
+   "still_hard": "Partial settlements, chargebacks, currency differences and disputed captures require investigation. Payment authorisation and customer authentication remain with the payment service.",
+   "human_edge": "Resolve ambiguous payment evidence and decide whether an exceptional financial action is justified.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily settlement exception prioritisation by cash exposure and age."
+   },
+   "altitude": "The merchant handles fewer status checks, while finance focuses on unsettled cash and disputes. No new authority to capture or refund money follows automatically from the change.",
+   "reach": [
+    {
+     "role": "marketing manager",
+     "task": "Diagnose checkout conversion losses caused by payment failures.",
+     "learn": "Distinguish authentication failures, technical failures and customer abandonment using aggregated funnel measures."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Electronic payment capture is commonly configured already; further gains mainly concern status checking and reconciliation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Transaction identifiers, fee rules and settlement totals support deterministic matching with unresolved cases routed to finance.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The OTHER slot represents an electronic payment service.",
+    "The spreadsheet baseline represents a business with partial settlement integration.",
+    "Removing manual clearance means fulfilment consumes validated payment events, not that unpaid orders are released.",
+    "Existing automatic capture provides no new human-time saving by itself.",
+    "Time shares are provisional baseline allocations, not measured savings.",
+    "The design processes transaction references and statuses rather than raw payment credentials; GDPR access and retention controls apply."
+   ],
+   "unknowns": [
+    "Existing capture timing, matching features and settlement interfaces.",
+    "Payment methods, currencies, refund volumes and chargeback workload.",
+    "Which financial corrections require approval and at what limits.",
+    "Access lead times and applicable consultation under national rules."
+   ],
+   "research_questions": [
+    "Which configured reconciliation features cover net settlements and partial refunds?",
+    "Which replay and duplicate controls are required by the payment interfaces?"
+   ],
+   "new_work": [
+    "Investigate unmatched settlements and disputed transactions.",
+    "Maintain fee mappings, matching tolerances and currency rules.",
+    "Monitor duplicate capture prevention and reconciliation completeness."
+   ],
+   "time_saved_pct": 72,
+   "speedup": 3.64
+  },
+  {
+   "uid": "13-1199.06:15710",
+   "short": "Maintain sales orders and generate, deliver and retain accurate customer invoices.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Import accepted sales orders into the finance order register.",
+     "actor": "order administrator",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "ERP"
+     ],
+     "inputs": [
+      "customer order",
+      "payment status"
+     ],
+     "outputs": [
+      "sales order"
+     ],
+     "handoff_to": "order administrator",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check invoice addresses, tax treatment, discounts and order totals.",
+     "actor": "order administrator",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "sales order",
+      "customer record",
+      "invoice rules"
+     ],
+     "outputs": [
+      "validated sales order",
+      "invoice exception"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Resolve invoice exceptions and approve departures from standard tax or commercial rules.",
+     "actor": "finance team",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "ECOMMERCE"
+     ],
+     "inputs": [
+      "invoice exception",
+      "sales order",
+      "invoice rules"
+     ],
+     "outputs": [
+      "approved invoice correction",
+      "validated sales order"
+     ],
+     "handoff_to": "order administrator",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "finance lead"
+    },
+    {
+     "id": "s4",
+     "what": "Generate numbered invoices from validated sales orders.",
+     "actor": "system",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "validated sales order",
+      "invoice template"
+     ],
+     "outputs": [
+      "customer invoice"
+     ],
+     "handoff_to": "order administrator",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Send invoices through the customer's agreed delivery channel.",
+     "actor": "order administrator",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "EMAIL"
+     ],
+     "inputs": [
+      "customer invoice",
+      "customer record"
+     ],
+     "outputs": [
+      "invoice delivery record"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Save invoice copies and link them to orders for later retrieval.",
+     "actor": "order administrator",
+     "today_means": "document",
+     "systems": [
+      "ERP",
+      "DOCS"
+     ],
+     "inputs": [
+      "customer invoice",
+      "sales order",
+      "invoice delivery record"
+     ],
+     "outputs": [
+      "invoice archive"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 10,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    }
+   ],
+   "design": "Connect accepted orders from the {ECOMMERCE} to the {ERP}, then configure validation, invoice numbering and delivery using approved rules. Retain the authoritative invoice and order link in the {ERP}, removing duplicate filing in the {DOCS}; finance approves exceptional tax or commercial corrections.",
+   "previous_blocker": "Order and finance records used different mappings, while invoice templates and tax rules needed local configuration. Document generation itself was usually already available.",
+   "enabler_now": "Existing invoicing features cover most of the flow. AI coding can reduce the effort of field mapping, validation and integration checks.",
+   "still_hard": "Cross-border tax treatment, credit notes and historical numbering errors need finance expertise. Invoice format and retention requirements depend on applicable national rules.",
+   "human_edge": "Decide the correct treatment of unusual transactions and resolve disputes about what was sold or billed.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Customer self-service invoice retrieval linked to authenticated order history."
+   },
+   "altitude": "The administrator spends the week resolving incomplete orders and improving invoice accuracy instead of copying and filing records. Financial approval rights stay with finance; self-service retrieval is a separate extension.",
+   "reach": [
+    {
+     "role": "technical writer",
+     "task": "Write customer guidance for invoice retrieval and correction requests.",
+     "learn": "Explain invoice fields, authentication and correction routes in plain language."
+    }
+   ],
+   "build_days": {
+    "coding": "2-6",
+    "integration": "4-10",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Sales-order validation and invoice generation are largely structured operations supported by standard finance software.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "An authoritative invoice archive can remove duplicate manual filing when retention and retrieval requirements are met.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This task concerns customer sales orders and invoices; merchandise purchasing belongs to procure-to-pay.",
+    "The baseline has an import step and manual delivery or filing around existing invoice generation.",
+    "Standard invoices use finance-approved tax and numbering rules.",
+    "Removing duplicate filing requires an adequate authoritative archive in the ERP.",
+    "Existing automatic invoice generation provides no additional saving by itself.",
+    "Estimates cover the core flow; the customer self-service extension needs separate scoping."
+   ],
+   "unknowns": [
+    "Existing order integration, invoice delivery and archive capabilities.",
+    "Countries served, tax registrations and applicable electronic invoice requirements.",
+    "Actual exception volumes and approval responsibilities.",
+    "Retention requirements, access lead times and applicable employee consultation."
+   ],
+   "research_questions": [
+    "Which invoice validation and delivery requirements apply to the intended markets?",
+    "Can configured archive and retrieval features remove the separate document copy?"
+   ],
+   "new_work": [
+    "Maintain invoice mappings, templates and approved validation rules.",
+    "Review rejected orders, delivery failures and numbering anomalies.",
+    "Verify archive completeness and access permissions."
+   ],
+   "time_saved_pct": 80,
+   "speedup": 5.0
+  },
+  {
+   "uid": "13-1199.06:15709",
+   "short": "Send transaction and shipment confirmations and resolve failed or incorrect notifications.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive validated transaction or shipment events.",
+     "actor": "system",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "paid order",
+      "shipment record"
+     ],
+     "outputs": [
+      "confirmation event"
+     ],
+     "handoff_to": "system",
+     "share_pct": 2,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Populate the appropriate confirmation template with order and tracking details.",
+     "actor": "system",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE"
+     ],
+     "inputs": [
+      "confirmation event",
+      "confirmation template",
+      "customer record"
+     ],
+     "outputs": [
+      "confirmation message"
+     ],
+     "handoff_to": "system",
+     "share_pct": 3,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Send the confirmation and record delivery status.",
+     "actor": "system",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "EMAIL"
+     ],
+     "inputs": [
+      "confirmation message"
+     ],
+     "outputs": [
+      "confirmation delivery record"
+     ],
+     "handoff_to": "customer service team",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Compare completed orders and shipments with confirmation delivery records.",
+     "actor": "customer service team",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "OPS_SYSTEM",
+      "EMAIL"
+     ],
+     "inputs": [
+      "paid order",
+      "shipment record",
+      "confirmation delivery record"
+     ],
+     "outputs": [
+      "confirmation exception"
+     ],
+     "handoff_to": "customer service team",
+     "share_pct": 40,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Confirm contact corrections or explain conflicting shipment information to customers.",
+     "actor": "customer service team",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "HELPDESK"
+     ],
+     "inputs": [
+      "confirmation exception",
+      "customer record",
+      "shipment record"
+     ],
+     "outputs": [
+      "verified correction"
+     ],
+     "handoff_to": "customer service team",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Check corrected details and resend the affected confirmation.",
+     "actor": "customer service team",
+     "today_means": "system_screen",
+     "systems": [
+      "ECOMMERCE",
+      "EMAIL"
+     ],
+     "inputs": [
+      "verified correction",
+      "confirmation exception",
+      "confirmation template"
+     ],
+     "outputs": [
+      "corrected confirmation",
+      "confirmation delivery record"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "customer service team"
+    }
+   ],
+   "design": "Configure transaction and shipment templates in the {ECOMMERCE}, using validated events from the {OPS_SYSTEM} and existing mail delivery. Add deterministic checks for missing events, failed delivery and duplicate sends, routing exceptions to the {HELPDESK}; staff verify sensitive corrections before a corrected message is sent.",
+   "previous_blocker": "Routine confirmations were commonly automated already. The remaining gap was reliable shipment events, delivery visibility and safe correction handling.",
+   "enabler_now": "Existing notification settings handle template generation and sending. Small event checks and controlled replay can close gaps without generating free text.",
+   "still_hard": "Mail acceptance does not prove that a customer read a message. Incorrect contact details and conflicting dispatch evidence still require human resolution.",
+   "human_edge": "Reassure customers and establish the correct facts when a confirmation conflicts with their experience.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Customer service checks fewer routine delivery records and spends more time resolving confusing orders. Decision rights do not change.",
+   "reach": [
+    {
+     "role": "editor",
+     "task": "Improve transaction and shipment confirmation templates.",
+     "learn": "Use clear status language, accessible formatting and consistent distinctions between order acceptance and dispatch."
+    }
+   ],
+   "build_days": {
+    "coding": "1-3",
+    "integration": "2-5",
+    "testing_rollout": "2-5",
+    "consent_and_access": "1-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Transaction and shipment confirmations commonly use existing event triggers and fixed templates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Missing-event checks and controlled retries can be deterministic; routine confirmations do not require a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Routine sending is already automated; incremental gains concern monitoring and correction work.",
+    "The illustrative baseline allocates most human effort to checking and exceptions.",
+    "Event acceptance, capture and shipment have distinct definitions agreed with operations.",
+    "Routine templates contain service information; promotional messages follow separate rules.",
+    "Contact corrections require verification before customer information is disclosed.",
+    "Access estimates include GDPR review and any consultation required under national rules."
+   ],
+   "unknowns": [
+    "Current notification configuration and the actual amount of manual checking.",
+    "Availability and meaning of delivery, bounce and shipment events.",
+    "Existing duplicate suppression, retry behaviour and supported languages.",
+    "Who can verify contact changes and approve corrected messages."
+   ],
+   "research_questions": [
+    "Which existing notification settings cover partial shipments and delayed dispatch?",
+    "Which delivery events reliably distinguish retryable failures from permanent failures?"
+   ],
+   "new_work": [
+    "Review missing events, permanent bounces and contradictory shipment statuses.",
+    "Maintain templates, translations and trigger definitions.",
+    "Check duplicate suppression and approve corrected-message replays."
+   ],
+   "time_saved_pct": 62,
+   "speedup": 2.63
+  }
+ ],
+ "role": {
+  "altitude": "The team shifts from copying records and checking routine statuses toward fulfilment exceptions, unsettled cash and customer remedies. Physical warehouse work remains substantial, and financial authority changes only through explicit delegation.",
+  "reach": [
+   "Help marketing managers time campaigns against stock and fulfilment capacity.",
+   "Help editors and technical writers improve transactional messages and invoice guidance."
+  ],
+  "skills_to_grow": [
+   "Map order, payment, invoice and shipment identifiers across systems.",
+   "Design duplicate protection, reconciliation rules and exception queues.",
+   "Interpret settlement evidence and recognise cases requiring finance judgement.",
+   "Use operational capacity and customer impact to prioritise exceptions."
+  ],
+  "ambitious_version": "Run a daily trading operations review that connects promotion plans, fulfilment capacity, settlement exceptions and customer problems, with clear authority for each corrective action."
+ },
+ "job_code": "13-1199.06",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 171,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3500});text(r.output)\n"
+  ],
+  "job": {
+   "code": "13-1199.06",
+   "title": "Online Merchants",
+   "tasks": 34,
+   "function": "Marketing"
+  }
+ }
+}

@@ -1,0 +1,1001 @@
+{
+ "tasks": [
+  {
+   "uid": "13-2082.00:7359",
+   "short": "Prepare individual and small-business tax returns from financial records and supporting documents.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect financial records and supporting documents into the client file.",
+     "actor": "tax preparer",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS",
+      "ERP",
+      "OTHER"
+     ],
+     "inputs": [
+      "client details",
+      "financial records",
+      "supporting documents"
+     ],
+     "outputs": [
+      "tax source pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "tax-and-filing",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read documents and enter supported amounts into tax preparation software {OTHER}.",
+     "actor": "tax preparer",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "tax source pack"
+     ],
+     "outputs": [
+      "tax source index",
+      "tax input schedule"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Documents without structured equivalents in the tax source pack.",
+      "output": "Typed amounts, dates and identifiers with page references.",
+      "check": "Validate taxpayer, period, currency, duplicate documents and document totals; review uncertain fields.",
+      "stop": "One extraction and one repair per document; unresolved fields enter a manual queue.",
+      "why_not_simpler": "Use imports and fixed templates first; varied free-text documents still need interpretation."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "tax-and-filing",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Reconcile source amounts with financial records and investigate differences.",
+     "actor": "tax preparer",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "ERP",
+      "OTHER"
+     ],
+     "inputs": [
+      "tax input schedule",
+      "financial records",
+      "prior-year return"
+     ],
+     "outputs": [
+      "reconciled tax inputs",
+      "reconciliation exceptions"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "tax-and-filing",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Choose tax treatments and document material judgements.",
+     "actor": "tax preparer",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "reconciled tax inputs",
+      "form requirements",
+      "tax guidance",
+      "client facts"
+     ],
+     "outputs": [
+      "tax treatment memo"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "tax-and-filing",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Populate forms and calculate liabilities in tax preparation software {OTHER}.",
+     "actor": "tax preparer",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "reconciled tax inputs",
+      "form requirements",
+      "tax treatment memo"
+     ],
+     "outputs": [
+      "draft tax return",
+      "calculation workpapers"
+     ],
+     "handoff_to": "senior tax preparer",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "tax-and-filing",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Review the return and approve the client-ready return pack.",
+     "actor": "senior tax preparer",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "draft tax return",
+      "calculation workpapers",
+      "return check report",
+      "tax treatment memo"
+     ],
+     "outputs": [
+      "reviewed return pack",
+      "review sign-off"
+     ],
+     "handoff_to": "tax preparer",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "tax-and-filing",
+     "approver": "senior tax preparer"
+    }
+   ],
+   "design": "Configure imports, calculations and form generation in tax preparation software {OTHER}, with source documents in {DOCS}. A bounded extractor handles unsupported documents, while deterministic reconciliation on the {DATA_PLATFORM} produces exceptions and linked workpapers. The senior tax preparer approves the client-ready pack; client authorisation and filing remain separate actions.",
+   "previous_blocker": "Tax software already calculates liabilities. Fragmented documents, inconsistent imports and undocumented treatment choices leave substantial preparation outside it.",
+   "enabler_now": "Existing import features and faster development of mappings and reconciliation checks make the missing connections cheaper. Bounded extraction can handle varied documents with source references.",
+   "still_hard": "Cross-border facts, disputed classifications, incomplete evidence and annual national tax changes still require expertise.",
+   "human_edge": "Understand the client's circumstances, distinguish defensible treatments and explain the consequences of uncertain positions.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Quarterly estimated-tax refresh for small-business clients."
+   },
+   "altitude": "The week shifts toward exceptions, treatment choices and client discussions. With agreed delegation, the preparer can prioritise quarterly estimate reviews; statutory signing authority does not change.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Resolve ledger classifications that cause recurring tax adjustments.",
+     "learn": "Account mappings, adjusting entries and close controls."
+    }
+   ],
+   "build_days": {
+    "coding": "8-15",
+    "integration": "8-20",
+    "testing_rollout": "10-20",
+    "consent_and_access": "5-25"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "AFAS Jonas provides assistance within income and corporate tax returns; the user remains responsible.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Tax arithmetic and form population should use maintained rules and validated mappings, with models limited to document interpretation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The build ranges are planning estimates, not demonstrated delivery times or a guaranteed coding speed increase.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The setting is a tax-services team within a European firm employing 200 to 2,000 people.",
+    "Tax preparation software {OTHER} supports maintained national tax rules and usable imports.",
+    "This task ends with a reviewed return pack; it excludes client authorisation and filing.",
+    "GDPR applies to client data. EU AI Act duties require a use-specific assessment; credit-scoring classifications do not automatically apply to tax preparation.",
+    "Access estimates include employee consultation where national rules require it; statutory waiting periods may extend elapsed time.",
+    "Step times and remaining time are planning estimates. Document handling drives effort, while calculations already use software."
+   ],
+   "unknowns": [
+    "Which jurisdictions, return types and tax years the team supports.",
+    "Available import interfaces, licences and source-data quality.",
+    "Who may approve treatments, release packs and submit returns.",
+    "Applicable employee consultation arrangements and approved data-processing locations."
+   ],
+   "research_questions": [
+    "Which official schemas and maintained calculation interfaces cover the target returns?",
+    "Which national rules govern preparer responsibility, record retention and employee consultation?"
+   ],
+   "new_work": [
+    "Review uncertain extracted fields and reconcile missing source documents.",
+    "Maintain document mappings and versioned national tax rules.",
+    "Regression-check calculations and return mappings after annual updates.",
+    "Monitor access, retention and extraction-provider changes."
+   ],
+   "time_saved_pct": 66,
+   "speedup": 2.9
+  },
+  {
+   "uid": "13-2082.00:7362",
+   "short": "Review financial records to determine the forms and schedules required for a tax return.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve financial statements and expenditure evidence from the client file.",
+     "actor": "tax preparer",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS",
+      "ERP"
+     ],
+     "inputs": [
+      "financial records",
+      "supporting documents",
+      "client details"
+     ],
+     "outputs": [
+      "tax source pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "tax-and-filing",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read records to identify income, expenditure, ownership and jurisdiction facts.",
+     "actor": "tax preparer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "tax source pack"
+     ],
+     "outputs": [
+      "client facts",
+      "tax source index"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Unstructured records not already represented in the tax source index.",
+      "output": "Evidence-linked facts, document categories and explicitly missing facts.",
+      "check": "Validate taxpayer, tax year and cited passages; distinguish absent evidence from a negative answer.",
+      "stop": "One extraction and one repair per document; conflicting or unsupported facts go to the preparer.",
+      "why_not_simpler": "Rules handle structured exports; narrative notes and unfamiliar document layouts require reading."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "tax-and-filing",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Match identified facts against national form and schedule requirements.",
+     "actor": "tax preparer",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "client facts",
+      "tax guidance",
+      "prior-year return"
+     ],
+     "outputs": [
+      "provisional form list",
+      "form selection exceptions"
+     ],
+     "handoff_to": "senior tax preparer",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "tax-and-filing",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Resolve ambiguous filing obligations and approve the required forms.",
+     "actor": "senior tax preparer",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "provisional form list",
+      "form selection exceptions",
+      "client facts",
+      "tax guidance"
+     ],
+     "outputs": [
+      "form requirements",
+      "missing evidence list"
+     ],
+     "handoff_to": "tax preparer",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "tax-and-filing",
+     "approver": "senior tax preparer"
+    },
+    {
+     "id": "s5",
+     "what": "Record the approved form checklist in tax preparation software {OTHER}.",
+     "actor": "tax preparer",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "form requirements",
+      "missing evidence list"
+     ],
+     "outputs": [
+      "return preparation checklist"
+     ],
+     "handoff_to": "tax preparer",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "tax-and-filing",
+     "approver": "none"
+    }
+   ],
+   "design": "Reuse the tax source index in {DOCS}, extracting only facts missing from structured records. A versioned decision table on the {DATA_PLATFORM} maps verified facts to national form requirements and flags uncertainty. Approved requirements populate the checklist in tax preparation software {OTHER}.",
+   "previous_blocker": "Form requirements depend on facts spread across documents, while checklists often hide the reasons behind a selection.",
+   "enabler_now": "Evidence-linked extraction can populate a stable fact schema. Deterministic decision tables can then provide reproducible selections and explicit exceptions.",
+   "still_hard": "Residency, ownership changes and cross-border obligations can require facts that financial statements do not contain.",
+   "human_edge": "Recognise when apparently routine records conceal a different filing obligation and ask the decisive follow-up question.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Reassess required schedules when a material client fact changes."
+   },
+   "altitude": "The preparer spends less time reading unchanged records and more time resolving incomplete facts. They can initiate a scope review when new facts appear; final scope approval follows existing delegation.",
+   "reach": [
+    {
+     "role": "compliance officer",
+     "task": "Maintain an evidence-backed register of filing obligations and deadlines.",
+     "learn": "Obligation ownership, jurisdiction tracking and change-control methods."
+    }
+   ],
+   "build_days": {
+    "coding": "6-12",
+    "integration": "4-10",
+    "testing_rollout": "8-15",
+    "consent_and_access": "3-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Evidence-linked extraction followed by jurisdiction-specific decision tables is a proposed design, not a demonstrated tax-form selection case in the digest.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "A missing source fact should trigger an exception rather than an inferred absence of a filing obligation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "A shared source index is reused across preparation and form selection; extraction is not built twice.",
+    "The first release covers a defined set of national return types.",
+    "Judgement remains concentrated in ambiguous obligations despite routine evidence gathering becoming automated.",
+    "Access work includes GDPR controls and employee consultation where national rules require it."
+   ],
+   "unknowns": [
+    "Whether existing tax preparation software {OTHER} already provides adequate form-selection rules.",
+    "Which factual triggers cause the team's most frequent missed schedules.",
+    "Whether client records include residency, ownership and foreign-income facts.",
+    "Whether a shared source index already exists."
+   ],
+   "research_questions": [
+    "Which official instructions define mandatory schedules and their triggering facts?",
+    "Can existing configuration cover those triggers before a custom decision table is built?"
+   ],
+   "new_work": [
+    "Maintain dated form triggers and their official sources.",
+    "Review conflicting facts and unresolved document categories.",
+    "Check for missed forms after national rule changes.",
+    "Deduplicate extraction and source-index updates across tasks."
+   ],
+   "time_saved_pct": 77,
+   "speedup": 4.35
+  },
+  {
+   "uid": "13-2082.00:7366",
+   "short": "Check others' tax-return inputs, totals and procedures against source records.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Open the draft return, workpapers and supporting evidence.",
+     "actor": "tax reviewer",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "draft tax return",
+      "calculation workpapers",
+      "tax source pack",
+      "tax source index"
+     ],
+     "outputs": [
+      "return review pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "tax-and-filing",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Recalculate totals and inspect validation messages in tax preparation software {OTHER}.",
+     "actor": "tax reviewer",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "return review pack",
+      "tax validation rules"
+     ],
+     "outputs": [
+      "arithmetic check results"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "tax-and-filing",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Compare return fields with source documents and the procedural checklist.",
+     "actor": "tax reviewer",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OTHER"
+     ],
+     "inputs": [
+      "return review pack",
+      "return preparation checklist",
+      "tax source index"
+     ],
+     "outputs": [
+      "source check results",
+      "review exceptions"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "tax-and-filing",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Discuss exceptions with the preparer and agree necessary corrections.",
+     "actor": "tax reviewer",
+     "today_means": "meeting_call",
+     "systems": [
+      "CHAT",
+      "OTHER"
+     ],
+     "inputs": [
+      "review exceptions",
+      "arithmetic check results",
+      "tax treatment memo"
+     ],
+     "outputs": [
+      "correction instructions",
+      "exception dispositions"
+     ],
+     "handoff_to": "tax preparer",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 65,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "tax-and-filing",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Confirm corrections and sign off the return check report.",
+     "actor": "tax reviewer",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "source check results",
+      "arithmetic check results",
+      "exception dispositions",
+      "corrected tax return"
+     ],
+     "outputs": [
+      "return check report"
+     ],
+     "handoff_to": "senior tax preparer",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "audit-and-controls",
+     "approver": "tax reviewer"
+    }
+   ],
+   "design": "Enable native validations in tax preparation software {OTHER}, then add deterministic source-to-field and checklist checks on the {DATA_PLATFORM}. Results link to evidence in {DOCS}; corrections trigger a rerun and invalidate stale checks. The reviewer resolves exceptions and signs the check report before final return approval.",
+   "previous_blocker": "Native checks catch arithmetic errors but often lack links to external evidence. Reviewers bridge those gaps manually.",
+   "enabler_now": "Structured source indexes and inexpensive field mappings allow repeatable comparisons. Existing validation features can cover arithmetic without a model.",
+   "still_hard": "A correct total can conceal an incorrect tax treatment. Weak source evidence and correlated extraction errors still need independent attention.",
+   "human_edge": "Challenge plausible but unsupported entries and recognise when a procedural pass hides a substantive problem.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Client-facing pre-filing source-to-return assurance report."
+   },
+   "altitude": "The reviewer's week shifts toward substantive exceptions and recurring control failures. They gain clearer authority to return incomplete packs for correction within the agreed review process.",
+   "reach": [
+    {
+     "role": "accountant and auditor",
+     "task": "Design source-to-ledger controls for recurring financial close adjustments.",
+     "learn": "Control objectives, independent evidence and testing coverage."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "5-12",
+    "testing_rollout": "8-15",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "DataSnipper supports evidence-linked financial checks with team review and sign-off.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Baker Tilly Netherlands reported statement tick-and-tie falling from eight to two hours; this vendor-reported audit case does not establish tax-review savings.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "Deterministic arithmetic and source comparisons require no model when validated fields and mappings are available.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "A validated source index and machine-readable return fields are available from preparation.",
+    "Unindexed evidence enters an exception queue; it cannot receive an automatic pass.",
+    "The check report supports final return approval and does not itself authorise filing.",
+    "Access work includes GDPR controls and consultation where national rules require it.",
+    "Build estimates exclude creating the upstream extraction service."
+   ],
+   "unknowns": [
+    "Which native validations are enabled and which errors escape them.",
+    "Whether source extraction has been independently checked.",
+    "Whether return versions and reviewer identities are reliably recorded.",
+    "Required separation between preparation, checking and final approval."
+   ],
+   "research_questions": [
+    "Which return fields and validation messages can be exported through supported interfaces?",
+    "Which independent checks detect errors shared by extraction and preparation?"
+   ],
+   "new_work": [
+    "Maintain field mappings and procedural checks.",
+    "Review unmatched evidence and unexplained variances.",
+    "Investigate recurring errors and overly noisy rules.",
+    "Verify that changed returns invalidate earlier check reports."
+   ],
+   "time_saved_pct": 72,
+   "speedup": 3.54
+  },
+  {
+   "uid": "13-2082.00:20364",
+   "short": "Explain applicable national and regional tax rules to individuals and small businesses.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive the client's tax question and locate the relevant client file.",
+     "actor": "tax preparer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "client question",
+      "client details"
+     ],
+     "outputs": [
+      "tax advice request"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Find current official guidance for the jurisdiction, tax year and topic.",
+     "actor": "tax preparer",
+     "today_means": "system_screen",
+     "systems": [
+      "GOV_PORTAL",
+      "DOCS"
+     ],
+     "inputs": [
+      "tax advice request",
+      "client facts"
+     ],
+     "outputs": [
+      "tax guidance"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Determine how the rules apply and identify missing client facts.",
+     "actor": "tax preparer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "tax advice request",
+      "tax guidance",
+      "client facts"
+     ],
+     "outputs": [
+      "tax advice position",
+      "missing evidence list"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Draft a plain-language explanation with relevant examples and caveats.",
+     "actor": "tax preparer",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "tax advice position",
+      "tax guidance",
+      "client question"
+     ],
+     "outputs": [
+      "draft tax explanation"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "The preparer's advice position, verified client facts and approved dated guidance.",
+      "output": "A plain-language explanation with source citations and labelled assumptions.",
+      "check": "Validate citations and dates; calculate examples deterministically; preparer checks meaning before delivery.",
+      "stop": "One draft and one revision per request; missing support returns to the preparer.",
+      "why_not_simpler": "Approved templates cover standard questions; varied client circumstances require tailored wording."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Explain the position to the client and check their understanding.",
+     "actor": "tax preparer",
+     "today_means": "meeting_call",
+     "systems": [
+      "CALENDAR",
+      "DOCS"
+     ],
+     "inputs": [
+      "draft tax explanation",
+      "missing evidence list"
+     ],
+     "outputs": [
+      "delivered tax explanation",
+      "client questions",
+      "agreed next steps"
+     ],
+     "handoff_to": "client",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "tax preparer"
+    },
+    {
+     "id": "s6",
+     "what": "Record advice delivered, assumptions and agreed follow-up actions.",
+     "actor": "tax preparer",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS",
+      "PROJECT"
+     ],
+     "inputs": [
+      "delivered tax explanation",
+      "agreed next steps"
+     ],
+     "outputs": [
+      "advice record",
+      "follow-up tasks"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure request capture in the {WORKFLOW} and a dated guidance library in {DOCS}, linked to official material in the {GOV_PORTAL}. A bounded drafting loop turns the preparer's approved position into a cited explanation, with deterministic example calculations. The preparer approves delivery during the client conversation and records agreed actions through structured fields.",
+   "previous_blocker": "Current guidance, client facts and prior advice sit in separate places. Templates help, but tailoring and checking explanations consume expert time.",
+   "enabler_now": "Filtered document search and bounded drafting can reduce preparation effort. Neither requires autonomous research or automatic delivery of advice.",
+   "still_hard": "Ambiguous law, changing facts, language needs and client misunderstandings remain difficult. A valid citation alone does not establish correct advice.",
+   "human_edge": "Notice confusion, explain trade-offs sensitively and establish whether the client understands what they must do.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "First-time self-employed clients needing structured plain-language tax briefings."
+   },
+   "altitude": "More of the week goes to client understanding and difficult applications of law. The preparer can develop introductory briefings within existing advice permissions; formal advice authority does not change.",
+   "reach": [
+    {
+     "role": "financial manager",
+     "task": "Explain tax-sensitive cash-flow choices to small-business owners.",
+     "learn": "Cash forecasting, scenario assumptions and communication of uncertainty."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "3-8",
+    "testing_rollout": "7-12",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Dated guidance retrieval, bounded drafting and human delivery are a proposed architecture; the digest contains no documented tax-explanation case.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Advice must be checked for jurisdiction, tax year, client facts and substantive applicability before delivery.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The US wording is adapted to applicable national and regional European tax rules.",
+    "The guidance library has an assigned maintainer and effective dates.",
+    "Follow-up records use confirmed structured notes; recording or transcribing conversations is outside scope.",
+    "GDPR controls apply to advice records. Employee consultation follows applicable national rules.",
+    "Client conversations remain substantial even when preparation becomes faster."
+   ],
+   "unknowns": [
+    "Supported jurisdictions, languages and client reading needs.",
+    "Permitted advice scope and escalation thresholds.",
+    "Whether guidance sources permit indexing and reuse.",
+    "Whether the proposed first-time self-employed group is currently underserved."
+   ],
+   "research_questions": [
+    "Which authoritative sources provide reliable updates and historical tax-year guidance?",
+    "Which national rules govern tax-advice scope and advice-record retention?"
+   ],
+   "new_work": [
+    "Maintain guidance versions, expiry dates and reusable explanations.",
+    "Check draft citations, examples and omitted qualifications.",
+    "Review recurring client misunderstandings and improve briefings.",
+    "Confirm advice records reflect what was actually delivered."
+   ],
+   "time_saved_pct": 48,
+   "speedup": 1.91
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts from collecting, rekeying and recalculating toward evidence exceptions, defensible tax positions and client understanding. Existing signing and advice permissions remain; broader responsibilities need explicit delegation.",
+  "reach": [
+   "Accountants: resolve recurring ledger classifications before tax preparation.",
+   "Compliance officers: maintain evidence-backed filing obligations and deadlines.",
+   "Financial managers: connect tax estimates to client cash-flow planning."
+  ],
+  "skills_to_grow": [
+   "Source-to-return reconciliation and independent validation.",
+   "Versioned national tax rules and decision-table design.",
+   "Review of extracted facts and cited draft explanations.",
+   "Plain-language advice and checking client understanding.",
+   "Data access, retention and exception-management practices."
+  ],
+  "ambitious_version": "Offer small-business clients a quarterly tax-readiness service combining updated estimates, missing-evidence checks and an expert discussion of material changes."
+ },
+ "job_code": "13-2082.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 168,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:2200});text(r.output);\n"
+  ],
+  "job": {
+   "code": "13-2082.00",
+   "title": "Tax Preparers",
+   "tasks": 12,
+   "function": "Finance"
+  }
+ }
+}

@@ -1,0 +1,825 @@
+{
+ "role_id": "payroll",
+ "tasks": [
+  {
+   "uid": "43-3051.00:2528",
+   "short": "Each month, match the payroll paid from Rabobank to the AFAS payroll journal and file the period-end report.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export payroll journal and net pay list from AFAS",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "payroll journal",
+      "net pay list"
+     ],
+     "outputs": [
+      "payroll export"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Download Rabobank statements and payment batch confirmations",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "Rabobank",
+      "Excel"
+     ],
+     "inputs": [
+      "bank statement",
+      "payment batch"
+     ],
+     "outputs": [
+      "bank statement export"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Match bank debits to net pay, tax and pension lines in Excel",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "payroll export",
+      "bank statement export"
+     ],
+     "outputs": [
+      "reconciliation sheet"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Investigate breaks: rejected, double or off-cycle payments",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "AFAS Profit",
+      "Rabobank",
+      "Outlook"
+     ],
+     "inputs": [
+      "reconciliation sheet",
+      "bank return message"
+     ],
+     "outputs": [
+      "break list with explanations"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "read",
+      "input": "Unmatched bank lines with their free-text remittance and return-reason fields, plus the employee's payment history",
+      "output": "Proposed cause per break (rejected IBAN, duplicate, manual advance, off-cycle) with the evidence lines",
+      "check": "Proposal must cite a bank line and an AFAS record that exist; amounts must add up to the break",
+      "stop": "One pass per break, max two retries; unclear breaks go to the specialist unlabelled",
+      "why_not_simpler": "Return reasons and remittance text are free text that rules classify only partly"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Balance, sign off and send period-end report to controller",
+     "actor": "payroll",
+     "today_means": "document",
+     "systems": [
+      "Excel",
+      "SharePoint",
+      "Outlook"
+     ],
+     "inputs": [
+      "reconciliation sheet",
+      "break list with explanations"
+     ],
+     "outputs": [
+      "period-end payroll report"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Replace the Excel reconciliation with a scheduled Python job on a governed data platform that pulls the AFAS payroll journal through its GetConnector and Rabobank CAMT.053 statements, matches by batch, employee and amount, and writes a break list to a Teams channel. A small model step proposes the cause of each break; the job builds the period-end report on SharePoint for the specialist to sign before it goes to the controller.",
+   "previous_blocker": "The match was quick enough in Excel for one person, and building a bank-to-payroll link was a project nobody owned between HR and Finance.",
+   "enabler_now": "AI-assisted coding makes a small matching job and report a matter of days, and bank statement files and AFAS connectors are standard interfaces.",
+   "still_hard": "Off-cycle corrections and advances paid outside AFAS break the match, and the bank feed needs Finance and IT to agree on access.",
+   "human_edge": "Deciding whether a break is a real overpayment to reclaim from an employee, and talking to that person, stays with the specialist.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Reconcile every payment batch the day after it runs, including weekly flex and off-cycle runs, instead of once at month end."
+   },
+   "altitude": "The specialist spends minutes on a break list instead of hours on a sheet, and decides which breaks become reclaims or journal corrections.",
+   "reach": [
+    {
+     "role": "bookkeeper",
+     "task": "Bank reconciliation of accounts payable",
+     "learn": "How the same CAMT.053 matching job can clear agency invoice payments."
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "3-6",
+    "testing_rollout": "4-6",
+    "consent_and_access": "3-8"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Payroll calculation stays deterministic and rules-based; AI checks run around it, such as a leaver paid double net.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Reconciliations should be deterministic software, not model work.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Rabobank offers statements in CAMT.053 format for import.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Payroll payments run as identifiable SEPA batches from one Rabobank account.",
+    "AFAS GetConnectors are licensed and can expose the payroll journal."
+   ],
+   "unknowns": [
+    "How many off-cycle and manual payments happen each month.",
+    "Whether Finance already imports Rabobank statements into AFAS automatically."
+   ],
+   "research_questions": [
+    "Does AFAS bank import with auto-matching already clear payroll lines without new code?",
+    "How many breaks per month are there today, and how long does each take?",
+    "Will Finance grant the job read access to the Rabobank statement feed?"
+   ],
+   "time_saved_pct": 81,
+   "speedup": 5.26
+  },
+  {
+   "uid": "43-3051.00:2515",
+   "short": "Collect pay mutations, run AFAS payroll, check it, pay through Rabobank and publish payslips.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect hours, shift allowances, overtime, absence, hires and leavers",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "timesheet export",
+      "mutation form",
+      "absence case"
+     ],
+     "outputs": [
+      "pay mutation list"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Mutation mails and attachments from team leads and HR admin that do not come through an AFAS workflow",
+      "output": "Structured mutation lines (employee number, wage component, period, amount) ready for AFAS import",
+      "check": "Employee and wage component must exist in AFAS; amounts within CAO limits; unmatched lines rejected",
+      "stop": "One extraction per document; anything failing checks goes to a review queue, never imported",
+      "why_not_simpler": "Some managers still send hours and changes as free-text mail; the rest moves to AFAS InSite forms"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Enter mutations in AFAS and run the payroll calculation",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "pay mutation list"
+     ],
+     "outputs": [
+      "draft payroll run"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Check the run against last period and find anomalies",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "draft payroll run",
+      "previous payroll run"
+     ],
+     "outputs": [
+      "pre-run exception list"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "judge",
+      "input": "Rule hits: gross moved beyond threshold, pension stopped while enrolled, leaver still paid, rate below minimum wage, CAO scale mismatch",
+      "output": "One-line explanation per exception citing the mutations that caused it",
+      "check": "Explanation must reference real mutation lines; rule hits stay listed even when explained",
+      "stop": "One explanation per exception; no explanation means a plain flag",
+      "why_not_simpler": "The rules find exceptions; linking each to its cause across mutations is reading work"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Approve run and send payment batch to Rabobank",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Rabobank"
+     ],
+     "inputs": [
+      "draft payroll run",
+      "pre-run exception list"
+     ],
+     "outputs": [
+      "approved payroll run",
+      "payment batch"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "integration",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Publish payslips and annual statements in AFAS Pocket",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "approved payroll run"
+     ],
+     "outputs": [
+      "payslip"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false
+    }
+   ],
+   "design": "Move mutations into AFAS InSite workflows and import the rest through a small intake job that reads remaining mails into checked AFAS import lines. AFAS keeps doing the gross-to-net; a pre-run check job applies explicit rules to the draft run and a model step explains each hit, so the specialist approves the run and the Rabobank batch from an exception list.",
+   "previous_blocker": "Two CAOs, shift allowances and seasonal staff made mutations messy, and the checks lived in the specialist's head and personal Excel.",
+   "enabler_now": "Rule checks around the payroll engine are now common practice, and a bounded model can read free-text mutation mails and explain exceptions without touching the calculation.",
+   "still_hard": "Keeping CAO rule variants correct, and staff trust: many employees do not want AI near their pay.",
+   "human_edge": "Approving the run and the payment, and calling an employee whose pay is wrong, stay with the specialist.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Run the pre-run check daily during the input window, so managers fix wrong hours before cut-off instead of after payday."
+   },
+   "altitude": "The specialist writes and tunes the check rules and approves runs from an exception list, measured on first-time-right runs and corrections per run.",
+   "reach": [
+    {
+     "role": "hr-admin",
+     "task": "Entering hires, leavers and contract changes in AFAS",
+     "learn": "Which mutation errors cause most payroll corrections, to fix them at entry."
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "4-7",
+    "testing_rollout": "8-12",
+    "consent_and_access": "10-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Production pre-run checks include gross moved more than expected, pension stopped for an enrolled person, leaver paid double, rate below minimum wage.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Workday's payroll agent will flag items outside defined parameters for payroll to check.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "In AFAS Flex, payroll lines approve automatically after a person approves the declaration.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "More than 46% of US respondents were uncomfortable with AI in payroll.",
+     "grade": "E3",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Rule-based pay decisions need a route to human review.",
+     "grade": "E3",
+     "source": "[S11]"
+    }
+   ],
+   "assumptions": [
+    "Gross-to-net stays in AFAS; no model touches the calculation.",
+    "Team leads can be moved to AFAS InSite forms for most mutations."
+   ],
+   "unknowns": [
+    "Share of mutations that still arrive by mail or Excel.",
+    "Whether the works council treats the intake job as a system needing consent under WOR 27(1)(k)."
+   ],
+   "research_questions": [
+    "How many corrections per run happen today, and which rule would have caught each?",
+    "Can AFAS Profit 8 alerts cover the pre-run checks without a separate job?",
+    "Will the works council consent to a model reading mutation mails?"
+   ],
+   "time_saved_pct": 73,
+   "speedup": 3.7
+  },
+  {
+   "uid": "43-3051.00:2529",
+   "short": "Build pay and benefit summaries for Finance, management, pension fund and statistics bodies, and send them.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive ad hoc report requests by mail",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook"
+     ],
+     "inputs": [
+      "report request"
+     ],
+     "outputs": [
+      "report request"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 10,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Extract payroll data from AFAS to Excel",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "payroll journal"
+     ],
+     "outputs": [
+      "payroll export"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Build summaries by site, cost centre, CAO and contract type",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "payroll export"
+     ],
+     "outputs": [
+      "pay summary report"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Check totals against the journal and write commentary",
+     "actor": "payroll",
+     "today_means": "document",
+     "systems": [
+      "Excel",
+      "Word"
+     ],
+     "inputs": [
+      "pay summary report",
+      "payroll journal"
+     ],
+     "outputs": [
+      "variance commentary"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Month-on-month variances above threshold with the mutations and headcount changes behind them",
+      "output": "Short draft commentary per variance",
+      "check": "Every figure in the text is compared to the computed table; mismatches are rejected",
+      "stop": "One draft per variance, one retry; else the variance is listed without text",
+      "why_not_simpler": "Totals are deterministic; the explanation in words is the part people read"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Send reports to controller, FP&A, HR director, pension fund and CBS",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "SharePoint"
+     ],
+     "inputs": [
+      "pay summary report",
+      "variance commentary"
+     ],
+     "outputs": [
+      "submitted pay report"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "Turn the recurring summaries into a Power BI payroll report on the existing nightly AFAS extract, with role-based access for controller, FP&A and HR director, which removes most ad hoc requests. A deterministic job produces the month pack and a checked model draft of variance commentary; external submissions go out only after the specialist approves.",
+   "previous_blocker": "Each department wanted its own cut, and pay data is confidential, so it stayed in the specialist's spreadsheets.",
+   "enabler_now": "The nightly AFAS extract and Power BI already exist; adding a governed payroll model with row-level security is now quick to build.",
+   "still_hard": "Access control on salary data per role, and agreeing one definition of cost per FTE across HR and Finance.",
+   "human_edge": "Judging what a pay movement means for the business and explaining it to the controller and HR director stays human.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A quarterly gender pay gap readiness report under EU 2023/970, ahead of the first mandatory report over 2027 pay due 7 June 2028."
+   },
+   "altitude": "The specialist stops building cuts and becomes the owner of payroll figures others self-serve, and decides which pay gaps need explaining before the works council sees them.",
+   "reach": [
+    {
+     "role": "cnb",
+     "task": "Job evaluation and pay scale design",
+     "learn": "How job schemes in AFAS map to the equal-work groups the pay gap report needs."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "2-4",
+    "testing_rollout": "4-6",
+    "consent_and_access": "5-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Noordhaven, with 1,200 staff, must report its gender pay gap yearly, first over 2027 pay, due 7 June 2028; a gap of 5% or more, unexplained, triggers a joint evaluation with the works council.",
+     "grade": "E3",
+     "source": "[S8]"
+    },
+    {
+     "claim": "AFAS Profit 8 stores job schemes for pay transparency and shows wage-component history.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Power BI supports row-level security for restricting rows by viewer.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The nightly AFAS extract includes payroll results, not only HR records.",
+    "Most requests repeat monthly and can be standardised."
+   ],
+   "unknowns": [
+    "Which external bodies receive payroll statistics and in what format.",
+    "Whether job schemes in AFAS are filled in for all 1,200 staff."
+   ],
+   "research_questions": [
+    "What share of report requests last year were repeats of the same cut?",
+    "Does the nightly extract hold wage components at line level?",
+    "Can AFAS job schemes support equal-work groups the works council will accept?"
+   ],
+   "time_saved_pct": 89,
+   "speedup": 9.09
+  },
+  {
+   "uid": "43-3051.00:20901",
+   "short": "Balance payroll clearing accounts in the ledger against payments to staff, tax office and pension fund.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pull balances of payroll clearing accounts from the AFAS ledger",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "general ledger balance"
+     ],
+     "outputs": [
+      "clearing account list"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Tie each balance to journal, payroll tax return, pension invoice and bank",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit",
+      "Rabobank"
+     ],
+     "inputs": [
+      "clearing account list",
+      "payroll journal",
+      "payroll tax return",
+      "pension invoice",
+      "bank statement export"
+     ],
+     "outputs": [
+      "account reconciliation"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 40,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Explain residual differences: advances, wage garnishments, late corrections",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "account reconciliation"
+     ],
+     "outputs": [
+      "difference list"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Book correcting journal entries",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "difference list"
+     ],
+     "outputs": [
+      "correcting journal entry"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Sign off balances with the controller",
+     "actor": "payroll",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams",
+      "Excel"
+     ],
+     "inputs": [
+      "account reconciliation",
+      "difference list"
+     ],
+     "outputs": [
+      "signed account reconciliation"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Extend the bank-to-payroll matching job with a ledger step: it ties each payroll clearing account (net pay, wage tax, pension, garnishments) to its source files and shows an ageing list of open items on a Power BI page. The specialist explains what remains and approves drafted correcting entries, which are posted to AFAS through its UpdateConnector.",
+   "previous_blocker": "Sources sit in three places (AFAS ledger, tax return, pension fund invoice) and differences are small and varied, so nobody built a tool.",
+   "enabler_now": "Fast code generation makes one job across these sources cheap, reusing the bank reconciliation from task 2528.",
+   "still_hard": "Old open items with no paper trail, and pension fund invoices that arrive as PDFs in differing formats.",
+   "human_edge": "Deciding whether an old difference is written off, reclaimed or corrected, and agreeing that with the controller, stays human.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Close the payroll clearing accounts weekly instead of at month end, so open items never age past one period."
+   },
+   "altitude": "The specialist works from an ageing list and gains the right to propose correcting entries ready for posting, with the controller signing off.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Month-end balance sheet reconciliations",
+     "learn": "The controller's materiality thresholds and what evidence an auditor wants for payroll accounts."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-5",
+    "testing_rollout": "4-6",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Reconciliations in payroll belong to deterministic software, not model work.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "AFAS Profit offers UpdateConnectors to post journal entries from outside systems.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Payroll clearing accounts are separate ledger accounts per liability type.",
+    "The task 2528 matching job is built first and reused."
+   ],
+   "unknowns": [
+    "Number and age of open items on payroll clearing accounts today.",
+    "Whether the pension fund provides invoice data as a file rather than PDF."
+   ],
+   "research_questions": [
+    "How many hours a month go into explaining residual differences versus matching?",
+    "Can the pension fund deliver contribution data in a structured file?",
+    "Will the controller accept drafted entries posted through a connector after approval?"
+   ],
+   "time_saved_pct": 73,
+   "speedup": 3.7
+  }
+ ],
+ "role": {
+  "altitude": "The Payroll Specialist moves from building sheets to owning the payroll check rules and reconciliations. They approve runs and entries from exception lists and are measured on first-time-right runs and corrections per run.",
+  "reach": [
+   "Compensation and Benefits Specialist: job schemes and pay transparency reporting",
+   "Accountant: month-end reconciliations and audit evidence",
+   "HR Administrator: clean mutation entry at the source"
+  ],
+  "skills_to_grow": [
+   "Writing and testing explicit payroll check rules across two CAOs",
+   "Reading and tuning reconciliation jobs and Power BI payroll models",
+   "EU pay transparency (2023/970) reporting and gap explanation",
+   "Explaining automated checks to the works council and staff"
+  ],
+  "ambitious_version": "One governed payroll data job ties AFAS, Rabobank, the tax return and the pension fund. It runs daily checks during the input window, reconciles every batch the next day and produces a quarterly pay gap readiness report. The specialist spends their week on exceptions, rule changes and explaining pay, not on Excel."
+ },
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 99,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

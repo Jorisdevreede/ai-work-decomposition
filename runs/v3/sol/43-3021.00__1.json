@@ -1,0 +1,824 @@
+{
+ "tasks": [
+  {
+   "uid": "43-3021.00:23238",
+   "short": "Check billing data against delivery evidence, agreed prices and tax rules, then correct errors.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve billing records and delivery records from the {ERP} and {OPS_SYSTEM}.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "billing record",
+      "delivery record"
+     ],
+     "outputs": [
+      "billing check pack"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compare supporting documents in the {DOCS} with billing quantities and agreed terms.",
+     "actor": "billing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "billing check pack",
+      "service confirmation",
+      "pricing agreement"
+     ],
+     "outputs": [
+      "support comparison"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Service confirmation and pricing agreement with source references.",
+      "output": "Referenced quantities, prices, dates and relevant billing terms.",
+      "check": "Validate field types, units, arithmetic and source locations; flag ambiguous or conflicting terms.",
+      "stop": "One extraction and one repair attempt per document; unresolved fields go to the billing clerk.",
+      "why_not_simpler": "Some supporting evidence contains free text and variable layouts without structured equivalents."
+     },
+     "authority": "draft",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "billing clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Check prices, quantities, duplicates and tax calculations in the {ERP}.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "billing check pack",
+      "support comparison",
+      "billing rules"
+     ],
+     "outputs": [
+      "billing discrepancy list"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Clarify missing evidence or disputed terms with the service owner through the {EMAIL}.",
+     "actor": "billing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "billing discrepancy list"
+     ],
+     "outputs": [
+      "correction instruction",
+      "service confirmation"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Review corrections and update the billing record in the {ERP}.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "billing record",
+      "correction instruction"
+     ],
+     "outputs": [
+      "approved billing record",
+      "correction log"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "billing clerk"
+    }
+   ],
+   "design": "An integration joins records from the {ERP} and {OPS_SYSTEM}, while configured checks identify billing discrepancies. A bounded extractor reads unstructured evidence in the {DOCS}; the billing clerk resolves ambiguity and approves proposed corrections before the {ERP} changes.",
+   "previous_blocker": "Delivery evidence, commercial terms and billing records use different references. Existing checks often cover arithmetic but miss missing evidence.",
+   "enabler_now": "Existing validation features and cheaper integration development can connect those records. Bounded extraction can handle residual documents without controlling postings.",
+   "still_hard": "Missing delivery evidence and disputed agreements still need people. Issued invoices may require credit notes rather than direct edits.",
+   "human_edge": "Recognise when apparently correct numbers misrepresent the service delivered, and settle the facts with its owner.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily prioritisation of recurring billing defects by value and source."
+   },
+   "altitude": "The clerk spends more time resolving causes of disputed billing and less time comparing fields. Delegated authority could include prioritising source-data fixes; commercial concessions remain with their current approvers.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Investigate recurring revenue adjustments.",
+     "learn": "Credit-note accounting, revenue cut-off and how billing defects affect ledger balances."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Configured arithmetic, duplicate and reference checks suit structured billing records.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "AFAS Profit extracts supplier invoice data; this supports document capture feasibility, not outgoing billing accuracy.",
+     "grade": "E2",
+     "source": "[S1]"
+    }
+   ],
+   "assumptions": [
+    "Step shares estimate a typical mixed goods-and-services workflow, not measured customer time.",
+    "Most billing data is structured; document review and missing evidence explain the remaining manual work.",
+    "Build ranges estimate one billing flow with supported exports or interfaces and exclude procurement delays.",
+    "The access range includes privacy review and consultation assessment; national rules may require longer consultation."
+   ],
+   "unknowns": [
+    "Available interfaces and shared references between billing and delivery records.",
+    "Actual discrepancy volumes and their causes.",
+    "Correction permissions and approval thresholds.",
+    "Whether national rules require employee consultation for the proposed change."
+   ],
+   "research_questions": [
+    "Which existing {ERP} checks can be enabled before building additional rules?",
+    "Which document fields remain necessary after structured evidence is connected?"
+   ],
+   "new_work": [
+    "Review extracted evidence and unresolved discrepancies.",
+    "Maintain billing checks and approved correction mappings.",
+    "Monitor failed joins and inspect a sample of passed checks."
+   ],
+   "time_saved_pct": 76,
+   "speedup": 4.17
+  },
+  {
+   "uid": "43-3021.00:23240",
+   "short": "Prepare itemised invoices, approve their release and record customer amounts due.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Select approved billable deliveries or services from the {OPS_SYSTEM} for the {ERP}.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "ERP"
+     ],
+     "inputs": [
+      "approved billing record",
+      "delivery record",
+      "service confirmation"
+     ],
+     "outputs": [
+      "billing batch"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Apply customer prices, discounts and payment terms in the {ERP}.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "billing batch",
+      "customer master",
+      "approved price list"
+     ],
+     "outputs": [
+      "priced billing batch"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Calculate line amounts, tax and totals in the {ERP}.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "priced billing batch",
+      "tax rules"
+     ],
+     "outputs": [
+      "invoice calculation"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Generate an itemised draft invoice in the {ERP}.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "invoice calculation",
+      "invoice template"
+     ],
+     "outputs": [
+      "draft invoice"
+     ],
+     "handoff_to": "billing supervisor",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Review the draft invoice and approve release in the {ERP}.",
+     "actor": "billing supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "draft invoice",
+      "approved billing record"
+     ],
+     "outputs": [
+      "invoice release approval"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "judgement_step",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "billing supervisor"
+    },
+    {
+     "id": "s6",
+     "what": "Issue the approved invoice through the {ERP}.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "draft invoice",
+      "invoice release approval",
+      "customer delivery preference"
+     ],
+     "outputs": [
+      "issued invoice",
+      "delivery status"
+     ],
+     "handoff_to": "external",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s7",
+     "what": "Post the customer amount due in the {ERP}.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "issued invoice"
+     ],
+     "outputs": [
+      "receivable entry"
+     ],
+     "handoff_to": "none",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "An integration brings approved billable events from the {OPS_SYSTEM} into the {ERP}, which applies prices, calculates tax and generates invoices. Recorded release approval permits dispatch and receivable posting; duplicate controls and delivery status support safe retries.",
+   "previous_blocker": "Billable events and customer terms were not consistently linked. Staff filled gaps between existing invoice features and operational records.",
+   "enabler_now": "Most calculation and invoice functions already exist. Faster integration development makes connecting the remaining inputs cheaper.",
+   "still_hard": "Complex tax treatment, milestone acceptance and negotiated exceptions need finance judgement. Invoice format and reporting requirements depend on transaction dates and national rules.",
+   "human_edge": "Decide whether the evidence supports charging the customer and recognise commercially sensitive exceptions.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A daily unbilled-delivery report for service owners."
+   },
+   "altitude": "Routine preparation becomes a monitored flow, leaving the clerk time to investigate unbilled work and failed deliveries. Invoice approval and concession rights do not automatically expand.",
+   "reach": [
+    {
+     "role": "bill and account collector",
+     "task": "Investigate customer disputes caused by invoice content.",
+     "learn": "Customer delivery requirements, dispute categories and payment-term interpretation."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Price application, tax arithmetic, invoice generation and receivable posting are established configurable finance functions.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The proposed effort and remaining review time are design estimates, not documented case results.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Approved prices and tax codes are maintained as structured records.",
+    "The representative workflow uses supervisor release approval; actual approval policies vary.",
+    "Dispatch requires the recorded approval from s5 and cannot bypass it.",
+    "Posting and issue may be one transaction in the {ERP}; they are separated here by their outputs.",
+    "Build ranges cover one invoice flow, including access review and assessment of consultation under national rules."
+   ],
+   "unknowns": [
+    "Current invoice channels, formats and customer requirements.",
+    "Which release approvals are required today.",
+    "Supported posting, dispatch and retry controls.",
+    "Applicable tax scenarios and national e-invoicing requirements."
+   ],
+   "research_questions": [
+    "Can configured {ERP} billing consume approved operational events directly?",
+    "How will duplicate invoice prevention work across interrupted dispatch and posting?"
+   ],
+   "new_work": [
+    "Maintain invoice templates, prices and tax mappings.",
+    "Handle rejected deliveries and incomplete billable events.",
+    "Review approval summaries and reconcile issued invoices to receivables."
+   ],
+   "time_saved_pct": 92,
+   "speedup": 13.33
+  },
+  {
+   "uid": "43-3021.00:23246",
+   "short": "Link invoices to supporting evidence and maintain complete, retrievable billing records.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Locate delivery evidence and service confirmations in the {DOCS}.",
+     "actor": "billing clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "delivery record",
+      "service confirmation",
+      "pricing agreement"
+     ],
+     "outputs": [
+      "billing evidence pack"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Match supporting evidence to the invoice record in the {ERP}.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "issued invoice",
+      "billing evidence pack"
+     ],
+     "outputs": [
+      "invoice evidence links",
+      "unmatched evidence list"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "File invoice copies and supporting documents in the {DOCS}.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "issued invoice",
+      "billing evidence pack",
+      "invoice evidence links",
+      "retention schedule"
+     ],
+     "outputs": [
+      "invoice archive record"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Request missing evidence from service owners through the {EMAIL}.",
+     "actor": "billing clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "unmatched evidence list",
+      "invoice archive record"
+     ],
+     "outputs": [
+      "evidence request",
+      "resolved evidence link"
+     ],
+     "handoff_to": "service owner",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    }
+   ],
+   "design": "A deterministic integration joins issued invoices in the {ERP} to evidence in the {DOCS} using exact transaction references. Configured filing applies access and retention metadata, while the {WORKFLOW} queues missing or ambiguous evidence for the billing clerk.",
+   "previous_blocker": "Documents were filed separately from transactions, with inconsistent references and ownership. Manual filing concealed incomplete evidence.",
+   "enabler_now": "Existing document features and small integrations can capture references at source and test completeness automatically.",
+   "still_hard": "Historical documents may lack reliable identifiers. Retention, legal holds and access must follow GDPR and applicable national rules.",
+   "human_edge": "Judge whether evidence actually substantiates the charge and obtain missing context from the responsible person.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "An invoice evidence pack for collection disputes."
+   },
+   "altitude": "The clerk handles incomplete records and prepares dispute evidence instead of routinely filing documents. Retention and deletion authority stays with existing owners.",
+   "reach": [
+    {
+     "role": "accountant and auditor",
+     "task": "Retrieve evidence for a sampled revenue transaction.",
+     "learn": "Evidence sufficiency, document provenance, retention and audit sampling."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "3-8",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Exact-reference linking, metadata filing and completeness queues can use deterministic software without a model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "GDPR requires appropriate access and storage controls where billing evidence contains personal data.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "New documents can receive stable transaction identifiers at source.",
+    "Automatic linking accepts exact references only; ambiguous matches remain unresolved.",
+    "The service owner is usually internal; the clerk may also request evidence from an external service provider.",
+    "The design applies approved retention metadata and does not introduce automatic deletion.",
+    "Build ranges cover new records; a historical archive cleanup is separate.",
+    "Access estimates include privacy review and any consultation assessment required by national rules."
+   ],
+   "unknowns": [
+    "Document locations, identifiers and historical archive quality.",
+    "Approved retention periods and legal-hold processes.",
+    "Whether current {DOCS} permissions match billing confidentiality needs.",
+    "How often missing evidence requires external contact."
+   ],
+   "research_questions": [
+    "Can document references be attached when delivery or service completion is recorded?",
+    "Which evidence types are mandatory for each invoice category?"
+   ],
+   "new_work": [
+    "Resolve missing and ambiguous document links.",
+    "Maintain evidence requirements and access mappings.",
+    "Check archive completeness, retrieval and legal-hold behaviour."
+   ],
+   "time_saved_pct": 89,
+   "speedup": 8.89
+  },
+  {
+   "uid": "43-3021.00:23242",
+   "short": "Use calculation tools and billing screens to total figures and enter billing amounts.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Calculate billing totals in the {SPREADSHEET} from approved billing data.",
+     "actor": "billing clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "approved billing record",
+      "approved price list"
+     ],
+     "outputs": [
+      "billing control total"
+     ],
+     "handoff_to": "billing clerk",
+     "share_pct": 55,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Key calculated billing amounts into the {ERP}.",
+     "actor": "billing clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "approved billing record",
+      "billing control total"
+     ],
+     "outputs": [
+      "priced billing batch"
+     ],
+     "handoff_to": "none",
+     "share_pct": 45,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Remove the separate calculation sheet and rekeying once the invoice flow calculates directly from approved records in the {ERP}. Retain configured reconciliation checks in the {ERP}; invoice review and release remain in the invoice-preparation workflow.",
+   "previous_blocker": "Disconnected operational inputs encouraged a separate calculation sheet that became part of routine billing.",
+   "enabler_now": "The connected invoice flow can calculate and retain the same figures without a second manual calculation.",
+   "still_hard": "Undocumented formulas may contain valid pricing exceptions. They must be understood before the sheet is retired.",
+   "human_edge": "Identify hidden commercial rules and decide whether a familiar workaround still serves a valid control purpose.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Separate calculation and rekeying disappear from the week. This removal alone grants no new decision rights.",
+   "reach": [
+    {
+     "role": "bookkeeping clerk",
+     "task": "Reconcile billed totals to receivable postings.",
+     "learn": "Control totals, duplicate prevention and reconciliation exceptions."
+    }
+   ],
+   "build_days": {
+    "coding": "0-2",
+    "integration": "0-3",
+    "testing_rollout": "2-5",
+    "consent_and_access": "1-5"
+   },
+   "run_cost": "none",
+   "evidence": [
+    {
+     "claim": "The legacy equipment task commonly survives as keyboard entry and separate calculation work.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "A separate calculation and rekeying step can disappear when the invoice flow performs the same controlled arithmetic.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This describes the residual workaround where it exists; many companies already perform calculations entirely in the {ERP}.",
+    "Elimination removes separate human operations, not the underlying arithmetic.",
+    "The invoice-preparation implementation is a prerequisite; these ranges cover incremental retirement work only.",
+    "This task overlaps invoice preparation and verification; its savings must not be counted twice.",
+    "No incremental runtime service or employee monitoring is introduced."
+   ],
+   "unknowns": [
+    "Whether separate calculation or rekeying still occurs.",
+    "Which formulas encode exceptions absent from the {ERP}.",
+    "Whether the calculation sheet supports any independent control that must be replaced.",
+    "Who authorises retirement of the current procedure."
+   ],
+   "research_questions": [
+    "Does each existing formula have an equivalent configured billing rule or necessary control?",
+    "Can the independent reconciliation use source totals without recreating manual arithmetic?"
+   ],
+   "new_work": [
+    "Validate parallel totals during retirement.",
+    "Document migrated exceptions and update the billing procedure."
+   ],
+   "time_saved_pct": 100,
+   "speedup": 20.0
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts toward resolving billing evidence gaps, investigating recurring defects and supporting disputes. Broader authority over source-data fixes or billing holds requires explicit delegation; commercial and accounting approvals remain assigned.",
+  "reach": [
+   "Support accountants with explanations of recurring revenue adjustments.",
+   "Support collectors with complete invoice evidence packs.",
+   "Support bookkeeping clerks with reconciled billing and receivable totals."
+  ],
+  "skills_to_grow": [
+   "Billing rules, tax codes and credit-note controls.",
+   "Transaction references, reconciliation and exception analysis.",
+   "Evidence quality, GDPR access controls and retention.",
+   "Testing configured rules and reviewing bounded extraction outputs."
+  ],
+  "ambitious_version": "A billing operations specialist who identifies unbilled work, prioritises recurring defects with service owners and supplies reliable evidence for customer disputes."
+ },
+ "job_code": "43-3021.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 124,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:2200});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-3021.00",
+   "title": "Billing and Posting Clerks",
+   "tasks": 26,
+   "function": "Finance"
+  }
+ }
+}

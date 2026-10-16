@@ -1,0 +1,624 @@
+{
+ "role_id": "fpa",
+ "tasks": [
+  {
+   "uid": "13-2031.00:3395",
+   "short": "Build the monthly and ad-hoc budget-versus-actual packs for sites, cost centres, management and the bank.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pull GL actuals, budget and flex-worker costs from AFAS and agency portals",
+     "actor": "fpa",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Staffing agency portals",
+      "Power BI"
+     ],
+     "inputs": [
+      "GL extract",
+      "budget file",
+      "agency invoice"
+     ],
+     "outputs": [
+      "actuals dataset"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Map to sites and cost centres, compute variances in Excel",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Microsoft Excel"
+     ],
+     "inputs": [
+      "actuals dataset",
+      "cost-centre mapping"
+     ],
+     "outputs": [
+      "variance table"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 10,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Ask site and cost-centre owners to explain large variances",
+     "actor": "fpa",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "variance table"
+     ],
+     "outputs": [
+      "variance explanations"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Write commentary and assemble the report pack",
+     "actor": "fpa",
+     "today_means": "document",
+     "systems": [
+      "PowerPoint",
+      "Word",
+      "SharePoint"
+     ],
+     "inputs": [
+      "variance table",
+      "variance explanations"
+     ],
+     "outputs": [
+      "budget report pack"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "variance table above threshold plus owner explanations",
+      "output": "draft commentary per site and cost centre with cited figures",
+      "check": "every number in the text is matched against the variance table by code; mismatches block the draft",
+      "stop": "one draft and one regenerate per section; else section left blank for the analyst",
+      "why_not_simpler": "owner explanations arrive as free text in mail and Teams and must be condensed into readable prose"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Review with controller and finance director, then distribute",
+     "actor": "fpa",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams",
+      "SharePoint"
+     ],
+     "inputs": [
+      "budget report pack"
+     ],
+     "outputs": [
+      "approved report pack"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "Replace the Excel workbook that ties the nightly AFAS extract, the budget and agency invoices with a scheduled Python job on a governed data platform feeding a certified Power BI variance model. A workflow asks owners for explanations on variances above threshold via Teams, and a bounded model step drafts commentary into a fixed report template that the analyst edits and the controller approves.",
+   "previous_blocker": "Cost-centre mapping and flex-worker costs lived in personal Excel files, and commentary needed free-text explanations no rule could summarise.",
+   "enabler_now": "AI coding makes the mapping and variance pipeline cheap to build, and a small model step can draft commentary checked against the numbers.",
+   "still_hard": "Keeping the cost-centre and site mapping clean as the organisation changes, and agency invoices that arrive late or do not match hours.",
+   "human_edge": "Deciding which variances matter to the board and the bank, and how to say it, stays with the analyst and controller.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A weekly flash variance per site for site managers instead of only a month-end pack."
+   },
+   "altitude": "The analyst stops assembling the pack and spends the week questioning variances with site managers; they gain the right to set the variance thresholds and the commentary standard.",
+   "reach": [
+    {
+     "role": "controller",
+     "task": "Month-end close and accruals",
+     "learn": "Which accruals and late agency invoices distort the variance, so the flash can flag them."
+    },
+    {
+     "role": "bookkeeper",
+     "task": "Processing agency invoices",
+     "learn": "How agency invoices map to sites and cost centres in AFAS."
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "4-7",
+    "testing_rollout": "5-8",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Finance executives report budgeting and variance analysis as tasks where AI was more useful than expected (+42 and +28 net).",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "FP&A agent products gather data, flag records that do not tie, do variance arithmetic and draft commentary.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Copilot in Power BI summarises reports but needs a prepared semantic model and is officially English-only.",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "Workpapers built in personal chatbots cannot be rebuilt for the auditor.",
+     "grade": "E3",
+     "source": "[S6]"
+    }
+   ],
+   "assumptions": [
+    "Budgets are held in Excel or AFAS at cost-centre level per site.",
+    "The nightly AFAS extract already feeds Power BI and can be reused.",
+    "Packs are produced monthly plus ad hoc for the board and the bank."
+   ],
+   "unknowns": [
+    "Whether agency portals offer an export or API for hours and invoices.",
+    "How many report variants exist today and who receives each.",
+    "Whether Fabric or Premium capacity is licensed."
+   ],
+   "research_questions": [
+    "How many hours per month does pack assembly take today, split by gather, Excel and writing?",
+    "Do the three agencies' invoices tie to AFAS cost centres without manual mapping?",
+    "Will the controller accept model-drafted commentary if every figure is checked by code?"
+   ],
+   "time_saved_pct": 74,
+   "speedup": 3.85
+  },
+  {
+   "uid": "13-2031.00:3404",
+   "short": "Turn board, bank and CAO directives into budget rules and instructions for cost-centre owners.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read directives: board targets, bank covenants, CAO wage increases",
+     "actor": "fpa",
+     "today_means": "document",
+     "systems": [
+      "SharePoint",
+      "Outlook"
+     ],
+     "inputs": [
+      "board directive",
+      "bank covenant",
+      "CAO wage table"
+     ],
+     "outputs": [
+      "assumption list"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "directive documents and CAO wage tables (Dutch PDF and Word)",
+      "output": "proposed assumption rows with source page reference",
+      "check": "analyst confirms each row; rows without a source reference are rejected",
+      "stop": "one pass per document; unparsed sections listed for manual reading",
+      "why_not_simpler": "directives and CAO texts are free text in Dutch with no fixed layout"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Translate into budget parameters: indexation, flex rates, capex limits",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Microsoft Excel"
+     ],
+     "inputs": [
+      "assumption list"
+     ],
+     "outputs": [
+      "budget parameter register"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Write budget instructions and policy for cost-centre owners",
+     "actor": "fpa",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "SharePoint"
+     ],
+     "inputs": [
+      "budget parameter register"
+     ],
+     "outputs": [
+      "budget instructions"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "approved parameter register and last year's instructions",
+      "output": "draft instruction document per site",
+      "check": "parameter values in text compared with the register by code",
+      "stop": "one draft per section; failures fall back to last year's text marked for edit",
+      "why_not_simpler": "instructions are prose that must explain changes in plain language"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Align rules with finance director, controller and HR on headcount",
+     "actor": "fpa",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "budget instructions",
+      "budget parameter register"
+     ],
+     "outputs": [
+      "approved budget policy"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Answer managers' questions on how the rules apply",
+     "actor": "fpa",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "approved budget policy"
+     ],
+     "outputs": [
+      "policy answer"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "manager question and the approved policy and register",
+      "output": "draft answer citing the policy paragraph",
+      "check": "answer must cite a paragraph; no citation routes to the analyst",
+      "stop": "one attempt; unclear questions go to the analyst queue",
+      "why_not_simpler": "questions arrive in free text in Dutch and vary widely"
+     },
+     "authority": "draft",
+     "human_gate": true
+    }
+   ],
+   "design": "Replace the Excel assumptions tabs with a small governed parameter register (CRUD app on the data platform) that versions each budget rule with its source and approver. Bounded model steps extract proposed assumptions from directives and draft the instructions and answers to managers; the finance director approves the policy and every rule change.",
+   "previous_blocker": "Directives come as free text in board letters, bank agreements and CAO tables, and the rules lived as hidden Excel assumptions without source or owner.",
+   "enabler_now": "Models can read Dutch documents and propose structured rows with a source reference, and a register app is quick to build with AI coding.",
+   "still_hard": "Interpreting ambiguous directives and agreeing trade-offs between sites and HR on headcount; headcount with named people is personal data under AVG.",
+   "human_edge": "Deciding what a directive means for Noordhaven and defending the rule to managers and the finance director.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A budget-rules answer desk in Teams for site and cost-centre managers during the budget round."
+   },
+   "altitude": "The analyst owns a versioned register of drivers and rules instead of re-deriving assumptions each year, and gains decision rights on parameter definitions within the finance director's policy.",
+   "reach": [
+    {
+     "role": "cnb",
+     "task": "CAO wage increase and benefit costing",
+     "learn": "How CAO increases and allowances translate into the wage indexation parameter."
+    },
+    {
+     "role": "hrbp",
+     "task": "Headcount planning with site managers",
+     "learn": "How planned hires and flex use per season feed the headcount rules."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "2-4",
+    "testing_rollout": "4-6",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Speed without defined drivers and encoded policies makes existing errors harder to catch.",
+     "grade": "E3",
+     "source": "[S4]"
+    },
+    {
+     "claim": "In FP&A agent products, people decide which source wins and face the board.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Headcount plans with named people are personal data.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Directives come from the board, the bank and two CAOs each budget cycle.",
+    "Budget instructions are published on SharePoint."
+   ],
+   "unknowns": [
+    "Whether bank covenants set limits that the budget must respect.",
+    "Whether the works council must see headcount rules that affect shift staffing.",
+    "How many budget-rule questions managers send per cycle."
+   ],
+   "research_questions": [
+    "How many distinct budget parameters exist today and where is each kept?",
+    "Can the model extract CAO wage steps from the Dutch CAO text with fewer than one error per table?",
+    "Would managers use a Teams answer desk instead of mailing the analyst?"
+   ],
+   "time_saved_pct": 43,
+   "speedup": 1.74
+  },
+  {
+   "uid": "13-2031.00:3400",
+   "short": "Find cost savings and profit improvements across sites, flex labour and transport.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pull cost, volume and flex-hour data per site",
+     "actor": "fpa",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Power BI",
+      "Staffing agency portals"
+     ],
+     "inputs": [
+      "GL extract",
+      "agency hours export",
+      "volume data"
+     ],
+     "outputs": [
+      "cost driver dataset"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Analyse unit costs, overtime and flex versus fixed staff in Excel",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Microsoft Excel"
+     ],
+     "inputs": [
+      "cost driver dataset"
+     ],
+     "outputs": [
+      "unit cost analysis"
+     ],
+     "handoff_to": "fpa",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Form improvement ideas and build business cases",
+     "actor": "fpa",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Microsoft Excel"
+     ],
+     "inputs": [
+      "unit cost analysis"
+     ],
+     "outputs": [
+      "business case"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Discuss ideas with site managers and finance director",
+     "actor": "fpa",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "business case"
+     ],
+     "outputs": [
+      "agreed improvement action"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "A scheduled job on the governed data platform joins AFAS costs, agency hours and site volumes into a Power BI driver dashboard with cost per order, overtime and flex share per site and week. A standard business-case template calculates savings and payback from the dashboard figures; the analyst forms the ideas and argues them with site managers.",
+   "previous_blocker": "Volume data and agency hours were not joined to AFAS costs, so each analysis started with days of manual Excel work.",
+   "enabler_now": "AI coding makes the joins and driver dashboard cheap to build; Copilot in Power BI can answer ad-hoc questions on a prepared model.",
+   "still_hard": "Getting reliable volume data per site and agreeing which driver explains a cost; ideas touching shifts or flex use need works-council and CAO checks.",
+   "human_edge": "Seeing which saving is real on the warehouse floor and persuading site managers to change how they work.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A monthly flex-versus-fixed staffing review per site instead of an annual one."
+   },
+   "altitude": "The analyst spends the week on site conversations and business cases instead of data pulls, and gains the right to propose savings targets per site to the finance director.",
+   "reach": [
+    {
+     "role": "people-analyst",
+     "task": "Absence and overtime reporting",
+     "learn": "How absence and overtime drive flex demand per site."
+    },
+    {
+     "role": "collections",
+     "task": "Customer payment follow-up",
+     "learn": "Which customers erode margin through late payment."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "5-8",
+    "testing_rollout": "4-6",
+    "consent_and_access": "3-6"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "The least successful AI finance tasks are those that demand human judgement.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Copilot in Power BI answers questions and summarises reports on Fabric F2+ or Premium, but can misinterpret unprepared data.",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "Data quality is the top barrier to AI in finance (40.4%).",
+     "grade": "E3",
+     "source": "[S1]"
+    }
+   ],
+   "assumptions": [
+    "Site volume data (orders, pallets) is available from an operational system outside AFAS.",
+    "Flex labour is a major controllable cost per site."
+   ],
+   "unknowns": [
+    "Which system holds warehouse and transport volumes and whether it has an export.",
+    "Whether agency hours can be tied to sites and shifts.",
+    "Whether the works council must consent to staffing analyses at team level."
+   ],
+   "research_questions": [
+    "Can cost per order per site be computed weekly from existing data without manual fixes?",
+    "How much of last year's savings came from flex versus fixed staffing decisions?",
+    "Do site managers act on a monthly driver dashboard, or only on face-to-face reviews?"
+   ],
+   "time_saved_pct": 52,
+   "speedup": 2.09
+  }
+ ],
+ "role": {
+  "altitude": "The FP&A Analyst moves from assembling packs and assumptions in Excel to owning the drivers, the rule register and the forecast logic, spending more time with site managers and the finance director.",
+  "reach": [
+   "Controller: month-end close and accruals that distort variances",
+   "Compensation and Benefits Specialist: CAO wage costing",
+   "People Analytics and HRIS Analyst: overtime, absence and flex-demand data",
+   "HR Business Partner: seasonal headcount planning"
+  ],
+  "skills_to_grow": [
+   "Defining drivers and data rules for a governed semantic model",
+   "Reviewing model-drafted commentary against source figures",
+   "Facilitating cost conversations with site managers",
+   "Basic Python and SQL to read and maintain the pipelines"
+  ],
+  "ambitious_version": "A monthly rolling forecast and scenarios per site (Rotterdam, Tilburg, Venlo) built on agreed drivers for volumes, flex labour and CAO wage costs, with weekly flash variances for site managers."
+ },
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 80,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

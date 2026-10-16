@@ -1,0 +1,763 @@
+{
+ "role_id": "payroll",
+ "role": {
+  "altitude": "The Payroll Specialist stops keying and comparing data and runs the monthly close using an exception list. They own the pre-run check rules for both CAOs, decide which exceptions block a run and sign off each run. Gross-to-net stays in AFAS Profit.",
+  "reach": [
+   "Compensation and Benefits Specialist: maintain CAO scales, allowances and job schemes in AFAS together, so the pay transparency data is right at the source.",
+   "People Analytics and HRIS Analyst: co-own the scheduled check job and the Power BI view of first-time-right pay runs.",
+   "Accountant: hand over the payroll journal and the net-pay batch reconciliation as one checked package."
+  ],
+  "skills_to_grow": [
+   "Writing pay rules as testable checks (thresholds, expected deltas, CAO rule variants)",
+   "Configuring AFAS Profit workflows, leave schemes and connectors",
+   "Reading and challenging exception explanations from a model",
+   "Pay transparency (EU 2023/970) data preparation and gender pay gap reporting"
+  ],
+  "ambitious_version": "Two days after month close, every run comes with a check report: corrections per run, causes and what was fixed. Payroll also prepares the pay data for the first gender pay gap report over 2027, due 7 June 2028, and answers employee pay transparency requests within the legal two months without a scramble."
+ },
+ "tasks": [
+  {
+   "uid": "43-3051.00:2519",
+   "short": "Check shift hours, overtime and pay adjustments against roster and contracts, then post approved mutations in AFAS.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect hours, overtime and adjustment requests from time exports and manager mails",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "AFAS Profit",
+      "Outlook",
+      "Excel"
+     ],
+     "inputs": [
+      "timesheet export",
+      "manager adjustment request"
+     ],
+     "outputs": [
+      "hours worksheet"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Compare hours with roster, contract hours, absence and CAO allowance rules",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "hours worksheet",
+      "contract data",
+      "absence record"
+     ],
+     "outputs": [
+      "hours exception list"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Chase team leads about missing or odd hours and decide on exceptions",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "hours exception list"
+     ],
+     "outputs": [
+      "resolved exception"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Post approved hours and adjustments as payroll mutations in AFAS",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "resolved exception",
+      "hours worksheet"
+     ],
+     "outputs": [
+      "payroll mutation"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Replace the Excel hours worksheet with a scheduled Python job on the governed data platform. It reads hours, rosters, contracts and absence through AFAS GetConnectors and runs explicit CAO rules. Clean lines are posted through UpdateConnectors once payroll approves the batch. Team leads get a Teams message for each break, and payroll works from an exception list in Power BI.",
+   "previous_blocker": "Two CAOs, shift allowances and data in several places made a rules engine look costly. The Excel sheet was quicker to change than custom code.",
+   "enabler_now": "AI coding makes it cheap to write and test the rule code and connectors. AFAS connectors and a nightly extract already exist for Power BI.",
+   "still_hard": "Hours that are late or wrong at the source, and CAO edge cases such as split shifts and public holidays, still need a person. Rules must be maintained every time a CAO changes.",
+   "human_edge": "Deciding with a team lead whether disputed overtime was worked and agreed, and knowing which teams always submit late.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Check hours weekly instead of only at month close, so errors are fixed before the pay run."
+   },
+   "altitude": "Payroll spends about a third of today's time on this, all of it on exceptions. Payroll gains the right to block a team's mutations until its lead confirms the hours.",
+   "reach": [
+    {
+     "role": "hr-admin",
+     "task": "Maintaining contract hours and rosters in AFAS",
+     "learn": "Which master-data errors cause most hours exceptions."
+    },
+    {
+     "role": "people-analyst",
+     "task": "Running the nightly AFAS extract",
+     "learn": "How to add the check job and its exception table to the governed platform."
+    }
+   ],
+   "build_days": {
+    "coding": "6-10",
+    "integration": "4-7",
+    "testing_rollout": "8-12",
+    "consent_and_access": "10-25"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Payroll checks in production are deterministic rules such as gross pay moving more than expected; the calculation stays rules-based.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "In AFAS Profit 8 Flex, payroll lines approve automatically once a person approves the declaration: a rule after a human gate.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Back-office checks are exempt from AI Act Art. 50 disclosure. A dashboard scoring people from time data can be high-risk from December 2027.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "AFAS GetConnectors and UpdateConnectors allow reading and writing payroll mutations.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Own employees' shift hours reach AFAS from a time registration export or self-service declarations.",
+    "Agency flex workers are paid by the agencies, so their hours are out of scope here.",
+    "The exception list is about data quality, not about scoring employees."
+   ],
+   "unknowns": [
+    "Which time registration system the warehouses use and whether it has an export or API.",
+    "How many hours exceptions come up per month on each site.",
+    "Whether the works council treats the hours check as a personnel monitoring system under WOR 27(1)(l)."
+   ],
+   "research_questions": [
+    "What share of last year's payroll corrections came from hours or allowance errors?",
+    "Can the warehouse time system deliver a daily file or API feed to the platform?",
+    "How many CAO allowance rules apply to warehouse and transport shifts, and are they written down anywhere?"
+   ],
+   "time_saved_pct": 92,
+   "speedup": 12.5
+  },
+  {
+   "uid": "43-3051.00:2516",
+   "short": "Enter variable pay, calculate exceptions in Excel, run and check the AFAS trial payroll, then finalise.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Enter variable pay items and one-off payments into AFAS",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "payroll mutation"
+     ],
+     "outputs": [
+      "payroll input"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Calculate retroactive CAO raises, final settlements and corrections in Excel",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "CAO wage table",
+      "contract data"
+     ],
+     "outputs": [
+      "correction calculation"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Run the trial payroll in AFAS",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "payroll input"
+     ],
+     "outputs": [
+      "trial payroll run"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Compare trial run with last month and hunt for odd results",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "trial payroll run",
+      "previous payroll run"
+     ],
+     "outputs": [
+      "pre-run check report"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "One flagged employee: rule hit, wage components this and last month, contract and absence mutations",
+      "output": "A two-line likely cause per exception, citing the components that moved",
+      "check": "Every cited component and amount must match the run data, otherwise the explanation is dropped. Payroll accepts or rejects each one.",
+      "stop": "One pass per exception, capped at 200 per run; on failure show the raw rule hit with no text",
+      "why_not_simpler": "Rules find the deviation but cannot say in plain words which mix of mutations caused it; payroll does that by hand today."
+     },
+     "authority": "read",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Finalise run, post journal and send net pay batch to Rabobank",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Rabobank"
+     ],
+     "inputs": [
+      "pre-run check report",
+      "trial payroll run"
+     ],
+     "outputs": [
+      "payroll journal",
+      "payment batch"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "Gross-to-net stays in AFAS Profit. Retroactive raises and final settlements move from Excel into AFAS configuration where possible. A scheduled Python job reads the trial run and checks it against last month and explicit rules, for example: gross pay moved more than expected, pension stopped while still enrolled, leaver paid twice, rate below minimum wage. A bounded model step drafts a short cause for each hit, and payroll approves the run from the report.",
+   "previous_blocker": "Comparing runs needed custom reports, and writing plain explanations of exceptions took a person.",
+   "enabler_now": "Rule code is cheap to write and test now, and a bounded model step can explain an exception from the structured run data. Vendors already run such checks in production.",
+   "still_hard": "Thresholds must be tuned so the list is short enough to read. Retroactive CAO raises across two CAOs stay error-prone, and a wrong check that stays silent is worse than no check.",
+   "human_edge": "Judging whether an unusual result is right, for example a large back payment, and deciding to hold or release the run.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A short report for each pay run, for the Controller, with exceptions found, corrections and first-time-right rate."
+   },
+   "altitude": "Payroll checks a ranked exception list instead of scanning spreadsheets, and close is about a day shorter. They own the check rules and the go or no-go decision for each run.",
+   "reach": [
+    {
+     "role": "accountant",
+     "task": "Posting and reconciling the payroll journal",
+     "learn": "Which payroll exceptions cause journal corrections later."
+    },
+    {
+     "role": "cnb",
+     "task": "Maintaining CAO wage tables",
+     "learn": "How to load a CAO raise so the retroactive calculation runs in AFAS."
+    }
+   ],
+   "build_days": {
+    "coding": "8-12",
+    "integration": "4-6",
+    "testing_rollout": "10-15",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Production payroll checks: gross moved more than expected, pension stopped while enrolled, leaver paid double net, rate below minimum wage. Calculation stays deterministic.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Workday's Payroll Agent will flag items outside defined parameters and audit retroactive adjustments for payroll to check.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Generated gross-to-net is unacceptable; almost right means someone is paid wrongly.",
+     "grade": "E3",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Rule-based pay decisions still need a route to human review.",
+     "grade": "E3",
+     "source": "[S11]"
+    }
+   ],
+   "assumptions": [
+    "The trial run can be read through an AFAS connector or report export.",
+    "The model step sees only pseudonymised or minimal fields and runs in an EU tenant."
+   ],
+   "unknowns": [
+    "How many corrections per pay run are made today, and after how many days they are found.",
+    "Which retroactive and final-settlement calculations are now done outside AFAS.",
+    "Whether a model provider is approved under Noordhaven's data processing agreements."
+   ],
+   "research_questions": [
+    "In the last 12 runs, how many errors would the four PayCaptain-style checks have caught?",
+    "How long does the trial-run comparison take today, and how many lines does it yield?",
+    "Do payroll staff find the drafted causes correct in a two-month shadow test?"
+   ],
+   "time_saved_pct": 64,
+   "speedup": 2.74
+  },
+  {
+   "uid": "43-3051.00:18563",
+   "short": "Record holiday, special and sick leave, keep balances right and reconcile leave with pay.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Process leave requests and corrections arriving by mail or paper from supervisors",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "leave request"
+     ],
+     "outputs": [
+      "leave record"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 30,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s2",
+     "what": "Maintain balances: statutory, extra-statutory, CAO days, expiry, part-time accrual",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "leave record",
+      "contract data",
+      "CAO leave rules"
+     ],
+     "outputs": [
+      "leave balance"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Reconcile sick days and leave with pay: sick pay, CAO top-up, payouts",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "absence record",
+      "leave balance",
+      "trial payroll run"
+     ],
+     "outputs": [
+      "leave exception list"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Answer employee and team lead questions about balances",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "leave balance"
+     ],
+     "outputs": [
+      "answered question"
+     ],
+     "handoff_to": "external",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 40,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    }
+   ],
+   "design": "Move leave requests into AFAS InSite and Pocket workflows, so the team lead approves and the record posts without a mail. Leave schemes for both CAOs, including expiry and part-time accrual, are configured in AFAS. A check in the same scheduled job compares absence and leave with pay mutations and lists breaks. Employees see their own balance in AFAS Pocket.",
+   "previous_blocker": "Shift workers without a desk or AFAS login send requests to supervisors on paper and in mail. CAO leave rules were never fully configured in AFAS.",
+   "enabler_now": "AFAS self-service on phones is now normal for shift staff. Configuration and the check code are fast to build and test.",
+   "still_hard": "Sick leave data is special-category data under GDPR, so access must be tight. Supervisors without login, plus CAO special leave and old balances, need cleanup first.",
+   "human_edge": "Handling disputed balances and sensitive situations, such as long-term sickness under Wet verbetering poortwachter, with care.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Warehouse and transport shift workers see and request their own leave on their phone for the first time."
+   },
+   "altitude": "Payroll stops being the leave mailbox and handles only reconciliation breaks and disputes. They decide how CAO leave rules are configured.",
+   "reach": [
+    {
+     "role": "hr-admin",
+     "task": "Registering absence and Poortwachter steps in AFAS",
+     "learn": "How absence registration timing affects sick pay and the CAO top-up."
+    },
+    {
+     "role": "hrbp",
+     "task": "Advising team leads on leave and absence",
+     "learn": "Which leave rules confuse team leads most."
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "3-5",
+    "testing_rollout": "8-12",
+    "consent_and_access": "10-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "AFAS Profit 8 approves payroll lines automatically after a person approves a Flex declaration.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "AFAS Profit supports leave workflows and balances through InSite and Pocket self-service.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "A bot reading the personnel file needs works council consent.",
+     "grade": "E3",
+     "source": "[S10]"
+    }
+   ],
+   "assumptions": [
+    "Most shift workers have a smartphone and can get an AFAS Pocket login.",
+    "Sick leave registration stays with HR admin, while payroll only reads it."
+   ],
+   "unknowns": [
+    "How many shift workers have an AFAS login today.",
+    "Which CAO leave rules are now only kept in Excel.",
+    "Whether the works council must consent to the new leave workflow (WOR 27(1)(b) or (k))."
+   ],
+   "research_questions": [
+    "How many leave mails and paper forms reach payroll each month?",
+    "How many balance corrections were made in the last year, and why?",
+    "Will team leads on all three sites approve leave in AFAS within the agreed time?"
+   ],
+   "time_saved_pct": 86,
+   "speedup": 7.02
+  },
+  {
+   "uid": "43-3051.00:2520",
+   "short": "Process joiners, transfers, leavers and tax credit choices into AFAS payroll records, including final settlements.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive change notices from HR admin, HRBPs and managers by mail",
+     "actor": "payroll",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "employee change notice"
+     ],
+     "outputs": [
+      "change request"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 20,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Check completeness: tax credit form, contract, cost centre, CAO scale",
+     "actor": "payroll",
+     "today_means": "document",
+     "systems": [
+      "AFAS Profit",
+      "SharePoint"
+     ],
+     "inputs": [
+      "change request",
+      "tax credit form",
+      "employment contract"
+     ],
+     "outputs": [
+      "validated change"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Uploaded tax credit form or signed contract (PDF or scan)",
+      "output": "Fields: tax credit yes/no, start date, hours, scale, cost centre",
+      "check": "Fields are compared with the values entered in AFAS. Any mismatch or low-confidence field goes to payroll.",
+      "stop": "One extraction per document; on parse failure route to payroll with no fields",
+      "why_not_simpler": "The forms are scanned or free-format, so fixed parsing fails on part of them."
+     },
+     "authority": "read",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Enter the change in AFAS payroll fields, often re-keying HR data",
+     "actor": "payroll",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "validated change"
+     ],
+     "outputs": [
+      "payroll record"
+     ],
+     "handoff_to": "payroll",
+     "share_pct": 30,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "For leavers: calculate leave payout, final pay and transition payment",
+     "actor": "payroll",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "payroll record",
+      "leave balance"
+     ],
+     "outputs": [
+      "final settlement"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "HR admin enters joiners, transfers and leavers once in an AFAS workflow, and payroll approves the payroll fields instead of re-keying them. A deterministic validation checks required fields. A bounded extraction step compares uploaded tax credit forms and contracts with what was entered. Leaver settlements use a fixed calculation script that payroll checks before the last run.",
+   "previous_blocker": "HR and payroll worked in separate mail flows, and the forms arrive as scans that rules cannot read.",
+   "enabler_now": "AFAS workflows already exist but are not used end to end. Document extraction is now reliable enough when every field is checked against the entered data.",
+   "still_hard": "Changes that arrive late or out of order around the payroll cut-off. Transition payments and disputed final settlements need legal judgement.",
+   "human_edge": "Judging unclear cases, such as a mid-month transfer between CAOs or a disputed final settlement, and explaining them to the employee.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Check every joiner and leaver before the cut-off date instead of finding errors after payment."
+   },
+   "altitude": "Payroll approves instead of types and spends the saved time on leaver settlements and checks. They gain the right to reject an incomplete change back to HR admin.",
+   "reach": [
+    {
+     "role": "hr-admin",
+     "task": "Entering joiners and contract changes in AFAS",
+     "learn": "Which fields payroll needs and why, so the change is right the first time."
+    },
+    {
+     "role": "accountant",
+     "task": "Booking final settlements and transition payments",
+     "learn": "How to accrue and post them correctly."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "3-5",
+    "testing_rollout": "6-10",
+    "consent_and_access": "10-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Production payroll checks include a leaver paid double net.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "A bot reading the personnel file needs works council consent under WOR 27(1)(k).",
+     "grade": "E3",
+     "source": "[S10]"
+    },
+    {
+     "claim": "AFAS Profit workflows route HR changes for approval.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "HR admin and payroll work in the same AFAS Profit environment.",
+    "Tax credit forms and contracts are stored in AFAS or SharePoint."
+   ],
+   "unknowns": [
+    "What share of changes arrive after the payroll cut-off.",
+    "How many leaver settlements per month need manual calculation.",
+    "Whether the works council has already agreed to automated processing of personnel file documents."
+   ],
+   "research_questions": [
+    "How many fields does payroll re-key per change that HR admin already entered?",
+    "What error rate does extraction from the tax credit form have on 100 real forms?",
+    "How many payroll corrections last year came from late or incomplete change notices?"
+   ],
+   "time_saved_pct": 82,
+   "speedup": 5.71
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 98,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

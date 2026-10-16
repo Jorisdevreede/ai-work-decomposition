@@ -1,0 +1,1006 @@
+{
+ "tasks": [
+  {
+   "uid": "43-5071.00:4739",
+   "short": "Check and record shipment quantities, weights, charges, damage and discrepancies.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read shipment documents and locate the matching purchase order.",
+     "actor": "receiving clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OPS_SYSTEM",
+      "ERP"
+     ],
+     "inputs": [
+      "delivery note",
+      "purchase order"
+     ],
+     "outputs": [
+      "shipment reference"
+     ],
+     "handoff_to": "receiving clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "integration",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Delivery note and purchase order candidates.",
+      "output": "Shipment fields with source references and proposed order match.",
+      "check": "Validate identifiers, units and totals against order records; flag ambiguous matches.",
+      "stop": "One extraction and one correction attempt per document; unresolved fields go to the receiving clerk.",
+      "why_not_simpler": "Structured notices use direct mapping, but varied document layouts need bounded extraction."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Count and weigh received goods, inspecting packaging and visible damage.",
+     "actor": "receiving clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "shipment reference",
+      "received goods",
+      "delivery note"
+     ],
+     "outputs": [
+      "receiving observations"
+     ],
+     "handoff_to": "receiving clerk",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Enter receipt quantities, weights and damage notes into the shipment record.",
+     "actor": "receiving clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "shipment reference",
+      "receiving observations"
+     ],
+     "outputs": [
+      "shipment record",
+      "discrepancy record"
+     ],
+     "handoff_to": "shipping clerk",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Compare recorded freight charges with agreed rates and flag differences.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "ERP"
+     ],
+     "inputs": [
+      "shipment record",
+      "carrier rate card",
+      "freight charge"
+     ],
+     "outputs": [
+      "charge check",
+      "charge exception"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Copy shipment totals into a recurring reporting workbook.",
+     "actor": "shipping clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "OPS_SYSTEM",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "shipment record",
+      "charge check",
+      "discrepancy record"
+     ],
+     "outputs": [
+      "shipment summary"
+     ],
+     "handoff_to": "operations manager",
+     "share_pct": 10,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "record-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure receiving capture in the {OPS_SYSTEM}; a bounded extractor prepares fields from irregular delivery documents. Deterministic checks match observations and charges to the {ERP}, create exception records and feed a live {BI} view, removing the reporting workbook.",
+   "previous_blocker": "Documents, physical observations and finance records used different identifiers, making duplicate entry easier than integration.",
+   "enabler_now": "Existing receiving functions and interfaces handle most records. AI-assisted coding reduces the effort of building mappings, checks and a small document extractor.",
+   "still_hard": "Physical inspection, disputed damage, inconsistent units and missing order references still require attention.",
+   "human_edge": "The clerk notices suspicious goods, distinguishes damage from packaging wear and investigates what the records cannot explain.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily selection of recurring stock discrepancies for investigation"
+   },
+   "altitude": "The week shifts from rekeying to investigating repeated mismatches and proposing receiving fixes. Financial approval rights do not change.",
+   "reach": [
+    {
+     "role": "logistics analyst",
+     "task": "Identify recurring receiving discrepancies by supplier and item.",
+     "learn": "Inventory reconciliation, unit conversions and basic root-cause analysis."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-12",
+    "testing_rollout": "4-8",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Boltrics provides warehouse, transport and customs records capabilities; local configuration remains unverified.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Qargo documents extraction of PDF orders into fields, supporting the bounded extraction pattern.",
+     "grade": "E2",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Order matching, charge arithmetic and duplicate detection can use deterministic rules.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This representative receiving flow also supports analogous outgoing shipment records.",
+    "Step shares and remaining time are planning estimates, not measured savings.",
+    "Physical inspection remains human; no new handling machinery is included.",
+    "Recorded observations can populate shipment records without a second transcription.",
+    "Access work includes GDPR controls for personal data and consultation under national rules where employee logging changes."
+   ],
+   "unknowns": [
+    "Available interfaces, receiving features and scale connections.",
+    "Document layouts, identifier quality and exception frequency.",
+    "Whether the reporting workbook contains calculations absent from source records.",
+    "Applicable national consultation requirements and approval lead times."
+   ],
+   "research_questions": [
+    "Which document extraction checks remain reliable across the relevant delivery-note formats?"
+   ],
+   "new_work": [
+    "Review ambiguous document matches and charge exceptions.",
+    "Maintain unit mappings, rate rules and supplier identifiers.",
+    "Monitor failed imports and reconcile record counts.",
+    "Check that reporting definitions remain consistent."
+   ],
+   "time_saved_pct": 70,
+   "speedup": 3.31
+  },
+  {
+   "uid": "43-5071.00:4741",
+   "short": "Resolve shipment damage, shortages and specification disputes with internal or external representatives.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve the shipment record, order and discrepancy record.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "ERP"
+     ],
+     "inputs": [
+      "shipment reference",
+      "discrepancy record"
+     ],
+     "outputs": [
+      "case records"
+     ],
+     "handoff_to": "shipping clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read correspondence, photographs and delivery evidence to reconstruct the problem.",
+     "actor": "shipping clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "EMAIL"
+     ],
+     "inputs": [
+      "case records",
+      "delivery evidence",
+      "case correspondence"
+     ],
+     "outputs": [
+      "case brief"
+     ],
+     "handoff_to": "shipping clerk",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "reconcile",
+      "input": "Case records, correspondence and delivery evidence.",
+      "output": "Cited chronology, conflicting claims and missing evidence.",
+      "check": "Require a source for each factual statement; preserve conflicts and let the clerk inspect original evidence.",
+      "stop": "One draft and one revision per case; missing evidence stays unresolved for the clerk.",
+      "why_not_simpler": "Correspondence describes disputed events in free text that fixed field matching cannot reconstruct."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Prepare questions and a proposed remedy for the representative.",
+     "actor": "shipping clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "case brief",
+      "remedy policy"
+     ],
+     "outputs": [
+      "resolution proposal"
+     ],
+     "handoff_to": "shipping clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Reviewed case brief and permitted remedies.",
+      "output": "Draft questions and remedy proposal with policy references.",
+      "check": "Check amounts and remedy eligibility deterministically; clerk checks tone, facts and commitments.",
+      "stop": "One draft and one requested revision; unsupported remedies go to the clerk.",
+      "why_not_simpler": "Templates cover standard notices; disputed facts need a short case-specific explanation."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Discuss disputed facts and negotiate a workable remedy with the representative.",
+     "actor": "shipping clerk",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "case brief",
+      "resolution proposal"
+     ],
+     "outputs": [
+      "provisional agreement"
+     ],
+     "handoff_to": "operations manager",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve remedies exceeding the clerk's delegated financial or operational limits.",
+     "actor": "operations manager",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "provisional agreement",
+      "approval limits"
+     ],
+     "outputs": [
+      "remedy decision"
+     ],
+     "handoff_to": "shipping clerk",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "complaint-to-resolution",
+     "approver": "operations manager"
+    },
+    {
+     "id": "s6",
+     "what": "Send the agreed remedy and next actions to the representative.",
+     "actor": "shipping clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "provisional agreement",
+      "remedy decision"
+     ],
+     "outputs": [
+      "resolution confirmation"
+     ],
+     "handoff_to": "external",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "complaint-to-resolution",
+     "approver": "shipping clerk"
+    },
+    {
+     "id": "s7",
+     "what": "Record the outcome and assign follow-up actions with due dates.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "resolution confirmation",
+      "discrepancy record"
+     ],
+     "outputs": [
+      "resolution record",
+      "follow-up actions"
+     ],
+     "handoff_to": "operations team",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "complaint-to-resolution",
+     "approver": "none"
+    }
+   ],
+   "design": "Link discrepancy records in the {OPS_SYSTEM} to evidence in {DOCS} and {EMAIL}; bounded loops prepare a cited brief and remedy draft. The clerk conducts the discussion, the {WORKFLOW} routes remedies above delegated limits for approval, and reviewed confirmations create follow-up actions automatically.",
+   "previous_blocker": "Evidence was scattered, while disputes required context and negotiation that standard forms did not capture.",
+   "enabler_now": "Record linking and approval flows are established technology. Small model loops can prepare readable briefs from correspondence with source checks.",
+   "still_hard": "Evidence can remain inconclusive. Liability, commercial goodwill and unusual remedies require human judgement.",
+   "human_edge": "The clerk earns cooperation, tests conflicting accounts and finds a remedy both sides can carry out.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Weekly prevention review of recurring shipment disputes"
+   },
+   "altitude": "The clerk spends less time assembling cases and more time resolving difficult disputes and recommending prevention measures. Existing settlement limits remain in force.",
+   "reach": [
+    {
+     "role": "quality control systems manager",
+     "task": "Turn recurring shipment failures into corrective actions.",
+     "learn": "Evidence standards, cause analysis and corrective-action tracking."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "4-10",
+    "testing_rollout": "5-9",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Linked case records, approval thresholds and reminders can use deterministic workflows.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Bounded summarisation can assist preparation, but disputed liability and negotiation still need human judgement.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Step shares include supporting approval work and are planning estimates.",
+    "Manager approval applies only above existing delegated limits.",
+    "Agreement terms are captured in structured fields before confirmation and follow-up automation.",
+    "No automatic credit, liability admission or replacement shipment is authorised.",
+    "GDPR controls cover personal correspondence; consultation follows national rules if employee monitoring changes."
+   ],
+   "unknowns": [
+    "Settlement limits and which role can authorise each remedy.",
+    "Evidence retention rules and correspondence access.",
+    "Share of cases requiring negotiation or manager approval.",
+    "Whether existing records support case links and action tracking."
+   ],
+   "research_questions": [
+    "How reliably can a bounded model distinguish allegations from established facts in shipment disputes?"
+   ],
+   "new_work": [
+    "Review briefs for omitted evidence and unsupported conclusions.",
+    "Maintain remedy policies, templates and approval thresholds.",
+    "Handle overdue remedies and failed follow-up assignments.",
+    "Sample completed cases for factual accuracy."
+   ],
+   "time_saved_pct": 46,
+   "speedup": 1.86
+  },
+  {
+   "uid": "43-5071.00:20278",
+   "short": "Sort and physically deliver received materials to the correct departments.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read delivery labels and routing slips to identify destination departments.",
+     "actor": "receiving clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "received goods",
+      "routing slip",
+      "department directory"
+     ],
+     "outputs": [
+      "delivery route"
+     ],
+     "handoff_to": "receiving clerk",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Sort materials into destination bins and assemble a safe load.",
+     "actor": "receiving clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "received goods",
+      "delivery route"
+     ],
+     "outputs": [
+      "sorted load"
+     ],
+     "handoff_to": "receiving clerk",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Move materials by handtruck or conveyor to the destination.",
+     "actor": "receiving clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "sorted load",
+      "delivery route"
+     ],
+     "outputs": [
+      "delivered materials"
+     ],
+     "handoff_to": "department recipient",
+     "share_pct": 60,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Confirm the recipient and agree where to leave the materials.",
+     "actor": "receiving clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "delivered materials",
+      "delivery route"
+     ],
+     "outputs": [
+      "delivery acceptance"
+     ],
+     "handoff_to": "receiving clerk",
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Mark the delivery complete in the internal movement record.",
+     "actor": "receiving clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "delivery acceptance",
+      "shipment record"
+     ],
+     "outputs": [
+      "internal delivery record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure destination codes, delivery rounds and scan confirmation in the {OPS_SYSTEM}, using a maintained department directory. The clerk checks unusual destinations, sorts and moves the materials, and records completion with a short mobile action.",
+   "previous_blocker": "Most time is physical handling, so paperwork automation alone offers limited savings. Destination directories and mobile confirmation may also be incomplete.",
+   "enabler_now": "Existing mobile records and simple routing rules can reduce searching and duplicate entry at modest implementation cost.",
+   "still_hard": "Stairs, blocked routes, fragile goods, unsafe loads and absent recipients remain physical constraints.",
+   "human_edge": "The clerk handles goods safely and adapts to the building and recipient's immediate circumstances.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The week remains mostly physical delivery, with less destination searching and completion entry. Decision rights do not change.",
+   "reach": [
+    {
+     "role": "facilities manager",
+     "task": "Plan delivery access and departmental drop-off points.",
+     "learn": "Building access constraints, safe routes and workplace handling requirements."
+    }
+   ],
+   "build_days": {
+    "coding": "1-3",
+    "integration": "2-5",
+    "testing_rollout": "3-6",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Boltrics provides warehouse management capabilities; the exact internal-delivery configuration needs verification.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "Destination lookup and scan confirmation can reduce administration but do not perform physical delivery.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The site uses routing slips and an internal movement record.",
+    "Step shares and remaining time are planning estimates.",
+    "Materials normally carry a usable destination or order reference.",
+    "No robotics, conveyor replacement or building alteration is included.",
+    "GDPR and national consultation requirements are assessed before changing identifiable movement logs."
+   ],
+   "unknowns": [
+    "Actual travel time, building layout and delivery volumes.",
+    "Availability of mobile devices, scanning and network coverage.",
+    "Whether destination labels and departmental directories are reliable.",
+    "Handling restrictions and consultation requirements."
+   ],
+   "research_questions": [
+    "Which existing mobile receiving functions support delivery confirmation in areas with poor connectivity?"
+   ],
+   "new_work": [
+    "Maintain destination codes and delivery rounds.",
+    "Resolve unreadable labels and unavailable recipients.",
+    "Support scanning devices and offline synchronisation.",
+    "Review route changes with facilities staff."
+   ],
+   "time_saved_pct": 16,
+   "speedup": 1.18
+  },
+  {
+   "uid": "43-5071.00:4740",
+   "short": "Arrange carrier collections and deliveries, including shipping instructions and exceptions.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve shipment dimensions, readiness, destination and required delivery date.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "ERP"
+     ],
+     "inputs": [
+      "shipment order",
+      "shipment record"
+     ],
+     "outputs": [
+      "shipping requirements"
+     ],
+     "handoff_to": "shipping clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check contracted carrier services, rates and available collection slots.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PARTNER_PORTAL",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "shipping requirements",
+      "carrier rate card"
+     ],
+     "outputs": [
+      "carrier options"
+     ],
+     "handoff_to": "shipping clerk",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Prepare collection details, delivery instructions and shipping paperwork.",
+     "actor": "shipping clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "shipping requirements",
+      "carrier options",
+      "shipping template"
+     ],
+     "outputs": [
+      "shipping instructions",
+      "shipping documents"
+     ],
+     "handoff_to": "shipping clerk",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Discuss unavailable capacity, timing changes or special handling with the carrier.",
+     "actor": "shipping clerk",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "carrier options",
+      "shipping instructions"
+     ],
+     "outputs": [
+      "agreed transport terms"
+     ],
+     "handoff_to": "shipping clerk",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Submit the booking and final shipping instructions to the carrier.",
+     "actor": "shipping clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "agreed transport terms",
+      "shipping instructions",
+      "shipping documents"
+     ],
+     "outputs": [
+      "carrier booking"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "shipping clerk"
+    },
+    {
+     "id": "s6",
+     "what": "Read the carrier acknowledgement and update collection and delivery details.",
+     "actor": "shipping clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "carrier booking",
+      "carrier acknowledgement"
+     ],
+     "outputs": [
+      "transport confirmation",
+      "shipment schedule"
+     ],
+     "handoff_to": "warehouse team",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "integration",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Carrier acknowledgement and submitted booking.",
+      "output": "Proposed confirmation fields and a list of differences.",
+      "check": "Match booking reference, dates, price and service; flag every changed or missing commitment.",
+      "stop": "Direct mapping for structured acknowledgements; one extraction for free text, then clerk review of unresolved differences.",
+      "why_not_simpler": "Some carriers confirm or change commitments in free-text messages."
+     },
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    }
+   ],
+   "design": "Connect shipment records in the {OPS_SYSTEM} to supported carrier interfaces in the {PARTNER_PORTAL}, using deterministic service and rate checks. Generate paperwork from the same record, obtain clerk approval before booking, and compare acknowledgements with booked terms; a bounded loop handles free-text replies.",
+   "previous_blocker": "Carrier interfaces differed, and shipping details were copied between records, documents and portals. Capacity exceptions still required direct discussion.",
+   "enabler_now": "Reusable interfaces, document templates and faster integration development make routine bookings practical to connect.",
+   "still_hard": "Unsupported portals, stale capacity, unusual cargo and last-minute changes remain costly. A written acknowledgement may change the negotiated terms.",
+   "human_edge": "The clerk negotiates feasible alternatives and recognises when a carrier's promise is too uncertain.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Compare contracted carrier alternatives for each time-sensitive shipment"
+   },
+   "altitude": "The clerk spends more time on capacity exceptions and service choices, with less booking preparation. Booking authority remains within existing delegated limits.",
+   "reach": [
+    {
+     "role": "dispatcher",
+     "task": "Coordinate collection windows with loading readiness.",
+     "learn": "Dock capacity, carrier cut-off times and disruption prioritisation."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "6-15",
+    "testing_rollout": "5-10",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Qargo and TransFollow support creation and signing of electronic consignment notes inside transport software.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "A documented loading-slot case reports reduced truck turnaround; it supports slot coordination, not this task's estimated savings.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "Paper consignment documents may still be needed on some international journeys.",
+     "grade": "E2",
+     "source": "[S13]"
+    },
+    {
+     "claim": "Contracted service filtering, document generation and booking checks can use deterministic rules.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Step shares and remaining time are planning estimates.",
+    "The initial scope covers a small set of contracted carriers with supported interfaces.",
+    "Clerk approval covers binding booking terms and final instructions.",
+    "Conflicting acknowledgements create an exception without overwriting agreed commitments.",
+    "GDPR applies to contact and driver data; national consultation rules apply if identifiable staff logging changes."
+   ],
+   "unknowns": [
+    "Carrier interface availability, fees and access conditions.",
+    "Booking limits and special-cargo approval requirements.",
+    "Completeness of dimensions, weights and readiness data.",
+    "Share of bookings needing negotiation, paper documents or portal entry."
+   ],
+   "research_questions": [
+    "Which relevant transport lanes accept the proposed electronic consignment documents?",
+    "Which carrier interfaces support duplicate-safe booking and cancellation?"
+   ],
+   "new_work": [
+    "Maintain carrier services, rate cards and document templates.",
+    "Resolve booking timeouts before retrying to avoid duplicate collections.",
+    "Review changed acknowledgement terms and missing confirmations.",
+    "Monitor interface changes and document acceptance."
+   ],
+   "time_saved_pct": 58,
+   "speedup": 2.41
+  }
+ ],
+ "role": {
+  "altitude": "The role becomes more focused on shipment exceptions, inventory accuracy and reliable handoffs. Physical handling and difficult carrier or dispute conversations remain substantial; additional spending or settlement rights require explicit delegation.",
+  "reach": [
+   "Logistics analyst: investigate recurring inventory and shipment discrepancies.",
+   "Quality control systems manager: develop corrective actions from dispute evidence.",
+   "Dispatcher: coordinate readiness, carrier commitments and loading windows.",
+   "Facilities manager: improve departmental delivery routes and access."
+  ],
+  "skills_to_grow": [
+   "Inventory reconciliation and unit-of-measure checks.",
+   "Evidence review and discrepancy investigation.",
+   "Carrier service selection and booking controls.",
+   "Basic workflow configuration and integration exception handling.",
+   "Safe handling and clear negotiation."
+  ],
+  "ambitious_version": "A shipment exception coordinator who combines receiving evidence, carrier commitments and dispute outcomes into practical prevention proposals, while retaining hands-on knowledge of the operation."
+ },
+ "job_code": "43-5071.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 161,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":2500});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-5071.00",
+   "title": "Shipping, Receiving, and Inventory Clerks",
+   "tasks": 11,
+   "function": "Office and operations"
+  }
+ }
+}

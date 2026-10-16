@@ -1,0 +1,668 @@
+{
+ "job_code": "41-3021.00",
+ "tasks": [
+  {
+   "uid": "41-3021.00:733",
+   "short": "Inspect property and decide if it is an insurance risk.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Inspect the property's condition, construction and age on site.",
+     "actor": "insurance sales agent",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "inspection request"
+     ],
+     "outputs": [
+      "site notes"
+     ],
+     "handoff_to": "none",
+     "share_pct": 52,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Write construction, age and condition into the file.",
+     "actor": "insurance sales agent",
+     "today_means": "document",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "site notes"
+     ],
+     "outputs": [
+      "inspection record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 14,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Site notes",
+      "output": "Inspection record: construction, age, condition",
+      "check": "Agent checks each field against what they saw",
+      "stop": "One pass; a blank stays for the agent to type",
+      "why_not_simpler": "Site notes are not a survey form"
+     },
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Decide if the property is a good insurance risk.",
+     "actor": "insurance sales agent",
+     "today_means": "in_person",
+     "systems": [
+      "CRM"
+     ],
+     "inputs": [
+      "inspection record"
+     ],
+     "outputs": [
+      "risk decision"
+     ],
+     "handoff_to": "underwriter",
+     "share_pct": 24,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Send the risk decision to the underwriter.",
+     "actor": "insurance sales agent",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "risk decision",
+      "inspection record"
+     ],
+     "outputs": [
+      "risk note"
+     ],
+     "handoff_to": "underwriter",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "supplier-to-contract",
+     "approver": "insurance sales agent",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "The inspection stays on site. Notes fill construction, age and condition on the {CRM} record, and the agent checks them against what they saw. The risk decision stays the agent's, and the underwriter receives it only after that check.",
+   "previous_blocker": "The visit and the decision were the work, and the write-up was a second evening.",
+   "enabler_now": "Three fields from the notes are enough to stop retyping. They do not decide the risk.",
+   "still_hard": "Seeing a defect that a form does not name.",
+   "human_edge": "The agent stands in the building and decides.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "Site visits stay. The evening write-up shrinks, and a decision is not sent until the record matches the visit.",
+   "reach": [
+    {
+     "role": "Solar Sales Representatives and Assessors",
+     "task": "Inspect a site before saying whether it can take the product",
+     "learn": "Which site facts they refuse to judge from photos alone"
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "2-4",
+    "testing_rollout": "2-4",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A property risk decision is made on site by the person who inspected it.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    },
+    {
+     "claim": "A Dutch insurance system uses one certified product-definition format for policy records and renewals.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "Focal role is the insurance sales agent. Boundary: from arrival on site to the risk note. A formal survey by another profession is out of scope.",
+    "Structured fields are construction type, age and condition. The agent produces them from the visit. Fallback: the agent types any blank before the decision is sent.",
+    "Test {CRM} inspection fields before custom code. Do not replace the visit with a document.",
+    "Upkeep of 1 hour per 100 baseline hours covers the field list."
+   ],
+   "unknowns": [
+    "Whether this agency's agents inspect, or only instruct a surveyor.",
+    "Which construction types the underwriter already codes."
+   ],
+   "research_questions": [
+    "What share of risks are decided at the visit rather than later?",
+    "How often do photos already exist before the visit?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Field check after the visit",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s2"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Maintain inspection fields",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4",
+     "approved_version": "risk decision and inspection record",
+     "approval_step_id": "s3",
+     "approver": "insurance sales agent"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 2.58,
+    "high": 6.45,
+    "basis": "Low case: every property is non-standard and the visit plus the decision are the whole hour. High case: only the write-up shrinks. The visit is never removed."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 13.9,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 12.9,
+   "speedup": 1.148106,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "41-3021.00:734",
+   "short": "Install a bookkeeping system and resolve problems.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Install the bookkeeping structure for insurance postings.",
+     "actor": "insurance sales agent",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "posting map"
+     ],
+     "outputs": [
+      "installed structure"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 28,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "record-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Load opening balances and policy codes.",
+     "actor": "insurance sales agent",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "opening balances",
+      "policy codes"
+     ],
+     "outputs": [
+      "loaded book"
+     ],
+     "handoff_to": "none",
+     "share_pct": 22,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "record-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Resolve bookkeeping problems the rules miss.",
+     "actor": "insurance sales agent",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "loaded book",
+      "error list"
+     ],
+     "outputs": [
+      "fix"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 34,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "audit-and-controls",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Show the bookkeeper the working path.",
+     "actor": "insurance sales agent",
+     "today_means": "in_person",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "fix"
+     ],
+     "outputs": [
+      "handover"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 16,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "Native {ERP} setup is used to install the posting structure and to load balances and policy codes. Problems the rules do not catch stay with the agent, who then walks the bookkeeper through the path. Custom code is only for a gap the ledger cannot configure.",
+   "previous_blocker": "Install and repair were the same undifferentiated session, with balances typed by hand.",
+   "enabler_now": "A posting map and a balance file can load. A rejected row still needs a person.",
+   "still_hard": "A customer's old book that does not match the map.",
+   "human_edge": "The agent sees which rejected row would silently drop a premium.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "The agent decides at handover which remaining problem is a rule gap rather than a typing error."
+   },
+   "altitude": "Loading shrinks. Problem solving and the handover stay. The agent can refuse to hand over a book with a rejected premium.",
+   "reach": [
+    {
+     "role": "Travel Agents",
+     "task": "Set up a customer's trip record in the booking ledger and fix rejected rows",
+     "learn": "Which rejected rows they refuse to skip"
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "6-10",
+    "testing_rollout": "4-7",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A ledger can load a mapped balance file; unmatched rows stay for a person.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "Focal role is the insurance sales agent. Boundary: from an agreed posting map to a handover. Designing the map is a separate task.",
+    "Structured fields are account, balance, policy code and error code. The customer's book produces the balances. Fallback: rejected rows stay out of the live book until the agent resolves them.",
+    "Test native {ERP} import before custom code.",
+    "Upkeep of 4 hours per 100 baseline hours covers import rules when policy codes change."
+   ],
+   "unknowns": [
+    "Whether the agent is allowed to install software in the customer's ledger.",
+    "What share of books arrive as a clean extract."
+   ],
+   "research_questions": [
+    "Which error codes does the ledger already return?",
+    "How often is the handover the first time the bookkeeper sees the system?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Resolve unmatched rows",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 15,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Maintain import rules for policy codes",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 18.8,
+    "high": 33.83,
+    "basis": "Low case: books are messy and resolution is most of the hour. High case: the load is clean and only exceptions plus the handover remain."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 51.0,
+   "incremental_hours_per_100_baseline_hours": 4,
+   "time_saved_pct": 47.0,
+   "speedup": 1.886792,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "41-3021.00:736",
+   "short": "Explain bookkeeping requirements for a group insurance program.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Draft bookkeeping requirements for the group program.",
+     "actor": "insurance sales agent",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "ERP"
+     ],
+     "inputs": [
+      "program record"
+     ],
+     "outputs": [
+      "requirements note"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Program record: premium pieces and payers",
+      "output": "Requirements note for the customer's books",
+      "check": "Agent checks every amount type against the program",
+      "stop": "One draft; an amount with no program line is deleted",
+      "why_not_simpler": "The note is prose for a bookkeeper, not a posting file"
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Explain the bookkeeping requirements to the customer.",
+     "actor": "insurance sales agent",
+     "today_means": "in_person",
+     "systems": [
+      "CALENDAR"
+     ],
+     "inputs": [
+      "requirements note"
+     ],
+     "outputs": [
+      "explanation"
+     ],
+     "handoff_to": "customer bookkeeper",
+     "share_pct": 52,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Send the requirements note that was explained.",
+     "actor": "insurance sales agent",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "requirements note"
+     ],
+     "outputs": [
+      "sent note"
+     ],
+     "handoff_to": "customer bookkeeper",
+     "share_pct": 18,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "insurance sales agent",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    }
+   ],
+   "design": "A requirements note is drafted from the group program and checked by the agent. The explanation stays a meeting. {EMAIL} sends that same note only after the meeting, not a different version.",
+   "previous_blocker": "Requirements were explained from memory, and the written note was typed afterwards and sometimes disagreed with the meeting.",
+   "enabler_now": "Premium pieces on the program record can fill the note. The meeting still explains them.",
+   "still_hard": "The customer's bookkeeper does not use the words on the program record.",
+   "human_edge": "The agent can tell when the bookkeeper has not understood a premium piece.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "A small employer's bookkeeper gets the requirements note without a second workshop."
+   },
+   "altitude": "Explanations stay. The agent can send only the note they already explained.",
+   "reach": [
+    {
+     "role": "Real Estate Brokers",
+     "task": "Explain what a client must record after an instruction changes",
+     "learn": "How they keep the written note tied to what was said"
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "2-5",
+    "testing_rollout": "2-4",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A requirements note can be drafted from a program record; the explanation to the bookkeeper stays in person.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "Focal role is the insurance sales agent. Boundary: from the group program to the note sent after the explanation. Installing the ledger is a separate task.",
+    "Structured fields are premium piece, payer and amount type. The program record produces them. Fallback: the agent writes any piece the draft drops.",
+    "Test a {DOCS} note template before custom code.",
+    "Upkeep of 1.5 hours per 100 baseline hours covers the note template."
+   ],
+   "unknowns": [
+    "Whether group programs already split premium pieces.",
+    "Whether the customer expects a meeting or will accept a note alone."
+   ],
+   "research_questions": [
+    "What share of group programs repeat the same premium pieces?",
+    "How often does the bookkeeper ask for a second explanation?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Note check before the meeting",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 8,
+      "counted_step_ids": [
+       "s1"
+      ]
+     },
+     {
+      "description": "Send check",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 4,
+      "counted_step_ids": [
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Maintain the requirements-note template",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1.5
+     }
+    ]
+   },
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3",
+     "approved_version": "requirements note explained in the meeting",
+     "approval_step_id": "s2",
+     "approver": "insurance sales agent"
+    }
+   ],
+   "time_saved_range_pct": {
+    "low": 8.46,
+    "high": 18.33,
+    "basis": "Low case: the bookkeeper needs a long explanation and the note is rewritten in the room. High case: the draft holds and only the meeting stays at full length."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 29.7,
+   "incremental_hours_per_100_baseline_hours": 1.5,
+   "time_saved_pct": 28.2,
+   "speedup": 1.392758,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "Inspections, problem solving and explanations stay on site or in the room. Write-ups and clean loads take less time. The agent does not send a risk note that disagrees with the visit.",
+  "reach": [
+   "Solar site inspections are not done from photos alone",
+   "Brokers keep the written note tied to what was said"
+  ],
+  "skills_to_grow": [
+   "Writing construction, age and condition without deciding the risk in the form",
+   "Holding rejected ledger rows out of a live book",
+   "Sending only the requirements note that was explained"
+  ],
+  "ambitious_version": "The agent spends field time on the property and the bookkeeper, with the record already matching what was seen or said."
+ },
+ "_meta": {
+  "model": "grok-4.7",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "41-3021.00",
+   "title": "Insurance Sales Agents",
+   "tasks": 19,
+   "function": "Sales and account management"
+  },
+  "digest": "research/digests-minor/41-3.md",
+  "digest_sha256": "98273aa70e075b7ddfa7e937a6c567912d180d2bc0ef953d0c589f8bd0222bb9",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-15T14:28:42"
+ }
+}

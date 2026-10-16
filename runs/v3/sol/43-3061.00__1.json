@@ -1,0 +1,1042 @@
+{
+ "tasks": [
+  {
+   "uid": "43-3061.00:2539",
+   "short": "Track requisitions, contracts and orders, and chase missing status information.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read requisition, contract and order records in {PROCUREMENT} and {CLM}.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT",
+      "CLM"
+     ],
+     "inputs": [
+      "purchase requisition",
+      "supplier contract",
+      "purchase order"
+     ],
+     "outputs": [
+      "status extract"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Reconcile dates, references and owners in a shared {SPREADSHEET} tracker.",
+     "actor": "procurement clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "status extract",
+      "status register"
+     ],
+     "outputs": [
+      "reconciled status register",
+      "missing status list"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Request missing confirmations from suppliers and internal owners through {EMAIL}.",
+     "actor": "procurement clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "missing status list",
+      "purchase order"
+     ],
+     "outputs": [
+      "status request"
+     ],
+     "handoff_to": "external",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Read replies in {EMAIL} and identify promised dates, delays and conditions.",
+     "actor": "procurement clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "supplier confirmation",
+      "internal status reply",
+      "purchase order"
+     ],
+     "outputs": [
+      "status proposal",
+      "status evidence"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Replies linked to one purchase order and its current status.",
+      "output": "Proposed dates, quantities, conditions and supporting text passages.",
+      "check": "Validate order references, date formats and quantities; preserve source passages and detect conflicting confirmations.",
+      "stop": "One extraction and one validation retry per reply; unresolved fields enter the exception queue.",
+      "why_not_simpler": "Supplier replies express dates and conditions in varied free text; fixed rules cannot reliably interpret them."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Resolve conflicting evidence and confirm status changes in {PROCUREMENT} or {CLM}.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT",
+      "CLM"
+     ],
+     "inputs": [
+      "status proposal",
+      "status evidence",
+      "supplier confirmation"
+     ],
+     "outputs": [
+      "verified status",
+      "escalation request"
+     ],
+     "handoff_to": "purchasing manager",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "procurement clerk"
+    },
+    {
+     "id": "s6",
+     "what": "Send requesters a status summary and flag overdue items through {EMAIL}.",
+     "actor": "procurement clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "verified status",
+      "escalation request"
+     ],
+     "outputs": [
+      "status summary"
+     ],
+     "handoff_to": "requester",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    }
+   ],
+   "design": "Connect {PROCUREMENT} and {CLM} through {DATA_PLATFORM} and replace the parallel {SPREADSHEET} tracker with a sourced status view in {BI}. Configure reminders in {WORKFLOW}; a bounded reader turns {EMAIL} replies into proposals that the procurement clerk confirms before record changes.",
+   "previous_blocker": "Order references and dates sit across separate records and supplier correspondence. Maintaining connectors and resolving mismatched identifiers took sustained effort.",
+   "enabler_now": "Existing exports, workflow rules and faster connector development make consolidation cheaper. A bounded reader can extract proposed updates from ordinary replies.",
+   "still_hard": "Suppliers may provide no reliable date. Conflicting commitments and contract amendments require investigation and commercial authority.",
+   "human_edge": "Recognise which delay threatens an operational commitment and secure a credible recovery plan.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Daily prioritisation of orders threatening the next production or service milestone"
+   },
+   "altitude": "The week shifts from copying dates to investigating delivery risks with requesters. The clerk can recommend escalation earlier; authority to change contracts or delivery commitments does not expand.",
+   "reach": [
+    {
+     "role": "purchasing manager",
+     "task": "Prioritise supplier delivery escalations",
+     "learn": "Operational criticality, escalation thresholds and the difference between a forecast and a contractual commitment."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "5-12",
+    "testing_rollout": "4-8",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Record consolidation, overdue rules and templated reminders are standard deterministic patterns.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The digest identifies record-grounded order-status replies as a bounded model use, with disputes sent to people.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "This is a representative mid-size company workflow, not an observed customer process.",
+    "Time shares and build ranges are planning estimates for one initial deployment.",
+    "A shared tracker supplements the main records; where native tracking already suffices, configuration replaces the connector build.",
+    "Routine status requests use approved templates and cannot amend orders or contracts.",
+    "The structured-data prior fits record gathering; correspondence still needs interpretation.",
+    "Access work includes GDPR controls and checking consultation requirements under national rules; employee monitoring is outside scope."
+   ],
+   "unknowns": [
+    "Available interfaces, stable identifiers and actual use of a parallel tracker.",
+    "Who may confirm delivery dates and amend contract records.",
+    "Supplier reply volume, languages and frequency of conflicting confirmations.",
+    "Applicable employee consultation arrangements."
+   ],
+   "research_questions": [
+    "Can native status views and reminders cover the required cross-record links?",
+    "How accurately can reply extraction distinguish firm commitments from tentative dates?"
+   ],
+   "new_work": [
+    "Review proposed updates and investigate conflicting evidence.",
+    "Maintain supplier contact routing and escalation thresholds.",
+    "Monitor connector freshness and failed record links.",
+    "Maintain extraction checks, access permissions and retention settings."
+   ],
+   "time_saved_pct": 90,
+   "speedup": 9.52
+  },
+  {
+   "uid": "43-3061.00:2534",
+   "short": "Buy routine materials and services within delegated limits, escalating unusual purchases.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check the purchase requisition, specification and buying limits in {PROCUREMENT}.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "purchase requisition",
+      "purchase specification",
+      "delegation policy"
+     ],
+     "outputs": [
+      "validated purchase requirement"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read supplier quotes in {DOCS} and enter comparable terms in {SPREADSHEET}.",
+     "actor": "procurement clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "supplier quote",
+      "validated purchase requirement"
+     ],
+     "outputs": [
+      "quote table"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Supplier quotes and a fixed schema for quantities, units, prices, delivery and exclusions.",
+      "output": "A quote table with source passages and explicit missing fields.",
+      "check": "Check arithmetic, currency, units, quote validity and required fields; the clerk reviews uncertain terms.",
+      "stop": "One extraction and one correction pass per quote; unresolved comparisons return to the clerk.",
+      "why_not_simpler": "Quote layouts and exclusions vary. Structured catalogue prices should bypass the reader."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Calculate comparable costs and rank compliant options in {SPREADSHEET}.",
+     "actor": "procurement clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "quote table",
+      "evaluation criteria"
+     ],
+     "outputs": [
+      "bid comparison"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Discuss suitability and delivery trade-offs with the requester or buyer.",
+     "actor": "procurement clerk",
+     "today_means": "meeting_call",
+     "systems": [],
+     "inputs": [
+      "bid comparison",
+      "purchase specification"
+     ],
+     "outputs": [
+      "purchase recommendation",
+      "supplier clarification"
+     ],
+     "handoff_to": "buyer",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve supplier selection and spending within the delegation policy in {PROCUREMENT}.",
+     "actor": "authorised buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "purchase recommendation",
+      "bid comparison",
+      "delegation policy"
+     ],
+     "outputs": [
+      "approved buying instruction"
+     ],
+     "handoff_to": "procurement clerk",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "authorised buyer"
+    },
+    {
+     "id": "s6",
+     "what": "Place the approved order through {PROCUREMENT} and retain the dispatch receipt.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "approved buying instruction",
+      "supplier quote"
+     ],
+     "outputs": [
+      "purchase order",
+      "dispatch receipt"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    }
+   ],
+   "design": "Use {PROCUREMENT} for requirements, delegated approvals and order placement. A bounded reader loads quotes from {DOCS} into a fixed comparison table, deterministic calculations rank compliant options, and {WORKFLOW} presents the evidence to the authorised buyer before dispatch.",
+   "previous_blocker": "Supplier quotes require manual normalisation, while suitability and delivery trade-offs resist simple price ranking.",
+   "enabler_now": "Small extraction loops can populate a fixed schema. Existing approval configuration and inexpensive calculation code handle the remaining routine work.",
+   "still_hard": "Equivalent specifications, uncertain supplier capacity and urgent substitutions require commercial judgement. A low price alone does not establish suitability.",
+   "human_edge": "Judge operational fit and negotiate a workable compromise when cost, quality and delivery conflict.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A short-notice alternative-supplier comparison for urgent purchase requests"
+   },
+   "altitude": "The clerk spends less time normalising quotes and more time preparing alternatives with requesters. Existing delegated buying rights remain; wider supplier-selection authority requires explicit delegation.",
+   "reach": [
+    {
+     "role": "purchasing agent",
+     "task": "Evaluate alternative suppliers for an urgent requirement",
+     "learn": "Specification equivalence, total acquisition cost, supplier qualification and negotiation preparation."
+    },
+    {
+     "role": "wholesale and retail buyer",
+     "task": "Assess substitute products before replenishment",
+     "learn": "Product specifications, demand implications and acceptable substitution criteria."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "4-10",
+    "testing_rollout": "5-9",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A documented vendor case describes eliminating manual re-entry of quote PDFs into orders.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "Fixed-schema quote extraction followed by deterministic scoring is feasible; equivalent supplier suitability still needs judgement.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The scope is routine buying cover, not independent strategic sourcing or contract negotiation.",
+    "Time shares and build ranges are planning estimates, not measured savings.",
+    "The authorised buyer may be the clerk for purchases within an existing delegation.",
+    "Dispatch is restricted to the exact approved supplier, lines, price and terms; changes require renewed approval.",
+    "Order placement reuses the purchase-order component in the preparation task; its build effort is not additive.",
+    "The judgement prior is more informative than the nearly-all-automated prior for supplier selection.",
+    "The cited quote-entry case is from the US and does not establish European rollout effort.",
+    "GDPR and EU AI Act applicability are checked for the actual use; consultation follows national rules where applicable."
+   ],
+   "unknowns": [
+    "Delegated spending limits and permitted purchase categories.",
+    "How often requests involve new suppliers or nonstandard terms.",
+    "Availability of approved catalogues and supplier qualification records.",
+    "Whether existing approvals bind the final order contents.",
+    "Applicable access and employee consultation requirements."
+   ],
+   "research_questions": [
+    "Which quote fields can be validated mechanically against specifications and approved catalogues?",
+    "Which native approval controls prevent dispatch after a material order change?"
+   ],
+   "new_work": [
+    "Review uncertain quote fields and unsupported comparisons.",
+    "Maintain evaluation criteria, unit conversions and approved supplier mappings.",
+    "Handle incomplete specifications and failed supplier qualification checks.",
+    "Check that dispatched orders match their approved versions."
+   ],
+   "time_saved_pct": 61,
+   "speedup": 2.58
+  },
+  {
+   "uid": "43-3061.00:2531",
+   "short": "Prepare purchase orders, secure release approval and distribute them to suppliers and requesters.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather requisition details, supplier records and agreed terms in {PROCUREMENT}.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "purchase requisition",
+      "supplier record",
+      "supplier quote",
+      "supplier contract"
+     ],
+     "outputs": [
+      "order source pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Enter order lines, delivery details and cost allocations in {PROCUREMENT}.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "order source pack",
+      "quote table"
+     ],
+     "outputs": [
+      "draft purchase order"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Check the draft purchase order against source documents and purchasing rules.",
+     "actor": "procurement clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "draft purchase order",
+      "order source pack",
+      "delegation policy"
+     ],
+     "outputs": [
+      "checked purchase order",
+      "order exception"
+     ],
+     "handoff_to": "authorised buyer",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Approve the final supplier, amount and terms for order release in {PROCUREMENT}.",
+     "actor": "authorised buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "checked purchase order",
+      "order exception",
+      "delegation policy"
+     ],
+     "outputs": [
+      "approved purchase order",
+      "approved buying instruction"
+     ],
+     "handoff_to": "procurement clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "authorised buyer"
+    },
+    {
+     "id": "s5",
+     "what": "Send the purchase order through {EMAIL} to the supplier and requesting department.",
+     "actor": "procurement clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "approved purchase order",
+      "supplier record",
+      "purchase requisition"
+     ],
+     "outputs": [
+      "purchase order",
+      "dispatch receipt",
+      "requester notification"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure {PROCUREMENT} to generate draft orders from validated requisitions, supplier records and agreed terms, with checks for missing fields, duplicate requests and approval limits. Route the final version through {WORKFLOW}, then dispatch that approved version through {EMAIL} and retain the receipt in {PROCUREMENT}.",
+   "previous_blocker": "Incomplete requisitions and disconnected quote documents made copying seem easier than maintaining a reliable mapping. Approval and distribution often depended on mailbox habits.",
+   "enabler_now": "Native order templates, approval rules and dispatch functions already cover much of the task. Faster configuration and integration work reduce the cost of filling local gaps.",
+   "still_hard": "Incorrect supplier master data and ambiguous commercial terms can produce a perfectly formatted but wrong order. Changed orders need version-specific approval.",
+   "human_edge": "Notice when the formal order does not express what the requester and supplier actually agreed.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "A guided purchase-request route for occasional departmental requesters"
+   },
+   "altitude": "The clerk handles incomplete requests and unusual terms instead of retyping routine orders. The clerk can help departments submit usable requests, while release authority remains with the authorised buyer.",
+   "reach": [
+    {
+     "role": "purchasing manager",
+     "task": "Improve requisition quality and purchasing compliance",
+     "learn": "Request-form design, approval matrices, supplier master controls and exception analysis."
+    }
+   ],
+   "build_days": {
+    "coding": "1-4",
+    "integration": "3-8",
+    "testing_rollout": "4-7",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Vendor cases document quote-to-order data capture and moving purchasing approvals out of an inbox.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "Order templates, validation and version-bound release approvals can usually use existing purchasing configuration.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The main purchasing system supports draft orders, approval routing and dispatch records.",
+    "Time shares and build ranges are estimates for a limited initial scope.",
+    "Free-text quote extraction is shared with the buying task; this task consumes validated fields.",
+    "Approvals already covering the exact final order are reused rather than requested twice.",
+    "Dispatch retries use duplicate prevention and cannot send an unapproved revision.",
+    "The document-heavy prior reflects source material; order creation itself typically uses system screens.",
+    "GDPR access and retention controls apply; national consultation requirements are checked if employee workflows materially change."
+   ],
+   "unknowns": [
+    "Native template, approval and dispatch capabilities.",
+    "Share of requisitions with complete line and delivery data.",
+    "Whether approval records identify the exact order version.",
+    "Supplier delivery channels and ownership of contact records.",
+    "Required access permissions and consultation arrangements."
+   ],
+   "research_questions": [
+    "Can configuration generate and dispatch orders without custom code?",
+    "How does the approval mechanism behave when a line, recipient or term changes?"
+   ],
+   "new_work": [
+    "Resolve rejected requisitions and missing supplier data.",
+    "Maintain templates, required fields and approval routing.",
+    "Investigate failed dispatches and duplicate-send alerts.",
+    "Periodically sample released orders against their approved versions."
+   ],
+   "time_saved_pct": 86,
+   "speedup": 6.9
+  },
+  {
+   "uid": "43-3061.00:2540",
+   "short": "Calculate order costs, check invoices and route or allocate charges to the correct accounts.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read supplier invoices and capture their headers and lines in {ERP}.",
+     "actor": "procurement clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "ERP"
+     ],
+     "inputs": [
+      "supplier invoice",
+      "supplier record"
+     ],
+     "outputs": [
+      "invoice record",
+      "capture exception"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Unstructured supplier invoice and known supplier records; structured invoices bypass the loop.",
+      "output": "Invoice fields and lines with source references and unresolved fields.",
+      "check": "Check supplier identity, duplicate references, currency, line totals, tax totals and required fields; review unresolved captures.",
+      "stop": "One extraction and one correction pass per invoice; failed checks stop capture for human correction.",
+      "why_not_simpler": "PDF layouts and descriptions vary. Structured invoice ingestion and configured capture are preferred wherever available."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "procurement clerk"
+    },
+    {
+     "id": "s2",
+     "what": "Calculate quantities, discounts, freight, tax and order totals in {PROCUREMENT}.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "purchase order",
+      "supplier quote",
+      "cost rules"
+     ],
+     "outputs": [
+      "order cost calculation"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Match invoice lines to purchase orders and receipts in {ERP}.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "invoice record",
+      "purchase order",
+      "goods receipt",
+      "order cost calculation"
+     ],
+     "outputs": [
+      "invoice match result",
+      "invoice discrepancy"
+     ],
+     "handoff_to": "finance team",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Resolve discrepancies and approve unusual account allocations in {ERP}.",
+     "actor": "finance team",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "invoice discrepancy",
+      "account mapping",
+      "purchase requisition"
+     ],
+     "outputs": [
+      "approved invoice coding",
+      "invoice hold"
+     ],
+     "handoff_to": "procurement clerk",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 75,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "finance team"
+    },
+    {
+     "id": "s5",
+     "what": "Assign routine or approved account codes and cost centres in {ERP}.",
+     "actor": "procurement clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "invoice match result",
+      "account mapping",
+      "approved invoice coding"
+     ],
+     "outputs": [
+      "coded invoice"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Forward coded invoices or holds to the responsible accounts team through {EMAIL}.",
+     "actor": "procurement clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "coded invoice",
+      "invoice hold"
+     ],
+     "outputs": [
+      "invoice routing notice"
+     ],
+     "handoff_to": "accounts payable clerk",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure {ERP} and {PROCUREMENT} for order arithmetic, line-level matching, account mapping and invoice routing. Ingest structured invoices directly; use a bounded capture loop for unsupported documents and route failed checks to people before coding or onward processing.",
+   "previous_blocker": "Invoice layouts vary, receipt records arrive late and account mappings are incomplete. Separate purchasing and finance records make even simple checks laborious.",
+   "enabler_now": "Configured capture and matching already exist. Bounded extraction can cover remaining document formats, while integrations carry order and receipt references.",
+   "still_hard": "Missing service acceptance, disputed quantities and ambiguous expense classifications need accountable decisions. Tax treatment and tolerance rules require finance ownership.",
+   "human_edge": "Distinguish a genuine supplier overcharge from an incomplete receipt or a legitimate change in scope.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly review of recurring freight, price and quantity discrepancies by supplier"
+   },
+   "altitude": "The clerk spends more time investigating recurring purchasing discrepancies with finance and buyers. The clerk can propose supplier corrections; accounting policy and payment-release rights remain with finance.",
+   "reach": [
+    {
+     "role": "purchasing agent",
+     "task": "Challenge recurring supplier charges against agreed terms",
+     "learn": "Price variance analysis, freight terms, receipt evidence and supplier dispute preparation."
+    },
+    {
+     "role": "purchasing manager",
+     "task": "Prioritise suppliers with repeated invoice discrepancies",
+     "learn": "Separate supplier errors from internal receiving and master-data failures."
+    }
+   ],
+   "build_days": {
+    "coding": "3-7",
+    "integration": "6-14",
+    "testing_rollout": "6-12",
+    "consent_and_access": "3-12"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Invoice capture can read PDF invoices and identify suppliers using registered identifiers.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Line-level three-way matching of invoices, orders and receipts is commercially available.",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "The Huuskes vendor case reports increased automatic invoice processing after implementation; it does not establish savings for this clerk task.",
+     "grade": "E3",
+     "source": "[S3]"
+    },
+    {
+     "claim": "A survey in the digest found substantial use of paper or email for invoice approval, supporting mailbox routing as a plausible current practice.",
+     "grade": "E2",
+     "source": "[S8]"
+    },
+    {
+     "claim": "The EU VAT reform supports a growing role for structured e-invoices; applicable national implementation must be checked.",
+     "grade": "E2",
+     "source": "[S10]"
+    }
+   ],
+   "assumptions": [
+    "Time shares and build ranges are planning estimates for a bounded initial invoice population.",
+    "Goods receipts include equivalent service acceptance where relevant.",
+    "Routine coding uses finance-approved mappings; discrepancies and unfamiliar classifications cannot pass automatically.",
+    "Invoice capture requires clerk confirmation; arithmetic and matching then run without a separate universal approval.",
+    "Coding and routing do not authorise payment or alter supplier bank details.",
+    "The high arithmetic and automatic-checking priors fit this task; missing receipt evidence remains a human dependency.",
+    "Access work includes GDPR controls and checking consultation requirements under national rules. No employee monitoring or automated employment decisions are introduced."
+   ],
+   "unknowns": [
+    "Invoice formats, structured invoice coverage and existing capture capabilities.",
+    "Quality and timeliness of goods receipts and service acceptance.",
+    "Approved matching tolerances, tax rules and account mappings.",
+    "Whether clerks enter accounting allocations or only forward invoices.",
+    "Integration permissions, segregation of duties and applicable consultation requirements."
+   ],
+   "research_questions": [
+    "Which invoice populations can use native capture and matching without a new model loop?",
+    "Can matching distinguish partial deliveries, credit notes and legitimate price adjustments?",
+    "Which capture validation failures best predict financially material errors?"
+   ],
+   "new_work": [
+    "Review capture exceptions and correct missing receipt links.",
+    "Maintain account mappings, tax configuration and matching tolerances with finance.",
+    "Monitor duplicate detection, connector failures and held invoices.",
+    "Review recurring supplier discrepancies and validate extraction changes before release."
+   ],
+   "time_saved_pct": 85,
+   "speedup": 6.56
+  }
+ ],
+ "role": {
+  "altitude": "The procurement clerk becomes a coordinator of purchasing exceptions and reliable transaction evidence. Routine records move automatically, while supplier choice, commercial commitments and financial exceptions remain with existing authorised roles.",
+  "reach": [
+   "Prepare supplier delivery escalations for the purchasing manager.",
+   "Build alternative-supplier comparisons with the purchasing agent.",
+   "Assess product substitutions with the wholesale and retail buyer."
+  ],
+  "skills_to_grow": [
+   "Purchase specifications and total acquisition cost",
+   "Supplier delivery risk and escalation",
+   "Quote comparison and source verification",
+   "Order approval controls and version management",
+   "Invoice matching and account-allocation basics",
+   "Exception analysis, data quality and integration monitoring",
+   "GDPR-aware handling of supplier contacts and appropriate AI literacy"
+  ],
+  "ambitious_version": "Run a purchasing exception service that identifies threatened deliveries, prepares compliant alternatives and exposes recurring supplier charges before they become operational problems. Broader spending or negotiation authority would require explicit delegation."
+ },
+ "job_code": "43-3061.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 167,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",max_output_tokens:3000});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-3061.00",
+   "title": "Procurement Clerks",
+   "tasks": 19,
+   "function": "Procurement"
+  }
+ }
+}

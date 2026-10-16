@@ -1,0 +1,833 @@
+{
+ "role_id": "accountant",
+ "role": {
+  "altitude": "The accountants stop matching, coding and typing entries and start owning the rules, tie-outs and tests that check every entry. They review exceptions, decide on estimates and explain the numbers. The weekly work moves from Excel to an exception queue and a short list of judgement calls before close.",
+  "reach": [
+   "Controller: close calendar and the sign-off of balance sheet reconciliations; learn to own which tie-outs gate the close.",
+   "Bookkeeper: invoice coding and AP matching; learn the coding rules so one rule set serves AP and the close.",
+   "FP&A Analyst: forecast and budget against actual; learn how actuals feed the forecast so the commentary covers both.",
+   "Payroll Specialist: payroll journal and flex hours from the agency portals; learn the payroll and agency accrual logic that drives the largest monthly estimates."
+  ],
+  "skills_to_grow": [
+   "Writing reconciliation and coding rules as testable specifications",
+   "Reading and reviewing simple Python or SQL jobs on the data platform",
+   "Judging model-drafted text and catching unnoticed assumptions",
+   "Designing control tests (duplicates, segregation of duties, IBAN changes)",
+   "Short variance storytelling for operational managers"
+  ],
+  "ambitious_version": "A daily close-in-progress: bank, agency and subledger reconciliations run every night, accruals for flex hours are drafted from the agency portals, miscodings surface the next day, and the month closes in about three days with commentary the warehouse and transport managers read. The two accountants spend their time on estimates, VAT positions, the auditor and the site managers."
+ },
+ "tasks": [
+  {
+   "uid": "13-2011.00:21516",
+   "short": "Compare AFAS ledger balances with bank, subledgers and agency data each month and resolve differences.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export ledger, subledger, bank and agency figures for the period",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Rabobank",
+      "Staffing agency portals"
+     ],
+     "inputs": [
+      "general ledger extract",
+      "bank statement",
+      "agency invoice",
+      "agency hours export"
+     ],
+     "outputs": [
+      "reconciliation data set"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Match items and tie out balances in Excel workbooks",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "reconciliation data set"
+     ],
+     "outputs": [
+      "reconciliation workpaper",
+      "unmatched items list"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 35,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Investigate unmatched items using invoices, bank text and mails",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "AFAS Profit",
+      "Outlook",
+      "SharePoint"
+     ],
+     "inputs": [
+      "unmatched items list",
+      "agency invoice",
+      "bank statement"
+     ],
+     "outputs": [
+      "explained differences"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Unmatched item with bank description, invoice text and candidate counter-items",
+      "output": "Likely cause (timing, missing invoice, duplicate, wrong account, unknown) with the evidence rows",
+      "check": "Proposed match must net to zero within tolerance in code; cause must cite existing record ids",
+      "stop": "One pass per item, max two retries; no valid match or 'unknown' goes to the accountant queue",
+      "why_not_simpler": "Bank and agency descriptions are free text that fixed matching rules miss"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Ask bookkeepers, sites or agencies for missing documents",
+     "actor": "accountant",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "explained differences"
+     ],
+     "outputs": [
+      "information request"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 12,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Sign off reconciliation and propose correcting entries",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "SharePoint",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "reconciliation workpaper",
+      "explained differences"
+     ],
+     "outputs": [
+      "signed reconciliation",
+      "correcting entry proposal"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 8,
+     "fate": "person_reviews",
+     "remaining_pct": 60,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Replace the Excel reconciliation workbooks that tie AFAS, Rabobank CAMT.053 files and the three agency portals with scheduled Python jobs on a governed data platform that read AFAS via GetConnectors, match items by rule and publish an exception queue and Power BI status page. A bounded model step proposes causes for unmatched free-text items; the accountant reviews the queue and signs off in a simple workflow before the controller approves corrections.",
+   "previous_blocker": "Agency portals and bank text did not share keys with AFAS, so matching rules in Excel were built by hand each month and never maintained as code.",
+   "enabler_now": "AI coding makes small matching jobs and connectors cheap to build, and a model can read free-text descriptions well enough to suggest the cause of a break.",
+   "still_hard": "Agency portal exports change format and may lack APIs; timing differences and missing invoices still need people outside finance to act.",
+   "human_edge": "Knowing which break matters, pressing a site or agency for the real story, and signing a reconciliation the auditor will rely on.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Run bank and agency reconciliations nightly instead of once at month end, so breaks are resolved within days."
+   },
+   "altitude": "The accountant works an exception queue each morning instead of rebuilding workbooks, and gains the right to set match tolerances and close a break without waiting for month end.",
+   "reach": [
+    {
+     "role": "bookkeeper",
+     "task": "Matching agency invoices to hours in AP",
+     "learn": "The same matching rules, so AP and close use one definition of a matched agency invoice."
+    },
+    {
+     "role": "controller",
+     "task": "Close calendar and reconciliation sign-off",
+     "learn": "Which reconciliations gate the close and what tolerance the auditor accepts."
+    }
+   ],
+   "build_days": {
+    "coding": "6-10",
+    "integration": "5-10",
+    "testing_rollout": "5-8",
+    "consent_and_access": "3-6"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Licensed accountants averaged about 37% on month-end scenarios where a frontier model scored 100%, but tasks rewarded detail and file search, not tacit context.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Multi-step reasoning across files is the main failure mode, so matching should stay in code and the model only classifies.",
+     "grade": "E3",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Firms using AI closed 7.5 days faster across 79 small and mid-sized firms.",
+     "grade": "E3",
+     "source": "[S3]"
+    },
+    {
+     "claim": "Cash checks from CAMT.053 files can run as deterministic software.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "AFAS GetConnectors are licensed and usable for ledger and subledger reads.",
+    "Rabobank delivers CAMT.053 statements in a format the platform can collect.",
+    "A governed data platform exists or can be set up for finance."
+   ],
+   "unknowns": [
+    "Whether the three staffing agency portals offer an API or only CSV/PDF exports.",
+    "How many reconciliations exist per month and how many breaks each produces.",
+    "Whether the external auditor accepts system-generated reconciliations with electronic sign-off."
+   ],
+   "research_questions": [
+    "What share of current breaks is solved by exact or tolerance matching alone, measured on three past months?",
+    "Can the agency hours and invoice data be pulled reliably without manual download?",
+    "Does the model's suggested cause agree with the accountant's on a sample of 100 past breaks?"
+   ],
+   "time_saved_pct": 77,
+   "speedup": 4.3
+  },
+  {
+   "uid": "13-2011.00:21515",
+   "short": "Calculate and book month-end accruals, deferrals and corrections in AFAS with support.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather accrual inputs: uninvoiced agency hours, open orders, prepaid schedules",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Staffing agency portals",
+      "Excel"
+     ],
+     "inputs": [
+      "agency hours export",
+      "open purchase orders",
+      "prepaid schedule"
+     ],
+     "outputs": [
+      "accrual input set"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Calculate standard accruals, deferrals and releases in Excel",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "accrual input set"
+     ],
+     "outputs": [
+      "draft journal entries"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Judge estimates and one-off items such as claims and bonuses",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "Excel",
+      "SharePoint"
+     ],
+     "inputs": [
+      "draft journal entries",
+      "contract",
+      "management information"
+     ],
+     "outputs": [
+      "estimate decision"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Write the support memo and workpaper for each entry",
+     "actor": "accountant",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "SharePoint"
+     ],
+     "inputs": [
+      "draft journal entries",
+      "estimate decision"
+     ],
+     "outputs": [
+      "entry support memo"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Entry lines, calculation trace and the accountant's estimate notes",
+      "output": "Short memo stating basis, source figures and assumptions",
+      "check": "Every figure in the memo must match the calculation trace in code; no assumption not present in the notes",
+      "stop": "One draft plus one regeneration on a failed check; otherwise the template memo without narrative",
+      "why_not_simpler": "A fixed template cannot state the reasoning behind a one-off estimate in readable words"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Enter entries in AFAS after controller approval",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "draft journal entries",
+      "entry support memo"
+     ],
+     "outputs": [
+      "posted journal entry"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "A scheduled job on the governed data platform reads agency hours, open orders and prepaid schedules, calculates the recurring accruals and deferrals by coded rules and drafts entries with a calculation trace. A bounded model step writes the support memo; the accountant decides estimates, the controller approves in a workflow, and approved entries post to AFAS through an UpdateConnector with automatic reversal next period.",
+   "previous_blocker": "The calculations lived in personal Excel files with inputs copied by hand from portals, and nobody had time to turn them into maintained code.",
+   "enabler_now": "AI coding makes rule-based accrual jobs quick to write and test, and products already prepare entries for human review [S5].",
+   "still_hard": "Estimates like claims, bonuses and uninvoiced agency hours depend on context the data does not hold; a wrong rule posts errors at scale.",
+   "human_edge": "Choosing the estimate, defending it to the controller and auditor, and noticing when a business event makes last month's rule wrong.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Accrue uninvoiced flex worker hours weekly from portal data so the peak-season cost picture is current."
+   },
+   "altitude": "The accountant spends close time on a handful of estimates and memo review instead of rebuilding Excel accruals, and owns the accrual rule book.",
+   "reach": [
+    {
+     "role": "payroll",
+     "task": "Payroll and holiday pay accruals",
+     "learn": "CAO-driven accrual logic so payroll and finance post one consistent accrual."
+    },
+    {
+     "role": "fpa",
+     "task": "Monthly forecast update",
+     "learn": "Which accruals swing the forecast so estimates and forecast use the same assumptions."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "4-8",
+    "testing_rollout": "5-8",
+    "consent_and_access": "2-5"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Workday's Accounting Agent prepares entries and recommends revenue schedules while teams stay responsible for review.",
+     "grade": "E2",
+     "source": "[S5]"
+    },
+    {
+     "claim": "A model can add an unnoticed assumption so the workpaper cannot be rebuilt; the memo check guards against this.",
+     "grade": "E1",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Estimates belong on the mandatory human review list.",
+     "grade": "E1",
+     "source": "[S7]"
+    }
+   ],
+   "assumptions": [
+    "AFAS UpdateConnector for journal entries can be enabled with a dedicated technical user.",
+    "Most monthly adjusting entries are recurring and rule-based."
+   ],
+   "unknowns": [
+    "How many adjusting entries are made per month and what share recur.",
+    "Whether the controller wants approval per entry or per batch.",
+    "How agency hours not yet invoiced are known today."
+   ],
+   "research_questions": [
+    "On the last six closes, what share of adjusting entries could a coded rule have produced to the cent?",
+    "Does the external auditor accept system-posted entries with an approval log as evidence?",
+    "Can agency hour data arrive before working day 2 of the close?"
+   ],
+   "time_saved_pct": 82,
+   "speedup": 5.56
+  },
+  {
+   "uid": "13-2011.00:21517",
+   "short": "Maintain the AFAS chart of accounts and cost centres and correct how entries are coded.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive requests for new accounts, cost centres or coding questions",
+     "actor": "accountant",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams"
+     ],
+     "inputs": [
+      "account request"
+     ],
+     "outputs": [
+      "account request"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Create or change accounts and map to reporting and VAT codes",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Power BI"
+     ],
+     "inputs": [
+      "account request"
+     ],
+     "outputs": [
+      "chart of accounts change"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Code invoice lines and bank items to account and cost centre",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "purchase invoice",
+      "bank statement"
+     ],
+     "outputs": [
+      "coded entry"
+     ],
+     "handoff_to": "bookkeeper",
+     "share_pct": 45,
+     "fate": "machine",
+     "remaining_pct": 15,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Invoice line or bank item text, supplier, amount and past coding history",
+      "output": "Proposed GL account, cost centre and VAT code with confidence",
+      "check": "Code checks the proposal against allowed account-cost centre-VAT combinations and supplier history",
+      "stop": "One call per line; low confidence or failed check goes to the review queue",
+      "why_not_simpler": "Supplier rules cover recurring suppliers but not new suppliers or mixed invoices with free-text lines"
+     },
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Find and reclassify miscoded entries before close",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "general ledger extract"
+     ],
+     "outputs": [
+      "reclassification entry"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Account and cost centre requests come in through a small form that the accountant approves before configuring AFAS. Supplier coding rules in AFAS handle recurring lines, a bounded model step proposes codes for the rest, and nightly deterministic tests on the data platform flag unusual account-cost centre combinations on a Power BI page for reclassification.",
+   "previous_blocker": "Coding outside fixed supplier rules needs reading free text, and miscoding checks were done by scrolling ledgers in Excel near close.",
+   "enabler_now": "Models classify invoice text against a known chart cheaply, and AI coding makes nightly coding tests easy to write.",
+   "still_hard": "The chart itself is a design choice tied to reporting, VAT and audit; a wrong mapping spreads to every report.",
+   "human_edge": "Deciding how the chart should reflect the business and what a cost belongs to when the facts are ambiguous.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Give site managers in Rotterdam, Tilburg and Venlo a self-service coding answer for their purchases before invoices arrive."
+   },
+   "altitude": "The accountant designs the chart and reviews a short daily exception list instead of coding lines, and decides the coding rules the bookkeepers and the model follow.",
+   "reach": [
+    {
+     "role": "bookkeeper",
+     "task": "Purchase invoice entry in AFAS",
+     "learn": "The coding rules and exception queue so AP coding and close checks agree."
+    },
+    {
+     "role": "people-analyst",
+     "task": "HR cost reporting in Power BI",
+     "learn": "How personnel and flex cost accounts map, so HR dashboards use the same cost centres."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "3-6",
+    "testing_rollout": "4-6",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Account assignment is part of the close work where a drafting step with a tie-out gate fits.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Models beat experienced accountants on detail-heavy, instruction-following month-end tasks.",
+     "grade": "E3",
+     "source": "[S1]"
+    }
+   ],
+   "assumptions": [
+    "AFAS supplier default coding is in use but incomplete.",
+    "Invoice line text is available in AFAS for model reading."
+   ],
+   "unknowns": [
+    "Share of invoice lines coded by supplier default today.",
+    "How often the chart of accounts or cost centres change per year.",
+    "How many reclassifications are booked at each close."
+   ],
+   "research_questions": [
+    "How accurate are model-proposed codes on twelve months of already coded lines?",
+    "Which share of reclassifications would nightly combination tests have caught earlier?",
+    "Does the auditor require a change log for chart of accounts edits beyond what AFAS keeps?"
+   ],
+   "time_saved_pct": 66,
+   "speedup": 2.99
+  },
+  {
+   "uid": "13-2011.00:21520",
+   "short": "Prepare the monthly finance report pack with variance explanations for management.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Extract actuals, budget and prior year from AFAS and Power BI",
+     "actor": "accountant",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Power BI",
+      "Excel"
+     ],
+     "inputs": [
+      "general ledger extract",
+      "budget"
+     ],
+     "outputs": [
+      "report data set"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Build report tables, KPIs and variances in Excel and PowerPoint",
+     "actor": "accountant",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "PowerPoint"
+     ],
+     "inputs": [
+      "report data set"
+     ],
+     "outputs": [
+      "report pack draft"
+     ],
+     "handoff_to": "accountant",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Find causes of variances and write commentary",
+     "actor": "accountant",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Teams",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "report pack draft",
+      "site manager input"
+     ],
+     "outputs": [
+      "variance commentary"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Variances above threshold with drill-down lines and site manager notes",
+      "output": "Draft commentary per variance citing the drivers",
+      "check": "Every amount and driver must exist in the drill-down data; numbers checked by code",
+      "stop": "One draft and one retry; failures leave the variance blank for the accountant",
+      "why_not_simpler": "Readable commentary that combines figures with manager notes needs text generation"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Review the pack with controller and finance director",
+     "actor": "accountant",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "report pack draft",
+      "variance commentary"
+     ],
+     "outputs": [
+      "approved report pack"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Distribute the pack and answer management questions",
+     "actor": "accountant",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "SharePoint"
+     ],
+     "inputs": [
+      "approved report pack"
+     ],
+     "outputs": [
+      "management report"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "read",
+      "input": "Manager question and the approved pack with drill-down data",
+      "output": "Draft answer with the figures it used",
+      "check": "Figures must come from the approved data set; the accountant sends the reply",
+      "stop": "One draft per question; unclear questions are answered by the accountant alone",
+      "why_not_simpler": "Questions arrive in free text and vary each month"
+     },
+     "authority": "draft",
+     "human_gate": true
+    }
+   ],
+   "design": "Replace the Excel and PowerPoint pack with a scheduled build on the governed data platform that pulls closed AFAS figures and budget, renders the tables and variances into a fixed Power BI and PDF layout, and flags variances above threshold. A bounded model step drafts commentary from drill-down lines and site managers' notes, which the accountant edits before the controller and finance director approve.",
+   "previous_blocker": "The pack mixed system figures with hand-gathered explanations, so each month was rebuilt by hand in Excel and PowerPoint.",
+   "enabler_now": "Power BI already holds a nightly AFAS extract, AI coding makes the pack build cheap, and models draft readable commentary from structured drivers.",
+   "still_hard": "Variance causes often sit in people's heads at the sites; commentary that is fluent but wrong misleads management.",
+   "human_edge": "Knowing what management needs to hear, which variance is a real warning, and saying it plainly in the review.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Send each site manager in Rotterdam, Tilburg and Venlo a monthly one-page site result with commentary."
+   },
+   "altitude": "The accountant spends report week on causes and conversations with site managers instead of formatting, and decides which variances get management attention.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Forecast and budget against actual",
+     "learn": "How actuals drivers feed the forecast so pack and forecast tell one story."
+    },
+    {
+     "role": "controller",
+     "task": "Monthly review with the finance director",
+     "learn": "What the board asks so the pack answers it before the meeting."
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "3-6",
+    "testing_rollout": "4-7",
+    "consent_and_access": "1-3"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Management reports and budget against actual fit deterministic software plus a model step for commentary.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Judgement and multi-step reasoning remain the bottleneck on full accounting tasks.",
+     "grade": "E3",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Accountants using AI closed 7.5 days faster in a field study.",
+     "grade": "E3",
+     "source": "[S3]"
+    }
+   ],
+   "assumptions": [
+    "Budget is held in AFAS or a file the platform can read.",
+    "The pack layout is stable month to month."
+   ],
+   "unknowns": [
+    "Who receives the pack today and in what format.",
+    "Whether site managers would supply notes on variances in a form.",
+    "How long the current pack takes to build."
+   ],
+   "research_questions": [
+    "Do controller and finance director accept model-drafted commentary after edit on three past months?",
+    "What share of variance explanations can be found in AFAS drill-down data alone?",
+    "Would site managers read a monthly site page, and would it change their decisions?"
+   ],
+   "time_saved_pct": 68,
+   "speedup": 3.12
+  }
+ ],
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 110,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

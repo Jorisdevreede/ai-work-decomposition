@@ -1,0 +1,890 @@
+{
+ "tasks": [
+  {
+   "uid": "43-4181.00:9756",
+   "short": "Maintain passenger-space inventory and provide current availability.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Inspect reservations, holds and available space in the reservation system.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "reservation record",
+      "capacity limit"
+     ],
+     "outputs": [
+      "availability snapshot"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Compare partner allotments against the reservation inventory.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "availability snapshot",
+      "partner allotment"
+     ],
+     "outputs": [
+      "inventory discrepancy"
+     ],
+     "handoff_to": "inventory controller",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Agree corrections for disputed counts, holds or allotments.",
+     "actor": "inventory controller",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "inventory discrepancy",
+      "capacity limit",
+      "allocation request"
+     ],
+     "outputs": [
+      "approved inventory change"
+     ],
+     "handoff_to": "reservation agent",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "opportunity-to-order",
+     "approver": "inventory controller"
+    },
+    {
+     "id": "s4",
+     "what": "Enter authorised blocks, releases and corrections in the reservation system.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "approved inventory change",
+      "allocation request"
+     ],
+     "outputs": [
+      "updated inventory"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Tell passengers or colleagues how much space remains.",
+     "actor": "reservation agent",
+     "today_means": "in_person",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "updated inventory"
+     ],
+     "outputs": [
+      "availability answer"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    }
+   ],
+   "design": "Configure a live availability view in the reservation system {OTHER}; a connector compares permitted allotment data from the {PARTNER_PORTAL} and queues discrepancies in the {WORKFLOW}. Validated allocation requests and approved corrections update the {OTHER} with capacity checks, duplicate protection and an audit trail. Structured availability answers use the same inventory version and show when it was last confirmed.",
+   "previous_blocker": "Booking transactions already update inventory automatically, but partner allotments and exceptional corrections often cross separate interfaces.",
+   "enabler_now": "Existing inventory controls can be configured, while AI-assisted coding reduces the effort of building adapters and reconciliation checks.",
+   "still_hard": "Concurrent sales, expired holds, delayed partner updates and disputed capacity require reliable transaction controls and operational decisions.",
+   "human_edge": "Resolve competing claims on scarce capacity and recognise when a technically valid allocation would cause an operational problem.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Review expiring group holds before each release deadline."
+   },
+   "altitude": "The week shifts from checking counts and rekeying changes to resolving allocation conflicts. Within delegated limits, the agent can release expired holds without waiting for a weekly reconciliation.",
+   "reach": [
+    {
+     "role": "first-line supervisor",
+     "task": "Review capacity exceptions and release priorities.",
+     "learn": "Understand allotment contracts, hold deadlines and delegated capacity limits."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "8-18",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Capacity checks, hold expiry and structured inventory reconciliation can use deterministic rules.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Order imports and stock synchronisation demonstrate an adjacent integration pattern, not passenger-inventory capability.",
+     "grade": "E2",
+     "source": "[S5]"
+    }
+   ],
+   "assumptions": [
+    "The setting includes partner allotments and occasional manual inventory corrections.",
+    "Ordinary booking transactions already update inventory; the proposal addresses remaining clerk work.",
+    "Time shares and remaining time are planning estimates, not measured savings.",
+    "The structured-input prior supports rules and integration; a language model adds little here.",
+    "Access effort excludes any extended consultation process required by national rules."
+   ],
+   "unknowns": [
+    "Which reservation interfaces support versioned reads, conditional writes and hold expiry?",
+    "Which source is authoritative when partner and internal counts differ?",
+    "What allocation decisions may the agent make without controller approval?",
+    "What access approvals and consultation under national rules apply?"
+   ],
+   "research_questions": [
+    "Can existing reservation configuration remove the need for a custom reconciliation connector?",
+    "How does the interface prevent duplicate updates and overselling during concurrent transactions?"
+   ],
+   "new_work": [
+    "Investigate stale feeds and unmatched allotments.",
+    "Review disputed capacity corrections.",
+    "Maintain identifier mappings, hold rules and delegated limits.",
+    "Monitor failed writes and reconcile after outages."
+   ],
+   "time_saved_pct": 80,
+   "speedup": 5.0
+  },
+  {
+   "uid": "43-4181.00:9761",
+   "short": "Announce confirmed arrivals, departures and movement changes through public-address equipment.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Read arrival, departure and location updates in the transport operations system.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "movement update",
+      "service schedule"
+     ],
+     "outputs": [
+      "announcement facts"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Confirm changed or unclear movement details with operations staff.",
+     "actor": "reservation agent",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "announcement facts",
+      "conflicting movement update"
+     ],
+     "outputs": [
+      "confirmed announcement facts"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Prepare announcement wording using the approved phrase sheet.",
+     "actor": "reservation agent",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "confirmed announcement facts",
+      "announcement template"
+     ],
+     "outputs": [
+      "announcement script"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Broadcast arrival and departure information through the public-address console.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "announcement script",
+      "broadcast zone"
+     ],
+     "outputs": [
+      "passenger announcement"
+     ],
+     "handoff_to": "external",
+     "share_pct": 40,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "inquiry-to-answer",
+     "approver": "reservation agent"
+    }
+   ],
+   "design": "Feed confirmed movement data from the transport operations system {OTHER} into approved templates and recorded phrases in the public-address system {OTHER}. A preview shows the service, destination, location and broadcast zone for the reservation agent to approve before release. Unclear updates return to operations staff for confirmation.",
+   "previous_blocker": "Movement data and public-address controls may be separate, while staff rely on local phrase sheets and microphone routines.",
+   "enabler_now": "Existing announcement features can provide templates, recorded phrases and release controls; a small deterministic connector supplies movement facts.",
+   "still_hard": "Last-minute changes, conflicting instructions, pronunciation, audibility and correct zone selection need operational testing.",
+   "human_edge": "Notice passenger confusion, interpret urgent instructions and choose when a live clarification is necessary.",
+   "ambition": {
+    "kind": "none",
+    "what": ""
+   },
+   "altitude": "The agent spends less time composing and speaking routine announcements and more time helping passengers interpret changes. No new operational decision rights are assumed.",
+   "reach": [
+    {
+     "role": "first-line supervisor",
+     "task": "Coordinate announcements during service disruption.",
+     "learn": "Learn escalation protocols, zone priorities and accessible passenger communication."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "5-15",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Approved phrases populated from structured movement data can automate routine announcement preparation without a language model.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Public-address integration and intelligibility require local validation; the digest provides no direct deployment case.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The site has a controlled public-address console and approved routine wording.",
+    "The estimates cover routine movement announcements; emergency command remains a separate procedure.",
+    "Time shares and remaining time are planning estimates.",
+    "The human-work prior fits situational confirmation, but routine wording and playback can use existing configuration.",
+    "Consultation under national rules, where required, may extend the access phase."
+   ],
+   "unknowns": [
+    "Can the public-address equipment accept structured messages and enforce zone permissions?",
+    "Which movement updates require operations confirmation?",
+    "Who may authorise routine broadcasts and urgent overrides?",
+    "Which language, accessibility and national consultation requirements apply?"
+   ],
+   "research_questions": [
+    "Can existing announcement configuration provide previews, cancellation and duplicate suppression?",
+    "How should stale or contradictory movement updates block playback?"
+   ],
+   "new_work": [
+    "Maintain approved phrases and pronunciation recordings.",
+    "Test zone routing and audibility after equipment changes.",
+    "Review failed, delayed or duplicate announcements.",
+    "Keep movement-source mappings and escalation contacts current."
+   ],
+   "time_saved_pct": 65,
+   "speedup": 2.86
+  },
+  {
+   "uid": "43-4181.00:9753",
+   "short": "Issue authorised tickets and insurance documents, assemble itineraries and deliver the travel pack.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve the booking, passenger details and purchased services from the reservation system.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "booking reference"
+     ],
+     "outputs": [
+      "booking record",
+      "passenger record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check names, itinerary, payment status and recorded traveller authorisation against issuance requirements.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "booking record",
+      "passenger record",
+      "issuance rules",
+      "traveller authorisation"
+     ],
+     "outputs": [
+      "validation report"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "opportunity-to-order",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Issue transport tickets in the ticketing system after resolving validation exceptions.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "booking record",
+      "validation report",
+      "traveller authorisation"
+     ],
+     "outputs": [
+      "transport ticket"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "opportunity-to-order",
+     "approver": "reservation agent"
+    },
+    {
+     "id": "s4",
+     "what": "Request the traveller's selected insurance policy through the supplier portal.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "passenger record",
+      "selected insurance",
+      "traveller authorisation"
+     ],
+     "outputs": [
+      "insurance policy"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "reservation agent"
+    },
+    {
+     "id": "s5",
+     "what": "Assemble tickets, policies, itinerary and joining instructions into a travel pack.",
+     "actor": "reservation agent",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "booking record",
+      "transport ticket",
+      "insurance policy",
+      "joining instructions"
+     ],
+     "outputs": [
+      "travel pack"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Send the travel pack to the confirmed recipient.",
+     "actor": "reservation agent",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "travel pack",
+      "confirmed recipient"
+     ],
+     "outputs": [
+      "delivery record"
+     ],
+     "handoff_to": "external",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    }
+   ],
+   "design": "Use the reservation and ticketing system {OTHER} to validate structured booking data and prepare issuance actions, with separate approval before ticket or policy commitments take effect. A deterministic generator assembles issued documents from the {OTHER} and {PARTNER_PORTAL} into a versioned travel pack in the {DOCS}, then the {EMAIL} sends a secure link to the confirmed recipient. Role-based access and retention settings support GDPR requirements.",
+   "previous_blocker": "Booking data, supplier issuance and document assembly sit across separate interfaces, with manual checks preventing costly mistakes.",
+   "enabler_now": "Existing issuance features, reusable templates and smaller integration components can remove copying without changing supplier authority.",
+   "still_hard": "Name mismatches, unusual fares, supplier outages, insurance permissions and irreversible issuance require careful exception handling.",
+   "human_edge": "Explain restrictive terms, resolve conflicting traveller details and verify informed instructions before financial commitments.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Versioned travel packs refreshed after confirmed itinerary changes."
+   },
+   "altitude": "The week shifts from assembling attachments to resolving booking and policy exceptions. The agent can correct presentation errors within delegated limits; commercial commitments still require the relevant issuance approval.",
+   "reach": [
+    {
+     "role": "customer service representative",
+     "task": "Handle document corrections after a confirmed itinerary change.",
+     "learn": "Learn document versioning, fare restrictions and the boundary between correction and reissue."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "8-20",
+    "testing_rollout": "6-12",
+    "consent_and_access": "5-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Structured booking data and fixed templates can generate itineraries and assemble issued documents deterministically.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Existing ticketing and supplier interfaces can support issuance, subject to contractual permissions and local capabilities.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The traveller has already chosen the services and explicitly authorised purchase.",
+    "Insurance work means requesting an authorised supplier policy, not generating policy terms or selecting cover.",
+    "Standard bookings have structured issuance rules; unfamiliar terms enter a human exception queue.",
+    "Document-heavy work mainly concerns outputs, so the document-input prior does not justify a model loop.",
+    "Time shares and remaining time are planning estimates.",
+    "Consultation under national rules, where applicable, is included in access planning."
+   ],
+   "unknowns": [
+    "Which issuance actions can existing configuration support?",
+    "What supplier permissions and insurance distribution responsibilities apply?",
+    "Where are traveller authorisation and confirmed recipient details recorded?",
+    "Which GDPR retention periods, access controls and national consultation duties apply?",
+    "How often do unusual terms require manual interpretation?"
+   ],
+   "research_questions": [
+    "Can issuance retries safely detect an existing ticket or policy before submitting again?",
+    "Can one booking version bind validation, issuance and document assembly?",
+    "Which supplier documents must be preserved unchanged in the travel pack?"
+   ],
+   "new_work": [
+    "Resolve validation failures and unusual fare or policy conditions.",
+    "Check uncertain issuance outcomes before retrying.",
+    "Maintain templates, supplier mappings and issuance rules.",
+    "Handle failed delivery and revoke superseded document links.",
+    "Review access and retention settings."
+   ],
+   "time_saved_pct": 92,
+   "speedup": 12.5
+  },
+  {
+   "uid": "43-4181.00:9768",
+   "short": "Obtain current supplier brochures and maintain a usable travel-information library.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Review the literature library for missing, outdated or depleted supplier material.",
+     "actor": "reservation agent",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "literature library",
+      "supplier list"
+     ],
+     "outputs": [
+      "literature gap list"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Email routine requests for replacement brochures to supplier contacts.",
+     "actor": "reservation agent",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "literature gap list",
+      "supplier contact"
+     ],
+     "outputs": [
+      "literature request"
+     ],
+     "handoff_to": "external",
+     "share_pct": 25,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Call suppliers to chase missing material or arrange printed copies.",
+     "actor": "reservation agent",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "literature request",
+      "literature gap list"
+     ],
+     "outputs": [
+      "supplier literature",
+      "supplier commitment"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "supplier-to-contract",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Check received literature for currency, relevant destinations and permitted use.",
+     "actor": "reservation agent",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "supplier literature",
+      "literature requirements"
+     ],
+     "outputs": [
+      "literature assessment"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "New supplier literature, source address and required metadata fields.",
+      "output": "Dates, destinations, languages and usage statements with page references and supporting quotations.",
+      "check": "Validate the schema and quoted text; flag missing dates and ambiguous usage statements for human review.",
+      "stop": "One extraction and one repair attempt per document; unreadable or oversized material goes to manual review.",
+      "why_not_simpler": "Supplier documents vary in layout and wording; fixed fields and date matching cannot reliably locate every relevant statement."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "File approved material and tell colleagues where to find it.",
+     "actor": "reservation agent",
+     "today_means": "system_screen",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "supplier literature",
+      "literature assessment"
+     ],
+     "outputs": [
+      "literature library",
+      "library update"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "reservation agent"
+    }
+   ],
+   "design": "Replace routine brochure requests with a catalogue of approved supplier links and permitted feeds in the {DOCS}; scheduled checks on the {DATA_PLATFORM} identify changed sources and missing material. A bounded extraction loop prepares cited metadata, while the reservation agent approves inclusion in the library through the {WORKFLOW}. Suppliers without usable digital sources enter a targeted contact queue.",
+   "previous_blocker": "Supplier material arrives in inconsistent formats, dates are often unclear and printed-copy requests depend on personal contacts.",
+   "enabler_now": "A link catalogue removes much routine chasing; inexpensive change checks and bounded document extraction make maintenance practical.",
+   "still_hard": "A live link does not prove current content, usage rights may be ambiguous and some passengers or suppliers still need print.",
+   "human_edge": "Judge whether material is useful and trustworthy for passengers, and maintain supplier relationships when information is missing.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "A curated plain-language literature collection for travellers with low literacy."
+   },
+   "altitude": "The week shifts from blanket requests to curating useful material and resolving source gaps. The agent gains delegated authority to retire stale items and prioritise accessible replacements.",
+   "reach": [
+    {
+     "role": "correspondence clerk",
+     "task": "Maintain approved supplier-information templates and source records.",
+     "learn": "Learn provenance tracking, document metadata and plain-language selection criteria."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-8",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-10"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Approved source catalogues and scheduled link checks can replace routine requests where current digital material is available.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Bounded extraction can prepare document metadata, but currency, suitability and usage ambiguity still require review.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Most routine replacement requests concern material available through approved links or permitted subscriptions.",
+    "The eliminated request step is replaced by source access; offline suppliers remain in the contact queue.",
+    "Phone and print work is concentrated in exceptions, despite the prior's high in-person share.",
+    "A working link alone never establishes publication currency or permission to redistribute.",
+    "Time shares and remaining time are planning estimates.",
+    "Access planning includes any applicable consultation under national rules."
+   ],
+   "unknowns": [
+    "Which suppliers provide current links, feeds or subscriptions?",
+    "How much demand remains for printed literature?",
+    "Which material may be stored, redistributed or adapted?",
+    "Who may approve and retire library items?",
+    "Which access approvals and national consultation duties apply?"
+   ],
+   "research_questions": [
+    "Which source checks distinguish meaningful updates from cosmetic page changes?",
+    "How accurately can extraction locate validity dates and usage statements in representative literature?",
+    "What criteria would make the plain-language collection useful to its intended travellers?"
+   ],
+   "new_work": [
+    "Review changed documents and ambiguous validity dates.",
+    "Contact suppliers with unavailable or unsuitable digital material.",
+    "Maintain approved source addresses and extraction checks.",
+    "Retire stale versions and verify redistribution permissions.",
+    "Review the plain-language collection with intended users."
+   ],
+   "time_saved_pct": 79,
+   "speedup": 4.82
+  }
+ ],
+ "role": {
+  "altitude": "The role shifts toward resolving capacity, issuance and passenger-information exceptions. Proposed decision rights cover bounded hold releases, document presentation corrections and literature curation; operational and purchase approvals stay attached to their specific actions.",
+  "reach": [
+   "First-line supervisor: coordinate capacity exceptions and disruption communication.",
+   "Customer service representative: resolve document corrections after itinerary changes.",
+   "Correspondence clerk: maintain approved supplier information and source records."
+  ],
+  "skills_to_grow": [
+   "Reservation inventory controls and concurrent-update risks.",
+   "Fare, insurance and issuance boundaries.",
+   "Accessible passenger communication.",
+   "Source verification and document provenance.",
+   "Exception triage and integration failure diagnosis.",
+   "GDPR-aware handling of traveller records."
+  ],
+  "ambitious_version": "A journey-information coordinator who anticipates expiring holds, keeps confirmed travel documents current and curates accessible passenger guidance."
+ },
+ "job_code": "43-4181.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 235,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "text(await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3000}));\n"
+  ],
+  "job": {
+   "code": "43-4181.00",
+   "title": "Reservation and Transportation Ticket Agents and Travel Clerks",
+   "tasks": 19,
+   "function": "Customer support"
+  }
+ }
+}

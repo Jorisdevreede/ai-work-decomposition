@@ -1,0 +1,864 @@
+{
+ "role_id": "hrbp",
+ "tasks": [
+  {
+   "uid": "11-3121.00:990",
+   "short": "Field manager and employee questions, apply contracts and CAO to cases, help resolve work problems.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive question or issue by mail, Teams, phone or on the floor",
+     "actor": "hrbp",
+     "today_means": "email_chat",
+     "systems": [
+      "Microsoft 365"
+     ],
+     "inputs": [
+      "manager question",
+      "employee question"
+     ],
+     "outputs": [
+      "open case"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "free-text question from Teams or mail",
+      "output": "category (general policy, contract, personal case, conflict) plus urgency",
+      "check": "category must be in a fixed list; personal and conflict categories always route to the HRBP of that site",
+      "stop": "one pass; low confidence or no category goes to the HRBP queue unclassified",
+      "why_not_simpler": "questions arrive as free text in Dutch and English; a form alone is ignored by shift managers"
+     },
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Look up contract, CAO article, absence and history in AFAS and SharePoint",
+     "actor": "hrbp",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "SharePoint"
+     ],
+     "inputs": [
+      "open case",
+      "employment contract",
+      "CAO text"
+     ],
+     "outputs": [
+      "case brief"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Interpret contract and CAO for this case and decide HR position",
+     "actor": "hrbp",
+     "today_means": "document",
+     "systems": [
+      "SharePoint",
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "case brief",
+      "CAO text"
+     ],
+     "outputs": [
+      "HR position"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 75,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "case brief plus retrieved CAO and contract clauses",
+      "output": "draft reading of the relevant clauses with citations",
+      "check": "every claim must cite a clause id that exists in the indexed CAO or contract template; uncited text is dropped",
+      "stop": "one draft; if no clause found it says so and the HRBP works from scratch",
+      "why_not_simpler": "matching a messy situation to clause text needs reading free text"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Talk with manager and employee to resolve the problem",
+     "actor": "hrbp",
+     "today_means": "meeting_call",
+     "systems": [],
+     "inputs": [
+      "HR position"
+     ],
+     "outputs": [
+      "agreed outcome"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Record outcome, send confirmation letter, request contract change in AFAS",
+     "actor": "hrbp",
+     "today_means": "email_chat",
+     "systems": [
+      "AFAS Profit",
+      "Microsoft 365"
+     ],
+     "inputs": [
+      "agreed outcome",
+      "contract template"
+     ],
+     "outputs": [
+      "confirmation letter",
+      "contract change request"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "A Teams front door (Copilot Studio or a small app on the M365 tenant) takes questions, classifies them with one bounded model call and answers general policy from the indexed SharePoint and CAO content; personal and conflict cases open a case in a SharePoint list with an auto-built case brief from the AFAS API. The HRBP gets a draft clause reading with citations, does the conversation, and a Power Automate flow turns the agreed outcome into a template letter and an AFAS change request for HR admin.",
+   "previous_blocker": "Questions arrive as unstructured talk and mail, and pulling contract, absence and CAO context took manual clicks in three places.",
+   "enabler_now": "AFAS Profit connectors and cheap retrieval over owned documents make a case brief and a cited clause draft a few days of build.",
+   "still_hard": "Trust from shift workers and managers who expect a person, and cases where the facts are disputed; the model must never decide a personal case.",
+   "human_edge": "Reading the room between a site manager and a worker, choosing what to concede, and being trusted by both sides.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Night and weekend shift workers in the warehouses get answers to contract and roster questions in their own shift instead of waiting for an office-hours HRBP."
+   },
+   "altitude": "The HRBP spends less time looking things up and more time on the 20-30 real conflicts per month per site; they decide which case categories the desk may answer alone.",
+   "reach": [
+    {
+     "role": "hr-admin",
+     "task": "Processing contract mutations in AFAS",
+     "learn": "Which change requests arrive incomplete and what fields the template must force."
+    },
+    {
+     "role": "payroll",
+     "task": "Answering pay and allowance questions",
+     "learn": "Which CAO allowance questions keep coming back so the desk can answer them from payroll rules."
+    }
+   ],
+   "build_days": {
+    "coding": "6-10",
+    "integration": "4-7",
+    "testing_rollout": "5-8",
+    "consent_and_access": "10-25"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "IBM's Ask HR handles over 11 million interactions a year, with HRBPs as first human support for escalated complex cases.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Coca-Cola Andina's HR agent serves 1,200 of 3,600 staff monthly and opens tickets for what it cannot answer.",
+     "grade": "E3",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Employee-facing bots must disclose they are AI.",
+     "grade": "E3",
+     "source": "[S9]"
+    },
+    {
+     "claim": "Works council consent is needed before AI processes personnel data.",
+     "grade": "E3",
+     "source": "[S10]"
+    },
+    {
+     "claim": "AFAS Profit exposes data through GetConnectors and UpdateConnectors usable for a case brief.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The CAO texts and contract templates are current in SharePoint.",
+    "Most questions from managers repeat across the three sites."
+   ],
+   "unknowns": [
+    "Share of questions that are personal cases versus general policy.",
+    "Whether the OR will consent to case logging of questions about named employees.",
+    "Whether IT allows an AFAS API user with read access to contracts and absence."
+   ],
+   "research_questions": [
+    "Of last month's 100 HRBP mails and Teams threads, how many could be answered from policy text alone?",
+    "Does the case brief cut lookup time by more than half in a two-week shadow test?",
+    "Do shift workers actually use a Teams bot, or do they need a phone or kiosk channel?"
+   ],
+   "time_saved_pct": 48,
+   "speedup": 1.93
+  },
+  {
+   "uid": "13-1071.00:18861",
+   "short": "Explain HR policies, CAO rules, procedures and Dutch law to managers and employees.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive policy question from manager or employee",
+     "actor": "hrbp",
+     "today_means": "email_chat",
+     "systems": [
+      "Microsoft 365"
+     ],
+     "inputs": [
+      "manager question",
+      "employee question"
+     ],
+     "outputs": [
+      "policy question"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Find the right policy page, CAO article or law text",
+     "actor": "hrbp",
+     "today_means": "document",
+     "systems": [
+      "SharePoint"
+     ],
+     "inputs": [
+      "policy question",
+      "CAO text",
+      "policy document"
+     ],
+     "outputs": [
+      "relevant clauses"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "read",
+      "input": "question plus indexed policies, both CAOs and selected law texts",
+      "output": "ranked list of clauses with document version",
+      "check": "only documents from the approved SharePoint library and wetten.overheid.nl are indexed",
+      "stop": "top five clauses; none above threshold means escalate",
+      "why_not_simpler": "keyword search fails on everyday wording like 'snipperdag' versus 'verlof'"
+     },
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Write explanation in plain Dutch or English",
+     "actor": "hrbp",
+     "today_means": "email_chat",
+     "systems": [
+      "Microsoft 365"
+     ],
+     "inputs": [
+      "relevant clauses"
+     ],
+     "outputs": [
+      "policy answer"
+     ],
+     "handoff_to": "external",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
+     "block": "answer_desk",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "question and retrieved clauses",
+      "output": "short answer with clause citations and an AI disclosure line",
+      "check": "every sentence must map to a cited clause; questions naming a person, absence, dismissal or pay dispute are never answered and go to the HRBP",
+      "stop": "one answer; if the check fails, a ticket to the HRBP with the draft attached",
+      "why_not_simpler": "answers must be phrased for the asker's situation, which a static FAQ cannot do"
+     },
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Handle follow-ups, edge cases and personal situations",
+     "actor": "hrbp",
+     "today_means": "meeting_call",
+     "systems": [
+      "AFAS Profit"
+     ],
+     "inputs": [
+      "escalated ticket"
+     ],
+     "outputs": [
+      "policy answer"
+     ],
+     "handoff_to": "external",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Fix unclear or missing policy text",
+     "actor": "hrbp",
+     "today_means": "document",
+     "systems": [
+      "SharePoint"
+     ],
+     "inputs": [
+      "unanswered question log"
+     ],
+     "outputs": [
+      "policy update proposal"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 5,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    }
+   ],
+   "design": "An answer desk in Teams built on the M365 tenant retrieves from one approved SharePoint library (policies, both CAOs, poortwachter procedure) and answers general questions with citations and an AI disclosure; anything personal becomes a ticket for the site HRBP. A weekly report of unanswered and escalated questions feeds policy fixes.",
+   "previous_blocker": "Earlier bots needed hand-built intent trees and failed on Dutch everyday wording and CAO detail.",
+   "enabler_now": "Retrieval with a model that cites clauses, on content HR already owns, is now standard in M365 and similar tools.",
+   "still_hard": "Keeping the source library current and versioned, and a wrong answer on law (ontslag, verzuim) has legal cost; the escalation line must be strict.",
+   "human_edge": "Knowing when a 'general' question is really about one person, and explaining a hard rule so it is accepted.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Every new team leader gets a policy answer within minutes for every question, instead of saving them up for the monthly HRBP meeting."
+   },
+   "altitude": "The HRBP stops answering the same leave and overtime questions and owns the escalated cases and the quality of the policy library.",
+   "reach": [
+    {
+     "role": "ld",
+     "task": "Onboarding new team leaders",
+     "learn": "The top 20 questions new leaders ask, to build them into onboarding."
+    },
+    {
+     "role": "hr-director",
+     "task": "Approving policy changes",
+     "learn": "Which policies generate most confusion, measured, not guessed."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "2-4",
+    "testing_rollout": "6-10",
+    "consent_and_access": "10-20"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Coca-Cola Andina runs an HR policy agent with ticket fallback, CSAT 4.1.",
+     "grade": "E3",
+     "source": "[S4]"
+    },
+    {
+     "claim": "IBM Ask HR saved about 40% with HRBPs as second line.",
+     "grade": "E3",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Average time saved by HR staff using chatbots was about 3%.",
+     "grade": "E3",
+     "source": "[S5]"
+    },
+    {
+     "claim": "AI disclosure is required for systems interacting with people.",
+     "grade": "E3",
+     "source": "[S9]"
+    }
+   ],
+   "assumptions": [
+    "Policies live in one SharePoint library that HR controls.",
+    "Questions in Dutch and English, some Polish speakers among warehouse staff."
+   ],
+   "unknowns": [
+    "How many policy questions per week reach the three HRBPs today.",
+    "Whether the policies and CAO summaries are up to date.",
+    "Languages needed for flex workers."
+   ],
+   "research_questions": [
+    "In a two-week test on 200 real past questions, what share does the desk answer correctly with citations?",
+    "How often does a 'general' question turn out to be personal, and does the filter catch it?",
+    "Do managers keep using the desk after week four?"
+   ],
+   "time_saved_pct": 72,
+   "speedup": 3.6
+  },
+  {
+   "uid": "11-3121.00:984",
+   "short": "Match staff to roles, shifts and sites: redeployment, internal moves, peak-season staffing.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect staffing needs and vacancies from site managers",
+     "actor": "hrbp",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "Microsoft 365"
+     ],
+     "inputs": [
+      "staffing request"
+     ],
+     "outputs": [
+      "staffing need list"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Gather available staff, contract hours, valid certificates and absence",
+     "actor": "hrbp",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Studytube",
+      "Staffing agency portals"
+     ],
+     "inputs": [
+      "staffing need list",
+      "employee record",
+      "certificate status"
+     ],
+     "outputs": [
+      "availability overview"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Shortlist matches, weigh fit, preferences and reintegration limits",
+     "actor": "hrbp",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "availability overview",
+      "reintegration plan"
+     ],
+     "outputs": [
+      "match proposal"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Agree moves with managers and employees",
+     "actor": "hrbp",
+     "today_means": "meeting_call",
+     "systems": [],
+     "inputs": [
+      "match proposal"
+     ],
+     "outputs": [
+      "agreed allocation"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Process change in AFAS, tell payroll and agency",
+     "actor": "hrbp",
+     "today_means": "email_chat",
+     "systems": [
+      "AFAS Profit",
+      "Staffing agency portals",
+      "Microsoft 365"
+     ],
+     "inputs": [
+      "agreed allocation"
+     ],
+     "outputs": [
+      "contract change request",
+      "agency order"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "Replace the site Excel sheets with a Power Apps request form and a nightly job on the existing Power BI extract that joins AFAS contracts and absence, Studytube certificates and agency headcount into a filterable availability view with hard-rule filters (valid forklift or VCA, contract hours, CAO working-time limits). The HRBP picks matches by hand; a Power Automate flow sends approved moves to HR admin and the agency order.",
+   "previous_blocker": "Certificate, contract and absence data sit in three systems and the agency portals, so matching ran on memory and Excel.",
+   "enabler_now": "AI-assisted coding makes the join, filters and form a short build on data that already reaches Power BI nightly.",
+   "still_hard": "No ranking or scoring of people: allocating tasks on traits or behaviour is high-risk under Annex III 4(b) from December 2027 and needs OR consent; agency portal data may only come as files.",
+   "human_edge": "Knowing who works well together, who is fragile after absence, and negotiating a move a person accepts.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Weekly redeployment review across Rotterdam, Tilburg and Venlo before ordering flex workers, instead of each site ordering agency staff alone."
+   },
+   "altitude": "The HRBP reviews a cross-site availability view weekly and decides internal moves before agency orders go out.",
+   "reach": [
+    {
+     "role": "people-analyst",
+     "task": "Maintaining the nightly AFAS extract",
+     "learn": "How to add Studytube certificates and agency headcount to the model."
+    },
+    {
+     "role": "fpa",
+     "task": "Forecasting flex labour cost",
+     "learn": "How internal moves change agency spend per site."
+    }
+   ],
+   "build_days": {
+    "coding": "5-9",
+    "integration": "5-10",
+    "testing_rollout": "4-7",
+    "consent_and_access": "15-30"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Microsoft's Workforce Insights agent shows managers structure and staffing without asking HR.",
+     "grade": "E2",
+     "source": "[S3]"
+    },
+    {
+     "claim": "AI allocating tasks on behaviour or traits is high-risk from 2 December 2027.",
+     "grade": "E3",
+     "source": "[S12]"
+    },
+    {
+     "claim": "OR consent is needed for systems that can observe behaviour or performance.",
+     "grade": "E3",
+     "source": "[S10]"
+    }
+   ],
+   "assumptions": [
+    "Studytube has an export or API for certificate expiry dates.",
+    "Reintegration limits are recorded in AFAS absence cases."
+   ],
+   "unknowns": [
+    "How the three agency portals export orders and headcount.",
+    "How often internal moves happen per month per site.",
+    "Whether sites will give up their own staffing sheets."
+   ],
+   "research_questions": [
+    "In the last peak season, how many agency orders could have been filled by idle certified staff on another site?",
+    "Can Studytube certificate data be joined to AFAS employee ids reliably?",
+    "Will the OR accept a view showing absence status next to availability?"
+   ],
+   "time_saved_pct": 66,
+   "speedup": 2.9
+  },
+  {
+   "uid": "13-1071.00:18872",
+   "short": "Advise management on recruiting and retention programmes using hiring and turnover data.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Pull time to hire, acceptance, 90-day retention and turnover figures",
+     "actor": "hrbp",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Recruitee",
+      "AFAS Profit",
+      "Power BI",
+      "Excel"
+     ],
+     "inputs": [
+      "pipeline export",
+      "employee record"
+     ],
+     "outputs": [
+      "hiring and retention figures"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Read exit interviews, onboarding feedback and manager remarks",
+     "actor": "hrbp",
+     "today_means": "document",
+     "systems": [
+      "SharePoint",
+      "Recruitee"
+     ],
+     "inputs": [
+      "exit interview notes",
+      "onboarding survey"
+     ],
+     "outputs": [
+      "leaving reasons summary"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "pseudonymised exit and onboarding comments",
+      "output": "theme per comment from a fixed list (pay, shifts, manager, travel, workload, other) with quote",
+      "check": "themes from the fixed list only; HRBP samples 10% and corrects",
+      "stop": "one pass per comment; unclear goes to 'other' for manual read",
+      "why_not_simpler": "reasons are free text; counting keywords misses most of them"
+     },
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Draft advice note with options, cost and expected effect",
+     "actor": "hrbp",
+     "today_means": "document",
+     "systems": [
+      "Microsoft 365"
+     ],
+     "inputs": [
+      "hiring and retention figures",
+      "leaving reasons summary"
+     ],
+     "outputs": [
+      "advice note"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "figures, themes and a note template",
+      "output": "first draft of the advice note",
+      "check": "every number must come from the dashboard dataset; HRBP edits options and recommendation",
+      "stop": "one draft; HRBP rewrites as needed",
+      "why_not_simpler": "the structure is fixed but the argument changes per site and season"
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Discuss with management and agree the programme",
+     "actor": "hrbp",
+     "today_means": "meeting_call",
+     "systems": [],
+     "inputs": [
+      "advice note"
+     ],
+     "outputs": [
+      "agreed programme"
+     ],
+     "handoff_to": "recruiter",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Track programme effect in the following months",
+     "actor": "hrbp",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Power BI"
+     ],
+     "inputs": [
+      "hiring and retention figures"
+     ],
+     "outputs": [
+      "programme effect report"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    }
+   ],
+   "design": "Extend the nightly Power BI model with Recruitee pipeline data so the North Star (filled roles still productive at day 90) and its inputs show per site and job family; a bounded model step tags pseudonymised exit and onboarding comments into fixed themes. A Word template plus one draft step produces the advice note, which the HRBP rewrites and presents.",
+   "previous_blocker": "Recruitee and AFAS data were never joined, so each advice note started with a manual Excel exercise and exit comments went unread.",
+   "enabler_now": "Recruitee's API and the existing AFAS extract can be joined with little code; theme tagging of short comments is cheap and checkable.",
+   "still_hard": "Proving cause: a retention dip may be the season or one manager; the advice still rests on HRBP judgement and site knowledge.",
+   "human_edge": "Telling a site director that their own team leader is the retention problem, and getting a programme funded.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A quarterly retention review per site with each site director, instead of an ad hoc note when turnover is already high."
+   },
+   "altitude": "The HRBP spends advice time on options and persuasion, not on building figures, and brings a site-level retention agenda to each quarterly review.",
+   "reach": [
+    {
+     "role": "recruiter",
+     "task": "Managing the Recruitee pipeline",
+     "learn": "Which stages lose candidates per job family and site."
+    },
+    {
+     "role": "people-analyst",
+     "task": "Building HR dashboards",
+     "learn": "How to define 90-day productive retention in AFAS data."
+    }
+   ],
+   "build_days": {
+    "coding": "4-7",
+    "integration": "4-8",
+    "testing_rollout": "3-5",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Workday HRBPs built narrow agents that cut prep time by up to 75% for half of users.",
+     "grade": "E3",
+     "source": "[S2]"
+    },
+    {
+     "claim": "Satisfaction and comment reports suit dashboards plus a model step over comments.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Recruitee offers an API for candidates and pipeline stages.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Exit interviews are written down somewhere searchable.",
+    "Recruitee candidate ids can be linked to AFAS employee ids at hire."
+   ],
+   "unknowns": [
+    "Whether exit and onboarding feedback is stored consistently across sites.",
+    "How often management asks for retention or recruiting advice.",
+    "Retention of exit comments under the AVG retention policy."
+   ],
+   "research_questions": [
+    "Can 90-day retention per site be computed from current AFAS and Recruitee data without manual fixes?",
+    "Do HRBPs agree with model themes on 90% of a 100-comment sample?",
+    "Did any past programme change 90-day retention measurably?"
+   ],
+   "time_saved_pct": 64,
+   "speedup": 2.76
+  }
+ ],
+ "role": {
+  "altitude": "The HRBP moves from answering and looking things up to second-line case handling and site advice: the answer desk and case briefs take routine questions, and the three HRBPs spend their weeks on conflicts, redeployment decisions and quarterly retention reviews with site directors.",
+  "reach": [
+   "Recruiter: pipeline drop-off per job family feeds retention advice",
+   "HR admin: complete change requests from case outcomes",
+   "People analytics: shared AFAS, Recruitee and Studytube data model",
+   "L&D: new team leader questions shape onboarding"
+  ],
+  "skills_to_grow": [
+   "Owning and versioning a policy content library",
+   "Reading dashboards and challenging the figures",
+   "Writing escalation rules for an answer desk",
+   "EU AI Act and WOR consent basics for HR tools",
+   "Coaching managers on difficult conversations"
+  ],
+  "ambitious_version": "HRBPs organised in pods per value stream (hire to productive, absence to return) across the three sites, with a Teams answer desk as front door for all 1,200 staff including night shifts, and a weekly cross-site staffing and retention review that cuts agency orders and lifts 90-day retention."
+ },
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 101,
+  "attempts": 1,
+  "warnings": [
+   "11-3121.00:984 s3: judgement step marked deterministic"
+  ],
+  "web": "off",
+  "tool_calls": []
+ }
+}

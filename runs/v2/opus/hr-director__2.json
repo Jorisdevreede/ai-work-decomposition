@@ -1,0 +1,801 @@
+{
+ "role_id": "hr-director",
+ "tasks": [
+  {
+   "uid": "11-3121.00:1001",
+   "short": "Build the yearly HR personnel budget in Excel from AFAS data and CAO tables, then track it monthly.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Export positions, salaries and contract hours from AFAS into the budget workbook",
+     "actor": "people-analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "AFAS position export",
+      "payroll actuals"
+     ],
+     "outputs": [
+      "headcount baseline"
+     ],
+     "handoff_to": "cnb",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Apply CAO wage steps, indexation, pension, social charges and agency rates",
+     "actor": "cnb",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel",
+      "Staffing agency portals"
+     ],
+     "inputs": [
+      "headcount baseline",
+      "CAO wage table",
+      "agency rate card"
+     ],
+     "outputs": [
+      "cost baseline"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Choose hiring, flex mix, training and wage-round assumptions per site",
+     "actor": "hr-director",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "cost baseline",
+      "personnel forecast",
+      "CAO negotiation stance"
+     ],
+     "outputs": [
+      "budget scenario"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 60,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Agree the personnel budget with Finance Director and controller",
+     "actor": "hr-director",
+     "today_means": "meeting_call",
+     "systems": [
+      "Teams"
+     ],
+     "inputs": [
+      "budget scenario"
+     ],
+     "outputs": [
+      "approved personnel budget"
+     ],
+     "handoff_to": "controller",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Compare monthly actuals to budget and explain variances",
+     "actor": "controller",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Power BI",
+      "Excel"
+     ],
+     "inputs": [
+      "payroll actuals",
+      "agency invoice",
+      "approved personnel budget"
+     ],
+     "outputs": [
+      "budget variance report"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    }
+   ],
+   "design": "Replace the budget workbook with a scheduled Python job on the governed data platform that reads AFAS positions and payroll, the agency invoices and a versioned CAO rate table, and writes a cost baseline plus editable scenario parameters. A Power BI page shows scenarios side by side and the monthly actual-versus-budget variance per site and cost type, refreshed with the nightly AFAS extract.",
+   "previous_blocker": "CAO rules, agency rates and AFAS exports lived in separate files, and building a reliable rate engine cost more than one yearly Excel exercise.",
+   "enabler_now": "AI-assisted coding makes a small, tested rate engine and data job cheap to build, and the nightly AFAS extract for Power BI already exists.",
+   "still_hard": "Keeping the CAO rate table correct after each wage round, and flex costs that swing with seasonal volume.",
+   "human_edge": "Choosing where to spend scarce money (wages, flex, training) and defending that choice with Finance and the works council.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Re-forecast the personnel budget monthly per site instead of once a year, including the cost of each CAO offer during the 2027 round."
+   },
+   "altitude": "Less time in Excel, more time on trade-offs; the director owns the scenario assumptions that Finance accepts as input.",
+   "reach": [
+    {
+     "role": "fpa",
+     "task": "Workforce cost lines in the company forecast",
+     "learn": "Use the same rate table and baseline so HR and Finance stop reconciling two numbers."
+    },
+    {
+     "role": "cnb",
+     "task": "Maintaining CAO wage tables",
+     "learn": "Keep the rate table as versioned, tested data rather than formulas in a workbook."
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "3-5",
+    "testing_rollout": "4-6",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Budgets suit deterministic software built from AFAS positions and CAO tables.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "The transport CAO ends 31 Dec 2026, so a 2027 wage round must be costed now.",
+     "grade": "E3",
+     "source": "[S10]"
+    }
+   ],
+   "assumptions": [
+    "The nightly AFAS extract includes positions, contract hours and wage components.",
+    "Agency invoices can be exported from the three portals in a fixed format."
+   ],
+   "unknowns": [
+    "Whether Finance already keeps a separate personnel cost model in AFAS or Excel.",
+    "How the own warehouse CAO wage table is stored and who maintains it."
+   ],
+   "research_questions": [
+    "Does the AFAS extract give enough wage component detail to reproduce last year's payroll cost within 1%?",
+    "Can all three agency portals export hours and invoices on a schedule?",
+    "Will the controller accept the platform baseline as the single source for personnel cost?"
+   ],
+   "time_saved_pct": 67,
+   "speedup": 3.03
+  },
+  {
+   "uid": "11-3121.00:1004",
+   "short": "Read new labour law, court rulings and CAO news and judge what they mean for Noordhaven.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Scan newsletters, government sites, union and court sources for changes",
+     "actor": "hr-director",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook"
+     ],
+     "inputs": [
+      "legal newsletter",
+      "union news",
+      "court ruling"
+     ],
+     "outputs": [
+      "source items"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Read items, filter relevance and summarise the point",
+     "actor": "hr-director",
+     "today_means": "document",
+     "systems": [
+      "Outlook",
+      "SharePoint"
+     ],
+     "inputs": [
+      "source items",
+      "Noordhaven policy set"
+     ],
+     "outputs": [
+      "cited summary"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "classify",
+      "input": "Source item text plus a short profile of Noordhaven (CAOs, sites, flex use, policies)",
+      "output": "Relevance label, two-line summary with quoted passage and link, and affected policy",
+      "check": "Every claim must quote the source; links are checked to resolve; items without a quote are dropped",
+      "stop": "One pass per item, token cap per item; on failure the item goes to the digest as 'unread'",
+      "why_not_simpler": "Relevance depends on free legal text; keyword filters flood or miss items."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Assess impact on CAO talks, policies, costs and legal risk",
+     "actor": "hr-director",
+     "today_means": "document",
+     "systems": [
+      "Word"
+     ],
+     "inputs": [
+      "cited summary",
+      "CAO text"
+     ],
+     "outputs": [
+      "impact note"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 85,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Brief management team, HRBPs and works council on changes",
+     "actor": "hr-director",
+     "today_means": "document",
+     "systems": [
+      "Teams",
+      "SharePoint"
+     ],
+     "inputs": [
+      "impact note"
+     ],
+     "outputs": [
+      "monthly trend brief"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Approved impact notes of the month",
+      "output": "Two-page brief in Dutch, one section per audience",
+      "check": "Director edits and approves; brief only cites approved notes",
+      "stop": "One draft per month; if rejected, director writes it",
+      "why_not_simpler": "A template cannot turn varied notes into readable prose per audience."
+     },
+     "authority": "draft",
+     "human_gate": true
+    }
+   ],
+   "design": "A scheduled job fetches fixed sources (rechtspraak.nl, overheid.nl, Staatscourant, FNV, CNV, employer association pages) into a SharePoint list, and a bounded model step labels relevance and writes cited summaries for a weekly digest in Teams. The director writes the impact notes; a second bounded step drafts the monthly brief from them, marked as AI-generated.",
+   "previous_blocker": "Legal text is unstructured and Dutch, and summarisers made up points without sources.",
+   "enabler_now": "Current models summarise Dutch legal text with quoted citations well enough for a reviewed digest, at low cost.",
+   "still_hard": "Judging what a ruling means for Noordhaven's own CAO and staff, and sources behind paywalls.",
+   "human_edge": "Knowing which change matters for the people and the bargaining position, and taking responsibility for advice.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "A monthly plain-language legal and CAO brief for the 30 site and shift managers, who get nothing today."
+   },
+   "altitude": "Reading time drops; the director spends it on impact judgement and on the 2027 CAO round preparation.",
+   "reach": [
+    {
+     "role": "hrbp",
+     "task": "Advising managers on policy",
+     "learn": "Use the cited digest to update policy answers and flag outdated SharePoint policies."
+    },
+    {
+     "role": "payroll",
+     "task": "Applying wage and tax rule changes",
+     "learn": "Receive tagged items that touch payroll in time for month close."
+    }
+   ],
+   "build_days": {
+    "coding": "3-5",
+    "integration": "2-3",
+    "testing_rollout": "3-5",
+    "consent_and_access": "1-2"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Legislation and CAO study suits model summaries with citations at autonomy 3.",
+     "grade": "E1",
+     "source": "[S6]"
+    },
+    {
+     "claim": "Generated content must be disclosed under AI Act Art. 50.",
+     "grade": "E3",
+     "source": "[S6]"
+    },
+    {
+     "claim": "FNV asks for worker say over AI at the CAO table, so union news needs close tracking.",
+     "grade": "E3",
+     "source": "[S9]"
+    }
+   ],
+   "assumptions": [
+    "The sources the director reads today are mostly public or reachable by subscription feed.",
+    "Content is public, so no personal data enters the model."
+   ],
+   "unknowns": [
+    "Which paid legal sources Noordhaven subscribes to and their terms on automated reading.",
+    "Whether the employer association shares CAO bargaining news in a feed."
+   ],
+   "research_questions": [
+    "Over one month, does the digest catch every item the director flagged by hand?",
+    "How many summaries have a citation that does not support the claim?",
+    "Do site managers read a monthly brief if offered?"
+   ],
+   "time_saved_pct": 70,
+   "speedup": 3.33
+  },
+  {
+   "uid": "11-3121.00:1003",
+   "short": "Run job evaluation: describe jobs, score them in the function system, set the scale, handle objections.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Collect evaluation request and current job description from manager",
+     "actor": "hrbp",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "SharePoint"
+     ],
+     "inputs": [
+      "evaluation request",
+      "job description"
+     ],
+     "outputs": [
+      "evaluation case"
+     ],
+     "handoff_to": "cnb",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 10,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Rewrite description in standard format and find comparable reference jobs",
+     "actor": "cnb",
+     "today_means": "document",
+     "systems": [
+      "Word",
+      "SharePoint"
+     ],
+     "inputs": [
+      "evaluation case",
+      "function house"
+     ],
+     "outputs": [
+      "standard job description",
+      "reference job list"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "artefact_generator",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "Manager's job description and the function house reference jobs",
+      "output": "Description in the standard template and three nearest reference jobs with differences listed",
+      "check": "C&B specialist checks against interview with the manager; no score is produced",
+      "stop": "One draft and one revision; else manual",
+      "why_not_simpler": "Job descriptions are free text in varying shapes; matching on titles fails."
+     },
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s3",
+     "what": "Score the job and place it in a salary scale in committee",
+     "actor": "hr-director",
+     "today_means": "meeting_call",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "standard job description",
+      "reference job list",
+      "CAO function grid"
+     ],
+     "outputs": [
+      "job grading decision"
+     ],
+     "handoff_to": "hr-admin",
+     "share_pct": 30,
+     "fate": "person_does",
+     "remaining_pct": 90,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    },
+    {
+     "id": "s4",
+     "what": "Check cost and equal-pay effects for current job holders",
+     "actor": "cnb",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Excel"
+     ],
+     "inputs": [
+      "job grading decision",
+      "payroll actuals"
+     ],
+     "outputs": [
+      "grading impact sheet"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s5",
+     "what": "Record grade in AFAS, inform employees, handle objections",
+     "actor": "hr-admin",
+     "today_means": "system_screen",
+     "systems": [
+      "AFAS Profit",
+      "Outlook"
+     ],
+     "inputs": [
+      "job grading decision"
+     ],
+     "outputs": [
+      "grading letter",
+      "objection case"
+     ],
+     "handoff_to": "hrbp",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true
+    }
+   ],
+   "design": "Configure an AFAS workflow for evaluation requests with the description attached, and add a bounded model step that rewrites descriptions into the template and lists nearest reference jobs, without scoring. A Power BI page shows the cost and pay-gap effect of a proposed grade; the committee scores, and AFAS generates the letter after approval.",
+   "previous_blocker": "Descriptions arrived as free text in mail, and matching them to the function house needed an expert reading each one.",
+   "enabler_now": "Models now rewrite and compare job texts reliably, and the AFAS workflow and Power BI extract already exist.",
+   "still_hard": "Scoring remains judgement, objections are personal, and the works council must trust that the method is neutral.",
+   "human_edge": "Weighing a job's real content fairly and explaining a grade face to face when someone objects.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "An equal-pay check per job family, refreshed yearly, ready for the EU pay transparency rules."
+   },
+   "altitude": "The director chairs fewer, better prepared committees and owns the reference job set.",
+   "reach": [
+    {
+     "role": "cnb",
+     "task": "Keeping the function house current",
+     "learn": "Maintain reference jobs as structured data the drafting step can use."
+    },
+    {
+     "role": "recruiter",
+     "task": "Writing vacancy texts",
+     "learn": "Start from the standard job description so vacancy and grade match."
+    }
+   ],
+   "build_days": {
+    "coding": "4-6",
+    "integration": "3-5",
+    "testing_rollout": "4-6",
+    "consent_and_access": "5-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Job evaluation fits a copilot at autonomy 2; rate jobs, not people.",
+     "grade": "E1",
+     "source": "[S6]"
+    },
+    {
+     "claim": "A ranking tool on people is high-risk from 2 Dec 2027 even with a final human click; tools without a score on people can fall outside.",
+     "grade": "E3",
+     "source": "[S7]"
+    },
+    {
+     "claim": "A works council can have advice or consent rights over an AI decision.",
+     "grade": "E3",
+     "source": "[S8]"
+    }
+   ],
+   "assumptions": [
+    "Noordhaven uses a function system (CAO grid or a method such as ORBA) with reference jobs on file.",
+    "The drafting step never scores jobs or people."
+   ],
+   "unknowns": [
+    "Which job evaluation method each CAO prescribes and who holds its licence.",
+    "Whether the works council sees this change as needing consent under Art. 27 WOR."
+   ],
+   "research_questions": [
+    "Do C&B reviewers accept at least 80% of drafted descriptions with small edits?",
+    "Does the function method licence allow using its reference texts in a model prompt?",
+    "Does the works council agree that a no-score drafting step is outside high-risk use?"
+   ],
+   "time_saved_pct": 56,
+   "speedup": 2.3
+  },
+  {
+   "uid": "11-3121.00:1000",
+   "short": "Forecast staffing needs per site and shift from volume plans, turnover and absence.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Gather headcount, turnover, absence and flex hours per site",
+     "actor": "people-analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "AFAS Profit",
+      "Staffing agency portals",
+      "Excel"
+     ],
+     "inputs": [
+      "AFAS position export",
+      "absence records",
+      "agency hours"
+     ],
+     "outputs": [
+      "workforce baseline"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s2",
+     "what": "Collect volume and client forecasts from operations and site managers",
+     "actor": "hr-director",
+     "today_means": "email_chat",
+     "systems": [
+      "Outlook",
+      "Excel"
+     ],
+     "inputs": [
+      "operations volume plan"
+     ],
+     "outputs": [
+      "demand drivers"
+     ],
+     "handoff_to": "people-analyst",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false
+    },
+    {
+     "id": "s3",
+     "what": "Model demand per site and shift, attrition, retirements and absence",
+     "actor": "people-analyst",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "workforce baseline",
+      "demand drivers"
+     ],
+     "outputs": [
+      "personnel forecast"
+     ],
+     "handoff_to": "hr-director",
+     "share_pct": 25,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false
+    },
+    {
+     "id": "s4",
+     "what": "Choose scenarios: hire, flex, overtime or training per site",
+     "actor": "hr-director",
+     "today_means": "spreadsheet",
+     "systems": [
+      "Excel"
+     ],
+     "inputs": [
+      "personnel forecast",
+      "cost baseline"
+     ],
+     "outputs": [
+      "workforce plan"
+     ],
+     "handoff_to": "finance-director",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 80,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": true
+    },
+    {
+     "id": "s5",
+     "what": "Present the plan to management and Finance",
+     "actor": "hr-director",
+     "today_means": "meeting_call",
+     "systems": [
+      "PowerPoint",
+      "Teams"
+     ],
+     "inputs": [
+      "workforce plan"
+     ],
+     "outputs": [
+      "approved workforce plan"
+     ],
+     "handoff_to": "recruiter",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "dashboard",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true
+    }
+   ],
+   "design": "A scheduled Python job on the governed data platform builds the workforce baseline from AFAS and the agency portals, and a small form (Microsoft Forms or a SharePoint list) collects site volume plans in a fixed format. A deterministic model with stated assumptions turns them into FTE need per site and shift under three scenarios in Power BI, feeding the budget and the recruiters' pipeline.",
+   "previous_blocker": "Volume plans came in different shapes by mail, and agency hours were not joined to AFAS data.",
+   "enabler_now": "The nightly AFAS extract and cheap AI-assisted coding make the joins and a transparent scenario model a few days of work.",
+   "still_hard": "Client volume is uncertain and seasonal; forecast quality only shows months later.",
+   "human_edge": "Deciding how much risk to carry between fixed staff and flex, and getting site managers to commit to their numbers.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Quarterly rolling forecast per site and shift, instead of one yearly plan, timed before the seasonal flex peak."
+   },
+   "altitude": "The director moves from compiling numbers to setting the fixed-versus-flex policy per site with operations.",
+   "reach": [
+    {
+     "role": "recruiter",
+     "task": "Planning vacancy pipelines",
+     "learn": "Open requisitions from the approved plan before the peak, not after."
+    },
+    {
+     "role": "fpa",
+     "task": "Volume-driven cost forecast",
+     "learn": "Share one set of volume drivers between HR and Finance."
+    }
+   ],
+   "build_days": {
+    "coding": "5-8",
+    "integration": "4-6",
+    "testing_rollout": "4-6",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Workday Work Intelligence (beta) cut a planned 50 hires to 42 in a demo by planning from tasks.",
+     "grade": "E2",
+     "source": "[S4]"
+    },
+    {
+     "claim": "Personnel forecasts should show scenarios, not one number, on the analyst's metric layer.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Operations has a volume forecast per site, even if rough.",
+    "Aggregated forecasts use no personal data beyond what Power BI already holds."
+   ],
+   "unknowns": [
+    "Who in operations owns volume forecasts and how often they change.",
+    "Whether agency hours can be tied to sites and shifts."
+   ],
+   "research_questions": [
+    "Would last year's model have predicted the actual flex peak within 15%?",
+    "Will site managers fill a fixed-format volume form each quarter?",
+    "Can agency portal data be joined to AFAS cost centres without manual mapping?"
+   ],
+   "time_saved_pct": 66,
+   "speedup": 2.94
+  }
+ ],
+ "role": {
+  "altitude": "From compiling budgets, forecasts and legal reading by hand to designing the HR operating system: which steps run alone, which need review, and what the works council has agreed to.",
+  "reach": [
+   "Finance Director: shared personnel cost baseline and volume drivers",
+   "People Analytics and HRIS Analyst: owns the data jobs and Power BI layer these tasks use",
+   "Compensation and Benefits Specialist: CAO rate table and function house as structured data",
+   "HR Business Partners: cited legal digest feeding policy advice"
+  ],
+  "skills_to_grow": [
+   "Setting autonomy levels and approval gates per automated step",
+   "AI Act and WOR compliance for HR tools (Art. 50 disclosure, high-risk from Dec 2027, Art. 24/27 consultation)",
+   "Scenario thinking for workforce cost and flex risk",
+   "Costing union demands, including the FNV ask for say over AI"
+  ],
+  "ambitious_version": "One governed HR data platform where budget, forecast and grading run from the same AFAS and agency data, re-forecast monthly per site, with an AI agreement signed with the works council and taken into the 2027 CAO round."
+ },
+ "_meta": {
+  "model": "claude-opus-5-5",
+  "variant": "v2",
+  "seconds": 93,
+  "attempts": 1,
+  "warnings": [],
+  "web": "off",
+  "tool_calls": []
+ }
+}

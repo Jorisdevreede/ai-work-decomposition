@@ -1,0 +1,986 @@
+{
+ "tasks": [
+  {
+   "uid": "43-5061.00:11371",
+   "short": "Gather production, inventory and customer information for status reporting.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve production progress, stock balances and order details.",
+     "actor": "production planning clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "ERP"
+     ],
+     "inputs": [
+      "production order",
+      "progress log",
+      "stock record"
+     ],
+     "outputs": [
+      "production export",
+      "stock snapshot",
+      "order export"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Read shift sheets and supervisor messages for updates missing from system records.",
+     "actor": "production planning clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "EMAIL"
+     ],
+     "inputs": [
+      "shift sheet",
+      "supervisor update"
+     ],
+     "outputs": [
+      "supplementary progress record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "crud_app",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Shift sheets and supervisor updates with known production order identifiers.",
+      "output": "Proposed quantities, completion times and shortage notes with source references.",
+      "check": "Validate identifiers, units, timestamps and quantity bounds; clerk accepts proposed entries.",
+      "stop": "One extraction and one correction attempt per document; unresolved fields enter an exception queue.",
+      "why_not_simpler": "Some updates contain free text and inconsistent layouts; structured updates bypass the model."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "production planning clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Copy source figures into a consolidated workbook and align order identifiers.",
+     "actor": "production planning clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "production export",
+      "stock snapshot",
+      "order export",
+      "supplementary progress record"
+     ],
+     "outputs": [
+      "status workbook"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "none",
+     "rung": "eliminate",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Clarify missing quantities, conflicting dates and unexplained inventory differences with supervisors.",
+     "actor": "production planning clerk",
+     "today_means": "meeting_call",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "status workbook",
+      "supervisor update"
+     ],
+     "outputs": [
+      "confirmed progress correction"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Apply confirmed corrections and prepare the reporting dataset.",
+     "actor": "production planning clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "BI"
+     ],
+     "inputs": [
+      "status workbook",
+      "confirmed progress correction"
+     ],
+     "outputs": [
+      "status dataset"
+     ],
+     "handoff_to": "production supervisor",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "data-to-report",
+     "approver": "none"
+    }
+   ],
+   "design": "Scheduled integrations on the {DATA_PLATFORM} join records from the {OPS_SYSTEM} and {ERP}, replacing the consolidation workbook. A bounded extractor proposes updates from {DOCS} and {EMAIL} for clerk acceptance; validation rules flag gaps and feed a timestamped {BI} view.",
+   "previous_blocker": "Order identifiers, update times and units differed between sources. Informal shift updates required someone to interpret and chase them.",
+   "enabler_now": "Existing interfaces, scheduled imports and validation rules handle structured records. AI coding reduces implementation effort, while bounded extraction can handle irregular notes.",
+   "still_hard": "Unrecorded shop-floor activity and disputed stock figures still require investigation. Faster refreshes cannot repair missing source events.",
+   "human_edge": "The clerk knows which discrepancy signals a real production problem and whom to ask for a reliable correction.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "A shift-level shortage watch for small production cells without dedicated planners."
+   },
+   "altitude": "The clerk spends less of the week assembling figures and more time resolving material and progress discrepancies. They can prioritise investigations; production commitments remain with supervisors.",
+   "reach": [
+    {
+     "role": "logistics analyst",
+     "task": "Identify recurring causes of late production completion.",
+     "learn": "Event timestamps, inventory reconciliation and basic cause analysis."
+    }
+   ],
+   "build_days": {
+    "coding": "4-8",
+    "integration": "5-12",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Scheduled joins, validation rules and dashboards can replace recurring compilation of structured production records.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Qargo's FCE Transport case demonstrates extraction of order information from PDFs; this is adjacent evidence, not a production-reporting case.",
+     "grade": "E2",
+     "source": "[S2]"
+    }
+   ],
+   "assumptions": [
+    "The company uses an {OPS_SYSTEM} and {ERP}, with a workbook bridging their reporting outputs.",
+    "The target covers production and material status rather than individual employee performance.",
+    "Time shares and build ranges are planning estimates, not measured customer results.",
+    "Access work includes GDPR checks where records contain personal data and consultation under national rules where applicable."
+   ],
+   "unknowns": [
+    "Whether order identifiers and units agree across the customer's systems.",
+    "Which interfaces, exports and reporting permissions are available.",
+    "How often shift updates arrive outside system records.",
+    "Whether employee-level monitoring or national consultation requirements apply."
+   ],
+   "research_questions": [
+    "Can existing reporting configuration supply the joined dataset without a new integration?",
+    "Which validation rules distinguish late data from genuine production exceptions?"
+   ],
+   "new_work": [
+    "Review extracted updates and investigate unresolved discrepancies.",
+    "Maintain identifier mappings, unit conversions and freshness thresholds.",
+    "Monitor failed imports and source-record coverage."
+   ],
+   "time_saved_pct": 82,
+   "speedup": 5.41
+  },
+  {
+   "uid": "43-5061.00:11362",
+   "short": "Check production documents, materials and work processes against specifications.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Find the applicable specification revision and inspection checklist.",
+     "actor": "production planning clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "production order",
+      "specification register"
+     ],
+     "outputs": [
+      "inspection checklist",
+      "applicable specification"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Check production documents for required fields, quantities, signatures and specification references.",
+     "actor": "production planning clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "production pack",
+      "inspection checklist",
+      "applicable specification"
+     ],
+     "outputs": [
+      "document check record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 35,
+     "block": "workflow_automation",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "Production documents and an approved checklist of required evidence.",
+      "output": "Cited field values and locations of signatures, with missing or unreadable evidence flagged.",
+      "check": "Apply deterministic completeness and consistency rules; clerk verifies flagged evidence. Signature presence does not prove validity.",
+      "stop": "One extraction and one retry per document; unreadable or contradictory evidence goes to the clerk.",
+      "why_not_simpler": "Scanned forms and narrative entries lack consistent fields; structured documents use direct checks."
+     },
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "audit-and-controls",
+     "approver": "production planning clerk"
+    },
+    {
+     "id": "s3",
+     "what": "Inspect materials and products and observe prescribed process checks.",
+     "actor": "production planning clerk",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "inspection checklist",
+      "applicable specification",
+      "material sample"
+     ],
+     "outputs": [
+      "inspection observations"
+     ],
+     "handoff_to": "none",
+     "share_pct": 35,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Enter measurements and compare recorded results with approved limits.",
+     "actor": "production planning clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "inspection observations",
+      "applicable specification"
+     ],
+     "outputs": [
+      "inspection record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Assemble failed checks and supporting evidence for quality review.",
+     "actor": "production planning clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "document check record",
+      "inspection record"
+     ],
+     "outputs": [
+      "discrepancy record"
+     ],
+     "handoff_to": "quality supervisor",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "audit-and-controls",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Decide release, rework or further inspection for failed or ambiguous checks.",
+     "actor": "quality supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "discrepancy record",
+      "applicable specification"
+     ],
+     "outputs": [
+      "quality disposition"
+     ],
+     "handoff_to": "production supervisor",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "audit-and-controls",
+     "approver": "quality supervisor"
+    }
+   ],
+   "design": "Configure the {OPS_SYSTEM} to select approved checklists, record observations and compare measurements with limits. A bounded document extractor checks evidence in {DOCS}, while a {WORKFLOW} assembles discrepancies for the quality supervisor's disposition.",
+   "previous_blocker": "Physical observations, document checks and release decisions were mixed together. Specification revisions and evidence were difficult to connect reliably.",
+   "enabler_now": "Versioned checklists, structured measurement forms and deterministic limit checks are established technology. Bounded extraction reduces document reading without replacing physical inspection.",
+   "still_hard": "Subtle defects, sampling adequacy and ambiguous specifications need trained judgement. Instrument integration and specialised inspection equipment may be expensive.",
+   "human_edge": "People recognise unexpected physical conditions and decide when an apparently compliant result still needs investigation.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A daily review of repeated checklist failures by production stage."
+   },
+   "altitude": "The clerk spends more time inspecting and investigating repeated failures, with less evidence assembly. They gain scope to propose targeted checks; release authority stays with the quality supervisor.",
+   "reach": [
+    {
+     "role": "quality control systems manager",
+     "task": "Analyse repeated nonconformities and propose corrective actions.",
+     "learn": "Sampling limits, specification control and corrective-action evidence."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "4-10",
+    "testing_rollout": "8-15",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Approved checklists and numeric tolerance checks can be configured without model judgement.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Document extraction can assist completeness checking, but does not establish physical conformity or justify release.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The clerk performs prescribed checks within their training; specialist inspections remain with qualified roles.",
+    "Approved limits and specification revisions can be represented explicitly.",
+    "Observation entry remains partly manual; no machine-vision or instrument retrofit is included.",
+    "Build estimates include representative failed-check trials and GDPR review where evidence identifies employees."
+   ],
+   "unknowns": [
+    "Which checks the clerk is qualified and authorised to perform.",
+    "Whether specification revisions are reliably linked to production orders.",
+    "Which measurements can be captured directly from instruments.",
+    "Whether sector-specific validation or national consultation requirements add rollout work."
+   ],
+   "research_questions": [
+    "Which checks are objective field or tolerance checks, and which require interpretation?",
+    "Can unreadable evidence and incorrect specification revisions be reliably routed for review?"
+   ],
+   "new_work": [
+    "Review uncertain document extraction and retain source evidence.",
+    "Maintain approved checklists, tolerances and revision links.",
+    "Investigate false alerts and missed discrepancies during rollout.",
+    "Review recurring failures without turning process records into employee scoring."
+   ],
+   "time_saved_pct": 44,
+   "speedup": 1.79
+  },
+  {
+   "uid": "43-5061.00:11377",
+   "short": "Prepare production, transport, staffing, purchasing and maintenance documentation.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve production sequences, shipment requirements and planned dates.",
+     "actor": "production planning clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM",
+      "ERP"
+     ],
+     "inputs": [
+      "production order",
+      "production schedule",
+      "shipping instruction"
+     ],
+     "outputs": [
+      "production requirements"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Obtain the approved staffing schedule and relevant availability.",
+     "actor": "production planning clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "HCM"
+     ],
+     "inputs": [
+      "approved staffing schedule"
+     ],
+     "outputs": [
+      "staffing extract"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Retrieve approved purchase orders and expected material delivery dates.",
+     "actor": "production planning clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "purchase order",
+      "supplier confirmation"
+     ],
+     "outputs": [
+      "purchase order extract"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "procure-to-pay",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Retrieve maintenance and repair orders affecting equipment availability.",
+     "actor": "production planning clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "maintenance order",
+      "repair order"
+     ],
+     "outputs": [
+      "equipment availability extract"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "facilities-and-workplace",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Populate templates and reconcile references across the preparation pack.",
+     "actor": "production planning clerk",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "production requirements",
+      "staffing extract",
+      "purchase order extract",
+      "equipment availability extract"
+     ],
+     "outputs": [
+      "draft production pack"
+     ],
+     "handoff_to": "production supervisor",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    },
+    {
+     "id": "s6",
+     "what": "Review readiness conflicts and approve the pack for issue.",
+     "actor": "production supervisor",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft production pack"
+     ],
+     "outputs": [
+      "approved production pack"
+     ],
+     "handoff_to": "production planning clerk",
+     "share_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "production supervisor"
+    },
+    {
+     "id": "s7",
+     "what": "Issue approved documents to departments and archive the released version.",
+     "actor": "production planning clerk",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "approved production pack"
+     ],
+     "outputs": [
+      "production pack",
+      "distribution record"
+     ],
+     "handoff_to": "production team",
+     "share_pct": 5,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "none"
+    }
+   ],
+   "design": "A template generator joins approved records from the {OPS_SYSTEM}, {ERP}, {PROCUREMENT} and a restricted {HCM} extract into versioned packs in {DOCS}. The {WORKFLOW} highlights missing references and readiness conflicts, obtains supervisor approval and distributes the released version.",
+   "previous_blocker": "Templates used separate copies of changing source records. Cross-system references and release versions depended on manual checks.",
+   "enabler_now": "Deterministic templates, record links and approval flows can be assembled with existing interfaces. AI coding reduces the effort of mapping fields and testing document variants.",
+   "still_hard": "Conflicting delivery, maintenance and staffing plans need operational decisions. Issued paper copies and late changes can still leave departments using obsolete instructions.",
+   "human_edge": "The supervisor judges whether a pack represents a workable and safe plan when resources conflict.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "A pre-shift readiness pack showing material, equipment and approved staffing gaps."
+   },
+   "altitude": "The clerk shifts from document assembly to preparing readiness exceptions before the shift starts. They can coordinate corrections across departments; purchasing, staffing and production approvals remain with their existing owners.",
+   "reach": [
+    {
+     "role": "project management specialist",
+     "task": "Coordinate readiness dependencies for a production changeover.",
+     "learn": "Dependency tracking, change control and escalation timing."
+    }
+   ],
+   "build_days": {
+    "coding": "5-10",
+    "integration": "7-15",
+    "testing_rollout": "6-12",
+    "consent_and_access": "5-25"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "TransFollow and Qargo support creating and signing transport documents inside an operational system; this supports the transport-document component.",
+     "grade": "E2",
+     "source": "[S1]"
+    },
+    {
+     "claim": "Structured source records can populate production and maintenance templates through deterministic generation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Employee scheduling and monitoring require separate assessment from simple document preparation under the EU AI Act.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "Document variants share stable order, equipment and revision identifiers.",
+    "The staffing extract contains only approved assignments and necessary availability, excluding absence reasons.",
+    "The solution reproduces approved staffing plans; it does not allocate employees using inferred traits.",
+    "Access estimates include GDPR controls and consultation under national rules where applicable; changed working-time rules may extend them."
+   ],
+   "unknowns": [
+    "Which document variants and internal approval rules the customer uses.",
+    "Whether staffing and maintenance records expose suitable interfaces.",
+    "Whether paper documents are operationally required.",
+    "Which employee consultation requirements and access restrictions apply."
+   ],
+   "research_questions": [
+    "Which templates can be replaced by existing document-generation configuration?",
+    "How should revised packs invalidate previously issued copies?",
+    "Can readiness gaps be detected using explicit rules before supervisor review?"
+   ],
+   "new_work": [
+    "Maintain templates, field mappings and document revision rules.",
+    "Resolve missing references and conflicting source dates.",
+    "Check distribution failures and obsolete-copy handling.",
+    "Review staffing-data access and retention."
+   ],
+   "time_saved_pct": 90,
+   "speedup": 10.0
+  },
+  {
+   "uid": "43-5061.00:11369",
+   "short": "Calculate production material, labour, manufacturing cost and wage estimates from approved rates.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Retrieve quantities, bills of materials, routing times and approved cost rates.",
+     "actor": "production planning clerk",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "production order",
+      "bill of materials",
+      "routing",
+      "approved rate table"
+     ],
+     "outputs": [
+      "calculation inputs"
+     ],
+     "handoff_to": "none",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s2",
+     "what": "Select batch size, expected scrap and working-time assumptions for the estimate.",
+     "actor": "production planning clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "calculation inputs",
+      "production schedule"
+     ],
+     "outputs": [
+      "calculation assumptions"
+     ],
+     "handoff_to": "none",
+     "share_pct": 20,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s3",
+     "what": "Calculate material quantities, labour hours, manufacturing costs and wage estimates.",
+     "actor": "production planning clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "calculation inputs",
+      "calculation assumptions"
+     ],
+     "outputs": [
+      "requirement calculation"
+     ],
+     "handoff_to": "none",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "artefact_generator",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s4",
+     "what": "Check units, effective rates and unusual variances against prior estimates.",
+     "actor": "production planning clerk",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "ERP"
+     ],
+     "inputs": [
+      "requirement calculation",
+      "prior estimate",
+      "approved rate table"
+     ],
+     "outputs": [
+      "checked requirement calculation"
+     ],
+     "handoff_to": "production supervisor",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "dashboard",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "plan-to-forecast",
+     "approver": "none"
+    },
+    {
+     "id": "s5",
+     "what": "Approve the estimate before it supports resource or overtime commitments.",
+     "actor": "production supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "checked requirement calculation",
+      "calculation assumptions"
+     ],
+     "outputs": [
+      "approved requirement estimate"
+     ],
+     "handoff_to": "production planner",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "plan-to-forecast",
+     "approver": "production supervisor"
+    }
+   ],
+   "design": "Configure the {ERP} costing and requirements functions to use versioned bills of materials, routings and effective rate tables from the {OPS_SYSTEM} and {ERP}. Explicit assumptions produce reproducible estimates and variance flags, with supervisor approval before resource commitments.",
+   "previous_blocker": "Arithmetic was already automated in many companies, but copied rates, stale routings and local spreadsheet assumptions caused repeated checking.",
+   "enabler_now": "Existing calculation engines can cover the arithmetic. AI coding makes small input adapters and validation rules cheaper to build; no model is needed for calculations.",
+   "still_hard": "Scrap, setup time, overtime eligibility and unusual production conditions remain uncertain. Standard software may already do most of the task, limiting additional savings.",
+   "human_edge": "The clerk understands when standard rates and production assumptions do not represent the actual job.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "A same-day overtime-versus-rescheduling cost comparison for threatened production orders."
+   },
+   "altitude": "The clerk spends less time checking arithmetic and more time testing operational assumptions. They can propose costed alternatives; budget, overtime and payroll approval rights do not expand.",
+   "reach": [
+    {
+     "role": "logistics analyst",
+     "task": "Compare production batch sizes and timing against material and labour constraints.",
+     "learn": "Scenario analysis, cost drivers and sensitivity to uncertain assumptions."
+    }
+   ],
+   "build_days": {
+    "coding": "2-5",
+    "integration": "3-8",
+    "testing_rollout": "5-10",
+    "consent_and_access": "3-15"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "Material requirements and standard production costs can be calculated deterministically from quantities, routings and approved rates.",
+     "grade": "E1",
+     "source": "model knowledge"
+    },
+    {
+     "claim": "Where existing software already performs the arithmetic, the main remaining gain comes from input quality and reduced reconciliation.",
+     "grade": "E1",
+     "source": "model knowledge"
+    }
+   ],
+   "assumptions": [
+    "The {ERP} includes configurable requirements and costing functions; this must be checked before building anything.",
+    "Wage outputs are planning estimates using approved rates, not payslips or payroll instructions.",
+    "The initial implementation uses standard labour rates rather than identifiable employee pay.",
+    "Build estimates include rate-version testing, access review and any consultation required by national rules."
+   ],
+   "unknowns": [
+    "How much calculation and validation the customer's {ERP} already performs.",
+    "Whether bills of materials, routing times and rate effective dates are maintained reliably.",
+    "Which wage rules, premiums and rounding conventions apply.",
+    "Whether individual pay data or changes to working-time rules are in scope."
+   ],
+   "research_questions": [
+    "Can configuration remove the local calculation workbook?",
+    "Which historical orders reveal unit, rate-version and rounding errors?",
+    "Which assumptions materially change the overtime-versus-rescheduling comparison?"
+   ],
+   "new_work": [
+    "Maintain rate effective dates, units and approved calculation rules.",
+    "Review unusual variances and stale routing assumptions.",
+    "Reconcile configuration changes against representative historical calculations."
+   ],
+   "time_saved_pct": 72,
+   "speedup": 3.51
+  }
+ ],
+ "role": {
+  "altitude": "The role moves from copying records and preparing documents toward resolving readiness gaps, testing assumptions and coordinating exceptions. Clerks gain scope to propose interventions, while quality release, staffing commitments and budget approval remain with authorised managers.",
+  "reach": [
+   "Logistics analyst: investigate recurring production delays and compare resource scenarios.",
+   "Quality control systems manager: connect repeated inspection failures to corrective-action evidence.",
+   "Project management specialist: coordinate material, equipment and staffing dependencies for changeovers."
+  ],
+  "skills_to_grow": [
+   "Data reconciliation, units and source-record traceability.",
+   "Configuration of templates, validation rules and exception queues.",
+   "Production costing and scenario analysis.",
+   "Specification control and inspection evidence.",
+   "Cross-department investigation and escalation.",
+   "GDPR-aware handling of employee and operational records."
+  ],
+  "ambitious_version": "A production readiness coordinator who provides timely material, equipment and staffing exception views, proposes costed recovery options and helps supervisors act before a shift loses output."
+ },
+ "job_code": "43-5061.00",
+ "_meta": {
+  "model": "gpt-6.1-sol",
+  "variant": "v3",
+  "seconds": 154,
+  "attempts": 1,
+  "checks": [],
+  "web": "off",
+  "tool_calls": [
+   "const r = await tools.exec_command({cmd:\"cat /Users/Joris.deVreede/.codex/RTK.md\",\"max_output_tokens\":3000});text(r.output);\n"
+  ],
+  "job": {
+   "code": "43-5061.00",
+   "title": "Production, Planning, and Expediting Clerks",
+   "tasks": 17,
+   "function": "Office and operations"
+  }
+ }
+}

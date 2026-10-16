@@ -1,0 +1,951 @@
+{
+ "job_code": "13-2072.00",
+ "tasks": [
+  {
+   "uid": "13-2072.00:3416",
+   "short": "Submit a complete loan application to a credit analyst for verification.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Check the application, evidence list and consent status before handover",
+     "actor": "loan officer",
+     "today_means": "document",
+     "systems": [
+      "CRM",
+      "DOCS"
+     ],
+     "inputs": [
+      "application record",
+      "credit memo",
+      "evidence bundle",
+      "consent record"
+     ],
+     "outputs": [
+      "handover checklist",
+      "missing-item list"
+     ],
+     "handoff_to": "loan officer",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 45,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "check",
+      "input": "application fields, consent record and required-evidence checklist",
+      "output": "completed handover checklist with source links and missing items",
+      "check": "the officer checks the document versions, consent and required items before submission",
+      "stop": "stop when consent, a required attachment or a current document is absent; return the case to the owner",
+      "why_not_simpler": "The case has a fixed checklist but its documents and exception notes arrive in varied forms."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "opportunity-to-order",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Create the analyst work item with the evidence links, requested review and due date",
+     "actor": "loan officer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CRM",
+      "WORKFLOW"
+     ],
+     "inputs": [
+      "handover checklist",
+      "credit memo",
+      "analysis evidence bundle"
+     ],
+     "outputs": [
+      "analyst review request",
+      "analyst work item"
+     ],
+     "handoff_to": "credit analyst",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "opportunity-to-order",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "loan-case-analyst-handover",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Explain an unusual case or answer the analyst's clarification request",
+     "actor": "loan officer",
+     "today_means": "meeting_call",
+     "systems": [
+      "EMAIL",
+      "TELEPHONY",
+      "CRM"
+     ],
+     "inputs": [
+      "analyst question",
+      "application record",
+      "customer explanation"
+     ],
+     "outputs": [
+      "clarification response",
+      "updated case note"
+     ],
+     "handoff_to": "credit analyst",
+     "share_pct": 25,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "opportunity-to-order",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Track the analyst recommendation and notify the next case owner",
+     "actor": "loan officer",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM",
+      "WORKFLOW"
+     ],
+     "inputs": [
+      "analyst recommendation",
+      "analyst work item"
+     ],
+     "outputs": [
+      "updated case status",
+      "next-owner notification"
+     ],
+     "handoff_to": "loan officer",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "loan-case-analyst-handover",
+     "approval_refs": []
+    }
+   ],
+   "design": "A {WORKFLOW} handover checks required fields and consent, then creates a versioned analyst work item from the {CRM} rather than an email bundle. The loan officer still resolves unusual facts with the analyst and the status returns to the case automatically.",
+   "previous_blocker": "The analyst receives an email packet whose attachments, status and missing items must be checked again.",
+   "enabler_now": "A case checklist and routing rule can create a traceable internal handover.",
+   "still_hard": "An analyst needs context for an unusual borrower or inconsistent evidence.",
+   "human_edge": "The officer can explain why a fact is unusual and obtain the missing context quickly.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Give analysts a queue of complete applications with a stated review question and due date."
+   },
+   "altitude": "The officer manages evidence quality and recurring handover failures rather than copying files into referrals.",
+   "reach": [
+    {
+     "role": "credit analyst",
+     "task": "Specify the evidence and exceptions needed for a recommendation",
+     "learn": "Write a review question that distinguishes missing evidence from risk judgement."
+    }
+   ],
+   "build_days": {
+    "coding": "2-4",
+    "integration": "2-5",
+    "testing_rollout": "3-5",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "The digest describes integrations for gathering financial data and workflow routing for exceptions.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "The boundary starts with an application ready for analyst review and ends when its review status is returned to the case.",
+    "The handover contract contains case ID, analyst question, evidence links, document versions, consent state, priority, due date and owner; the loan officer supplies the review question.",
+    "A missing consent or attachment blocks submission and is repaired by the officer.",
+    "Native case routing and task features are tested before custom workflow code.",
+    "One hour per 100 focal-role baseline hours is allowed for changing analyst checklists and monitoring failed handovers."
+   ],
+   "unknowns": [
+    "Which attachments analysts require by loan type.",
+    "Whether analysts can work from source links instead of copied files."
+   ],
+   "research_questions": [
+    "How often are applications returned as incomplete?",
+    "Which analyst questions repeat across applications?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Officer check of the handover package",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 12,
+      "counted_step_ids": [
+       "s1"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Maintain handover checklist and repair failed routes",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 20,
+    "high": 35,
+    "basis": "The low case assumes many applications need live clarification; one upkeep hour per 100 baseline hours is deducted."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 59.25,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 58.25,
+   "speedup": 2.39521,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-2072.00:3413",
+   "short": "Review loan agreements for completeness and policy accuracy.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive the executed or draft agreement and identify its case, product and version",
+     "actor": "loan officer",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "CRM"
+     ],
+     "inputs": [
+      "loan agreement",
+      "application record"
+     ],
+     "outputs": [
+      "identified agreement version",
+      "agreement review record"
+     ],
+     "handoff_to": "loan officer",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "contract-to-renewal",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Compare names, amount, repayment, rate, fees, dates and signatures with the approved case and policy rules",
+     "actor": "loan officer",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "CRM",
+      "WORKFLOW"
+     ],
+     "inputs": [
+      "identified agreement version",
+      "approved case terms",
+      "policy rules"
+     ],
+     "outputs": [
+      "clause comparison",
+      "agreement exceptions"
+     ],
+     "handoff_to": "loan officer",
+     "share_pct": 45,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "reconcile",
+      "input": "agreement text, approved case terms and policy checklist",
+      "output": "field comparison with clause references and exceptions",
+      "check": "the officer checks every exception and the source clause before marking the agreement accurate",
+      "stop": "stop on a missing signature, changed commercial term, conflicting identity or unrecognised clause; send the agreement for correction",
+      "why_not_simpler": "Clause positions and wording can vary, although the approved values and required checks are fixed."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "contract-to-renewal",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Record a pass or issue a correction request with the precise clause and mismatch",
+     "actor": "loan officer",
+     "today_means": "email_chat",
+     "systems": [
+      "CRM",
+      "EMAIL",
+      "WORKFLOW"
+     ],
+     "inputs": [
+      "clause comparison",
+      "agreement exceptions"
+     ],
+     "outputs": [
+      "agreement review result",
+      "correction request"
+     ],
+     "handoff_to": "contract administrator",
+     "share_pct": 25,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "contract-to-renewal",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Resolve a policy exception or ambiguous agreement wording with the appropriate owner",
+     "actor": "loan officer",
+     "today_means": "meeting_call",
+     "systems": [
+      "EMAIL",
+      "DOCS",
+      "CRM"
+     ],
+     "inputs": [
+      "agreement exceptions",
+      "policy rules",
+      "agreement version"
+     ],
+     "outputs": [
+      "exception decision",
+      "revised agreement instruction"
+     ],
+     "handoff_to": "contract administrator",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "contract-to-renewal",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "A {WORKFLOW} review takes the agreement version and approved case terms from {DOCS} and the {CRM}, then applies fixed field and signature checks. It produces clause-linked exceptions for a loan officer; a pass or a correction request is recorded without rekeying.",
+   "previous_blocker": "The officer reads an agreement beside the case record and manually describes each mismatch.",
+   "enabler_now": "Agreement fields and policy checklists can be compared systematically, with a bounded read of variable clause text.",
+   "still_hard": "An unusual clause or policy exception needs accountable interpretation before a customer document is changed.",
+   "human_edge": "The officer can assess materiality and explain a correction in the context of the approved lending case.",
+   "ambition": {
+    "kind": "new_service",
+    "what": "Provide a clause-linked correction request that lets a contract administrator fix an agreement without a second search."
+   },
+   "altitude": "The officer improves contract controls by reviewing exception patterns instead of rechecking standard fields.",
+   "reach": [
+    {
+     "role": "contract administrator",
+     "task": "Correct an agreement from a clause-linked review result",
+     "learn": "Interpret an approved terms-to-clause mapping."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-6",
+    "testing_rollout": "4-8",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "The digest recommends source tie-outs and review before financial documents are relied on.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "The boundary starts with an agreement version and ends with a pass, correction request or documented exception.",
+    "The comparison contract contains agreement ID, version, borrower names, amount, rate, fees, repayment schedule, effective date, signature state, policy version and source-clause link; the contract and case systems supply the fields.",
+    "A scanned or unclear clause is reviewed from the original rather than inferred.",
+    "Native document fields and workflow rules are tested before a custom comparison.",
+    "Two hours per 100 focal-role baseline hours are allowed for clause-map maintenance and exceptional-document review."
+   ],
+   "unknowns": [
+    "Whether agreements are born-digital or often scanned.",
+    "Which policy rules vary by product or jurisdiction."
+   ],
+   "research_questions": [
+    "Which agreement fields generate the most correction requests?",
+    "How often does a comparison exception prove to be material?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Officer review of clause comparison exceptions",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 10,
+      "counted_step_ids": [
+       "s2"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Maintain clause mappings and investigate exceptional documents",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 35,
+    "high": 55,
+    "basis": "The low case assumes variable wording and exceptions need officer judgement; two upkeep hours per 100 baseline hours are deducted."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 73.75,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 71.75,
+   "speedup": 3.539823,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-2072.00:3412",
+   "short": "Review and update credit and loan files.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Receive a changed document, payment event or customer update and identify the affected file",
+     "actor": "loan officer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CRM",
+      "DOCS"
+     ],
+     "inputs": [
+      "change notice",
+      "customer message",
+      "updated document"
+     ],
+     "outputs": [
+      "file-update work item",
+      "affected file identifier"
+     ],
+     "handoff_to": "loan officer",
+     "share_pct": 20,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "loan-file-change-intake",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Compare changed facts with the current credit file and identify fields and documents that need updating",
+     "actor": "loan officer",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM",
+      "DOCS",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "file-update work item",
+      "current credit file",
+      "updated document"
+     ],
+     "outputs": [
+      "proposed file changes",
+      "data conflict list"
+     ],
+     "handoff_to": "loan officer",
+     "share_pct": 35,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "reconcile",
+      "input": "current credit-file fields and updated customer documents",
+      "output": "proposed field changes with source links and conflicts",
+      "check": "the officer checks identity, effective date and every conflict before a record changes",
+      "stop": "stop on an identity mismatch, conflicting date or material credit change; open a manual review",
+      "why_not_simpler": "The target fields are known but customer documents and change notices vary."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Apply approved field changes, attach the source document and retain the prior version",
+     "actor": "loan officer",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM",
+      "DOCS"
+     ],
+     "inputs": [
+      "proposed file changes",
+      "updated document"
+     ],
+     "outputs": [
+      "updated credit file",
+      "file audit entry"
+     ],
+     "handoff_to": "loan officer",
+     "share_pct": 30,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "crud_app",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "loan-file-change-intake",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Investigate a material change that could affect the existing lending position",
+     "actor": "loan officer",
+     "today_means": "meeting_call",
+     "systems": [
+      "CRM",
+      "EMAIL",
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "data conflict list",
+      "updated credit file"
+     ],
+     "outputs": [
+      "material-change assessment",
+      "follow-up request"
+     ],
+     "handoff_to": "credit manager",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "A {WORKFLOW} creates a file-update item from a change notice and compares the new document with current {CRM} fields. It writes only checked changes with their source and prior version; material changes remain with the loan officer.",
+   "previous_blocker": "Updates are found in messages and documents, then copied into a credit file with limited visibility of the old value.",
+   "enabler_now": "A record workflow can make field-level changes, source links and version history routine.",
+   "still_hard": "A changed fact can signal a material credit issue rather than a clerical update.",
+   "human_edge": "The officer distinguishes routine file maintenance from a change that warrants a lending review.",
+   "ambition": {
+    "kind": "decide_more_often",
+    "what": "Run a weekly queue of material file changes that need a lending response."
+   },
+   "altitude": "The officer measures why files change and improves data collection at the source.",
+   "reach": [
+    {
+     "role": "claims adjuster",
+     "task": "Maintain a case file with source-linked updates",
+     "learn": "Separate a factual record correction from a material case change."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "3-6",
+    "testing_rollout": "4-7",
+    "consent_and_access": "2-4"
+   },
+   "run_cost": "low",
+   "evidence": [
+    {
+     "claim": "A records app with an audit trail can replace spreadsheet and mailbox glue.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "The boundary starts when a credit-file change is received and ends when it is versioned or escalated as material.",
+    "The update contract contains case ID, customer ID, changed field, old value, new value, effective date, source document version, change reason and reviewer; the change notice and officer supply the fields.",
+    "Conflicting or unreadable evidence creates a manual review rather than an automated update.",
+    "Native CRM fields, audit history and notifications are tested before a custom update flow.",
+    "One hour per 100 focal-role baseline hours is allowed for source mapping and exception-rule maintenance."
+   ],
+   "unknowns": [
+    "Which credit-file fields have an existing audit trail.",
+    "What events the lender defines as material changes."
+   ],
+   "research_questions": [
+    "Which file updates are routine versus material?",
+    "How often are updates entered from an obsolete document version?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Officer review of proposed updates and conflicts",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 10,
+      "counted_step_ids": [
+       "s2"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Maintain change-source mappings and material-change rules",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 1
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 35,
+    "high": 55,
+    "basis": "The low case assumes a substantial share of changes need a materiality check; one upkeep hour per 100 baseline hours is deducted."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 74.5,
+   "incremental_hours_per_100_baseline_hours": 1,
+   "time_saved_pct": 73.5,
+   "speedup": 3.773585,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  },
+  {
+   "uid": "13-2072.00:3411",
+   "short": "Obtain and compile applicant credit histories and financial records.",
+   "steps": [
+    {
+     "id": "s1",
+     "what": "Request and record the applicant's consent for the required credit and financial sources",
+     "actor": "loan officer",
+     "today_means": "meeting_call",
+     "systems": [
+      "CRM",
+      "EMAIL",
+      "OTHER"
+     ],
+     "inputs": [
+      "application record",
+      "data-source notice"
+     ],
+     "outputs": [
+      "consent record",
+      "source-request list"
+     ],
+     "handoff_to": "applicant",
+     "share_pct": 15,
+     "fate": "person_reviews",
+     "remaining_pct": 40,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "opportunity-to-order",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Retrieve available credit history and financial records from approved sources",
+     "actor": "loan officer",
+     "today_means": "system_screen",
+     "systems": [
+      "CRM",
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "consent record",
+      "source-request list"
+     ],
+     "outputs": [
+      "retrieved credit history",
+      "financial record bundle"
+     ],
+     "handoff_to": "loan officer",
+     "share_pct": 40,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "opportunity-to-order",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Classify statements, accounts and financial periods into the application dossier",
+     "actor": "loan officer",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "CRM",
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "financial record bundle",
+      "retrieved credit history"
+     ],
+     "outputs": [
+      "indexed financial dossier",
+      "missing-record list"
+     ],
+     "handoff_to": "loan officer",
+     "share_pct": 30,
+     "fate": "person_reviews",
+     "remaining_pct": 25,
+     "block": "judgement_step",
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "extract",
+      "input": "bank statements, corporate financial statements and credit-history documents",
+      "output": "indexed dossier with entity, period, account and source links",
+      "check": "the officer checks entity identity, reporting period, totals and document completeness",
+      "stop": "stop on an unclear entity, missing period or unreadable document; request the source manually",
+      "why_not_simpler": "The required dossier fields are fixed but applicant and corporate documents use different layouts."
+     },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "opportunity-to-order",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Send a targeted request for records that cannot be retrieved or do not reconcile",
+     "actor": "loan officer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CRM",
+      "WORKFLOW"
+     ],
+     "inputs": [
+      "missing-record list",
+      "indexed financial dossier"
+     ],
+     "outputs": [
+      "record request",
+      "case follow-up"
+     ],
+     "handoff_to": "applicant",
+     "share_pct": 15,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "opportunity-to-order",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    }
+   ],
+   "design": "A {WORKFLOW} records consent and retrieves available records into a source-linked dossier in the {CRM}. A bounded extraction indexes varied financial documents, while the officer checks identity and periods before using the dossier in credit assessment.",
+   "previous_blocker": "The officer chases data across portals and attachments, then manually names and files documents for analysis.",
+   "enabler_now": "Consented data retrieval and a document-indexing loop can prepare a traceable dossier.",
+   "still_hard": "Consent, corporate ownership, document provenance and ambiguous periods require careful human review.",
+   "human_edge": "The officer can decide which missing record is material and explain a targeted request to the applicant.",
+   "ambition": {
+    "kind": "serve_new_group",
+    "what": "Give applicants a clear record-request list that distinguishes consented retrieval from documents they must provide."
+   },
+   "altitude": "The officer improves source coverage and evidence quality rather than downloading and renaming routine records.",
+   "reach": [
+    {
+     "role": "credit analyst",
+     "task": "Use an indexed evidence dossier to test a financial assertion",
+     "learn": "Trace a ratio back to the source period and entity."
+    }
+   ],
+   "build_days": {
+    "coding": "3-6",
+    "integration": "5-10",
+    "testing_rollout": "4-8",
+    "consent_and_access": "5-10"
+   },
+   "run_cost": "medium",
+   "evidence": [
+    {
+     "claim": "Ockto passes consented public-source data to a lender through an integration.",
+     "grade": "E2",
+     "source": "[S3]",
+     "kind": "capability"
+    }
+   ],
+   "assumptions": [
+    "The boundary starts with a consent request and ends with a source-linked dossier or a targeted missing-record request.",
+    "The retrieval contract contains applicant ID, consent scope, source name, retrieval timestamp, document ID, entity, financial period, account, document version and provenance link; the applicant, approved source and officer provide the fields.",
+    "Unavailable sources and unreadable documents are requested manually and are never inferred.",
+    "Native consent capture and integration options are tested before custom retrieval code.",
+    "Two hours per 100 focal-role baseline hours are allowed for source-connection monitoring and extraction exceptions."
+   ],
+   "unknowns": [
+    "Which sources can be accessed for each applicant type and jurisdiction.",
+    "Whether corporate statements arrive in a machine-readable form."
+   ],
+   "research_questions": [
+    "What proportion of the dossier can be retrieved with consent?",
+    "Which document types fail identity or period checks most often?"
+   ],
+   "new_work": {
+    "already_counted": [
+     {
+      "description": "Officer review of consent scope and extracted dossier fields",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 10,
+      "counted_step_ids": [
+       "s1",
+       "s3"
+      ]
+     }
+    ],
+    "incremental": [
+     {
+      "description": "Monitor source connections and document-extraction exceptions",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 2
+     }
+    ]
+   },
+   "approvals": [],
+   "time_saved_range_pct": {
+    "low": 40,
+    "high": 60,
+    "basis": "The low case assumes unavailable sources and varied corporate documents still need manual requests; two upkeep hours per 100 baseline hours are deducted."
+   },
+   "focal_role_share_pct": 100,
+   "excluded_labour_share_pct": 0,
+   "gross_time_saved_pct": 86.5,
+   "incremental_hours_per_100_baseline_hours": 2,
+   "time_saved_pct": 84.5,
+   "speedup": 6.451613,
+   "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
+  }
+ ],
+ "role": {
+  "altitude": "Run a daily exception review across incomplete applications, credit evidence and authority routes.",
+  "reach": [
+   "personal financial advisor: recognise when an applicant needs broader budgeting or debt advice"
+  ],
+  "skills_to_grow": [
+   "evidence traceability",
+   "credit-policy exception review",
+   "plain-language financial explanation"
+  ],
+  "ambitious_version": "Give more applicants a complete, understandable path from enquiry to an accountable lending decision."
+ },
+ "_meta": {
+  "model": "terra",
+  "variant": "v4",
+  "author": "ntm-pane",
+  "checks": [],
+  "web": "off",
+  "job": {
+   "code": "13-2072.00",
+   "title": "Loan Officers",
+   "tasks": 30,
+   "function": "Business operations"
+  },
+  "digest": "research/digests-minor/13-2.md",
+  "digest_sha256": "72aa7eab66a391d49503a7556a3f044967c5d3d35a727b71a88731a2d174a963",
+  "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
+  "finalized": "2026-10-15T14:16:04"
+ }
+}
