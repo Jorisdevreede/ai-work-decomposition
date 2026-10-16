@@ -1,35 +1,37 @@
 # Batch 3 second review (Q, pane 5, Opus 5.5)
 
-**Running verdict after round 4 (16 Oct 17:37): 31 files read, 26 fix, 2 good, 3 redo.** Not a model ranking:
-different jobs, eight to fifteen files each. All 31 passed the finalize checks when read; every fix is a semantic
-defect. Round 4 revised Q's round-3 fix on Grok `35-1011.00__1` to redo (G3 list-step template, below).
+**Running verdict after round 5 (16 Oct 19:48): 39 files read, 32 fix, 2 good, 5 redo.** Not a model ranking:
+different jobs, ten to nineteen files each. All 39 passed the finalize checks when read; every fix is a semantic
+defect.
 
 | Model | Files read | Fix | Good | Redo |
 |---|---:|---:|---:|---:|
-| opus-5.5 | 8 | 8 | 0 | 0 |
-| sol-6.1 | 8 | 7 | 1 | 0 |
-| grok-4.7 | 15 | 11 | 1 | 3 |
+| opus-5.5 | 10 | 10 | 0 | 0 |
+| sol-6.1 | 10 | 9 | 1 | 0 |
+| grok-4.7 | 19 | 13 | 1 | 5 |
 
-Open defect classes (through round 4):
-- **All models:** a fill, sync, alert or send the design names has no step (prefill, POS total, tachograph
-  download, reorder proposal); a consumed input has no producer edge; authority labels on person-held steps
-  (write_internal on in-person decisions, act_external for colleagues).
-- **Grok templates.** Three pane-level families, each a fixed design shape with job words swapped in: G4 paper card
-  (13:37-15:31, 22 files pulled by the lead at 15:33), G2 posted line (R, 23 files pulled at 17:25) and G3 list step
-  (11:58-16:25, 21 files, 49 tasks, still in `runs/v5`): a "List/Show X" step goes to machine at 0% because an
-  existing system "lists X only when already stored", while the person still reads the list. G1 now draws its
-  saving from filing "the accepted X" by machine, sometimes where nothing is filed today, with self-approvals of a
-  plain save. Approval cycles: R counts 32.
-- **Opus:** most face-to-face cuts are now explained (round 4 sample: 3 explained, 2 partly, 1 unsupported);
-  machine steps the design relies on are missing. `35-3011.00__2:2239` is fixed (approval binds the allergen text).
-- **Sol:** zero-saving tasks are back to 53% of tasks in files new since 15:2x (157/299; 36% in 13:40-15:35);
-  half the sampled zeros still fold a record write into an in-person step.
+Open defect classes (through round 5):
+- **All models:** a record write, lookup or send is folded into an in-person or conversation step, so the zero or
+  the cut sits on the wrong part; a fill, sync, alert or send the design names has no step; a consumed input has
+  no producer edge; authority labels on person-held steps.
+- **Grok, after the template pulls (17:30 on):** G2 and G3 swung to zeros (85% and 89% of tasks; G3 16 of 19
+  record- or report-type statements) with new boilerplate ("the upkeep allowance is zero because no tool is
+  added", "nothing ... is drafted or filed by a machine", "no version is filed"). Of eight sampled G2/G3 zeros one
+  is honest; four fold the record work into a person step, two skip a change the digest documents, one drops the
+  statement's paperwork. G1's zeros (49%) are honest in a sample of four. Template families also reach before the
+  pulled windows: G2 `21-1093.00__3` (13:04) and G3 `37-2012.00__1` (11:44) are redo.
+- **Opus:** high savings outrun the file's own assumptions or pull in a sibling task (`35-1012.00__5:2151` 74%
+  priced at full recipe coverage against a stated 70%; `25-9044.00__2:10957` counts mark recording under "return
+  assignments"). Face-to-face cuts mostly explained.
+- **Sol:** 63% of tasks at zero since 17:30, 2.0 steps per task. The zeros come from boundary assumptions that
+  exclude the statement's record, report or send part ("Do not invent a report-writing baseline"), not from a new
+  sentence template.
 
 **R/Q comparison:** four files read by both at the same hash, all fix in both: Grok `41-2011.00__2`,
-`41-2011.00__4`, `41-2011.00__5`, Opus `35-3031.00__2`. R accepted Q's `25-2021.00__8:6567` finding (15:20). R found
-the G2 posted-line family (the lead pulled it); Q has read none of those files. One family-level difference: R rated Grok
-`29-1123.00__3` fix (SHA `857ea21400d0`, unchanged); tasks `:369` and `:377` carry the G3 list-step template,
-which Q judges as templated (redo). Q has not read the rest of that file.
+`41-2011.00__4`, `41-2011.00__5`, Opus `35-3031.00__2`. No open disagreement. R accepted Q's
+`25-2021.00__8:6567` (15:20); the lead pulled R's G2 and Q's G3/G4 template families. R's 19:22 shared-id finding on
+Opus `35-1012.00__5:2164` was right for the 15:37 version (s7 and s8 both `reservation-entry`) and is fixed in the
+19:29 version Q read. The family-level difference on Grok `29-1123.00__3` is moot: the file was pulled with G3.
 
 ## Method
 
@@ -354,6 +356,88 @@ Findings per file:
 
 Next round about 19:40.
 
+### Round 5 — selected 19:40 CEST, written 19:48
+
+Seed `batch3-Q-round5-20261016`. Finalized passes 799 (grok 142, opus 321, sol 336) after the lead moved 21 G3
+files (17:41, Q's list-step alert) to `runs/g3-rejected-b3/`; Q's redos `49-3011.00__2` and `35-1011.00__1` are
+among them. Unreviewed populations opus 312, sol 327, grok 130 (G1 47, G2 16, G3 38, G4 29). Selected: opus
+`35-1012.00__5` (re-finalized 19:29), `39-9031.00__5`; sol `29-2061.00__2`, `29-1127.00__5`; Grok `31-2021.00__1`
+(G1), `21-1093.00__3` (G2), `37-2012.00__1` (G3), `25-2057.00__2` (G4). All eight pass the finalize checks rerun
+read-only; hashes unchanged at 19:47. None was read in full by R.
+
+**Zero shift after the template pulls.** Tasks at 0% by finalize time, before and after 17:30: G1 16% to 49%, G2 0%
+to 85%, G3 16% to 89%, G4 15% to 6%, Opus 0% to 0%, Sol 49% to 63% (steps per task G2 4.7 to 2.7, G3 5.1 to 3.3,
+Sol 2.4 to 2.0). On record- or report-type statements after 17:30: G3 16 of 19 at zero, G2 7 of 10, G1 3 of 13, G4
+0 of 16, Opus 0 of 118, Sol 18 of 93. A 5-gram scan (`frames.py`) finds "the upkeep allowance is zero because no
+tool is added" in 61 of G3's 68 tasks since 17:30, and "no tool is added and nothing is drafted or filed by a
+machine" in 11 of G2's 28.
+
+Targeted read of zeros finalized after 17:30 (seed `batch3-Q-round5-targets-20261016`):
+- G1, 4 of 4 honest (`25-1081.00__2:6150`, `25-1042.00__2:5806`, `25-1123.00__8:20095`, `39-3011.00__1:4445`):
+  live discussion, writing that is the work itself, physical exchange.
+- G2, 0 of 4 honest. Missed change: `19-3033.00__5:22175` splits out the counseling note (28%) and keeps it at 100%
+  with "No tool is added", while digest 19-3 reports speech-driven notes at 24 of 25 Dutch providers [S6] and
+  27 to 10 minutes per encounter [S9]; `39-5011.00__1:8054` the ticket write itself, with booking and payments in
+  digest 39-5 [S1], and a step share copied from the means share. Under-decomposed: `25-2058.00__1:6788`,
+  `47-4011.00__2:880`.
+- G3, 1 of 4 honest (`21-2011.00__4:10947`). Under-decomposed `21-1094.00__2:19020`, `:19023` (letters, referral
+  forms and calls inside in-person advocacy); statement drift `29-1229.02__1:17107` (admission orders and note
+  excluded with "this task does not file one").
+- Sol, 2 of 6 honest (`25-1081.00__6:6167`, `31-9011.00__1:7882`). Under-decomposed `49-2094.00__3:901`,
+  `29-1229.02__3:17100`; statement drift `25-1081.00__6:6170` (written advice excluded by "Do not invent a
+  report-writing baseline"); missed change `49-2094.00__3:889` (service history gathered in a meeting; digest
+  49-2 [S2] work-order recaps).
+- Opus tasks at 50% or more: earned `29-1071.00__3:4084`, `29-1127.00__1:18524` (minor: a 40% note cut above the
+  29% the cited [S8] reports); partly `29-2032.00__2:443`; over-claimed `25-9044.00__2:10957`.
+
+**Template families reach before the pulled windows.** G2 `21-1093.00__3` (13:04; R's window starts 13:40) and G3
+`37-2012.00__1` (11:44; Q's window starts 11:58) are templated. Of seven pre-window G2/G3 files Q has read, these
+two are; the other five (`41-2011.00__2`, `35-2014.00__1`, `53-3033.00__2`, `25-3021.00__7`, `41-2011.00__5`) are
+fix. Unread pre-window files: G2 `53-3032.00__2`, `35-1012.00__6`, `29-1141.03__2`, `25-2022.00__1`,
+`25-3031.00__1`, `35-9031.00__1`; G3 `49-9071.00__1`, `25-2021.00__4`, `25-2031.00__8`.
+
+**G4 after its reset (watch).** `25-2057.00__2` and six later G4 files build one step per means bucket from the
+prompt's time-share prior ("largest remainder") and take the saving from one bucket split into machine draft,
+check and gated release. The steps in the file read are about the tasks, so not a template finding yet.
+
+Findings per file:
+
+- **opus `35-1012.00__5` (fix).** `:2151` prices s2-s5 as if every dish had a recipe record while its assumption
+  says about 70% do; at 70% net is about 53%, not 74%, and the one-off recipe entry is missing from build and
+  new_work; s6's checked estimate feeds no step. `:2164/s4` the quote goes to the guest with no send step or gate;
+  s9's event sheet precedes s10's final numbers; the reminder and update link have no step. `:2161/s6` stays_manual
+  cut 20%; `:2165/s6` gated publish and team briefing share one step. Strength: `:2164` approvals bind the accepted
+  quote.
+- **opus `39-9031.00__5` (fix).** `:4577/s3` an ungated machine send of fixed health-safety text, placed after the
+  advice although the design shows it at first booking; `:4577/s4` and `:4576/s6` cut capture work where only the
+  medium changes (paper to app, the trainer still records); `:4576` publishing names needs a consent capture that
+  no step makes. Strengths: heat and ranking approvals bind checked versions; deterministic rules, no model.
+- **sol `29-2061.00__2` (fix).** `:514/s1` the care-plan entry sits inside a team call; `:514/s2` charting inside
+  the intervention; `:516/s1` a record lookup inside the bedside assessment and the evaluation note excluded.
+  `:513` zero probably holds once the record read is split. Strength: `:515` cuts only the copying share.
+- **sol `29-1127.00__5` (fix).** `:18525` document share 60% against a prior of 22% carries the whole saving with
+  no reason; `:23952/s2` the supervision record (feedback, learning actions, hours sign-off) inside a 90%
+  in-person step; `:1879` lesson plan and materials have no producer or lookup. Strengths: native blocks first,
+  no model; a1 binds the final programme.
+- **Grok `31-2021.00__1` (G1, fix).** `:15247/s2` compiling response data and progress notes sits inside an
+  in-person judgement step, so its zero is untested; `:21192/s4` a 10% "save the note" step carries the low end;
+  `:21192/s2` a model loop where the record's own fields would do, with a "plan for next visit" output the input
+  lacks. `:2008`, `:21193` honest zeros.
+- **Grok `21-1093.00__3` (G2, redo).** All four tasks share one skeleton: "Read the X" cut to 75-85% because "it
+  opens on the id that <other role> stored", an unchanged core, and a note cut to 70-90% because it "stores the id
+  instead of recopying"; design, altitude, metrics and incremental sentences repeat with job words swapped.
+  Baselines (binder, booklet, referral mail) are invented; already_counted lists unchanged core steps.
+- **Grok `37-2012.00__1` (G3, redo).** `:9564`, `:9563`, `:9577` add a 4% "Rewrite the list" step whose output no
+  step uses and remove it with a paper par or amenity card; `:9571/s3` the same with a second copy; range bases
+  and legal items share one frame. `:9571/s6` files a handwritten note by machine with no capture step.
+- **Grok `25-2057.00__2` (G4, fix).** `:6752/c6` the loop drafts the parent note from conferences no step records;
+  its check traces sentences but does not bar diagnostic labels on art. 9 data; `:6750/m4` the loop check is
+  format-only and m7 counts teaching (task 6751) as curriculum work; two new loops have 0h upkeep; `:6751/s5`
+  results write missing; `:6749` ap-count is a self-approval. Strengths: ap-curr and ap-note bind final versions;
+  [S3] supports its E2 claim.
+
+Next round about 21:50.
+
 ## Verdicts
 
 | File | Label | Pane | Round | Verdict | sha256[:12] | Reason |
@@ -389,3 +473,11 @@ Next round about 19:40.
 | 53-3033.00__2 | grok-4.7 | G2 | 4 | fix | 133fa215db80 | 8621 cash sheet after hand-in, POS total no step; 8622/s3 kept check cut 30%; already_counted on all steps |
 | 49-3011.00__2 | grok-4.7 | G3 | 4 | redo | a03bd6dad4f9 | G3 list-step template in 9972/9961/9982 (4% List step to 0%, still read); 9968 cycle, no parts keying step |
 | 25-2011.00__2 | grok-4.7 | G4 | 4 | fix | c11a84386343 | 6469/s1 invented plan-book hunt; 6471/s1 note before the child is identified; 6482/s1 attendance tick folded in |
+| 35-1012.00__5 | opus-5.5 | O1 | 5 | fix | 3cf97fe9655b | 2151 74% priced at full recipe coverage vs stated 70%; 2164 quote sent ungated, reminder no step; 2161/s6 cut |
+| 39-9031.00__5 | opus-5.5 | O1 | 5 | fix | e9bbb0eabf51 | 4577/s3 ungated send placed after advice; 4577/s4 and 4576/s6 cut capture where only the medium changes |
+| 29-2061.00__2 | sol-6.1 | S1 | 5 | fix | c4b18dc6976a | 514 care-plan entry and charting folded into call and care; 516 record lookup folded in, evaluation note excluded |
+| 29-1127.00__5 | sol-6.1 | S1 | 5 | fix | 3fae6840d2b0 | 18525 docs share 60% vs prior 22% carries all saving; 23952/s2 supervision record folded in; 1879 no producer |
+| 31-2021.00__1 | grok-4.7 | G1 | 5 | fix | 0d5b6da6e60d | 15247/s2 compile and notes folded in (zero untested); 21192/s4 10% save step; 21192/s2 needless loop |
+| 21-1093.00__3 | grok-4.7 | G2 | 5 | redo | 6dbfdb6b9ae3 | One read-cut + note-cut skeleton in all four tasks ("opens on the id"); invented binder/booklet baselines |
+| 37-2012.00__1 | grok-4.7 | G3 | 5 | redo | 7222146a77f0 | 9564/9563/9577 add an orphan 4% rewrite step to remove it with a par card; same frame; 9571 capture missing |
+| 25-2057.00__2 | grok-4.7 | G4 | 5 | fix | 793623de5a96 | 6752 note drafted from unrecorded conferences, check lacks label bar; 6750 format-only check; 6751 write missing |

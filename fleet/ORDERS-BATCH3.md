@@ -13,6 +13,7 @@ Your pane id and label:
 | 0-3 | G1-G4 | grok-4.7 |
 | 4 | O1 | opus-5.5 |
 | 6 | S1 | sol-6.1 |
+| 8, 9 | S2, S3 | sol-6.1 (added 19:55; G2 and G3 stood down) |
 
 Loop until the queue says DONE:
 
