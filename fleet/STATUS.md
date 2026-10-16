@@ -532,3 +532,27 @@ MOCKUP-c fixes 2026-10-15 11:57 CEST mockups/c-conversation/index.html — all 3
 2026-10-16 19:48 CEST Q ALERT opus-5.5: price a high saving at the file's own coverage assumption and inside the statement. runs/v5/opus-5.5/35-1012.00__5.json (2151 74% assumes every dish has a recipe record; its assumption says 70%, about 53% at that), 25-9044.00__2.json (10957 "return assignments" counts mark recording from a sibling task)
 2026-10-16 19:48 CEST Q fleet/v5-review/REVIEW-B3-Q.md round 5: 8 files, 6 fix 2 redo 0 good; cumulative 39: 32 fix 2 good 5 redo. Zeros after the template pulls: G1 49% (honest), G2 85%, G3 89%, Sol 63%. R's 35-1012.00__5:2164 shared-id finding held for the 15:37 version, fixed 19:29. No open R/Q disagreement. Next ~21:50 CEST
 19:53 LEAD stood down G2 and G3 (zero over-correction per Q ALERT 19:48); moved 32 of their files (since 17:30, plus 21-1093.00__3, 37-2012.00__1) to runs/g23-rejected-b3/; added S2, S3 (Sol 6.1, panes 8-9)
+2026-10-16 19:55 CEST O1 331 passed, 0 blocked, last 37-2012.00__1; also moved 9 files' 'special category' claims off [S19] (GDPR art. 22) to model knowledge, re-finalized, passed
+2026-10-16T17:58:19Z S1 350 passed, 0 blocked, last 29-2032.00__3
+2026-10-16 19:59 CEST O1 Q ALERT fixed: 35-1012.00__5:2151 repriced at its 70% recipe coverage (74% -> 53%); 25-9044.00__2:10957 rescoped to returning work (mark copying and grade questions dropped as sibling work, 70% digital scenario added; 65% -> 47%); sweep of coverage assumptions found 31-9092.00__2:2034 s3 below its 40% online share, raised 50 -> 60. All re-finalized, passed. Scope audit of 198 tasks at 40%+ running.
+2026-10-16 20:09 CEST O1 336 passed, 0 blocked, last 21-1013.00__1. Scope audit (Q ALERT, 198 tasks at 40%+): 22 sibling-task steps found in 18 files; dropped them and rescaled shares (19-4021.00__2:20982, 25-1011.00__2:5666, 25-1071.00__2:6110, 25-1121.00__2:6270, 29-1051.00__2:1812, 29-1123.00__1:370, 29-2055.00__2:15245, 29-2056.00__2:4189, 29-2072.00__1:22880, 29-2081.00__1:4205 +60% coverage scenario, 31-9092.00__2:2031, 39-3091.00__1:5119, 39-3091.00__3:5133, 47-2031.00__1:23445, 53-2031.00__3:9657, 53-3051.00__2:23727, 53-3053.00__3:23752); rewrote 33-3012.00__2:15261 around equipment use (47% -> 19%). All re-finalized, passed.
+2026-10-16T18:12:39Z S1 360 passed, 0 blocked, last 33-9093.00__1
+2026-10-16 20:14 CEST O1 340 passed, 0 blocked, last 47-4041.00__1 (also removed insurer claims from 29-2081.00__1:4205, now owned by sibling 4206)
+2026-10-16 20:16 G4 20 passed, 0 blocked, last 21-1093.00__3
+2026-10-16 20:24 CEST O1 346 passed, 0 blocked, last 15-1299.03__1 (also dropped feedback collection from 15-1299.01__3:14737, owned by sibling 14744)
+2026-10-16 20:26 CEST O1 SKIPPED 15-1299.04__1 (Penetration Testers): O1 cannot write this job; no file written; please reassign to another pane
+2026-10-16 20:27 CEST O1 wrote stub runs/v5/opus-5.5/15-1299.04__1.blocked.json (no content) so claim_next moves on; lead: delete the stub to reassign
+2026-10-16 20:27 CEST O1 also stubbed 15-1299.04__2 15-1299.04__3 15-1299.04__4 15-1299.04__5 15-1299.04__6 (same job, no content); lead: delete the stubs to reassign
+2026-10-16 20:28 CEST S2 10 prompts passed, 0 blocked; last runs/v5/sol-6.1/15-1299.03__6.json
+2026-10-16T18:31:51Z S1 370 passed, 0 blocked, last 15-1299.05__4
+2026-10-16 20:40:04 CEST S3 runs/v5/sol-6.1/ 10 prompts finalized and passed; occupation-specific steps, source capture, final-version gates, and provisional savings checked; continuing claim loop.
+2026-10-16T18:47:47Z S1 380 passed, 0 blocked, last 27-1014.00__1
+2026-10-16 20:51 CEST G1 60 passed, 0 blocked, last 31-2011.00__1
+2026-10-16T18:55:09Z S1 TOOL ERROR 25-1032.00__3 Command blocked by PreToolUse hook: BLOCKED by dcg; core.git:git-alias-semantic-unverified
+2026-10-16T19:09:07Z S1 390 passed, 0 blocked, last 53-2012.00__4
+2026-10-16 21:17:45 CEST S3 20 passed, 0 blocked, last 43-5011.01__3
+2026-10-16 21:18 CEST S2 20 passed, 0 blocked, last 39-6012.00__2
+2026-10-16 21:19 CEST R ALERT grok-4.7: current pool has 34 system-actor steps with positive focal shares across 20 tasks/10 files. 25-1081.00__2 :6151 b3,b5 and :6149 c3 describe human drafting/re-entry today: keep today's actor human and machine only as future fate. Also human mapping upkeep is not system runtime: 15-1299.01__6 :14745,:14742 charge maintaining heading maps after template changes as system hours without an automatic mechanism.
+2026-10-16 21:19 CEST R ALERT opus-5.5: expected plans do not capture actual values: 51-3011.00__1 :11922 production record comes from planned weigh list after human flour/weather adjustment and weighing. Name/cost actual capture. :11921 lot scanning is still human work although s4 remaining=0. Round-5 shared-ID defects in electrician, supervisor and stocker are specifically verified repaired.
+2026-10-16 21:19 CEST R fleet/v5-review/REVIEW-B3.md round 6 complete: 6 files/22 tasks/97 steps; 5 fix,1 good; cumulative 28 fix,8 good,0 redo. Structural scan 912 passes/3244 tasks/12723 steps; nine old Grok cycles and Sol lifecycle-order issue persist; all selected checks pass and hashes stable. Next 23:16 CEST; weekend active.
+21:22 LEAD O1 hit an Opus safeguard flag on 15-1299.04 (penetration testers) and wrote 6 empty blocked stubs; stubs moved to runs/o1-blocked-stubs-b3/, 15-1299.04__1/4/5/6 and 15-1299.05__1 claimed for S1; O1 stays on Opus 5.5, context cleared, loop restarted

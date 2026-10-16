@@ -831,7 +831,7 @@
   },
   {
    "uid": "29-2072.00:22880",
-   "short": "Find diagnosis, stage and treatment in the record, enter demographics, procedures and treatment dates, code the diagnosis and ask clinicians about gaps.",
+   "short": "Find diagnosis, stage and treatment in the record, enter demographics, procedures and treatment dates, and ask clinicians about gaps.",
    "steps": [
     {
      "id": "s1",
@@ -848,7 +848,7 @@
       "disease details"
      ],
      "handoff_to": "none",
-     "share_pct": 30,
+     "share_pct": 35,
      "fate": "person_reviews",
      "remaining_pct": 50,
      "block": "integration",
@@ -885,7 +885,7 @@
       "demographic fields"
      ],
      "handoff_to": "none",
-     "share_pct": 20,
+     "share_pct": 24,
      "fate": "machine",
      "remaining_pct": 0,
      "block": "integration",
@@ -915,7 +915,7 @@
       "treatment fields"
      ],
      "handoff_to": "none",
-     "share_pct": 25,
+     "share_pct": 29,
      "fate": "person_reviews",
      "remaining_pct": 30,
      "block": "integration",
@@ -924,43 +924,6 @@
      "authority": "write_internal",
      "human_gate": false,
      "boundary": "artefact",
-     "workflow": "documents-and-records",
-     "approver": "none",
-     "labour_scope": "focal_role",
-     "shared_step_id": "",
-     "approval_refs": []
-    },
-    {
-     "id": "s4",
-     "what": "Medical records specialist codes the diagnosis",
-     "actor": "medical records specialist",
-     "today_means": "system_screen",
-     "systems": [
-      "OTHER"
-     ],
-     "inputs": [
-      "disease details"
-     ],
-     "outputs": [
-      "diagnosis code"
-     ],
-     "handoff_to": "none",
-     "share_pct": 15,
-     "fate": "person_reviews",
-     "remaining_pct": 40,
-     "block": "judgement_step",
-     "rung": "deterministic_plus_loop",
-     "loop": {
-      "purpose": "classify",
-      "input": "The clinical text of the admission.",
-      "output": "An ICD-10 code with a confidence score.",
-      "check": "Codes above the hospital's confidence threshold are accepted; all others go to the specialist; a sample of accepted codes is audited.",
-      "stop": "One code proposal per admission.",
-      "why_not_simpler": "Diagnoses are written in free text that rules cannot map to codes."
-     },
-     "authority": "write_internal",
-     "human_gate": false,
-     "boundary": "decision",
      "workflow": "documents-and-records",
      "approver": "none",
      "labour_scope": "focal_role",
@@ -977,13 +940,13 @@
      ],
      "inputs": [
       "treatment fields",
-      "diagnosis code"
+      "disease details"
      ],
      "outputs": [
       "details clarified"
      ],
      "handoff_to": "clinician",
-     "share_pct": 10,
+     "share_pct": 12,
      "fate": "person_does",
      "remaining_pct": 100,
      "block": "conversation",
@@ -999,21 +962,21 @@
      "approval_refs": []
     }
    ],
-   "design": "Demographics, procedures and treatment dates flow from the patient record system ({OTHER}) into the registry form ({PARTNER_PORTAL}) for the specialist to check. A bounded step proposes stage and extent from the reports with the source sentence, and the specialist confirms every field. A coding step proposes the diagnosis code; codes above the hospital's threshold pass, the rest go to the specialist. Asking clinicians stays with the specialist.",
+   "design": "Demographics, procedures and treatment dates flow from the patient record system ({OTHER}) into the registry form ({PARTNER_PORTAL}) for the specialist to check. A bounded step proposes stage and extent from the reports with the source sentence, and the specialist confirms every field. Asking clinicians stays with the specialist.",
    "previous_blocker": "Every field was read from reports and typed into the registry by hand.",
-   "enabler_now": "Record systems export structured data, and coding services propose codes from clinical text.",
+   "enabler_now": "Record systems export structured data, and language models can propose fields with the source sentence.",
    "still_hard": "Accuracy differs per specialty; thresholds need local checking.",
    "human_edge": "Seeing that two reports describe the same tumour differently.",
    "ambition": {
     "kind": "none",
     "what": ""
    },
-   "altitude": "The specialist confirms proposed fields and codes instead of entering them.",
+   "altitude": "The specialist confirms proposed fields instead of entering them.",
    "reach": [
     {
-     "role": "clinical coder",
-     "task": "Code admissions",
-     "learn": "Whether thresholds hold across specialties."
+     "role": "registry staff",
+     "task": "Analyse registry data",
+     "learn": "Whether fields arrive complete."
     }
    ],
    "build_days": {
@@ -1025,13 +988,13 @@
    "run_cost": "low",
    "evidence": [
     {
-     "claim": "DHD codes 65% of day admissions with high certainty; codes above 70% skip the coder and are 85 to 90% correct; Rijnstate reached 72% automatic (provider figures).",
-     "grade": "E3",
-     "source": "[S9]",
-     "kind": "case"
+     "claim": "Record systems can export structured demographics, procedures and dates to registry forms.",
+     "grade": "E1",
+     "source": "model knowledge",
+     "kind": "capability"
     },
     {
-     "claim": "Logging coder corrections can count as staff monitoring under the works council rules.",
+     "claim": "Logging corrections per specialist can count as staff monitoring under the works council rules.",
      "grade": "E1",
      "source": "[S27]",
      "kind": "legal"
@@ -1045,7 +1008,7 @@
    ],
    "assumptions": [
     "Boundary: from the patient record to clarified details; registry analysis is outside.",
-    "Input contract: structured data from the record system; code lists from the registry; fallback is typing by hand.",
+    "Input contract: structured data from the record system; fallback is typing by hand.",
     "Asking clinicians does not change.",
     "Clinicians' time is outside the specialist's savings."
    ],
@@ -1053,7 +1016,7 @@
     "Registrations per week."
    ],
    "research_questions": [
-    "Which share of codes passes the threshold here?"
+    "Which share of proposed fields is confirmed unchanged?"
    ],
    "new_work": {
     "already_counted": [
@@ -1072,19 +1035,11 @@
       "counted_step_ids": [
        "s3"
       ]
-     },
-     {
-      "description": "Medical records specialist codes admissions below the threshold.",
-      "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 3,
-      "counted_step_ids": [
-       "s4"
-      ]
      }
     ],
     "incremental": [
      {
-      "description": "Medical records specialist audits a sample of accepted codes.",
+      "description": "Medical records specialist checks a sample of transferred fields.",
       "labour_scope": "focal_role",
       "hours_per_100_baseline_hours": 1
      }
@@ -1094,14 +1049,14 @@
    "time_saved_range_pct": {
     "low": 20,
     "high": 38,
-    "basis": "Specialties with low coding confidence save less."
+    "basis": "Low: specialties with mostly free-text reports; high: specialties with structured reports."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 61.5,
+   "gross_time_saved_pct": 61.8,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 60.5,
-   "speedup": 2.531646,
+   "time_saved_pct": 60.8,
+   "speedup": 2.55102,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1151,6 +1106,6 @@
   "digest": "research/digests-minor/29-2.md",
   "digest_sha256": "b8bd66fb5c85e7c8a1fa26f1cded445238cbc7e74ade18211b6edeb0116b4232",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T15:40:09"
+  "finalized": "2026-10-16T20:08:34"
  }
 }

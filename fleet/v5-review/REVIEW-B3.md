@@ -2,11 +2,11 @@
 
 | Model | fix | good | redo | Reviewed files |
 |---|---:|---:|---:|---:|
-| grok-4.7 | 10 | 0 | 0 | 10 |
-| opus-5.5 | 9 | 1 | 0 | 10 |
-| sol-6.1 | 4 | 6 | 0 | 10 |
+| grok-4.7 | 12 | 0 | 0 | 12 |
+| opus-5.5 | 11 | 1 | 0 | 12 |
+| sol-6.1 | 5 | 7 | 0 | 12 |
 
-Through round 5: **23 fix, 7 good, 0 redo** across 30 files, 110 tasks and 495 steps, including one revised round-2 verdict. Savings remain provisional. Samples differ by job; these counts do not establish a model quality ranking.
+Through round 6: **28 fix, 8 good, 0 redo** across 36 files, 132 tasks and 592 steps, including one revised round-2 verdict. Savings remain provisional. Samples differ by job; these counts do not establish a model quality ranking.
 
 ## Review protocol and continuation
 
@@ -342,3 +342,64 @@ No new R sample overlaps Q's completed ledger as checked this round. The resolve
 Round 5: **5 fix, 1 good, 0 redo**. Cumulative: **23 fix, 7 good, 0 redo**, 30 distinct sampled files, 110 tasks and 495 steps. Supplemental findings do not enter those counts.
 
 Next scheduled round: **16 October 2026, 21:16 CEST**. All round-5 sample slots filled; continue every two hours through Sunday 23:59 CEST.
+
+## Round 6 — 16 October 2026, 21:16–21:19 CEST
+
+Selection at 21:16:45, sorted eligible paths and two new files per model:
+
+- `batch3-R-round6-grok-4.7-20261016`: 132 passes, 124 eligible.
+- `batch3-R-round6-opus-5.5-20261016`: 347 passes, 337 eligible.
+- `batch3-R-round6-sol-6.1-20261016`: 433 passes, 423 eligible.
+
+Read 22 originals and 97 steps against the contract and batch-2 defects. Evidence comparison uses supplied digests 21-1, 25-1, 49-9, 51-3, 33-1 and 39-9, without fresh source or legal verification. All six pass the exact-prompt read-only checks and template checks, with hashes unchanged.
+
+| File | Verdict | Findings |
+|---|---|---|
+| `runs/v5/grok-4.7/21-1013.00__4.json` | fix | :9198/a5 and :9199/d5 need recordings, while the interview/session steps produce only spoken conversations. Explicitly condition savings on already recorded material or represent recording/capture and its effort; a spoken session alone is not an available recording. :9198's cited [S2] supports dictation of spoken notes, not by itself ambient transcription of the full family meeting; distinguish it from [S3]'s consultation-note capability. Upkeep is labelled system even for keeping method headings current and session dates available: name any human maintenance or explain the automatic mechanism. Human meaning checks and exact commit/send version gates are present; counseling, custody opinion and testimony stay full. |
+| `runs/v5/grok-4.7/25-1081.00__2.json` | fix | :6151/b3,b5 and :6149/c3 assign positive focal baseline shares to system actors (6,5,8), although the design describes today's human comment drafting, grade re-entry and lecture-note writing. Use the human actor for today's step and machine as future fate, or exclude genuine existing runtime. :6151/b5 writes both accepted grade and comment, but b-grade's version names only the accepted grade; bind the exact accepted comment too. Supervision/discussion zeros do not omit paperwork required by these originals, and grading/lecturing meaning checks retain time. |
+| `runs/v5/opus-5.5/49-9052.00__1.json` | fix | :11858/s4 sends user guides but a1 binds only completed installation, not the exact guide/message version and recipient. Bind that actual sent payload, with template ownership and counted review/standing approval if intended. :11859's original asks for impedance and additional resistance; the design computes cable loss and proposes an attenuator. Make the required quantity/output and cable-type, length, readings and rule/table inputs explicit rather than assuming these descriptions are interchangeable. Physical measuring/fitting stay full, subscriber effort is represented, and the trace-upload review precedes its write. |
+| `runs/v5/opus-5.5/51-3011.00__1.json` | fix | :11922 keeps human flour/weather adjustments and weighing, yet derives the final production record from the planned weigh list with no producer for actual adjustments/weights. Count actual-value capture or state that the record is only a plan. :11921/s4 makes lot recording zero while its design still has the baker scan labels; retain scan effort or supply automatic capture, beyond the separately counted non-barcode fallback. :20819/:11924/:11921 ranges say most work is manual without low/high cases. Physical inspection, cleaning, weighing and supplier calls stay full. |
+| `runs/v5/sol-6.1/33-1091.00__4.json` | fix | :22944/s3 combines final validation/approval with submitting the procedure to its owner; split the decision and submission artefact boundary within the retained 25h and bind the submitted version. Its self-reference is a counted manual approval, not an ordering cycle. :22955 should make clear whether s3 merely approves a draft booking or commits it: s2 produces only a draft and there is no separate scheduling write. Input/brief capture, operational judgment and budget explanation are explicitly retained and upkeep is priced. |
+| `runs/v5/sol-6.1/39-9041.00__6.json` | good | All three originals covered. Live housekeeping supervision and recreation remain full without fabricated filing baselines. Room matching uses verified fields and published rules, retains exception judgement and final assignment approval, and prices focal/other upkeep. The boundary explicitly conditions any advisor saving on actually holding allocation duties in the European setting. The counted intrinsic assignment approval is not a cycle; no extra sending/release action is claimed. Sources support matching capability and distinguish the vendor case from local savings. |
+
+### Structural scan
+
+Frozen at 2026-10-16T21:16:47+02:00: **912 files, 3,244 tasks, 12,723 steps**. No frozen hash changed during follow-up checks.
+
+| Model | Files | Tasks | Steps | Distinct task-step texts | Full shapes | Economic shapes | Largest coarse group |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| grok-4.7 | 132 | 453 | 2265 | 453 | 452 | 440 | 48 |
+| opus-5.5 | 347 | 1224 | 6272 | 1224 | 1224 | 1216 | 34 |
+| sol-6.1 | 433 | 1567 | 4186 | 1563 | 1426 | 708 | 343 |
+
+No repeated adjacent text pair; the three exact manual-duty groups remain the legitimate matches already read. The same nine Grok approval cycles in the same four files remain; the three old prior-version false positives remain scoped. The same Sol training-admin forward dependency remains. Four Opus late-draft hits are still the already-cleared distinct artefacts.
+
+One new late-draft candidate, Sol `39-6012.00__1/:20260`, is not premature approval: s4 explains the already checked route, and assumptions explicitly return to s3 if the explanation changes a detail before s5 sends the link. Its spoken guest explanation is labelled draft authority, which should be corrected, but does not create a later route artefact invalidating a1. This supplement is outside sample verdict counts.
+
+### Recurring labels, repairs and Q comparison
+
+A targeted current-pass scan finds **34 positive focal-share steps with actor system, across 20 tasks in 10 Grok files**. The sample education file is a direct example where assumptions confirm that a person does this work today. Future machine fate must not replace today's actor; existing runtime cannot enter the human denominator.
+
+There are also 47 incremental entries labelled system. These are candidates, not 47 confirmed human transfers. Targeted reading of `15-1299.01__6/:14745,:14742` finds maintaining heading/field maps after template changes charged as one system hour, with no human maintainer or automatic remapping mechanism. Clarify who does this work and cost that labour if human. The sample therapist file similarly labels keeping method headings current as system work. Do not deduct actual runtime as human labour.
+
+Q's watch on G4 means-bucket construction remains relevant: 34 current Grok tasks across 12 files mention largest-remainder allocation from priors. The new therapist sample does this explicitly. Using priors alone is permitted and does not establish a text template; the step claims still need task-specific producers, boundaries and justified savings. No new blanket template/redo finding is made from numerical shapes.
+
+The three Opus shared-ID examples from round 5 are now repaired on reading:
+- Electrician `47-2111.00__2`, SHA-256 `c4a5180ef9e099e5370ca1c4313329f601187f43a834869290581e6f6d4bd56f`: report send has `inspection-report-send`, stock check has `van-stock-check`, distinct from report writing/order placement.
+- Supervisor `35-1012.00__5`, SHA-256 `d09f2c62b3de065804426fd01dcadda2a5a5409d3444bfb43bea1a8507ecc3f9`: guest confirmation has `reservation-confirmation`, distinct from reservation entry.
+- Stocker `53-7065.00__3`, SHA-256 `413779e447ffdcdfa2ef20d6785791cc3c7fd5790cdaea85c7069c298876c042`: write-down has `stock-write-off`, distinct from vendor return request.
+
+These close the specific ID defects, not the whole files. Q agreed the supervisor finding held on the earlier version and was fixed at 19:29. Q also found coverage/sibling-scope defects in R's round-5 teaching-assistant path; O1 reports a scope repair. That path has changed, so the historical R verdict remains about its recorded hash. No open R/Q verdict disagreement. Lead's 19:53 quarantine of G2/G3 versions is outside the current passed population; historical sample receipts remain counted.
+
+### Receipts and next round
+
+- `runs/v5/grok-4.7/21-1013.00__4.json` SHA-256 `14af6b75dbbd9f280ffc548528f89ca70408c822a2464e6881d642d274c59490`.
+- `runs/v5/grok-4.7/25-1081.00__2.json` SHA-256 `6eb1484b8cb047da89db0eaedd460cb1591e18b2c3572b4201ad850c997361d4`.
+- `runs/v5/opus-5.5/49-9052.00__1.json` SHA-256 `3aa7d6e33eff498a01936a8d851bebd72e9c5dcabbf8ef4388d83a492bbc917d`.
+- `runs/v5/opus-5.5/51-3011.00__1.json` SHA-256 `c52037b6163bdb81ad98a6e59916006f6201df3d3c3563d0355129980972a1d6`.
+- `runs/v5/sol-6.1/33-1091.00__4.json` SHA-256 `4544c30a6d2f7c5a0ddaf1af5b20564eca8f02aedde3260e22a216b92e655547`.
+- `runs/v5/sol-6.1/39-9041.00__6.json` SHA-256 `0d1fc5ab70c6aebf352225f8a3fcc340c2a61a069d900964493ca73b0db3615a`.
+
+Round 6: **5 fix, 1 good, 0 redo**. Cumulative: **28 fix, 8 good, 0 redo**, 36 distinct sampled files, 132 tasks and 592 steps. Supplements are excluded from those counts.
+
+Next scheduled round: **16 October 2026, 23:16 CEST**. All round-6 sample slots filled; continue every two hours through Sunday 23:59 CEST.
