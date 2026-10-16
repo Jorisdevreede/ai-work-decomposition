@@ -433,7 +433,17 @@ PANE_HEADER = """\
 knowledge). Write ONE JSON object valid against schema/taskgraph-v4.schema.json to
 runs/v4/<your-label>/<name>.json, then run
   python3 tools/fleet_v3.py --batch config/jobs-batch2.json --label <your-label> --finalize runs/v4/<your-label>/<name>.json
-Fix every reported failure and finalize again (at most 3 tries; a blocked file stays .blocked.json). -->
+Fix every reported failure and finalize again (at most 3 tries; a blocked file stays .blocked.json).
+The batch-2 review found these defects in most files; the checks do not catch them, so avoid them yourself:
+- Order: no step uses a list, record or artefact before the step that creates it; an approval binds the exact
+  final version it approves and never comes before that artefact; shared ids only for the same action.
+- Savings: only steps the change actually touches lose time. Human, physical, customer, supplier or other-role
+  work keeps its share and remaining_pct unless the design changes that exact step. No invented admin baseline.
+- Labels: authority read vs write matches what the step does; a model loop only where judgement needs one; a
+  check must verify the generated meaning, not only ids or numbers.
+- Evidence: cite a digest source id only for a claim that source supports; model knowledge is E1 and says so;
+  legal and survey items use those kinds, never capability or case.
+- Already-counted and new work point to the right steps; ranges name a task-specific scenario. -->
 
 """
 
@@ -473,6 +483,12 @@ def template_checks(answer, facts, out_dir, name):
     return problems
 
 
+def job_tasks(job, tasks):
+    """The job's O*NET tasks, limited to the batch entry's `uids` when it lists them (e.g. digital tasks only)."""
+    keep = set(job.get("uids") or [])
+    return [t for t in tasks if t["code"] == job["code"] and (not keep or f"{t['code']}:{t['task_id']}" in keep)]
+
+
 def finalize(paths, batch_path, label):
     batch = {j["code"]: j for j in load(os.path.join(ROOT, batch_path))["jobs"]}
     schema_text = json.dumps(load(SCHEMA))
@@ -483,7 +499,7 @@ def finalize(paths, batch_path, label):
         name = Path(path).name.replace(".blocked.json", ".json")
         code, n = name[:-5].split("__")
         n = int(n)
-        expected = [t for t in tasks if t["code"] == code]
+        expected = job_tasks(batch.get(code, {"code": code}), tasks)
         facts = [task_facts(t, scores, jev, shares) for t in expected][(n - 1) * CHUNK:n * CHUNK]
         digest = digest_for(code)
         try:
@@ -557,7 +573,7 @@ def main():
         by_code.setdefault(t["code"], []).append(t)
     work = []
     for job in jobs:
-        facts = [task_facts(t, scores, jev, shares) for t in by_code.get(job["code"], [])]
+        facts = [task_facts(t, scores, jev, shares) for t in job_tasks(job, by_code.get(job["code"], []))]
         for n, i in enumerate(range(0, len(facts), CHUNK), 1):
             part = facts[i:i + CHUNK]
             work.append((job, n, part, prompt_for(job, batch, occ, part, slots)))
@@ -569,7 +585,7 @@ def main():
         for job, n, part, p in work:
             name = f"{job['code']}__{n}"
             with open(os.path.join(out_dir, name + ".md"), "w", encoding="utf-8") as fh:
-                fh.write(PANE_HEADER + p)
+                fh.write(PANE_HEADER.replace("config/jobs-batch2.json", args.batch) + p)
             manifest.append({"name": name, "code": job["code"], "title": job["title"], "function": job.get("function"),
                              "n": n, "uids": [f["uid"] for f in part]})
         write_json(os.path.join(out_dir, "manifest.json"), manifest)

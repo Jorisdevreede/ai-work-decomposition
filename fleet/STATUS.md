@@ -394,3 +394,4 @@ MOCKUP-c fixes 2026-10-15 11:57 CEST mockups/c-conversation/index.html — all 3
 2026-10-16 02:53 CEST G0 prototypes/flow portfolio HR null profile Accelerate Now 6, Invest to Unlock 3, Quick Wins 47, Deprioritize 10. Goal link moves a dot, a running item rings as Stop, a pilot becomes Checkable and earned, production stays refused. Checked 1440/390, clean console.
 2026-10-16 02:53 CEST G0 PORTFOLIO DONE
 2026-10-16 02:57 CEST lead prototypes/flow portfolio checked in browser (goal link, policy card, pilot card earned, production refused, go/no-go prefill); goal suggestions now use name + 3 biggest tasks and skip generic office words. Tests pass, clean console, 1440/390 no overflow.
+2026-10-16 11:05 CEST R fleet/v5-review/REVIEW-B3.md — reviewer ready; 0 finalized passes, first round waits for 10; then every 2h through 18 October.
