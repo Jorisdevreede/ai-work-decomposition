@@ -37,7 +37,7 @@
     },
     {
      "id": "s2",
-     "what": "Food server checks each tray against the diet list before leaving the kitchen",
+     "what": "Food server checks each tray against the diet list before leaving the kitchen: by eye today; after the change the server scans the tray label against the current diet and still looks at what is on the tray",
      "actor": "food server",
      "today_means": "document",
      "systems": [],
@@ -51,7 +51,7 @@
      "handoff_to": "none",
      "share_pct": 25,
      "fate": "person_reviews",
-     "remaining_pct": 40,
+     "remaining_pct": 60,
      "block": "workflow_automation",
      "rung": "deterministic",
      "loop": null,
@@ -135,9 +135,9 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 50,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -149,7 +149,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Diet orders entered by ward nurses in the electronic health record ({OTHER}) flow to the meal system ({OPS_SYSTEM}) as they change, so the diet list is current and fewer calls to the ward are needed. Each tray carries a printed label; scanning it at the kitchen exit checks it against the patient's current diet and allergies, and the server looks at mismatches only. Refused meals are noted with a pick list on a tablet. Delivering and checking the patient at the bedside stay in person.",
+   "design": "Diet orders entered by ward nurses in the electronic health record ({OTHER}) flow to the meal system ({OPS_SYSTEM}) as they change, so the diet list is current and fewer calls to the ward are needed. Each tray carries a printed label; scanning it at the kitchen exit checks it against the patient's current diet and allergies, and the server resolves mismatches; looking at what is on each tray stays. Refused meals are noted on a tablet instead of paper, which takes as long. Delivering and checking the patient at the bedside stay in person.",
    "previous_blocker": "Diet lists were printed in the morning and trays checked by eye.",
    "enabler_now": "Meal systems take diet orders from the record and check scanned tray labels against them.",
    "still_hard": "Late diet changes and patients who moved rooms still need a call.",
@@ -196,7 +196,7 @@
    "assumptions": [
     "Boundary: from the diet list to noted refusals; meal production is outside.",
     "Input contract: diet orders entered by ward nurses in the record; prepared trays from the kitchen; fallback is the printed list.",
-    "Delivery and bedside checks do not change.",
+    "Delivery, bedside checks and noting refusals keep their full time. s1 keeps 30 for calls about changes the record does not show yet. s2 keeps 60 because the scan replaces finding each patient on the list and comparing diet codes, while looking at the food on the tray against its label stays.",
     "Nurse time is outside the server's savings."
    ],
    "unknowns": [
@@ -218,7 +218,7 @@
     ],
     "incremental": [
      {
-      "description": "Food server learns the scanner and tablet.",
+      "description": "Food server rescans unreadable labels and works from the printed list when the scanner fails.",
       "labour_scope": "focal_role",
       "hours_per_100_baseline_hours": 0.3
      }
@@ -226,16 +226,16 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 8,
-    "high": 16,
-    "basis": "Most of this task is delivering trays in person."
+    "low": 8.7,
+    "high": 16.7,
+    "basis": "Low: nurses enter many diet changes late, so calls stay common and scans flag many trays; s1 keeps 60 and s2 keeps 80 (8.7); high: diet orders are current in the record (16.7)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 27.0,
+   "gross_time_saved_pct": 17.0,
    "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 26.7,
-   "speedup": 1.364256,
+   "time_saved_pct": 16.7,
+   "speedup": 1.20048,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -255,7 +255,7 @@
       "meal orders"
      ],
      "handoff_to": "none",
-     "share_pct": 35,
+     "share_pct": 34,
      "fate": "person_does",
      "remaining_pct": 60,
      "block": "workflow_automation",
@@ -267,6 +267,34 @@
      "workflow": "order-to-cash",
      "approver": "none",
      "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s1p",
+     "what": "Patient who can order picks meals on the bedside screen, which shows only dishes that fit their diet",
+     "actor": "patient",
+     "today_means": "system_screen",
+     "systems": [],
+     "inputs": [
+      "menu"
+     ],
+     "outputs": [
+      "patient screen orders"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "customer",
      "shared_step_id": "",
      "approval_refs": []
     },
@@ -328,21 +356,52 @@
      "approval_refs": []
     },
     {
-     "id": "s3",
-     "what": "Food server relays orders to the kitchen by typing them in or phoning",
+     "id": "s3c",
+     "what": "Food server checks the final orders taken on the tablet before sending: patient, dishes, portion and diet",
      "actor": "food server",
      "today_means": "system_screen",
      "systems": [
       "OPS_SYSTEM"
      ],
      "inputs": [
-      "confirmed orders"
+      "confirmed orders",
+      "patient screen orders"
+     ],
+     "outputs": [
+      "orders checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Food server relays orders to the kitchen by typing them in or phoning today; after the change the checked tablet orders and the patients' own screen orders go to the kitchen screen",
+     "actor": "food server",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "orders checked"
      ],
      "outputs": [
       "kitchen orders"
      ],
      "handoff_to": "kitchen staff",
-     "share_pct": 20,
+     "share_pct": 19,
      "fate": "machine",
      "remaining_pct": 0,
      "block": "integration",
@@ -461,7 +520,8 @@
     "Input contract: diet orders entered by ward nurses; recipes and allergens kept by the kitchen in the meal system; fallback is paper cards.",
     "Questions and late changes do not change.",
     "Patients' time is outside the server's savings.",
-    "Input contract for s2: diet orders entered by ward nurses in the meal system as part of admission today; the diet filter needs no new entry."
+    "Input contract for s2: diet orders entered by ward nurses in the meal system as part of admission today; the diet filter needs no new entry.",
+    "Patients ordering on the screen is shown as s1p and priced as patient time. s1 keeps 60 because the server still takes orders in person from patients who need help, about half of them. The check before sending keeps its full time."
    ],
    "unknowns": [
     "Share of patients able to order on the bedside screen."
@@ -476,11 +536,6 @@
       "description": "Food server helps patients with the bedside screen.",
       "labour_scope": "focal_role",
       "hours_per_100_baseline_hours": 2
-     },
-     {
-      "description": "Patients who can order themselves pick meals on the bedside screen.",
-      "labour_scope": "customer",
-      "hours_per_100_baseline_hours": 0.5
      }
     ]
    },
@@ -488,22 +543,22 @@
     {
      "id": "a1",
      "action_step_id": "s3",
-     "approved_version": "Orders as confirmed by the food server after the diet check; a later change goes by phone in s5.",
-     "approval_step_id": "s6",
+     "approved_version": "The meal orders the server took on the tablet, with patient, dishes and portion exactly as checked by the server in s3c, sent once to the kitchen screen for that meal; patients' own screen orders go as each patient confirms them. A later change goes by phone in s5.",
+     "approval_step_id": "s3c",
      "approver": "food server"
     }
    ],
    "time_saved_range_pct": {
-    "low": 18,
-    "high": 32,
-    "basis": "Wards where most patients need help save less."
+    "low": 37.4,
+    "high": 46.0,
+    "basis": "Low: most patients on the ward need help, so few order on the screen and s1 keeps 85 (37.4); high: about half of patients order themselves (46.0)."
    },
-   "focal_role_share_pct": 100,
-   "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 49.0,
+   "focal_role_share_pct": 99,
+   "excluded_labour_share_pct": 1,
+   "gross_time_saved_pct": 48.080808,
    "incremental_hours_per_100_baseline_hours": 2,
-   "time_saved_pct": 47.0,
-   "speedup": 1.886792,
+   "time_saved_pct": 46.080808,
+   "speedup": 1.854627,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -568,7 +623,7 @@
     },
     {
      "id": "s3",
-     "what": "Food server writes temperatures on the paper food safety sheet",
+     "what": "Food server writes temperatures on the paper food safety sheet today; after the change the probe logs each reading and the server picks the product and confirms it on the tablet",
      "actor": "food server",
      "today_means": "document",
      "systems": [],
@@ -580,8 +635,8 @@
      ],
      "handoff_to": "none",
      "share_pct": 10,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -693,7 +748,7 @@
    "assumptions": [
     "Boundary: from watching the line to reporting; supervisor follow-up is outside.",
     "Input contract: products and limits set by the kitchen manager in the app; fallback is the paper sheet.",
-    "Watching, probing and correcting do not change.",
+    "Watching, probing, correcting and reporting keep their full time. s3 keeps 30 for picking the product and confirming each logged reading.",
     "Readings are about food, not used to rate staff."
    ],
    "unknowns": [
@@ -714,16 +769,16 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 3,
-    "high": 7,
-    "basis": "Almost all of this task is watching in person."
+    "low": 3.7,
+    "high": 6.7,
+    "basis": "Low: the probe often fails to pair, so half of readings are still typed in and s3 keeps 60 (3.7); high: the probe logs as designed (6.7)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 10.0,
+   "gross_time_saved_pct": 7.0,
    "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 9.7,
-   "speedup": 1.10742,
+   "time_saved_pct": 6.7,
+   "speedup": 1.071811,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -732,7 +787,7 @@
    "steps": [
     {
      "id": "s1",
-     "what": "Food server records amounts and types of special food items served on the paper ward list",
+     "what": "Food server records amounts and types of special food items served: on the paper ward list today; after the change on a tablet list of each patient's ordered items, entering what was actually served",
      "actor": "food server",
      "today_means": "document",
      "systems": [],
@@ -745,7 +800,7 @@
      "handoff_to": "none",
      "share_pct": 35,
      "fate": "person_does",
-     "remaining_pct": 50,
+     "remaining_pct": 80,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -787,8 +842,8 @@
      "approval_refs": []
     },
     {
-     "id": "s3",
-     "what": "Food server enters the totals in the kitchen spreadsheet for ordering and billing",
+     "id": "s3c",
+     "what": "Food server checks the shift totals per item and ward against what was actually served before they go to ordering and billing",
      "actor": "food server",
      "today_means": "spreadsheet",
      "systems": [
@@ -798,23 +853,55 @@
       "shift totals"
      ],
      "outputs": [
+      "shift totals checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Food server enters the totals in the kitchen spreadsheet for ordering and billing",
+     "actor": "food server",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "shift totals checked"
+     ],
+     "outputs": [
       "kitchen order totals"
      ],
      "handoff_to": "kitchen staff",
-     "share_pct": 20,
+     "share_pct": 19,
      "fate": "machine",
      "remaining_pct": 0,
      "block": "integration",
      "rung": "configure",
      "loop": null,
      "authority": "write_internal",
-     "human_gate": false,
+     "human_gate": true,
      "boundary": "system_or_means",
      "workflow": "procure-to-pay",
-     "approver": "none",
+     "approver": "food server",
      "labour_scope": "focal_role",
      "shared_step_id": "",
-     "approval_refs": []
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s4",
@@ -874,7 +961,7 @@
      "approval_refs": []
     }
    ],
-   "design": "The server taps each special item served (supplement drinks, tube feeds, diet products) on a tablet per patient in the meal system ({OPS_SYSTEM}), where the dietitian's orders already sit. The system totals the shift, passes totals to kitchen ordering and billing, and lists ordered items not served. Telling the dietitian about refusals stays a conversation.",
+   "design": "The server records each special item actually served (supplement drinks, tube feeds, diet products) on a tablet list of each patient's orders in the meal system ({OPS_SYSTEM}), where the dietitian's orders already sit. The system totals the shift; the server checks the totals and releases them once to kitchen ordering and billing; the system and lists ordered items not served. Telling the dietitian about refusals stays a conversation.",
    "previous_blocker": "Items were written on paper ward lists, tallied by hand and typed into a spreadsheet.",
    "enabler_now": "Meal systems hold special item orders per patient and record what was served on a tablet.",
    "still_hard": "Taps must be made at the bedside, not from memory at the end of the round.",
@@ -915,7 +1002,7 @@
    "assumptions": [
     "Boundary: from special item orders to totals and the dietitian informed; diet plans are outside.",
     "Input contract: special item orders entered by the dietitian in the meal system; fallback is the paper ward list.",
-    "Telling the dietitian does not change.",
+    "Telling the dietitian and checking the totals keep their full time. s1 keeps 80 because patient and item names are listed from the orders, while entering what was actually served stays the server's own record.",
     "Records are about patients' intake, not used to rate servers."
    ],
    "unknowns": [
@@ -934,18 +1021,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3",
+     "approved_version": "The shift totals of special items per item and ward exactly as checked by the food server in s3c, passed once to kitchen ordering and billing in the meal system for that shift; any correction needs a new check.",
+     "approval_step_id": "s3c",
+     "approver": "food server"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 28,
-    "high": 48,
-    "basis": "Wards without tablets on the trolley keep paper lists."
+    "low": 28.5,
+    "high": 55.0,
+    "basis": "Low: half of wards have no tablet on the trolley and keep the paper list, so s1 keeps 100 and s2 and s3 keep 50 (28.5); high: every ward records on the tablet (55.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 67.5,
+   "gross_time_saved_pct": 56.0,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 66.5,
-   "speedup": 2.985075,
+   "time_saved_pct": 55.0,
+   "speedup": 2.222222,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -984,6 +1079,6 @@
   "digest": "research/digests-minor/35-3.md",
   "digest_sha256": "9c37bd6e4230b6d76f4a66b24a4ebb16d252bae0b46d34eb20ea2e1fa9030e91",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T22:10:33"
+  "finalized": "2026-10-17T08:23:01"
  }
 }

@@ -276,9 +276,9 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 5,
-    "high": 11,
-    "basis": "Lines where operators skip downtime reasons give a Pareto nobody trusts, and tallies return."
+    "low": 9.5,
+    "high": 15.8,
+    "basis": "Low: operators often skip downtime reasons, so the Pareto is not trusted and tallies return (9.5); high: reasons entered on most stops (15.8)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
@@ -293,6 +293,36 @@
    "short": "Collect counts, scrap and hours, reconcile with the ERP, work out unit costs and prepare the weekly management report.",
    "steps": [
     {
+     "id": "s0",
+     "what": "Operators book counts at manual stations and order hours at terminals",
+     "actor": "production operator",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "shift report"
+     ],
+     "outputs": [
+      "station bookings"
+     ],
+     "handoff_to": "production supervisor",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "data-to-report",
+     "approver": "none",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s1",
      "what": "Supervisor types production counts and scrap from shift sheets into the spreadsheet",
      "actor": "production supervisor",
@@ -301,13 +331,14 @@
       "SPREADSHEET"
      ],
      "inputs": [
-      "shift report"
+      "shift report",
+      "station bookings"
      ],
      "outputs": [
       "production records"
      ],
      "handoff_to": "none",
-     "share_pct": 25,
+     "share_pct": 24,
      "fate": "person_reviews",
      "remaining_pct": 20,
      "block": "integration",
@@ -315,7 +346,7 @@
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
-     "boundary": "start",
+     "boundary": "actor",
      "workflow": "data-to-report",
      "approver": "none",
      "labour_scope": "focal_role",
@@ -332,7 +363,8 @@
       "OTHER"
      ],
      "inputs": [
-      "clock records"
+      "clock records",
+      "station bookings"
      ],
      "outputs": [
       "time records"
@@ -355,7 +387,7 @@
     },
     {
      "id": "s3",
-     "what": "Supervisor reconciles counts with order confirmations in the ERP and fixes differences",
+     "what": "Supervisor reconciles counts with production orders and fixes differences: by hand in the ERP today; after the change confirmations are prepared from counts and bookings and the supervisor resolves only differences",
      "actor": "production supervisor",
      "today_means": "system_screen",
      "systems": [
@@ -365,10 +397,10 @@
       "production records"
      ],
      "outputs": [
-      "reconciled production"
+      "order confirmations"
      ],
      "handoff_to": "none",
-     "share_pct": 15,
+     "share_pct": 13,
      "fate": "person_reviews",
      "remaining_pct": 40,
      "block": "workflow_automation",
@@ -382,6 +414,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s3c",
+     "what": "Supervisor checks the day's order confirmations: quantities, scrap and hours per order against the shift",
+     "actor": "production supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "order confirmations"
+     ],
+     "outputs": [
+      "confirmations checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "data-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3s",
+     "what": "Supervisor releases the checked confirmations to the ERP",
+     "actor": "production supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "ERP"
+     ],
+     "inputs": [
+      "confirmations checked"
+     ],
+     "outputs": [
+      "reconciled production"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "data-to-report",
+     "approver": "production supervisor",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
     },
     {
      "id": "s4",
@@ -447,8 +541,8 @@
      "approval_refs": []
     },
     {
-     "id": "s6",
-     "what": "Supervisor e-mails the report to the plant manager",
+     "id": "s5c",
+     "what": "Supervisor checks the final weekly report: figures against the week's confirmations and the comment against what happened",
      "actor": "production supervisor",
      "today_means": "email_chat",
      "systems": [
@@ -458,14 +552,44 @@
       "management report"
      ],
      "outputs": [
+      "report checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "data-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6",
+     "what": "Supervisor sends the checked report to the plant manager: by e-mail today, released in {BI} after the change",
+     "actor": "production supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "report checked"
+     ],
+     "outputs": [
       "sent report"
      ],
      "handoff_to": "plant manager",
-     "share_pct": 5,
-     "fate": "machine",
-     "remaining_pct": 0,
-     "block": "workflow_automation",
-     "rung": "configure",
+     "share_pct": 4,
+     "fate": "person_does",
+     "remaining_pct": 20,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": true,
@@ -507,7 +631,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Machine counts and operator entries at manual stations flow into the {OPS_SYSTEM}, order hours come from bookings in the time and attendance system ({OTHER}), and both confirm production orders in the {ERP} automatically, leaving only differences for the supervisor. Unit cost is computed from the controller's rates, and the weekly report is generated in {BI}; the supervisor adds a short comment and releases it.",
+   "design": "Machine counts and operator entries at manual stations flow into the {OPS_SYSTEM}, order hours come from bookings in the time and attendance system ({OTHER}), and both prepare the production order confirmations, leaving only differences for the supervisor, who checks the day's confirmations and releases them once to the {ERP}. Unit cost is computed from the controller's rates, and the weekly report is generated in {BI}; the supervisor adds a short comment, checks the report and releases it once to the plant manager.",
    "previous_blocker": "Counts, hours and costs were re-typed from paper into spreadsheets because systems were not linked.",
    "enabler_now": "Production monitoring replaces paper reports, and time systems and ERPs exchange bookings as standard integration.",
    "still_hard": "Manual stations still depend on operators entering counts; hour bookings per operator need works council consent.",
@@ -555,7 +679,7 @@
     "Boundary: from shift data to the report reviewed; month-end closing is outside.",
     "Input contract: machine counts from counters connected by maintenance; counts at manual stations and order hour bookings entered by operators at terminals; cost rates set by the cost controller; fallback is the spreadsheet.",
     "Hours are reported per order and line, not per operator.",
-    "Plant manager and operator time is outside the supervisor's savings.",
+    "Plant manager and operator time is outside the supervisor's savings; the operators' bookings are step s0 (share 1, other role). Both checks and the ERP release keep their full time; s6 keeps 20 for the release.",
     "Coverage for s1 and s2: about 70% of output comes from machines with connected counters and the rest from operator entries at terminals; orders without bookings show as differences that the supervisor resolves."
    ],
    "unknowns": [
@@ -599,11 +723,6 @@
       "hours_per_100_baseline_hours": 1.5
      },
      {
-      "description": "Operators book counts and hours at terminals.",
-      "labour_scope": "other_role",
-      "hours_per_100_baseline_hours": 1
-     },
-     {
       "description": "Cost controller keeps cost rates current.",
       "labour_scope": "other_role",
       "hours_per_100_baseline_hours": 0.5
@@ -614,28 +733,65 @@
     {
      "id": "a1",
      "action_step_id": "s6",
-     "approved_version": "The week's report with figures and comment as released by the supervisor in s5; changes after release need a new release.",
-     "approval_step_id": "s5",
+     "approved_version": "The week's report with figures and comment exactly as checked by the supervisor in s5c, released once in {BI} to the plant manager; changes after release need a new check.",
+     "approval_step_id": "s5c",
+     "approver": "production supervisor"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s3s",
+     "approved_version": "The day's production order confirmations with quantities, scrap and hours exactly as checked by the supervisor in s3c, posted once to the {ERP} for those orders; any correction needs a new check.",
+     "approval_step_id": "s3c",
      "approver": "production supervisor"
     }
    ],
    "time_saved_range_pct": {
-    "low": 30,
-    "high": 50,
-    "basis": "Plants with mostly manual stations and no order hour booking keep much of the typing."
+    "low": 51.4,
+    "high": 70.6,
+    "basis": "Low: mostly manual stations and few order hour bookings, so much of the typing stays (51.4); high: about 70% of output from connected counters (70.6)."
    },
-   "focal_role_share_pct": 90,
-   "excluded_labour_share_pct": 10,
-   "gross_time_saved_pct": 75.555556,
+   "focal_role_share_pct": 89,
+   "excluded_labour_share_pct": 11,
+   "gross_time_saved_pct": 72.134831,
    "incremental_hours_per_100_baseline_hours": 1.5,
-   "time_saved_pct": 74.055556,
-   "speedup": 3.85439,
+   "time_saved_pct": 70.634831,
+   "speedup": 3.405395,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
    "uid": "51-1011.00:8463",
    "short": "Spot shortages, requisition materials and supplies, chase delivery, request repairs and check what arrives.",
    "steps": [
+    {
+     "id": "s0",
+     "what": "Operators scan empty kanban bins at the lines",
+     "actor": "production operator",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "line stock"
+     ],
+     "outputs": [
+      "bin scans"
+     ],
+     "handoff_to": "buyer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
     {
      "id": "s1",
      "what": "Supervisor checks stock of consumables and supplies at the lines",
@@ -649,7 +805,7 @@
       "shortage list"
      ],
      "handoff_to": "none",
-     "share_pct": 15,
+     "share_pct": 14,
      "fate": "person_does",
      "remaining_pct": 50,
      "block": "workflow_automation",
@@ -657,7 +813,7 @@
      "loop": null,
      "authority": "read",
      "human_gate": false,
-     "boundary": "start",
+     "boundary": "actor",
      "workflow": "procure-to-pay",
      "approver": "none",
      "labour_scope": "focal_role",
@@ -666,7 +822,7 @@
     },
     {
      "id": "s2",
-     "what": "Supervisor fills in a paper requisition with article numbers and quantities",
+     "what": "Supervisor fills in a requisition with article numbers and quantities: on paper today, as a form in the procurement system for non-catalogue items after the change",
      "actor": "production supervisor",
      "today_means": "document",
      "systems": [],
@@ -674,10 +830,10 @@
       "shortage list"
      ],
      "outputs": [
-      "purchase requisition"
+      "requisition draft"
      ],
-     "handoff_to": "buyer",
-     "share_pct": 15,
+     "handoff_to": "none",
+     "share_pct": 13,
      "fate": "person_does",
      "remaining_pct": 40,
      "block": "crud_app",
@@ -691,6 +847,64 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s2c",
+     "what": "Supervisor checks the final requisition: articles, quantities, the line and the need",
+     "actor": "production supervisor",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "requisition draft"
+     ],
+     "outputs": [
+      "requisition checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2s",
+     "what": "Supervisor submits the checked requisition in the procurement system",
+     "actor": "production supervisor",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "requisition checked"
+     ],
+     "outputs": [
+      "purchase requisition"
+     ],
+     "handoff_to": "buyer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "production supervisor",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
     },
     {
      "id": "s3",
@@ -721,6 +935,37 @@
      "approval_refs": []
     },
     {
+     "id": "s3b",
+     "what": "Buyer checks the final order: lines, quantities, supplier and price against the requisition or bin scan",
+     "actor": "buyer",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "approved requisition",
+      "bin scans"
+     ],
+     "outputs": [
+      "order checked"
+     ],
+     "handoff_to": "external",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s4",
      "what": "Buyer orders from the supplier",
      "actor": "buyer",
@@ -729,13 +974,13 @@
       "PROCUREMENT"
      ],
      "inputs": [
-      "approved requisition"
+      "order checked"
      ],
      "outputs": [
       "purchase order"
      ],
      "handoff_to": "external",
-     "share_pct": 10,
+     "share_pct": 9,
      "fate": "person_does",
      "remaining_pct": 60,
      "block": "workflow_automation",
@@ -745,7 +990,7 @@
      "human_gate": true,
      "boundary": "actor",
      "workflow": "procure-to-pay",
-     "approver": "plant manager",
+     "approver": "buyer",
      "labour_scope": "other_role",
      "shared_step_id": "supplier-order-placement",
      "approval_refs": [
@@ -785,7 +1030,7 @@
     },
     {
      "id": "s6",
-     "what": "Supervisor reports equipment failures and requests repair from maintenance by phone",
+     "what": "Supervisor writes the repair request for an equipment failure: by phone to maintenance today, in the maintenance management system with machine number and photo after the change",
      "actor": "production supervisor",
      "today_means": "paper_phone",
      "systems": [
@@ -795,16 +1040,16 @@
       "equipment failure"
      ],
      "outputs": [
-      "repair request"
+      "repair request draft"
      ],
-     "handoff_to": "maintenance technician",
-     "share_pct": 15,
+     "handoff_to": "none",
+     "share_pct": 13,
      "fate": "person_does",
-     "remaining_pct": 60,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "system_or_means",
      "workflow": "other",
@@ -814,8 +1059,70 @@
      "approval_refs": []
     },
     {
+     "id": "s6c",
+     "what": "Supervisor checks the final repair request: machine, fault, photo and urgency",
+     "actor": "production supervisor",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "repair request draft"
+     ],
+     "outputs": [
+      "repair request checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6s",
+     "what": "Supervisor submits the checked repair request to maintenance",
+     "actor": "production supervisor",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "repair request checked"
+     ],
+     "outputs": [
+      "repair request"
+     ],
+     "handoff_to": "maintenance technician",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "production supervisor",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a3"
+     ]
+    },
+    {
      "id": "s7",
-     "what": "Supervisor requests outside repair services when maintenance cannot fix the fault",
+     "what": "Supervisor requests outside repair services when maintenance cannot fix the fault: by e-mail today, by a form in the procurement system after the change",
      "actor": "production supervisor",
      "today_means": "email_chat",
      "systems": [
@@ -825,10 +1132,10 @@
       "repair request"
      ],
      "outputs": [
-      "service requisition"
+      "service request draft"
      ],
-     "handoff_to": "buyer",
-     "share_pct": 10,
+     "handoff_to": "none",
+     "share_pct": 8,
      "fate": "person_does",
      "remaining_pct": 80,
      "block": "crud_app",
@@ -842,6 +1149,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s7c",
+     "what": "Supervisor checks the service request: the fault, the service needed and the machine",
+     "actor": "production supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "service request draft"
+     ],
+     "outputs": [
+      "service request checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s7s",
+     "what": "Supervisor submits the checked service request to purchasing",
+     "actor": "production supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "service request checked"
+     ],
+     "outputs": [
+      "service requisition"
+     ],
+     "handoff_to": "buyer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "production supervisor",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a4"
+     ]
     },
     {
      "id": "s8",
@@ -873,7 +1242,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Consumables move to two-bin kanban: operators scan an empty bin and the {PROCUREMENT} system creates a requisition against a framework contract, so the supervisor only requisitions non-catalogue items through a form there. Order status is visible in the same system instead of by phone, and repair requests go into the maintenance management system ({OTHER}) with machine number and photo.",
+   "design": "Consumables move to two-bin kanban: operators scan an empty bin and the {PROCUREMENT} system creates a requisition against a framework contract, which the buyer checks before ordering; the supervisor only requisitions non-catalogue items through a form there, checks each and submits it once. Order status is visible in the same system instead of by phone. The supervisor writes repair requests in the maintenance management system ({OTHER}) with machine number and photo, and requests for outside services in the procurement system, checking each before submitting it once.",
    "previous_blocker": "Requisitions were paper forms and status lived in the buyer's mailbox.",
    "enabler_now": "Purchasing systems support catalogues, framework contracts and kanban triggers, and maintenance systems take requests from a phone.",
    "still_hard": "Kanban only works if bins are scanned and min/max levels are right; urgent repairs still go by phone.",
@@ -915,7 +1284,7 @@
     "Boundary: from spotting a need to checking what arrived; invoice matching is outside.",
     "Input contract: min/max levels and framework articles set by purchasing; bins scanned empty by operators; machine numbers in the maintenance system kept by maintenance; fallback is the paper requisition.",
     "Requisitions above the spending limit still go to the plant manager.",
-    "Buyer, plant manager and operator time is outside the supervisor's savings."
+    "Buyer, plant manager and operator time is outside the supervisor's savings; the operators' bin scans are step s0 (share 1, other role). Writing repair requests, the checks and the submits keep their full time. s1 keeps 50 for line checks; s2 keeps 40 for non-catalogue items; s5 keeps 50 for chasing late orders; s7 keeps 80 because only the form layout changes."
    ],
    "unknowns": [
     "Share of supplies that can move to kanban.",
@@ -933,11 +1302,6 @@
       "hours_per_100_baseline_hours": 1
      },
      {
-      "description": "Operators scan empty bins.",
-      "labour_scope": "other_role",
-      "hours_per_100_baseline_hours": 1
-     },
-     {
       "description": "Purchasing keeps min/max levels and the catalogue current.",
       "labour_scope": "other_role",
       "hours_per_100_baseline_hours": 0.5
@@ -948,22 +1312,43 @@
     {
      "id": "a1",
      "action_step_id": "s4",
-     "approved_version": "Requisition lines above the spending limit as approved by the plant manager in s3; changed lines need a new approval; lines under the limit need none.",
-     "approval_step_id": "s3",
-     "approver": "plant manager"
+     "approved_version": "The order lines exactly as checked by the buyer in s3b, after the plant manager's approval in s3 for lines above the spending limit, sent once to the framework supplier; changed lines need a new approval and check.",
+     "approval_step_id": "s3b",
+     "approver": "buyer"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s2s",
+     "approved_version": "The requisition with articles and quantities exactly as checked by the supervisor in s2c, submitted once in the {PROCUREMENT} system; any change needs a new check.",
+     "approval_step_id": "s2c",
+     "approver": "production supervisor"
+    },
+    {
+     "id": "a3",
+     "action_step_id": "s6s",
+     "approved_version": "The repair request with machine, fault, photo and urgency exactly as checked by the supervisor in s6c, submitted once to the maintenance queue in the maintenance management system; any change needs a new check.",
+     "approval_step_id": "s6c",
+     "approver": "production supervisor"
+    },
+    {
+     "id": "a4",
+     "action_step_id": "s7s",
+     "approved_version": "The service request with fault, service and machine exactly as checked by the supervisor in s7c, submitted once to purchasing in the {PROCUREMENT} system; any change needs a new check.",
+     "approval_step_id": "s7c",
+     "approver": "production supervisor"
     }
    ],
    "time_saved_range_pct": {
-    "low": 14,
-    "high": 26,
-    "basis": "Plants buying mostly non-catalogue parts and services keep most requisition work."
+    "low": 16.2,
+    "high": 27.4,
+    "basis": "Low: mostly non-catalogue parts and services, so most requisition work stays (16.2); high: consumables on kanban (27.4)."
    },
-   "focal_role_share_pct": 85,
-   "excluded_labour_share_pct": 15,
-   "gross_time_saved_pct": 37.647059,
+   "focal_role_share_pct": 84,
+   "excluded_labour_share_pct": 16,
+   "gross_time_saved_pct": 28.452381,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 36.647059,
-   "speedup": 1.578459,
+   "time_saved_pct": 27.452381,
+   "speedup": 1.378405,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -972,7 +1357,7 @@
    "steps": [
     {
      "id": "s1",
-     "what": "Supervisor requests a new hire with a vacancy form e-mailed to HR",
+     "what": "Supervisor writes the request for a new hire: a vacancy form e-mailed today, a form in the HCM with the position data filled in after the change",
      "actor": "production supervisor",
      "today_means": "email_chat",
      "systems": [
@@ -983,12 +1368,12 @@
       "staffing gap"
      ],
      "outputs": [
-      "vacancy request"
+      "vacancy request draft"
      ],
-     "handoff_to": "HR advisor",
-     "share_pct": 10,
+     "handoff_to": "none",
+     "share_pct": 8,
      "fate": "person_does",
-     "remaining_pct": 60,
+     "remaining_pct": 80,
      "block": "workflow_automation",
      "rung": "configure",
      "loop": null,
@@ -1000,6 +1385,70 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s1c",
+     "what": "Supervisor checks the vacancy request: position, hours, reason and start date",
+     "actor": "production supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "vacancy request draft"
+     ],
+     "outputs": [
+      "vacancy request checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "hire-to-productive",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s1s",
+     "what": "Supervisor submits the checked vacancy request to HR",
+     "actor": "production supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "DOCS"
+     ],
+     "inputs": [
+      "vacancy request checked"
+     ],
+     "outputs": [
+      "vacancy request"
+     ],
+     "handoff_to": "HR advisor",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "hire-to-productive",
+     "approver": "production supervisor",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s2",
@@ -1103,7 +1552,7 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 55,
+     "remaining_pct": 80,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -1146,7 +1595,7 @@
     },
     {
      "id": "s7",
-     "what": "Supervisor proposes promotions or contract extensions to HR by e-mail",
+     "what": "Supervisor writes proposals for promotions or contract extensions: by e-mail today, in an HCM form with the employee's data filled in after the change",
      "actor": "production supervisor",
      "today_means": "email_chat",
      "systems": [
@@ -1156,12 +1605,12 @@
       "agreed evaluations"
      ],
      "outputs": [
-      "personnel action proposal"
+      "proposal draft"
      ],
-     "handoff_to": "HR advisor",
-     "share_pct": 10,
+     "handoff_to": "none",
+     "share_pct": 8,
      "fate": "person_does",
-     "remaining_pct": 60,
+     "remaining_pct": 80,
      "block": "workflow_automation",
      "rung": "configure",
      "loop": null,
@@ -1173,6 +1622,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s7c",
+     "what": "Supervisor checks the proposal: the employee, the action proposed and the reasons",
+     "actor": "production supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "proposal draft"
+     ],
+     "outputs": [
+      "proposal checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "employee-lifecycle",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s7s",
+     "what": "Supervisor submits the checked proposal to HR",
+     "actor": "production supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "proposal checked"
+     ],
+     "outputs": [
+      "personnel action proposal"
+     ],
+     "handoff_to": "HR advisor",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "employee-lifecycle",
+     "approver": "production supervisor",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
     },
     {
      "id": "s8",
@@ -1205,7 +1716,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Vacancy requests, promotion and extension proposals become forms in the {HCM} that route to HR with the employee's data filled in. Evaluation forms in the {TALENT} system pre-fill last year's goals and completed training from the {LMS}; the supervisor writes every judgement, and no model scores or ranks operators.",
+   "design": "Vacancy requests, promotion and extension proposals become forms in the {HCM} with position and employee data filled in; the supervisor writes the reasons, checks each and submits it once to HR. Evaluation forms in the {TALENT} system pre-fill last year's goals and completed training from the {LMS}; the supervisor writes every judgement, and no model scores or ranks operators.",
    "previous_blocker": "Forms were paper or e-mail attachments, retyped by HR.",
    "enabler_now": "HR systems offer request forms, evaluation forms and pre-fill from training records as configuration.",
    "still_hard": "Judging people fairly is the work; any model that evaluates workers would be high-risk and needs workers' representatives informed.",
@@ -1259,7 +1770,7 @@
     "Boundary: from requesting a hire or action to HR processing it; recruitment advertising and contracts are outside.",
     "Input contract: employee data in the HCM kept by HR; goals entered in last year's evaluation; completed training from the learning system; fallback is paper forms.",
     "HR time is outside the supervisor's savings.",
-    "Interviews, decisions and conversations do not change."
+    "Interviews, decisions, conversations, the checks and the submits keep their full time. s1 and s7 keep 80 because only position and employee data fill in and the supervisor writes the reasons; s5 keeps 80 because goals and training fill in and the supervisor writes every judgement."
    ],
    "unknowns": [
     "Number of operators the supervisor evaluates each year.",
@@ -1272,29 +1783,44 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "Supervisor learns and uses the HR forms.",
-      "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 0.5
-     },
-     {
       "description": "HR keeps forms and routing current.",
       "labour_scope": "other_role",
       "hours_per_100_baseline_hours": 0.5
+     },
+     {
+      "description": "No ongoing upkeep for the supervisor: learning the HR forms is a one-off, and using them is part of s1, s5 and s7.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s1s",
+     "approved_version": "The vacancy request with position, hours, reason and start date exactly as checked by the supervisor in s1c, submitted once to HR in the {HCM}; any change needs a new check.",
+     "approval_step_id": "s1c",
+     "approver": "production supervisor"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s7s",
+     "approved_version": "The proposal for that employee with the action and reasons exactly as checked by the supervisor in s7c, submitted once to HR in the {HCM}; any change needs a new check.",
+     "approval_step_id": "s7c",
+     "approver": "production supervisor"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 5,
-    "high": 11,
-    "basis": "Supervisors with few hires and evaluations a year save little on forms."
+    "low": 2.2,
+    "high": 5.4,
+    "basis": "Low: employee data and last year's goals are often missing in the HR systems, so little fills in (2.2); high: data complete (5.4)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
-   "gross_time_saved_pct": 13.157895,
-   "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 12.657895,
-   "speedup": 1.144923,
+   "gross_time_saved_pct": 5.473684,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 5.473684,
+   "speedup": 1.057906,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1346,6 +1872,6 @@
   "digest": "research/digests-minor/51-1.md",
   "digest_sha256": "bce2aba18a9826d9df09648df3a69f82270ae770ea6c876c25029d9105ac5cfd",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T23:40:20"
+  "finalized": "2026-10-17T08:37:56"
  }
 }

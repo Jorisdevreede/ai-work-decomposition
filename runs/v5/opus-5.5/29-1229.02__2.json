@@ -35,7 +35,7 @@
     },
     {
      "id": "s2",
-     "what": "Hospitalist arranges follow-up care and home care by phone",
+     "what": "Hospitalist phones home care and clinics about complex or urgent arrangements",
      "actor": "hospitalist",
      "today_means": "paper_phone",
      "systems": [
@@ -45,14 +45,14 @@
       "discharge decided"
      ],
      "outputs": [
-      "care arranged"
+      "arrangements discussed"
      ],
      "handoff_to": "external",
-     "share_pct": 30,
+     "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 60,
-     "block": "workflow_automation",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -62,6 +62,98 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s2r",
+     "what": "Hospitalist fills transfer requests for home care and follow-up: by phone today, as structured requests from the discharge checklist after the change",
+     "actor": "hospitalist",
+     "today_means": "system_screen",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "discharge decided"
+     ],
+     "outputs": [
+      "transfer request draft"
+     ],
+     "handoff_to": "external",
+     "share_pct": 18,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2c",
+     "what": "Hospitalist checks each transfer request: care needed, dates, medication and the provider or clinic it goes to",
+     "actor": "hospitalist",
+     "today_means": "system_screen",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "transfer request draft"
+     ],
+     "outputs": [
+      "transfer request checked"
+     ],
+     "handoff_to": "external",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2s",
+     "what": "Hospitalist sends the checked transfer request through the regional transfer system",
+     "actor": "hospitalist",
+     "today_means": "system_screen",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "transfer request checked"
+     ],
+     "outputs": [
+      "care arranged"
+     ],
+     "handoff_to": "external",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "hospitalist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s3",
@@ -80,7 +172,7 @@
      "handoff_to": "none",
      "share_pct": 20,
      "fate": "person_does",
-     "remaining_pct": 50,
+     "remaining_pct": 60,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -123,7 +215,7 @@
      "approval_refs": []
     }
    ],
-   "design": "A discharge checklist in the record ({OTHER}) sends structured transfer requests to home care and follow-up clinics through the regional transfer system, so most arrangements no longer need phone calls. The discharge medication list starts from the inpatient orders and the admission list, and the hospitalist reconciles the differences. Deciding on discharge and explaining the plan stay with the hospitalist.",
+   "design": "A discharge checklist in the record ({OTHER}) fills structured transfer requests to home care and follow-up clinics; the hospitalist checks each one and sends it once through the regional transfer system, so routine arrangements no longer need phone calls. Complex or urgent ones are still phoned. The discharge medication list starts from the inpatient orders and the admission list, and the hospitalist reconciles the differences. Deciding on discharge and explaining the plan stay with the hospitalist.",
    "previous_blocker": "Follow-up care was arranged by phone and medication lists rebuilt by hand.",
    "enabler_now": "Records send transfer requests and reconcile medication lists.",
    "still_hard": "Nursing home places still need calls.",
@@ -164,7 +256,7 @@
    "assumptions": [
     "Boundary: from the ward round to the patient discharged; care after discharge is outside.",
     "Input contract: home care providers on the transfer system; fallback is phone.",
-    "Discharge decisions stay with the hospitalist.",
+    "Discharge decisions, calls on complex arrangements, the request checks and sends, and explaining the plan keep their full time. s2r keeps 50 because the checklist fills the requests from the record; s3 keeps 60 because the list starts from the orders and the hospitalist reconciles the differences.",
     "Home care staff read transfers as they took calls."
    ],
    "unknowns": [
@@ -183,18 +275,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s2s",
+     "approved_version": "Each transfer request exactly as checked by the hospitalist in s2c, sent once through the regional transfer system to the named home care provider or clinic; any change needs a new check.",
+     "approval_step_id": "s2c",
+     "approver": "hospitalist"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 7,
-    "high": 14,
-    "basis": "Low: complex discharges to nursing homes; high: routine discharges home."
+    "low": 4.8,
+    "high": 16.0,
+    "basis": "Low: few providers are on the transfer system, so most arrangements are still phoned (s2r keeps 90), and admission lists are incomplete (s3 keeps 80) (4.8); high: routine discharges home with providers on the system (16.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 22.0,
+   "gross_time_saved_pct": 17.0,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 21.0,
-   "speedup": 1.265823,
+   "time_saved_pct": 16.0,
+   "speedup": 1.190476,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -248,14 +348,14 @@
      "handoff_to": "none",
      "share_pct": 40,
      "fate": "person_reviews",
-     "remaining_pct": 50,
+     "remaining_pct": 60,
      "block": "artefact_generator",
      "rung": "deterministic_plus_loop",
      "loop": {
       "purpose": "draft",
       "input": "The admission notes, daily notes, results and medication changes in the record.",
       "output": "A draft narrative of the hospital course and the plan for the GP.",
-      "check": "A validator flags any diagnosis, medication, dose or result not in the record; the hospitalist edits every summary.",
+      "check": "A validator flags any diagnosis, medication, dose or result not in the record, and a second check lists narrative statements that cannot be found in the notes; the hospitalist reads the narrative against the notes, resolves each flag and edits every summary.",
       "stop": "One draft per discharge; if rejected, the hospitalist writes the narrative.",
       "why_not_simpler": "The hospital course is spread over many free-text notes; a template cannot condense it."
      },
@@ -307,7 +407,7 @@
     },
     {
      "id": "s4",
-     "what": "Hospitalist checks the final discharge summary",
+     "what": "Hospitalist checks the final discharge summary: course, medication changes, codes and follow-up against the record, and the patient's own GP as addressee",
      "actor": "hospitalist",
      "today_means": "document",
      "systems": [],
@@ -335,7 +435,7 @@
     },
     {
      "id": "s5",
-     "what": "Hospitalist sends discharge summaries to primary care physicians",
+     "what": "Hospitalist sends the checked discharge summary to the GP through secure messaging",
      "actor": "hospitalist",
      "today_means": "email_chat",
      "systems": [
@@ -349,8 +449,8 @@
      ],
      "handoff_to": "external",
      "share_pct": 5,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_does",
+     "remaining_pct": 20,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -366,7 +466,7 @@
      ]
     }
    ],
-   "design": "The discharge summary template in the record ({OTHER}) fills admission reason, results, procedures and medication changes from structured data. A bounded step drafts the narrative of the hospital course from the notes; a validator flags any diagnosis, medication or result not in the record, and the hospitalist edits every summary. Suggested codes are confirmed one by one. Once checked, the summary goes to the GP through secure messaging.",
+   "design": "The discharge summary template in the record ({OTHER}) fills admission reason, results, procedures and medication changes from structured data. A bounded step drafts the narrative of the hospital course from the notes; a validator flags any diagnosis, medication or result not in the record, and the hospitalist edits every summary. Suggested codes are confirmed one by one. The hospitalist checks the final summary and its addressee and sends it once to the GP through secure messaging.",
    "previous_blocker": "Facts were copied from many screens and the narrative written from scratch.",
    "enabler_now": "Clinical tools draft letters and suggest codes; records fill templates.",
    "still_hard": "Long admissions have many conflicting notes.",
@@ -419,7 +519,7 @@
    "assumptions": [
     "Boundary: from the patient discharged to the summary sent; the GP's follow-up is outside.",
     "Input contract: structured data in the record; fallback is copying by hand.",
-    "The hospitalist edits every summary and confirms every code.",
+    "The hospitalist edits every summary, confirms every code and checks the final summary. s2 keeps 60 because the narrative draft is read against the notes and edited; s5 keeps 20 for the send.",
     "A DPIA comes before use."
    ],
    "unknowns": [
@@ -459,22 +559,22 @@
     {
      "id": "a1",
      "action_step_id": "s5",
-     "approved_version": "The summary as checked by the hospitalist in s4.",
+     "approved_version": "The discharge summary exactly as checked by the hospitalist in s4, sent once through secure messaging to the patient's own GP; any change needs a new check.",
      "approval_step_id": "s4",
      "approver": "hospitalist"
     }
    ],
    "time_saved_range_pct": {
-    "low": 16,
-    "high": 33,
-    "basis": "Low: long complex admissions; high: short routine admissions."
+    "low": 29.0,
+    "high": 44.5,
+    "basis": "Low: long complex admissions with much unstructured data (s1 keeps 60) and drafts that need heavy edits (s2 keeps 80) (29.0); high: short routine admissions (44.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 50.0,
+   "gross_time_saved_pct": 45.0,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 49.5,
-   "speedup": 1.980198,
+   "time_saved_pct": 44.5,
+   "speedup": 1.801802,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -511,7 +611,7 @@
     },
     {
      "id": "s2",
-     "what": "Hospitalist writes orders and tasks for nurses as free text",
+     "what": "Hospitalist writes orders and tasks for nurses: as free text today, from order sets with fixed fields after the change",
      "actor": "hospitalist",
      "today_means": "system_screen",
      "systems": [
@@ -521,10 +621,10 @@
       "care directed"
      ],
      "outputs": [
-      "orders written"
+      "order draft"
      ],
      "handoff_to": "none",
-     "share_pct": 20,
+     "share_pct": 17,
      "fate": "person_does",
      "remaining_pct": 60,
      "block": "crud_app",
@@ -536,6 +636,98 @@
      "workflow": "other",
      "approver": "none",
      "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2c",
+     "what": "Hospitalist checks the final orders: what, when, until when and when to call, for this patient",
+     "actor": "hospitalist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "order draft"
+     ],
+     "outputs": [
+      "orders checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2s",
+     "what": "Hospitalist signs the checked orders, releasing them to the nurses",
+     "actor": "hospitalist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "orders checked"
+     ],
+     "outputs": [
+      "orders written"
+     ],
+     "handoff_to": "nurses",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "hospitalist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
+     "id": "s2n",
+     "what": "Nurses mark tasks done in the record",
+     "actor": "nurses",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "orders written"
+     ],
+     "outputs": [
+      "tasks marked done"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "other_role",
      "shared_step_id": "",
      "approval_refs": []
     },
@@ -576,7 +768,8 @@
      "today_means": "meeting_call",
      "systems": [],
      "inputs": [
-      "orders clarified"
+      "orders clarified",
+      "tasks marked done"
      ],
      "outputs": [
       "shift handed over"
@@ -598,7 +791,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Orders and nursing tasks use order sets with fixed fields (what, when, until when, call if) in the record ({OTHER}), so orders are clearer and fewer calls are needed to clarify them. The handover uses a structured list from the record with open tasks and patients to watch. Directing staff on rounds stays with the hospitalist.",
+   "design": "Orders and nursing tasks use order sets with fixed fields (what, when, until when, call if) in the record ({OTHER}), so orders are clearer and fewer calls are needed to clarify them. The hospitalist checks and signs each set of orders once. Nurses mark tasks done, and the handover uses a structured list from the record with open tasks and patients to watch. Directing staff on rounds stays with the hospitalist.",
    "previous_blocker": "Orders were written as free text and handovers prepared from memory.",
    "enabler_now": "Records hold order sets and structured handover lists.",
    "still_hard": "Changing patients still need calls.",
@@ -639,7 +832,7 @@
    "assumptions": [
     "Boundary: from the ward round to the shift handed over; nursing care is outside.",
     "Input contract: order sets set up; fallback is free text.",
-    "Rounds do not change.",
+    "Rounds and the order check and signature keep their full time. s2 keeps 60 because order sets fill fixed fields; s3 keeps 80 because clearer orders cause fewer calls; s4 keeps 70 because the list replaces compiling open tasks. Nurses' done marks (s2n) are outside the hospitalist's savings.",
     "Nurses read structured orders in about the time free text took."
    ],
    "unknowns": [
@@ -658,18 +851,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s2s",
+     "approved_version": "The orders and tasks exactly as checked by the hospitalist in s2c, signed once for this patient and released to the nurses; any change needs a new check.",
+     "approval_step_id": "s2c",
+     "approver": "hospitalist"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 5,
-    "high": 9,
-    "basis": "Low: small wards; high: large wards with many orders."
+    "low": 3.8,
+    "high": 12.4,
+    "basis": "Low: few orders fit a set (s2 keeps 85), calls barely drop (s3 keeps 95) and the list misses tasks (s4 keeps 90) (3.8); high: large wards with many standard orders (12.4)."
    },
-   "focal_role_share_pct": 100,
-   "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 14.0,
+   "focal_role_share_pct": 99,
+   "excluded_labour_share_pct": 1,
+   "gross_time_saved_pct": 12.929293,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 13.5,
-   "speedup": 1.156069,
+   "time_saved_pct": 12.429293,
+   "speedup": 1.141934,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -677,8 +878,38 @@
    "short": "Receive the consultation request, review the patient's record, examine the patient, advise the treating team, and write the consult note.",
    "steps": [
     {
+     "id": "s0",
+     "what": "Requesting doctor enters the consult request with a structured question and urgency in the record",
+     "actor": "requesting doctor",
+     "today_means": "system_screen",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "patient problem"
+     ],
+     "outputs": [
+      "consult request"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s1",
-     "what": "Hospitalist receives inpatient consultation requests by phone",
+     "what": "Hospitalist receives inpatient consultation requests: by phone today, as electronic requests to read after the change, with urgent ones still phoned",
      "actor": "hospitalist",
      "today_means": "paper_phone",
      "systems": [
@@ -691,7 +922,7 @@
       "request received"
      ],
      "handoff_to": "none",
-     "share_pct": 10,
+     "share_pct": 9,
      "fate": "person_does",
      "remaining_pct": 50,
      "block": "workflow_automation",
@@ -809,7 +1040,7 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_does",
-     "remaining_pct": 60,
+     "remaining_pct": 85,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -823,7 +1054,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Consultations are requested electronically in the record ({OTHER}) with a structured question and urgency, so routine requests do not come by phone. The consult view shows problems, medication, recent results and the question together. The consult note uses a template that starts from the question. Examining and advising stay with the hospitalist.",
+   "design": "Consultations are requested electronically in the record ({OTHER}) with a structured question and urgency, so routine requests do not come by phone. The consult view shows problems, medication, recent results and the question together. The consult note template starts from the question, and the hospitalist writes the findings and advice as today. Examining and advising stay with the hospitalist.",
    "previous_blocker": "Requests came by phone without a clear question, and data were gathered from several screens.",
    "enabler_now": "Records support electronic consult requests and summary views.",
    "still_hard": "Urgent consults still come by phone.",
@@ -864,7 +1095,7 @@
    "assumptions": [
     "Boundary: from the consult request to the consult note; follow-up care is outside.",
     "Input contract: requesting teams use the electronic request; fallback is phone.",
-    "Advising stays with the hospitalist.",
+    "Examining and advising keep their full time. s1 keeps 50 for reading requests and urgent calls; s2 keeps 60 because the consult view gathers the record; s5 keeps 85 because only the question and standard fields fill in. The requesting doctor's form (s0) is outside the hospitalist's savings.",
     "Requesting doctors fill the request in about the time a call took."
    ],
    "unknowns": [
@@ -885,16 +1116,16 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 6,
-    "high": 12,
-    "basis": "Low: mostly urgent consults; high: mostly planned consults."
+    "low": 10.1,
+    "high": 14.3,
+    "basis": "Low: most consults are urgent and still phoned (s1 keeps 80) and the template saves little (s5 keeps 95) (10.1); high: most consults planned and requested electronically (14.3)."
    },
-   "focal_role_share_pct": 100,
-   "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 19.0,
+   "focal_role_share_pct": 99,
+   "excluded_labour_share_pct": 1,
+   "gross_time_saved_pct": 14.89899,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 18.5,
-   "speedup": 1.226994,
+   "time_saved_pct": 14.39899,
+   "speedup": 1.168211,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -942,6 +1173,6 @@
   "digest": "research/digests-minor/29-1.md",
   "digest_sha256": "5d7bc5777e3c199c076be82fc8847b59d13a24aa68c707151f0b858f326e00d7",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T19:24:15"
+  "finalized": "2026-10-17T08:26:05"
  }
 }

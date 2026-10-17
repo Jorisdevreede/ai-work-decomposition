@@ -48,7 +48,7 @@
     },
     {
      "id": "s2",
-     "what": "Emergency physician requests laboratory tests and imaging in the record",
+     "what": "Emergency physician requests laboratory tests and imaging in the record: test by test today, from an order set after the change",
      "actor": "emergency physician",
      "today_means": "system_screen",
      "systems": [
@@ -58,10 +58,10 @@
       "tests chosen"
      ],
      "outputs": [
-      "tests ordered"
+      "order draft"
      ],
      "handoff_to": "none",
-     "share_pct": 10,
+     "share_pct": 8,
      "fate": "person_does",
      "remaining_pct": 60,
      "block": "crud_app",
@@ -75,6 +75,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s2c",
+     "what": "Emergency physician checks the final orders: patient, tests, clinical question and urgency",
+     "actor": "emergency physician",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "order draft"
+     ],
+     "outputs": [
+      "orders checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2s",
+     "what": "Emergency physician signs the checked orders, releasing them to the lab and radiology",
+     "actor": "emergency physician",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "orders checked"
+     ],
+     "outputs": [
+      "tests ordered"
+     ],
+     "handoff_to": "lab and radiology",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "emergency physician",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s3",
@@ -152,7 +214,7 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 70,
+     "remaining_pct": 80,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -166,8 +228,16 @@
      "approval_refs": []
     }
    ],
-   "design": "Order sets per presenting complaint, agreed by the department, let the physician request a standard panel in one step and add or drop tests. ECG measurements and ultrasound images flow from the devices into the record, and findings go into structured fields. Choosing tests, performing bedside procedures and interpreting stay fully with the physician.",
-   "approvals": [],
+   "design": "Order sets per presenting complaint, agreed by the department, let the physician request a standard panel in one step and add or drop tests. The physician checks the final orders and signs them once. ECG measurements and ultrasound images flow from the devices into the record, and the physician writes the findings as today. Choosing tests, performing bedside procedures and interpreting stay fully with the physician.",
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s2s",
+     "approved_version": "The lab and imaging orders with patient, tests, clinical question and urgency exactly as checked by the physician in s2c, signed once and released to the lab and radiology; any change needs a new check.",
+     "approval_step_id": "s2c",
+     "approver": "emergency physician"
+    }
+   ],
    "previous_blocker": "Tests were ordered one by one and device results retyped.",
    "enabler_now": "Order sets and device links to the record.",
    "still_hard": "Atypical presentations where standard panels mislead.",
@@ -209,7 +279,7 @@
     "Boundary: diagnostic procedures in the emergency department; reporting by radiology is outside.",
     "Input contract for s2: order sets agreed by the department and kept in the record by the application team.",
     "Input contract for s5: ECG machines and ultrasound devices linked to the record; about 80% of bedside devices are; s5 is priced at that share.",
-    "Selection, procedures and interpretation keep their full time."
+    "Selection, procedures, interpretation and the order check and release keep their full time. s2 keeps 60 because the order set fills the standard panel; s5 keeps 80 because only device measurements fill in and the physician writes the findings."
    ],
    "unknowns": [
     "Which bedside devices are linked."
@@ -228,16 +298,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 2,
-    "high": 6,
-    "basis": "Low: complex patients with custom orders; high: common complaints using order sets."
+    "low": 1.9,
+    "high": 4.9,
+    "basis": "Low: most patients need custom orders (s2 keeps 85) and half of the devices are not linked (s5 keeps 90) (1.9); high: order sets fit common complaints and 80% of devices are linked (4.9)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 7.0,
+   "gross_time_saved_pct": 5.2,
    "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 6.7,
-   "speedup": 1.071811,
+   "time_saved_pct": 4.9,
+   "speedup": 1.051525,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -305,7 +375,7 @@
     },
     {
      "id": "s3",
-     "what": "Emergency physician records the priority and orders",
+     "what": "Emergency physician records the priority of treatment",
      "actor": "emergency physician",
      "today_means": "system_screen",
      "systems": [
@@ -315,12 +385,42 @@
       "priority decided"
      ],
      "outputs": [
-      "orders recorded"
+      "priority recorded"
      ],
      "handoff_to": "none",
-     "share_pct": 20,
+     "share_pct": 8,
      "fate": "person_does",
-     "remaining_pct": 85,
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3o",
+     "what": "Emergency physician enters the orders: one by one today, from order sets after the change",
+     "actor": "emergency physician",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "priority recorded"
+     ],
+     "outputs": [
+      "order draft"
+     ],
+     "handoff_to": "none",
+     "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 75,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -332,10 +432,80 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s3c",
+     "what": "Emergency physician checks the final orders: patient, interventions, doses and urgency against the priority decided",
+     "actor": "emergency physician",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "order draft"
+     ],
+     "outputs": [
+      "orders checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3s",
+     "what": "Emergency physician signs the checked orders, releasing them to nurses, the lab and radiology",
+     "actor": "emergency physician",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "orders checked"
+     ],
+     "outputs": [
+      "orders recorded"
+     ],
+     "handoff_to": "nurses",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "emergency physician",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     }
    ],
-   "design": "The department's overview board shows each patient's latest vital signs from the monitors and lab results with abnormal values marked, so the physician sees them on one screen. Evaluating and setting priority stay fully with the physician; no software triages patients. Orders use the order sets.",
-   "approvals": [],
+   "design": "The department's overview board shows each patient's latest vital signs from the monitors and lab results with abnormal values marked, so the physician sees them on one screen. Evaluating and setting priority stay fully with the physician; no software triages patients. The physician records the priority as today; orders use the order sets, and the physician checks them and signs them once.",
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3s",
+     "approved_version": "The orders exactly as checked by the physician in s3c, signed once for this patient and released to nurses, the lab and radiology; any change needs a new check.",
+     "approval_step_id": "s3c",
+     "approver": "emergency physician"
+    }
+   ],
    "previous_blocker": "Vitals and results sat on separate screens and monitors.",
    "enabler_now": "Department overview boards fed by monitors and the lab system.",
    "still_hard": "Patients whose numbers look fine but who are deteriorating.",
@@ -376,7 +546,7 @@
    "assumptions": [
     "Boundary: deciding interventions and priority; carrying them out is outside.",
     "Input contract for s1: monitors in treatment bays linked to the record and lab results from the lab system; about 80% of bays have linked monitors; s1 is priced at that share.",
-    "Evaluation keeps its full time."
+    "Evaluation, recording the priority, and checking and signing orders keep their full time. s1 keeps 60 because the board shows data from about 80% of bays; s3o keeps 75 because order sets fill standard orders."
    ],
    "unknowns": [
     "Share of bays with linked monitors."
@@ -395,16 +565,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 3,
-    "high": 9,
-    "basis": "Low: departments with few linked monitors; high: fully linked bays."
+    "low": 4.3,
+    "high": 10.3,
+    "basis": "Low: few bays have linked monitors (s1 keeps 80) and few orders fit a set (s3o keeps 95) (4.3); high: 80% linked bays and order sets as designed (10.3)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 11.0,
+   "gross_time_saved_pct": 10.5,
    "incremental_hours_per_100_baseline_hours": 0.2,
-   "time_saved_pct": 10.8,
-   "speedup": 1.121076,
+   "time_saved_pct": 10.3,
+   "speedup": 1.114827,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -486,15 +656,15 @@
      ],
      "handoff_to": "none",
      "share_pct": 15,
-     "fate": "person_reviews",
-     "remaining_pct": 70,
+     "fate": "person_does",
+     "remaining_pct": 85,
      "block": "crud_app",
      "rung": "deterministic_plus_loop",
      "loop": {
       "purpose": "classify",
       "input": "The diagnosis text the physician typed.",
       "output": "Suggested diagnosis codes from the hospital's thesaurus.",
-      "check": "The physician picks or rejects each suggestion; no code is saved without the physician's choice.",
+      "check": "Suggestions come only from the national thesaurus, matched to the typed diagnosis; the physician reads each code's description against the diagnosis and picks or rejects it; no code is saved without the physician's choice, and unclear matches are coded by hand.",
       "stop": "One suggestion list per diagnosis.",
       "why_not_simpler": "Physicians describe the same diagnosis in many ways."
      },
@@ -508,7 +678,7 @@
      "approval_refs": []
     }
    ],
-   "design": "One summary view in the record shows problem list, medication, recent letters and results, including data exchanged from other hospitals and the pharmacy with the patient's consent, instead of opening each document. Diagnosing stays fully with the physician. When the diagnosis is typed, code suggestions from the thesaurus appear and the physician picks one.",
+   "design": "One summary view in the record shows problem list, medication, recent letters and results, including data exchanged from other hospitals and the pharmacy with the patient's consent, instead of opening each document. Diagnosing stays fully with the physician. The physician writes the diagnosis and reasoning as today; when the diagnosis is typed, code suggestions from the thesaurus appear and the physician picks one.",
    "approvals": [],
    "previous_blocker": "History was spread over documents, other hospitals and phone calls.",
    "enabler_now": "Record summary views, regional data exchange and code suggestions.",
@@ -550,7 +720,7 @@
    "assumptions": [
     "Boundary: diagnosing in the emergency department; treatment is outside.",
     "Input contract for s1: records from other hospitals and pharmacies available through regional exchange with the patient's consent, about 60% of patients; others need calls; s1 is priced at that share.",
-    "Diagnosis keeps its full time."
+    "Diagnosis keeps its full time. s3 keeps 85 because only looking up the code goes; writing the diagnosis and reasoning stays."
    ],
    "unknowns": [
     "Share of patients with exchangeable records."
@@ -578,16 +748,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 4,
-    "high": 11,
-    "basis": "Low: patients with few records elsewhere; high: complex patients with many outside records."
+    "low": 4.7,
+    "high": 10.7,
+    "basis": "Low: few patients' outside records come through the exchange (s1 keeps 85) and suggestions rarely fit (s3 keeps 95) (4.7); high: 60% of patients covered and suggestions fit (10.7)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 13.5,
+   "gross_time_saved_pct": 11.25,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 13.0,
-   "speedup": 1.149425,
+   "time_saved_pct": 10.75,
+   "speedup": 1.120448,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -611,7 +781,7 @@
      "handoff_to": "none",
      "share_pct": 20,
      "fate": "person_reviews",
-     "remaining_pct": 60,
+     "remaining_pct": 70,
      "block": "artefact_generator",
      "rung": "configure",
      "loop": null,
@@ -697,11 +867,11 @@
       "disposition recorded"
      ],
      "handoff_to": "none",
-     "share_pct": 15,
+     "share_pct": 12,
      "fate": "person_does",
-     "remaining_pct": 70,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -711,10 +881,80 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s4c",
+     "what": "Emergency physician checks the bed request filled from the disposition: patient, ward, level of care and urgency",
+     "actor": "emergency physician",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "disposition recorded"
+     ],
+     "outputs": [
+      "bed request checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4s",
+     "what": "Emergency physician releases the bed request to bed management: by phone and a separate form today, by one release from the disposition fields after the change",
+     "actor": "emergency physician",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "bed request checked"
+     ],
+     "outputs": [
+      "bed requested"
+     ],
+     "handoff_to": "bed management",
+     "share_pct": 2,
+     "fate": "person_does",
+     "remaining_pct": 25,
+     "block": "workflow_automation",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "emergency physician",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     }
    ],
-   "design": "A handover template in the record fills vital signs, results, treatments given and times from the emergency course, and the physician adds the assessment and question. Consulting and agreeing the disposition stay human. The disposition is recorded in fixed fields that also trigger the bed request or discharge letter.",
-   "approvals": [],
+   "design": "A handover template in the record fills vital signs, results, treatments given and times from the emergency course, and the physician adds the assessment and question. Consulting and agreeing the disposition stay human. The physician records the disposition as today; its fields fill the bed request, which the physician checks and releases once to bed management.",
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4s",
+     "approved_version": "The bed request with patient, ward, level of care and urgency exactly as checked by the physician in s4c, released once to bed management; any change needs a new check.",
+     "approval_step_id": "s4c",
+     "approver": "emergency physician"
+    }
+   ],
    "previous_blocker": "Handover summaries were written from scratch while the consultant waited.",
    "enabler_now": "Handover templates filled from the record.",
    "still_hard": "Disagreements about whether to admit.",
@@ -755,7 +995,7 @@
    "assumptions": [
     "Boundary: consulting on disposition; the admitting team's work is outside.",
     "Input contract for s1: vitals, results and treatments recorded in the record by nurses and physicians during the emergency course.",
-    "Consulting and agreeing keep their full time."
+    "Consulting, agreeing, recording the disposition and checking the bed request keep their full time. s1 keeps 70 because the template fills facts and the physician writes the assessment and question; s4s keeps 25 for releasing the request and calls about urgent beds."
    ],
    "unknowns": [
     "Share of patients needing a consultation."
@@ -774,16 +1014,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 3,
-    "high": 10,
-    "basis": "Low: few admissions; high: busy shifts with many handovers."
+    "low": 3.3,
+    "high": 7.2,
+    "basis": "Low: the template misses many items (s1 keeps 85) and bed requests are still phoned (s4s keeps 70) (3.3); high: the template and request fill as designed (7.2)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 12.5,
+   "gross_time_saved_pct": 7.5,
    "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 12.2,
-   "speedup": 1.138952,
+   "time_saved_pct": 7.2,
+   "speedup": 1.077586,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -819,6 +1059,6 @@
   "digest": "research/digests-minor/29-1.md",
   "digest_sha256": "5d7bc5777e3c199c076be82fc8847b59d13a24aa68c707151f0b858f326e00d7",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T23:47:13"
+  "finalized": "2026-10-17T08:19:36"
  }
 }

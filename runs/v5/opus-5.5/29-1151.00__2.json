@@ -80,7 +80,7 @@
      "handoff_to": "none",
      "share_pct": 20,
      "fate": "person_does",
-     "remaining_pct": 50,
+     "remaining_pct": 65,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -164,7 +164,8 @@
     "Boundary: from the patient scheduled to the plan agreed; giving anesthesia is outside.",
     "Input contract: screening and labs in the record; fallback is searching tabs.",
     "Planning decisions stay with the nurse anesthetist and anesthesiologist.",
-    "Anesthesiologists' time does not change."
+    "Anesthesiologists' time does not change.",
+    "s1 keeps 60 for reading the summary view; gathering from tabs goes. s3 keeps 65: templates fill standard choices, but each plan is changed and recorded by the nurse anesthetist."
    ],
    "unknowns": [
     "Plans per day."
@@ -184,16 +185,16 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 7,
-    "high": 13,
-    "basis": "Low: complex patients with outside records; high: routine day surgery."
+    "low": 6.2,
+    "high": 16.5,
+    "basis": "Low: complex patients with outside records, so s1 and s3 keep 85 (6.2); high: routine day surgery where view and templates fit (16.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 20.0,
+   "gross_time_saved_pct": 17.0,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 19.5,
-   "speedup": 1.242236,
+   "time_saved_pct": 16.5,
+   "speedup": 1.197605,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -201,8 +202,8 @@
    "short": "Hand out the anesthesia leaflet, explain anesthesia, risks and alternatives, answer the patient's questions, and record consent.",
    "steps": [
     {
-     "id": "s1",
-     "what": "Nurse anesthetist hands out the printed anesthesia information leaflet",
+     "id": "s0b",
+     "what": "Nurse anesthetist checks the information before it goes: the leaflet and video fit the planned anesthesia type, and it goes to this patient's portal",
      "actor": "nurse anesthetist",
      "today_means": "document",
      "systems": [],
@@ -210,23 +211,53 @@
       "consent visit"
      ],
      "outputs": [
-      "leaflet given"
+      "leaflet checked"
      ],
      "handoff_to": "customer",
-     "share_pct": 10,
+     "share_pct": 1,
      "fate": "person_does",
-     "remaining_pct": 30,
-     "block": "notification",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
-     "boundary": "start",
+     "boundary": "decision",
      "workflow": "inquiry-to-answer",
      "approver": "none",
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s1",
+     "what": "Nurse anesthetist gives the anesthesia leaflet: handed out printed today; after the change released to the patient's portal with a short video before the visit, printed only for patients without the portal",
+     "actor": "nurse anesthetist",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "leaflet checked"
+     ],
+     "outputs": [
+      "leaflet given"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 9,
+     "fate": "person_does",
+     "remaining_pct": 30,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "start",
+     "workflow": "inquiry-to-answer",
+     "approver": "nurse anesthetist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s2",
@@ -313,7 +344,7 @@
      "approval_refs": []
     }
    ],
-   "design": "The patient portal sends the anesthesia leaflet and a short video before the visit ({OTHER}), so the leaflet is not handed out and the patient arrives with questions. The consent form in the record ({OPS_SYSTEM}) is prefilled with patient, procedure and anesthesia type and signed on a tablet, so it is not written on paper and copied into the record. Explaining and answering questions stay with the nurse anesthetist.",
+   "design": "The nurse anesthetist checks and releases the anesthesia leaflet and a short video to the patient portal before the visit ({OTHER}), so the leaflet is not handed out and the patient arrives with questions. The consent form in the record ({OPS_SYSTEM}) is prefilled with patient, procedure and anesthesia type and signed on a tablet, so it is not written on paper and copied into the record. Explaining and answering questions stay with the nurse anesthetist.",
    "previous_blocker": "Leaflets were handed out at the visit and consent written on paper.",
    "enabler_now": "Patient portals send information; records take tablet signatures.",
    "still_hard": "Patients with low literacy need everything explained in person.",
@@ -355,7 +386,8 @@
     "Boundary: from the consent visit to consent recorded; the surgeon's consent talk is outside.",
     "Input contract: patient uses the portal; fallback is the printed leaflet.",
     "Explaining does not get shorter.",
-    "Patients read the leaflet at home."
+    "Patients read the leaflet at home.",
+    "s1 keeps 30 for the release and printouts for patients without the portal; its check (s0b) takes 1. s4 keeps 40 for completing and checking the signed form; copying from paper goes."
    ],
    "unknowns": [
     "Consent visits per day."
@@ -378,18 +410,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s1",
+     "approved_version": "The anesthesia leaflet and video for the planned anesthesia type exactly as checked by the nurse anesthetist in s0b, released once to this patient's portal; any change needs a new check.",
+     "approval_step_id": "s0b",
+     "approver": "nurse anesthetist"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 4,
-    "high": 8,
-    "basis": "Low: older patients who do not use the portal; high: day surgery patients who do."
+    "low": 10.3,
+    "high": 14.8,
+    "basis": "Low: many older patients do not use the portal, so leaflets are still handed out and s1 keeps 80 (10.3); high: day surgery patients who use the portal (14.8)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 16.0,
+   "gross_time_saved_pct": 15.3,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 15.5,
-   "speedup": 1.183432,
+   "time_saved_pct": 14.8,
+   "speedup": 1.173709,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -397,19 +437,50 @@
    "short": "Take the patient through the health questionnaire, interview and examine the patient, decide fitness for anesthesia, and document the screening.",
    "steps": [
     {
+     "id": "s0c",
+     "what": "Patient fills the health questionnaire in the patient portal at home",
+     "actor": "patient",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "screening visit"
+     ],
+     "outputs": [
+      "questionnaire answers"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "customer",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s1",
      "what": "Nurse anesthetist goes through the health questionnaire with the patient",
      "actor": "nurse anesthetist",
      "today_means": "in_person",
      "systems": [],
      "inputs": [
-      "screening visit"
+      "screening visit",
+      "questionnaire answers"
      ],
      "outputs": [
       "questionnaire done"
      ],
      "handoff_to": "customer",
-     "share_pct": 20,
+     "share_pct": 19,
      "fate": "person_does",
      "remaining_pct": 50,
      "block": "crud_app",
@@ -497,14 +568,14 @@
      "handoff_to": "none",
      "share_pct": 20,
      "fate": "person_reviews",
-     "remaining_pct": 50,
+     "remaining_pct": 65,
      "block": "artefact_generator",
      "rung": "deterministic_plus_loop",
      "loop": {
       "purpose": "draft",
       "input": "The screening conversation, recorded with the patient's consent, and the questionnaire answers.",
       "output": "A draft screening note in the record's fields.",
-      "check": "Code flags any finding, medication or allergy not found in the transcript or questionnaire; the nurse anesthetist edits and validates every note before it is saved.",
+      "check": "Code flags any finding, medication or allergy not found in the transcript or questionnaire; the nurse anesthetist reads the draft against their own examination and fitness decision, corrects it, and types the note when the draft misses or changes a finding, before it is saved.",
       "stop": "One draft per screening; if rejected, the nurse anesthetist writes the note.",
       "why_not_simpler": "Questionnaire fields hold the answers, not the interview and exam findings."
      },
@@ -560,7 +631,7 @@
     "Boundary: from the screening visit to the screening documented; surgery planning is outside.",
     "Input contract: patient consents to recording; fallback is typing the note.",
     "The nurse anesthetist validates every note.",
-    "Patients fill the questionnaire at home."
+    "Patients fill the questionnaire at home (s0c, share 1, customer time), instead of going through it with the nurse anesthetist. s1 keeps 50 for going through flagged answers. s4 keeps 65 because every note is read against the examination."
    ],
    "unknowns": [
     "Screenings per day."
@@ -584,26 +655,21 @@
       "description": "Nurse anesthetist asks patients' consent to record.",
       "labour_scope": "focal_role",
       "hours_per_100_baseline_hours": 0.5
-     },
-     {
-      "description": "Patients fill the questionnaire in the portal.",
-      "labour_scope": "customer",
-      "hours_per_100_baseline_hours": 3
      }
     ]
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 7,
-    "high": 13,
-    "basis": "Low: older patients who fill nothing at home; high: day surgery patients who do."
+    "low": 4.8,
+    "high": 16.1,
+    "basis": "Low: many older patients fill nothing at home, so s1 keeps 90, and half decline recording, so s4 keeps 83 (4.8); high: day surgery patients who fill it in and consent (16.1)."
    },
-   "focal_role_share_pct": 100,
-   "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 20.0,
+   "focal_role_share_pct": 99,
+   "excluded_labour_share_pct": 1,
+   "gross_time_saved_pct": 16.666667,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 19.5,
-   "speedup": 1.242236,
+   "time_saved_pct": 16.166667,
+   "speedup": 1.192843,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -741,7 +807,7 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 50,
+     "remaining_pct": 60,
      "block": "artefact_generator",
      "rung": "deterministic",
      "loop": null,
@@ -797,7 +863,8 @@
     "Boundary: from the patient in recovery to the note written; ward care is outside.",
     "Input contract: monitors linked to the record; fallback is hand charting.",
     "Clinical decisions stay with the nurse anesthetist.",
-    "Anesthesiologists' time does not change."
+    "Anesthesiologists' time does not change.",
+    "s3 keeps 30 for confirming monitor values and scoring by eye. s5 keeps 60 because findings and decisions are written by the nurse anesthetist; vitals, drugs and the score fill in."
    ],
    "unknowns": [
     "Patients in recovery per day."
@@ -817,16 +884,16 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 5,
-    "high": 10,
-    "basis": "Low: unstable patients needing close attention; high: routine day surgery recoveries."
+    "low": 3.5,
+    "high": 14.0,
+    "basis": "Low: recovery monitors are not linked to the record, so charting stays by hand and s3 keeps 100 (3.5); high: linked monitors as designed (14.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 15.5,
+   "gross_time_saved_pct": 14.5,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 15.0,
-   "speedup": 1.176471,
+   "time_saved_pct": 14.0,
+   "speedup": 1.162791,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -875,6 +942,6 @@
   "digest": "research/digests-minor/29-1.md",
   "digest_sha256": "5d7bc5777e3c199c076be82fc8847b59d13a24aa68c707151f0b858f326e00d7",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T19:52:55"
+  "finalized": "2026-10-17T08:32:01"
  }
 }

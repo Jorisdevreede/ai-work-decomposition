@@ -187,7 +187,7 @@
       "purpose": "draft",
       "input": "The recorded consultation, with the patient's consent, and the structured data in the record.",
       "output": "A draft of the findings and plan in the record template.",
-      "check": "The dermatologist reads and corrects every draft before it is saved; a monthly sample audit looks for omissions.",
+      "check": "A check lists every statement in the draft that cannot be found in the consultation transcript, and every finding or plan item in the transcript missing from the draft; the dermatologist reads the draft against the consult, resolves each listed item and corrects every line before it is saved. A monthly sample audit looks for omissions.",
       "stop": "The dermatologist writes it when the recording is incomplete or the patient declines recording.",
       "why_not_simpler": "Each consultation is free conversation."
      },
@@ -338,9 +338,9 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 1.3,
-    "high": 3.3,
-    "basis": "Low: few follow-up patients and consents; high: many follow-ups and consents."
+    "low": 1.8,
+    "high": 4.3,
+    "basis": "Low: most lesions still have images from before the body map (s3 keeps 70) and few patients agree to recording (s6 keeps 90) (1.8); high: the body map holds earlier images and most patients agree (4.3)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
@@ -412,7 +412,7 @@
     },
     {
      "id": "s3",
-     "what": "Dermatologist selects and prints leaflets",
+     "what": "Dermatologist selects leaflets: printed today, picked from vetted texts for the portal after the change",
      "actor": "dermatologist",
      "today_means": "document",
      "systems": [
@@ -422,16 +422,16 @@
       "patient counselled"
      ],
      "outputs": [
-      "leaflets given"
+      "leaflets chosen"
      ],
      "handoff_to": "patient",
-     "share_pct": 4,
+     "share_pct": 2,
      "fate": "person_does",
      "remaining_pct": 50,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
-     "authority": "act_external",
+     "authority": "read",
      "human_gate": false,
      "boundary": "artefact",
      "workflow": "other",
@@ -439,6 +439,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s3c",
+     "what": "Dermatologist checks the leaflets fit this patient's risk and the advice given, and that they go to this patient",
+     "actor": "dermatologist",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "leaflets chosen"
+     ],
+     "outputs": [
+      "leaflets checked"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3s",
+     "what": "Dermatologist sends the checked leaflets to the patient portal",
+     "actor": "dermatologist",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "leaflets checked"
+     ],
+     "outputs": [
+      "leaflets given"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "dermatologist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
     },
     {
      "id": "s4",
@@ -464,7 +526,7 @@
       "purpose": "draft",
       "input": "The recorded consultation, with the patient's consent, and the structured data in the record.",
       "output": "A draft of the counselling note in the record template.",
-      "check": "The dermatologist reads and corrects every draft before it is saved; a monthly sample audit looks for omissions.",
+      "check": "A check lists every statement in the draft that cannot be found in the consultation transcript; the dermatologist reads the draft against the consult, resolves each listed statement and corrects every line before it is saved. A monthly sample audit looks for omissions.",
       "stop": "The dermatologist writes it when the recording is incomplete or the patient declines recording.",
       "why_not_simpler": "Each consultation is free conversation."
      },
@@ -509,7 +571,7 @@
     },
     {
      "id": "s6",
-     "what": "Dermatologist answers follow-up messages",
+     "what": "Dermatologist writes replies to follow-up messages: from scratch today, from a draft citing vetted texts after the change",
      "actor": "dermatologist",
      "today_means": "email_chat",
      "systems": [
@@ -519,23 +581,23 @@
       "counselling noted"
      ],
      "outputs": [
-      "messages answered"
+      "reply draft"
      ],
      "handoff_to": "patient",
-     "share_pct": 5,
+     "share_pct": 3,
      "fate": "person_reviews",
-     "remaining_pct": 80,
+     "remaining_pct": 70,
      "block": "answer_desk",
      "rung": "deterministic_plus_loop",
      "loop": {
       "purpose": "draft",
       "input": "The patient's question and vetted, guideline-based patient texts.",
       "output": "A draft reply citing the text it draws on.",
-      "check": "Each reply cites its paragraph and the dermatologist reads and signs it before sending.",
+      "check": "Each reply sentence must cite its vetted paragraph. A second check reads each sentence against the cited paragraph and flags sentences the paragraph does not support; questions about new symptoms or not covered by the texts get no draft and the dermatologist answers them by hand.",
       "stop": "Questions about the patient's own diagnosis go to the dermatologist unanswered.",
       "why_not_simpler": "Patients ask in their own words."
      },
-     "authority": "act_external",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "actor",
      "workflow": "other",
@@ -543,10 +605,87 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s6c",
+     "what": "Dermatologist checks the final reply: advice against the patient's record and the vetted texts, and that it goes to this patient",
+     "actor": "dermatologist",
+     "today_means": "email_chat",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "reply draft"
+     ],
+     "outputs": [
+      "reply checked"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6s",
+     "what": "Dermatologist sends the checked reply through the patient portal",
+     "actor": "dermatologist",
+     "today_means": "email_chat",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "reply checked"
+     ],
+     "outputs": [
+      "messages answered"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "dermatologist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     }
    ],
-   "design": "Leaflets from vetted, guideline-based texts are linked in the patient portal. The annual screening recall is set automatically from the diagnosis code, and the dermatologist confirms it. With consent, the scribe drafts the counselling note. Follow-up replies start from drafts citing vetted texts, and the dermatologist signs each. Counselling and demonstration stay with the dermatologist.",
-   "approvals": [],
+   "design": "Leaflets from vetted, guideline-based texts are chosen, checked and sent once to the patient portal. The annual screening recall is set automatically from the diagnosis code, and the dermatologist confirms it. With consent, the scribe drafts the counselling note. Follow-up replies start from drafts citing vetted texts; the dermatologist adapts each, checks the final reply and sends it once. Counselling and demonstration stay with the dermatologist.",
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s6s",
+     "approved_version": "Each reply text exactly as checked by the dermatologist in s6c, sent once through the patient portal to the patient who asked; any change needs a new check.",
+     "approval_step_id": "s6c",
+     "approver": "dermatologist"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s3s",
+     "approved_version": "The leaflets exactly as checked by the dermatologist in s3c, sent once to this patient's portal; any change needs a new check.",
+     "approval_step_id": "s3c",
+     "approver": "dermatologist"
+    }
+   ],
    "previous_blocker": "Leaflets were printed and recalls set by hand.",
    "enabler_now": "Portal leaflets, coded recalls, scribes and reply drafting with citations.",
    "still_hard": "Patients who skip their annual screening.",
@@ -593,7 +732,7 @@
    "assumptions": [
     "Boundary: counselling on prevention; diagnosing and treating skin conditions (task 17095) is in this set and a separate task.",
     "The means prior puts 2% on screens; the steps show 4%, for setting screening recalls, and slightly less in person.",
-    "s3 keeps half; s4 is priced at 75; s5 keeps 30 for confirming the recall; s6 is priced at 80."
+    "s3 keeps half; s4 is priced at 75; s5 keeps 30 for confirming the recall; s6 keeps 70 because the dermatologist adapts every draft; the leaflet and reply checks and sends keep their full time."
    ],
    "unknowns": [
     "Patients on annual screening."
@@ -605,23 +744,23 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "No new work.",
+      "description": "Dermatologist asks consent for recording.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 0
+      "hours_per_100_baseline_hours": 0.2
      }
     ]
    },
    "time_saved_range_pct": {
-    "low": 2,
-    "high": 4.9,
-    "basis": "Low: few screening patients; high: large screening population."
+    "low": 3.3,
+    "high": 5.2,
+    "basis": "Low: few patients use the portal leaflets (s3 keeps 80), few agree to recording (s4 keeps 95) and few questions fit a draft (s6 keeps 95) (3.3); high: the design as priced (5.2)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 6.55,
-   "incremental_hours_per_100_baseline_hours": 0,
-   "time_saved_pct": 6.55,
-   "speedup": 1.070091,
+   "gross_time_saved_pct": 5.45,
+   "incremental_hours_per_100_baseline_hours": 0.2,
+   "time_saved_pct": 5.25,
+   "speedup": 1.055409,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -739,7 +878,7 @@
       "purpose": "draft",
       "input": "The recorded consultation, with the patient's consent, and the structured data in the record.",
       "output": "A draft of the findings and plan in the record template.",
-      "check": "The dermatologist reads and corrects every draft before it is saved; a monthly sample audit looks for omissions.",
+      "check": "A check lists every statement in the draft that cannot be found in the consultation transcript, and every finding or plan item in the transcript missing from the draft; the dermatologist reads the draft against the consult, resolves each listed item and corrects every line before it is saved. A monthly sample audit looks for omissions.",
       "stop": "The dermatologist writes it when the recording is incomplete or the patient declines recording.",
       "why_not_simpler": "Each consultation is free conversation."
      },
@@ -845,7 +984,7 @@
     },
     {
      "id": "s8",
-     "what": "Dermatologist checks and signs the final GP letter",
+     "what": "Dermatologist checks the final GP letter: findings, plan and medication against the record, and the patient's own GP as addressee",
      "actor": "dermatologist",
      "today_means": "document",
      "systems": [
@@ -855,7 +994,7 @@
       "letter draft"
      ],
      "outputs": [
-      "letter signed"
+      "letter checked"
      ],
      "handoff_to": "none",
      "share_pct": 1,
@@ -864,7 +1003,7 @@
      "block": "judgement_step",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "other",
@@ -875,14 +1014,14 @@
     },
     {
      "id": "s9",
-     "what": "Dermatologist sends the signed letter to the GP",
+     "what": "Dermatologist signs and sends the checked letter to the GP",
      "actor": "dermatologist",
      "today_means": "email_chat",
      "systems": [
       "OTHER"
      ],
      "inputs": [
-      "letter signed"
+      "letter checked"
      ],
      "outputs": [
       "letter sent"
@@ -940,7 +1079,7 @@
     {
      "id": "a1",
      "action_step_id": "s9",
-     "approved_version": "The GP letter exactly as checked and signed by the dermatologist in s8, sent to the patient's own GP; any change needs a new signature.",
+     "approved_version": "The GP letter exactly as checked by the dermatologist in s8, signed and sent once to the patient's own GP; any change needs a new check.",
      "approval_step_id": "s8",
      "approver": "dermatologist"
     }
@@ -1029,9 +1168,9 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 1.2,
-    "high": 3.1,
-    "basis": "Low: few recorded consultations; high: most recorded."
+    "low": 1.4,
+    "high": 3.9,
+    "basis": "Low: few patients agree to recording (s4 keeps 92) and letters need heavy edits (s7 keeps 80) (1.4); high: most consults recorded and letters fill as designed (3.9)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
@@ -1220,7 +1359,7 @@
       "purpose": "draft",
       "input": "The recorded consultation, with the patient's consent, and the structured data in the record.",
       "output": "A draft of the health history in the record template.",
-      "check": "The dermatologist reads and corrects every draft before it is saved; a monthly sample audit looks for omissions.",
+      "check": "A check lists every statement in the draft that cannot be found in the consultation transcript or the questionnaire, and every item in the transcript missing from the draft; the dermatologist reads the draft against the consult, resolves each listed item and corrects every line before it is saved. A monthly sample audit looks for omissions.",
       "stop": "The dermatologist writes it when the recording is incomplete or the patient declines recording.",
       "why_not_simpler": "Each consultation is free conversation."
      },
@@ -1254,7 +1393,7 @@
      "block": "conversation",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "read",
+     "authority": "act_external",
      "human_gate": false,
      "boundary": "actor",
      "workflow": "other",
@@ -1348,9 +1487,9 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 5.8,
-    "high": 14.6,
-    "basis": "Low: few questionnaires and overviews; high: most patients complete both."
+    "low": 8.1,
+    "high": 19.2,
+    "basis": "Low: only a third of patients have an overview by integration (s4 keeps 70), half fill the questionnaire (s5 keeps 60) and few agree to recording (s6 keeps 90) (8.1); high: coverage as assumed (19.2)."
    },
    "focal_role_share_pct": 99,
    "excluded_labour_share_pct": 1,
@@ -1392,6 +1531,6 @@
   "digest": "research/digests-minor/29-1.md",
   "digest_sha256": "5d7bc5777e3c199c076be82fc8847b59d13a24aa68c707151f0b858f326e00d7",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-17T04:36:45"
+  "finalized": "2026-10-17T08:30:24"
  }
 }

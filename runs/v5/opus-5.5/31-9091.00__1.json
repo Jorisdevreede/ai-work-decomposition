@@ -59,7 +59,7 @@
       "purpose": "draft",
       "input": "The recording of the treatment talk, made only with the patient's consent, and the practice's fixed note template.",
       "output": "A draft treatment note in the template: anaesthetic, materials, findings and advice.",
-      "check": "Every drug name and dose must match the practice's medicines list and appear in the transcript; every number must appear in the transcript; the assistant corrects the draft and it goes to the dentist; nothing enters the record unsigned.",
+      "check": "Every drug name and dose must match the practice's medicines list and appear in the transcript, every number must appear in the transcript, and a validator lists any statement not found in the transcript; the assistant reads the draft against the treatment talk, resolves each listed statement and corrects it, and it goes to the dentist; nothing enters the record unsigned.",
       "stop": "One draft per treatment; without consent or on failure the assistant types the note.",
       "why_not_simpler": "The treatment talk is free speech; a template alone cannot turn it into a note."
      },
@@ -104,7 +104,7 @@
     },
     {
      "id": "s4",
-     "what": "Assistant saves the note to the patient's dossier",
+     "what": "Assistant saves the note to the patient's dossier; after the change the record saves it when the dentist signs",
      "actor": "dental assistant",
      "today_means": "system_screen",
      "systems": [
@@ -124,15 +124,13 @@
      "rung": "deterministic",
      "loop": null,
      "authority": "write_internal",
-     "human_gate": true,
+     "human_gate": false,
      "boundary": "system_or_means",
      "workflow": "documents-and-records",
-     "approver": "dentist",
+     "approver": "none",
      "labour_scope": "focal_role",
      "shared_step_id": "",
-     "approval_refs": [
-      "a1"
-     ]
+     "approval_refs": []
     },
     {
      "id": "s5",
@@ -166,7 +164,7 @@
     },
     {
      "id": "s6",
-     "what": "Assistant types the batch numbers of materials used",
+     "what": "Assistant records the batch numbers of materials used: typed today, by scanning each batch label after the change",
      "actor": "dental assistant",
      "today_means": "system_screen",
      "systems": [
@@ -195,7 +193,7 @@
      "approval_refs": []
     }
    ],
-   "design": "With the patient's consent, a CE-marked scribe in the dental record system ({OTHER}) drafts the treatment note from the treatment talk into the practice template, with drug names and numbers checked against lists and the transcript; the assistant corrects it, the dentist signs, and only then does the system save it to the dossier. Treatment codes are proposed from the charted treatments for the assistant to check, and batch labels are scanned; charting stays live.",
+   "design": "With the patient's consent, a CE-marked scribe in the dental record system ({OTHER}) drafts the treatment note from the treatment talk into the practice template, with drug names and numbers checked against lists and the transcript; the assistant corrects it and the dentist signs; signing saves it to the dossier, an ordinary save that needs no approval. Treatment codes are proposed from the charted treatments for the assistant to check, and batch labels are scanned; charting stays live.",
    "previous_blocker": "Notes were typed after each treatment and codes looked up by hand.",
    "enabler_now": "Dutch practices use ambient scribes that draft consult notes for the clinician to approve; record systems can map charted treatments to tariff codes.",
    "still_hard": "Scribes make verified errors in a share of notes; patients may hold back with a recorder on; the scribe must be CE-marked class IIa or higher.",
@@ -255,7 +253,7 @@
     "Boundary: from charting to the filed note, codes and batches; billing is outside.",
     "Input contract: recording consent asked by the assistant at the start; note template and medicines list kept by the practice owner; code mapping from the record system supplier; fallback is typing.",
     "Recordings are deleted once the note is signed.",
-    "Dentist time is outside the assistant's savings."
+    "Dentist time is outside the assistant's savings. s2 keeps 40 for reading and correcting each draft; s5 keeps 40 for checking proposed codes; s6 keeps 50 for scanning each label."
    ],
    "unknowns": [
     "Share of patients who consent to recording.",
@@ -296,19 +294,11 @@
      }
     ]
    },
-   "approvals": [
-    {
-     "id": "a1",
-     "action_step_id": "s4",
-     "approved_version": "The treatment note as signed by the dentist in s3; any later edit needs a new signature.",
-     "approval_step_id": "s3",
-     "approver": "dentist"
-    }
-   ],
+   "approvals": [],
    "time_saved_range_pct": {
-    "low": 15,
-    "high": 28,
-    "basis": "Patients who refuse recording and complex treatments keep notes typed by hand."
+    "low": 21.6,
+    "high": 40.5,
+    "basis": "Low: many patients refuse recording, so notes are typed by hand and s2 keeps 100 (21.6); high: most patients consent (40.5)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
@@ -324,7 +314,7 @@
    "steps": [
     {
      "id": "s1",
-     "what": "Assistant counts dental supplies in the cupboards and writes a stock list",
+     "what": "Assistant tracks dental supplies: counts the cupboards and writes a stock list today, scans the card of each empty bin after the change",
      "actor": "dental assistant",
      "today_means": "document",
      "systems": [],
@@ -435,8 +425,8 @@
      "approval_refs": []
     },
     {
-     "id": "s5",
-     "what": "Assistant places the order in the supplier's webshop",
+     "id": "s4b",
+     "what": "Assistant checks the final order: items, quantities, prices, the manager's approval where needed, and the supplier",
      "actor": "dental assistant",
      "today_means": "system_screen",
      "systems": [
@@ -446,12 +436,42 @@
       "approved order"
      ],
      "outputs": [
+      "order checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Assistant places the order in the supplier's webshop: typed item by item today, by one release of the checked order after the change",
+     "actor": "dental assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "order checked"
+     ],
+     "outputs": [
       "supplier order"
      ],
      "handoff_to": "external",
-     "share_pct": 15,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "share_pct": 14,
+     "fate": "person_does",
+     "remaining_pct": 10,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -459,7 +479,7 @@
      "human_gate": true,
      "boundary": "system_or_means",
      "workflow": "procure-to-pay",
-     "approver": "practice manager",
+     "approver": "dental assistant",
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": [
@@ -553,7 +573,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Supplies sit in two bins with a barcode card; the assistant scans the card when a bin empties, which replaces the weekly count. The practice management system ({OTHER}) turns scans and minimum levels into a proposed order, the assistant adjusts it, the practice manager approves orders above the limit, and the system sends the order to the supplier's webshop. An equipment register raises an alert when a service is due; unpacking and booking the service visit stay manual.",
+   "design": "Supplies sit in two bins with a barcode card; the assistant scans the card when a bin empties, which replaces the weekly count. The practice management system ({OTHER}) turns scans and minimum levels into a proposed order, the assistant adjusts it, the practice manager approves orders above the limit, and the assistant checks the final order and releases it once to the supplier's webshop. An equipment register raises an alert when a service is due; unpacking and booking the service visit stay manual.",
    "previous_blocker": "Stock was counted by eye and orders typed into the webshop; service dates sat on a wall chart.",
    "enabler_now": "Barcode two-bin systems and supplier webshop links are standard; registers can alert on dates.",
    "still_hard": "Cards get lost; expiry dates of materials still need checking.",
@@ -595,7 +615,7 @@
     "Boundary: from stock signals to stocked supplies and booked services; paying invoices is outside.",
     "Input contract: minimum levels and cards set by the head assistant; budget limit set by the practice manager; equipment register with service intervals kept by the practice manager; fallback is counting and the wall chart.",
     "Manager time is outside the assistant's savings.",
-    "Unpacking and booking visits do not change."
+    "Unpacking and booking visits do not change. s1 keeps 40 for scanning cards; s3 keeps 50 for adjusting quantities; the order check keeps its full time and s5 keeps 10 for the release."
    ],
    "unknowns": [
     "Number of stock items.",
@@ -617,9 +637,9 @@
     ],
     "incremental": [
      {
-      "description": "Assistant scans empty-bin cards.",
+      "description": "No separate new work: scanning empty-bin cards is in s1.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 1
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
@@ -627,22 +647,22 @@
     {
      "id": "a1",
      "action_step_id": "s5",
-     "approved_version": "The order lines and total as approved by the practice manager in s4; orders under the limit follow the checked order; any change above the limit needs a new approval.",
-     "approval_step_id": "s4",
-     "approver": "practice manager"
+     "approved_version": "The order with items, quantities and prices exactly as checked by the assistant in s4b, including the manager's approval for orders above the limit, sent once to the supplier's webshop; any change needs a new check.",
+     "approval_step_id": "s4b",
+     "approver": "dental assistant"
     }
    ],
    "time_saved_range_pct": {
-    "low": 20,
-    "high": 38,
-    "basis": "Small practices with few items save less on counting."
+    "low": 43.7,
+    "high": 53.2,
+    "basis": "Low: a small practice with few items and bins not always scanned, so counting partly stays and s1 keeps 70 (43.7); high: two-bin cards on all regular items (53.2)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
-   "gross_time_saved_pct": 55.789474,
-   "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 54.789474,
-   "speedup": 2.211874,
+   "gross_time_saved_pct": 53.263158,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 53.263158,
+   "speedup": 2.13964,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -679,7 +699,7 @@
     },
     {
      "id": "s2",
-     "what": "Assistant writes the dentist's extra instructions on the leaflet by hand",
+     "what": "Assistant writes the dentist's extra instructions: by hand on the leaflet today, typed into the template field after the change",
      "actor": "dental assistant",
      "today_means": "document",
      "systems": [],
@@ -692,9 +712,9 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 70,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "draft",
      "human_gate": false,
@@ -707,7 +727,7 @@
     },
     {
      "id": "s3",
-     "what": "Assistant finds the right printed leaflet for the treatment and checks it",
+     "what": "Assistant finds the right aftercare leaflet: from the printed stock today, chosen from the charted treatment after the change",
      "actor": "dental assistant",
      "today_means": "document",
      "systems": [],
@@ -715,12 +735,12 @@
       "extra instructions"
      ],
      "outputs": [
-      "checked aftercare sheet"
+      "aftercare sheet draft"
      ],
      "handoff_to": "none",
-     "share_pct": 10,
+     "share_pct": 8,
      "fate": "person_reviews",
-     "remaining_pct": 60,
+     "remaining_pct": 50,
      "block": "artefact_generator",
      "rung": "deterministic",
      "loop": null,
@@ -734,8 +754,36 @@
      "approval_refs": []
     },
     {
+     "id": "s3b",
+     "what": "Assistant checks the final aftercare sheet: the template fits the treatment, the extra instructions match the dentist's, and the patient's portal account",
+     "actor": "dental assistant",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "aftercare sheet draft"
+     ],
+     "outputs": [
+      "checked aftercare sheet"
+     ],
+     "handoff_to": "none",
+     "share_pct": 2,
+     "fate": "person_reviews",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s4",
-     "what": "Assistant hands the patient the leaflet with the instructions prescribed by the dentist",
+     "what": "Assistant gives the patient the checked aftercare sheet: hands a leaflet today; after the change releases it to print and to the patient's portal, and hands over the printout",
      "actor": "dental assistant",
      "today_means": "document",
      "systems": [],
@@ -747,8 +795,8 @@
      ],
      "handoff_to": "customer",
      "share_pct": 10,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_does",
+     "remaining_pct": 40,
      "block": "notification",
      "rung": "configure",
      "loop": null,
@@ -794,7 +842,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Fixed aftercare templates per treatment, approved once by the dentist, sit in the dental record system ({OTHER}) and are chosen from the charted treatment; the assistant types any extra instructions into a field and checks the sheet. Once the assistant marks it checked, the system prints it and sends it to the patient's portal. Explaining aftercare and answering calls stay in person and by phone; no phone bot is used.",
+   "design": "Fixed aftercare templates per treatment, approved once by the dentist, sit in the dental record system ({OTHER}) and are chosen from the charted treatment; the assistant types any extra instructions into a field, checks the final sheet and releases it once: it prints and goes to the patient's portal. Explaining aftercare and answering calls stay in person and by phone; no phone bot is used.",
    "previous_blocker": "Leaflets were picked from a drawer and extra instructions handwritten.",
    "enabler_now": "Record systems can select templates from treatment codes and send them to patient portals.",
    "still_hard": "Templates must match what the dentist prescribes; patients still need the explanation.",
@@ -841,7 +889,7 @@
    "assumptions": [
     "Boundary: from the end of treatment to questions afterwards; complications needing the dentist are outside.",
     "Input contract: templates per treatment written and approved by the dentist; patient portal from the record system supplier; fallback is printed leaflets.",
-    "Explaining and answering calls do not change.",
+    "Explaining, answering calls, writing extra instructions and the check keep their full time. s3 keeps 50 because the template is chosen from the charted treatment; s4 keeps 40 for the release and handing over the printout.",
     "Patients without a portal get the printout only."
    ],
    "unknowns": [
@@ -854,9 +902,9 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "Assistant types extra instructions into the template field.",
+      "description": "No separate new work: typing extra instructions is in s2.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 0.3
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
@@ -864,22 +912,22 @@
     {
      "id": "a1",
      "action_step_id": "s4",
-     "approved_version": "The aftercare sheet with extra instructions as checked by the assistant in s3; any change needs a new check.",
-     "approval_step_id": "s3",
+     "approved_version": "The aftercare sheet with the treatment template and extra instructions exactly as checked by the assistant in s3b, printed for and sent once to this patient's portal; any change needs a new check.",
+     "approval_step_id": "s3b",
      "approver": "dental assistant"
     }
    ],
    "time_saved_range_pct": {
-    "low": 6,
-    "high": 11,
-    "basis": "Most of this task is explaining in person and answering calls."
+    "low": 4.6,
+    "high": 10.0,
+    "basis": "Low: many treatments have no template and many patients have no portal, so s3 keeps 80 and s4 keeps 70 (4.6); high: templates for common treatments (10.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 17.0,
-   "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 16.7,
-   "speedup": 1.20048,
+   "gross_time_saved_pct": 10.0,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 10.0,
+   "speedup": 1.111111,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -957,7 +1005,7 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 40,
+     "remaining_pct": 85,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -985,7 +1033,7 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_reviews",
-     "remaining_pct": 50,
+     "remaining_pct": 60,
      "block": "artefact_generator",
      "rung": "deterministic",
      "loop": null,
@@ -999,21 +1047,49 @@
      "approval_refs": []
     },
     {
-     "id": "s5",
-     "what": "Assistant hands the patient a copy of the plan",
+     "id": "s4b",
+     "what": "Assistant checks the final home-care plan: problem areas against the scores, the advice for this patient, and the patient's portal account",
      "actor": "dental assistant",
-     "today_means": "document",
+     "today_means": "system_screen",
      "systems": [],
      "inputs": [
       "home-care plan"
      ],
      "outputs": [
+      "plan checked"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Assistant gives the patient the plan: hands a copy today; after the change releases it to print and to the patient's portal, and hands over the printout",
+     "actor": "dental assistant",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "plan checked"
+     ],
+     "outputs": [
       "plan sent"
      ],
      "handoff_to": "customer",
-     "share_pct": 5,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "share_pct": 4,
+     "fate": "person_does",
+     "remaining_pct": 40,
      "block": "notification",
      "rung": "configure",
      "loop": null,
@@ -1030,7 +1106,7 @@
     },
     {
      "id": "s6",
-     "what": "Assistant writes the next check-up date on an appointment card",
+     "what": "Assistant sets the next check-up: writes the date on an appointment card today, books the recall proposed by the dentist's rules in the agenda after the change",
      "actor": "dental assistant",
      "today_means": "document",
      "systems": [],
@@ -1042,12 +1118,12 @@
      ],
      "handoff_to": "customer",
      "share_pct": 5,
-     "fate": "machine",
-     "remaining_pct": 0,
-     "block": "notification",
-     "rung": "deterministic",
+     "fate": "person_does",
+     "remaining_pct": 40,
+     "block": "crud_app",
+     "rung": "configure",
      "loop": null,
-     "authority": "act_external",
+     "authority": "write_internal",
      "human_gate": false,
      "boundary": "actor",
      "workflow": "meetings-and-calendar",
@@ -1057,7 +1133,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Plaque scores are clicked per tooth surface in the dental record system ({OTHER}), which builds a home-care plan from a template marking the problem areas for the assistant to check; once checked, the system prints it and sends it to the patient's portal. The recall date is set from the scores and a reminder is sent; instructing and showing stay in person.",
+   "design": "Plaque scores are clicked per tooth surface in the dental record system ({OTHER}), which works out the plaque index and builds a home-care plan from a template marking the problem areas; the assistant adds advice for the patient, checks the final plan and releases it once to print and to the patient's portal. The recall date is proposed from the scores and the dentist's recall rules, and the assistant books it in the agenda; instructing and showing stay in person.",
    "previous_blocker": "Scores were on paper charts and plans were handwritten.",
    "enabler_now": "Dental record systems hold plaque indices per surface and send recall reminders.",
    "still_hard": "Changing a patient's habits is a conversation; a printed plan does little on its own.",
@@ -1098,7 +1174,7 @@
    "assumptions": [
     "Boundary: from instruction to the recall set; the hygienist's treatment is outside.",
     "Input contract: plan template and recall rules set by the dentist; fallback is paper charts and cards.",
-    "Instructing and showing do not change.",
+    "Instructing and showing do not change. s3 keeps 85 because each surface is still scored and only the index arithmetic goes; s4 keeps 60 because the template marks problem areas and the assistant still writes the advice; the plan check keeps its full time; s5 keeps 40 for the release and handing over; s6 keeps 40 for booking the recall.",
     "Patients without a portal get the printout."
    ],
    "unknowns": [
@@ -1120,9 +1196,9 @@
     ],
     "incremental": [
      {
-      "description": "Assistant learns the plaque score screen.",
+      "description": "No ongoing upkeep: learning the plaque score screen is a one-off.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 0.3
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
@@ -1130,22 +1206,22 @@
     {
      "id": "a1",
      "action_step_id": "s5",
-     "approved_version": "The home-care plan as checked by the assistant in s4; any change needs a new check.",
-     "approval_step_id": "s4",
+     "approved_version": "The home-care plan exactly as checked by the assistant in s4b, printed for and sent once to this patient's portal; any change needs a new check.",
+     "approval_step_id": "s4b",
      "approver": "dental assistant"
     }
    ],
    "time_saved_range_pct": {
-    "low": 7,
-    "high": 14,
-    "basis": "Most of this task is instruction in the chair."
+    "low": 6.8,
+    "high": 10.9,
+    "basis": "Low: the template rarely fits and many patients have no portal, so s4 keeps 85 and s5 keeps 80 (6.8); high: as designed (10.9)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 21.0,
-   "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 20.7,
-   "speedup": 1.261034,
+   "gross_time_saved_pct": 10.9,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 10.9,
+   "speedup": 1.122334,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1186,6 +1262,6 @@
   "digest": "research/digests-minor/31-9.md",
   "digest_sha256": "f3ce26d648888b585d966df912b62996ed079388a146e14c8c833ed41e893467",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T13:36:42"
+  "finalized": "2026-10-17T08:35:03"
  }
 }

@@ -282,7 +282,7 @@
       "purpose": "draft",
       "input": "The recorded consultation, with the patient's consent, and the structured data in the record.",
       "output": "A draft of the history, findings and diagnosis in the record template.",
-      "check": "The podiatrist reads and corrects every draft before it is saved; a monthly sample audit looks for omissions.",
+      "check": "The podiatrist reads each draft against the examination findings and the diagnosis decided, corrects it, and types the note when the draft misses or changes a finding; a monthly sample audit looks for omissions.",
       "stop": "The podiatrist writes it when the recording is incomplete or the patient declines recording.",
       "why_not_simpler": "Each consultation is free conversation."
      },
@@ -405,9 +405,9 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 2.3,
-    "high": 5.8,
-    "basis": "Low: few portal forms and consents; high: most patients use both."
+    "low": 4.7,
+    "high": 7.7,
+    "basis": "Low: only half of patients use the portal form, so s7 keeps 60, and half decline recording, so s9 keeps 88 (4.7); high: 80% use the form and most consent, as assumed (7.7)."
    },
    "focal_role_share_pct": 99,
    "excluded_labour_share_pct": 1,
@@ -479,7 +479,7 @@
     },
     {
      "id": "s3",
-     "what": "Podiatrist selects and prints leaflets",
+     "what": "Podiatrist selects the leaflets for the patient: printed today, linked in the patient portal after the change",
      "actor": "podiatrist",
      "today_means": "document",
      "systems": [
@@ -489,16 +489,16 @@
       "patient advised"
      ],
      "outputs": [
-      "leaflets given"
+      "leaflets selected"
      ],
      "handoff_to": "patient",
-     "share_pct": 4,
+     "share_pct": 2,
      "fate": "person_does",
      "remaining_pct": 50,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
-     "authority": "act_external",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "artefact",
      "workflow": "other",
@@ -506,6 +506,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s3b",
+     "what": "Podiatrist checks the selected leaflets: they fit this patient's condition and advice, and they go to the right patient",
+     "actor": "podiatrist",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "leaflets selected"
+     ],
+     "outputs": [
+      "leaflets checked"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3c",
+     "what": "Podiatrist sends the checked leaflets to the patient's portal",
+     "actor": "podiatrist",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "leaflets checked"
+     ],
+     "outputs": [
+      "leaflets given"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "podiatrist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s4",
@@ -531,7 +593,7 @@
       "purpose": "draft",
       "input": "The recorded consultation, with the patient's consent, and the structured data in the record.",
       "output": "A draft of the advice note in the record template.",
-      "check": "The podiatrist reads and corrects every draft before it is saved; a monthly sample audit looks for omissions.",
+      "check": "The podiatrist reads each draft against the advice actually given in the room, corrects it, and types the note when the draft misses or changes a point; a monthly sample audit looks for omissions.",
       "stop": "The podiatrist writes it when the recording is incomplete or the patient declines recording.",
       "why_not_simpler": "Each consultation is free conversation."
      },
@@ -607,7 +669,15 @@
     }
    ],
    "design": "Leaflets from vetted, guideline-based texts are linked in the patient portal. The prevention recall is set from the diagnosis code, and the podiatrist confirms it. With consent, the scribe drafts the advice note. Advising, demonstrating and answering questions stay with the podiatrist.",
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3c",
+     "approved_version": "The leaflets exactly as checked by the podiatrist in s3b, linked once in this patient's portal; any change needs a new check.",
+     "approval_step_id": "s3b",
+     "approver": "podiatrist"
+    }
+   ],
    "previous_blocker": "Leaflets were printed and recalls set by hand.",
    "enabler_now": "Portal leaflets, coded recalls and scribes.",
    "still_hard": "Patients who do not change their footwear.",
@@ -654,7 +724,7 @@
    "assumptions": [
     "Boundary: advising patients; educating the public about foot care (task 7857) is a sibling task.",
     "Each task in this set carries the scribe saving only for its own part of the consultation note: history, findings and diagnosis here, the treatment plan in task 7850 and the advice in task 7852.",
-    "s3 keeps half; s4 is priced at 75; s5 keeps 30 for confirming the recall.",
+    "s3 keeps half because choosing the leaflets stays and printing goes; the check (s3b) and the portal link (s3c) take 1 each. s4 is priced at 75; s5 keeps 30 for confirming the recall.",
     "The means prior puts 14% on documents; the steps show 8%, because advice is given and shown in the room."
    ],
    "unknowns": [
@@ -667,23 +737,23 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "No new work.",
+      "description": "Podiatrist keeps the leaflets linked in the portal current.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 0
+      "hours_per_100_baseline_hours": 0.2
      }
     ]
    },
    "time_saved_range_pct": {
-    "low": 1.5,
-    "high": 3.8,
-    "basis": "Low: few recalls; high: many diabetic patients."
+    "low": 2.4,
+    "high": 3.9,
+    "basis": "Low: half of patients decline recording, so s4 keeps 88, and the recall rules miss many diagnoses, so s5 keeps 60 (2.4); high: most consent and recalls set from the code (3.9)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 5.1,
-   "incremental_hours_per_100_baseline_hours": 0,
-   "time_saved_pct": 5.1,
-   "speedup": 1.053741,
+   "gross_time_saved_pct": 4.1,
+   "incremental_hours_per_100_baseline_hours": 0.2,
+   "time_saved_pct": 3.9,
+   "speedup": 1.040583,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -778,7 +848,7 @@
     },
     {
      "id": "s4",
-     "what": "Podiatrist prescribes medications in the prescribing system",
+     "what": "Podiatrist writes the prescription for medications in the prescribing system",
      "actor": "podiatrist",
      "today_means": "system_screen",
      "systems": [
@@ -788,16 +858,16 @@
       "treatment decided"
      ],
      "outputs": [
-      "prescription"
+      "prescription draft"
      ],
      "handoff_to": "none",
-     "share_pct": 6,
+     "share_pct": 4,
      "fate": "person_does",
      "remaining_pct": 100,
      "block": "judgement_step",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "act_external",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "other",
@@ -805,6 +875,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s4b",
+     "what": "Podiatrist checks the final prescription: drug, dose, duration and patient, and the patient's pharmacy",
+     "actor": "podiatrist",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "prescription draft"
+     ],
+     "outputs": [
+      "prescription checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4c",
+     "what": "Podiatrist signs and sends the checked prescription to the pharmacy",
+     "actor": "podiatrist",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "prescription checked"
+     ],
+     "outputs": [
+      "prescription"
+     ],
+     "handoff_to": "pharmacist",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "podiatrist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a3"
+     ]
     },
     {
      "id": "s5",
@@ -839,7 +971,7 @@
     },
     {
      "id": "s6",
-     "what": "Podiatrist checks the final orthosis order",
+     "what": "Podiatrist checks the final orthosis order: device prescription, measurements and patient match the scan and the treatment decided, and it goes to the right lab",
      "actor": "podiatrist",
      "today_means": "document",
      "systems": [
@@ -858,7 +990,7 @@
      "block": "judgement_step",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "other",
@@ -916,7 +1048,7 @@
      "handoff_to": "none",
      "share_pct": 6,
      "fate": "person_does",
-     "remaining_pct": 60,
+     "remaining_pct": 70,
      "block": "artefact_generator",
      "rung": "configure",
      "loop": null,
@@ -931,7 +1063,7 @@
     },
     {
      "id": "s9",
-     "what": "Podiatrist checks and signs the final referral",
+     "what": "Podiatrist checks the final referral: the question, findings and urgency match the record, and it goes to the named practitioner; then signs it",
      "actor": "podiatrist",
      "today_means": "document",
      "systems": [
@@ -950,7 +1082,7 @@
      "block": "judgement_step",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "other",
@@ -1015,7 +1147,7 @@
       "purpose": "draft",
       "input": "The recorded consultation, with the patient's consent, and the structured data in the record.",
       "output": "A draft of the treatment plan in the record template.",
-      "check": "The podiatrist reads and corrects every draft before it is saved; a monthly sample audit looks for omissions.",
+      "check": "The podiatrist reads each draft against the treatment decided and agreed with the patient, corrects it, and types the plan when the draft misses or changes a point; a monthly sample audit looks for omissions.",
       "stop": "The podiatrist writes it when the recording is incomplete or the patient declines recording.",
       "why_not_simpler": "Each consultation is free conversation."
      },
@@ -1073,6 +1205,13 @@
      "approved_version": "The referral exactly as checked and signed by the podiatrist in s9, sent once to the named practitioner; any change needs a new signature.",
      "approval_step_id": "s9",
      "approver": "podiatrist"
+    },
+    {
+     "id": "a3",
+     "action_step_id": "s4c",
+     "approved_version": "The prescription with drug, dose and duration exactly as checked by the podiatrist in s4b, sent once to the patient's pharmacy; any change needs a new check.",
+     "approval_step_id": "s4b",
+     "approver": "podiatrist"
     }
    ],
    "design": "The scan software sends measurements and patient details to the lab's order form, so the podiatrist adds only the device prescription, instead of retyping. Referrals fill from the validated record, and the podiatrist edits and signs them. With consent, the scribe drafts the treatment plan. Discussing, scanning, deciding, prescribing, checking, sending and queries stay with the podiatrist.",
@@ -1123,8 +1262,8 @@
     "Boundary: prescribing treatments; diagnosing (task 7849) is in this set and a separate task.",
     "Each task in this set carries the scribe saving only for its own part of the consultation note: history, findings and diagnosis here, the treatment plan in task 7850 and the advice in task 7852.",
     "Input contract for s5: about 60% of orders go to labs that take scan data directly; s5 is priced at that share and keeps 40.",
-    "s8 keeps 60 because every referral is edited; s11 is priced at 75.",
-    "Prescribing keeps its full time."
+    "s8 keeps 70 because patient details and findings fill from the record but the podiatrist writes the question to the other practitioner; s11 is priced at 75.",
+    "Prescribing keeps its full time: writing (s4), checking (s4b) and sending (s4c)."
    ],
    "unknowns": [
     "Orthoses per month."
@@ -1143,16 +1282,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 2.3,
-    "high": 5.9,
-    "basis": "Low: few orthoses; high: device-heavy practice."
+    "low": 4.3,
+    "high": 7.2,
+    "basis": "Low: only a third of orders go to labs that take scan data, so s5 keeps 70, and half decline recording, so s11 keeps 88 (4.3); high: 60% of orders by scan data and most consent, as assumed (7.2)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 8.0,
+   "gross_time_saved_pct": 7.4,
    "incremental_hours_per_100_baseline_hours": 0.2,
-   "time_saved_pct": 7.8,
-   "speedup": 1.084599,
+   "time_saved_pct": 7.2,
+   "speedup": 1.077586,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -1247,7 +1386,7 @@
     },
     {
      "id": "s4",
-     "what": "Podiatrist orders supplies on supplier webshops item by item",
+     "what": "Podiatrist prepares the supply order: item by item on supplier webshops today, from a saved standard list after the change",
      "actor": "podiatrist",
      "today_means": "system_screen",
      "systems": [
@@ -1257,16 +1396,16 @@
       "stock counted"
      ],
      "outputs": [
-      "supplies ordered"
+      "order prepared"
      ],
      "handoff_to": "none",
-     "share_pct": 7,
+     "share_pct": 5,
      "fate": "person_does",
-     "remaining_pct": 50,
+     "remaining_pct": 40,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
-     "authority": "act_external",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "system_or_means",
      "workflow": "other",
@@ -1276,8 +1415,70 @@
      "approval_refs": []
     },
     {
+     "id": "s4b",
+     "what": "Podiatrist checks the final order: items and quantities match the stock count, prices are as expected, and it goes to the right supplier",
+     "actor": "podiatrist",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "order prepared"
+     ],
+     "outputs": [
+      "order checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4c",
+     "what": "Podiatrist places the checked order with the supplier",
+     "actor": "podiatrist",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "order checked"
+     ],
+     "outputs": [
+      "supplies ordered"
+     ],
+     "handoff_to": "supplier",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "podiatrist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
+    },
+    {
      "id": "s5",
-     "what": "Podiatrist checks deliveries and invoices",
+     "what": "Podiatrist checks deliveries and invoices: goods received match the order and each invoice matches the delivery",
      "actor": "podiatrist",
      "today_means": "document",
      "systems": [
@@ -1307,7 +1508,7 @@
     },
     {
      "id": "s6",
-     "what": "Podiatrist retypes supplier invoices into the bookkeeping package",
+     "what": "Podiatrist books the checked supplier invoices in the bookkeeping package: retyped today; e-invoices are imported after the change and paper ones still typed",
      "actor": "podiatrist",
      "today_means": "system_screen",
      "systems": [
@@ -1327,13 +1528,15 @@
      "rung": "configure",
      "loop": null,
      "authority": "write_internal",
-     "human_gate": false,
+     "human_gate": true,
      "boundary": "system_or_means",
      "workflow": "other",
-     "approver": "none",
+     "approver": "podiatrist",
      "labour_scope": "focal_role",
      "shared_step_id": "",
-     "approval_refs": []
+     "approval_refs": [
+      "a3"
+     ]
     },
     {
      "id": "s7",
@@ -1427,7 +1630,7 @@
     },
     {
      "id": "s10",
-     "what": "Podiatrist checks the final claim batch",
+     "what": "Podiatrist checks the final claim batch: each claim's codes match the treatment given, corrected claims are right, and it goes to the right insurers",
      "actor": "podiatrist",
      "today_means": "system_screen",
      "systems": [
@@ -1446,7 +1649,7 @@
      "block": "judgement_step",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "other",
@@ -1583,6 +1786,20 @@
      "approved_version": "The claim batch exactly as checked by the podiatrist in s10, submitted once to the insurers; any change needs a new check.",
      "approval_step_id": "s10",
      "approver": "podiatrist"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s4c",
+     "approved_version": "The supply order with items, quantities and prices exactly as checked by the podiatrist in s4b, placed once with the named supplier; any change needs a new check.",
+     "approval_step_id": "s4b",
+     "approver": "podiatrist"
+    },
+    {
+     "id": "a3",
+     "action_step_id": "s6",
+     "approved_version": "The supplier invoices exactly as checked against the deliveries by the podiatrist in s5, booked once in the bookkeeping package; any change needs a new check.",
+     "approval_step_id": "s5",
+     "approver": "podiatrist"
     }
    ],
    "design": "Supplies are reordered from a saved standard list, instead of item by item. Supplier e-invoices import into bookkeeping. The autoclave's cycle log is stored digitally, so printouts are not copied. Fixed code rules check each claim before it joins the batch, so fewer come back. Hiring, counting stock, checking invoices, schedules, checking and submitting the batch, quality records, mail and meetings stay with the podiatrist. No model screens applicants.",
@@ -1625,7 +1842,7 @@
    ],
    "assumptions": [
     "Boundary: practice administration; clinical notes are counted in the clinical tasks in this set, so keeping records here means practice records only.",
-    "s4 keeps half for non-standard items; s6 keeps 40 for paper invoices; s7 keeps 30 for checks; s9 keeps half for rejections the rules cannot catch.",
+    "s4 keeps 40 for non-standard items; the order check (s4b) and placing the order (s4c) take 1 each. s6 keeps 40 for paper invoices; s7 keeps 30 for checks; s9 keeps half for rejections the rules cannot catch.",
     "The means prior puts 39% in person and 17% on screens; the steps show 29% in person and 27% on screens, because claims, orders and bookkeeping run in systems."
    ],
    "unknowns": [
@@ -1645,16 +1862,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 5.1,
-    "high": 12.8,
-    "basis": "Low: small practice; high: practice with many claims and suppliers."
+    "low": 11.2,
+    "high": 16.6,
+    "basis": "Low: few suppliers send e-invoices, so s6 keeps 70, and the code rules catch few rejections, so s9 keeps 80 (11.2); high: most invoices electronic and rules as designed (16.6)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 17.6,
+   "gross_time_saved_pct": 17.1,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 17.1,
-   "speedup": 1.206273,
+   "time_saved_pct": 16.6,
+   "speedup": 1.199041,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1682,6 +1899,6 @@
   "digest": "research/digests-minor/29-1.md",
   "digest_sha256": "5d7bc5777e3c199c076be82fc8847b59d13a24aa68c707151f0b858f326e00d7",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-17T04:45:34"
+  "finalized": "2026-10-17T08:15:07"
  }
 }

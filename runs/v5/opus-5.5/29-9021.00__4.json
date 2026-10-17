@@ -20,7 +20,7 @@
    "steps": [
     {
      "id": "s1",
-     "what": "Physicians or outpatient secretaries request old or external patient records",
+     "what": "Physicians or outpatient secretaries request old or external patient records: by mail today, on a form in the electronic record after the change",
      "actor": "outpatient secretary",
      "today_means": "email_chat",
      "systems": [
@@ -93,9 +93,9 @@
      "handoff_to": "none",
      "share_pct": 30,
      "fate": "person_does",
-     "remaining_pct": 75,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "read",
      "human_gate": false,
@@ -138,7 +138,7 @@
     },
     {
      "id": "s5",
-     "what": "Health information technologist requests records from other hospitals or the GP and files what arrives",
+     "what": "Health information technologist prepares requests for records from other hospitals or the GP: by e-mail today, through the exchange where the provider is connected after the change",
      "actor": "health information technologist",
      "today_means": "email_chat",
      "systems": [
@@ -149,10 +149,105 @@
       "request authorised"
      ],
      "outputs": [
+      "external request draft"
+     ],
+     "handoff_to": "none",
+     "share_pct": 7,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5b",
+     "what": "Health information technologist checks each external request: patient, records asked for, the treatment relationship behind it and the provider it goes to",
+     "actor": "health information technologist",
+     "today_means": "system_screen",
+     "systems": [
+      "EMAIL",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "external request draft"
+     ],
+     "outputs": [
+      "external request checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5c",
+     "what": "Health information technologist sends the checked request to the other provider",
+     "actor": "health information technologist",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "external request checked"
+     ],
+     "outputs": [
+      "external request sent"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "health information technologist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
+     "id": "s5f",
+     "what": "Health information technologist files the external records that arrive under the patient and document type",
+     "actor": "health information technologist",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "external request sent"
+     ],
+     "outputs": [
       "external records filed"
      ],
      "handoff_to": "none",
-     "share_pct": 15,
+     "share_pct": 6,
      "fate": "person_does",
      "remaining_pct": 70,
      "block": "integration",
@@ -198,8 +293,16 @@
      "approval_refs": []
     }
    ],
-   "design": "Requests come in on a form in the electronic record ({OPS_SYSTEM}) instead of by mail. The form checks the requester's treatment relationship against the patient's appointments and admissions, and only exceptions go to the technologist. Each request prints a barcode cover sheet, so a scanned paper record lands under the right patient and document type. External records are requested and received through the hospital's exchange with other providers where they are connected. The request system logs every status change. Pulling and scanning paper stay physical work.",
-   "approvals": [],
+   "design": "Requests come in on a form in the electronic record ({OPS_SYSTEM}) instead of by mail. The form checks the requester's treatment relationship against the patient's appointments and admissions, and only exceptions go to the technologist. Each request prints a barcode cover sheet, so a scanned paper record lands under the right patient and document type. The technologist checks each external request before sending it once; requests go and records arrive through the hospital's exchange with other providers where they are connected. The request system logs every status change. Pulling and scanning paper stay physical work.",
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5c",
+     "approved_version": "Each request with patient, records asked for and the treatment relationship exactly as checked by the technologist in s5b, sent once to the named hospital or GP, through the exchange or by e-mail; any change needs a new check.",
+     "approval_step_id": "s5b",
+     "approver": "health information technologist"
+    }
+   ],
    "previous_blocker": "Requests came by mail and every step was logged by hand.",
    "enabler_now": "Request forms in hospital records, barcode scanning and electronic exchange between providers.",
    "still_hard": "Old paper records that were filed wrongly.",
@@ -247,7 +350,7 @@
     "Boundary: from request to records available and logged; release of copies to patients is a separate task.",
     "Input contract for s2: appointments and admissions in the electronic record, entered by planning staff as today; about 80% of requests match a relationship; the rest are checked by hand; s2 is priced at that share.",
     "Input contract for s4: the barcode cover sheet printed from the request record in s1.",
-    "Input contract for s5: about a third of external requests go to providers connected to electronic exchange.",
+    "Input contract for s5 and s5f: about a third of external requests go to providers connected to electronic exchange; s5 and s5f keep 70. The check and the send keep their full time. Retrieving records (s3) keeps its full time because pulling paper and finding scans do not change; s6 keeps 30 for returning paper records.",
     "Requester time is outside the technologist's savings."
    ],
    "unknowns": [
@@ -276,16 +379,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 10,
-    "high": 28,
-    "basis": "Low: much paper archive and few connected providers; high: mostly scanned archive and many internal requests."
+    "low": 16.7,
+    "high": 25.1,
+    "basis": "Low: appointments are often missing for the requester, so more requests are checked by hand, and cover sheets are often not used, so s2 keeps 80 and s4 keeps 90 (16.7); high: about 80% of requests match as assumed (25.1)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
-   "gross_time_saved_pct": 34.210526,
+   "gross_time_saved_pct": 25.684211,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 33.710526,
-   "speedup": 1.508535,
+   "time_saved_pct": 25.184211,
+   "speedup": 1.336616,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -337,10 +440,10 @@
       "coding manual"
      ],
      "outputs": [
-      "work instructions"
+      "instruction draft"
      ],
      "handoff_to": "none",
-     "share_pct": 25,
+     "share_pct": 23,
      "fate": "person_reviews",
      "remaining_pct": 70,
      "block": "artefact_generator",
@@ -349,7 +452,7 @@
       "purpose": "draft",
       "input": "The system release notes or coding rule change, and the current work instruction it affects.",
       "output": "A draft revised work instruction with the changed steps marked.",
-      "check": "Every changed step must cite the release note item or coding manual section it follows from, or it is marked; no patient data are used; the technologist edits and approves the instruction.",
+      "check": "Every changed step must cite the release note item or coding manual section it follows from, or it is marked; the technologist reads each changed step against the cited item to check it says the same, rewrites what does not and writes new material by hand; no patient data are used.",
       "stop": "One draft per change.",
       "why_not_simpler": "Release notes describe the system; staff need the steps of their own work."
      },
@@ -361,6 +464,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s2b",
+     "what": "Health information technologist checks the final work instruction: each step against the release note or coding manual, and the staff group it is meant for",
+     "actor": "health information technologist",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "instruction draft"
+     ],
+     "outputs": [
+      "instruction checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "learning-to-certified",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2c",
+     "what": "Health information technologist publishes the checked work instruction to medical records staff",
+     "actor": "health information technologist",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "instruction checked"
+     ],
+     "outputs": [
+      "work instructions"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "learning-to-certified",
+     "approver": "health information technologist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s3",
@@ -452,8 +617,16 @@
      "approval_refs": []
     }
    ],
-   "design": "When a system release or coding rule changes, a bounded step drafts the revised work instruction from the release notes and the current instruction, citing each change; the technologist edits and approves it. Audit samples of staff work are drawn by a fixed rule from the coding worklist. Completion is recorded in the hospital's {LMS} when staff finish the e-learning or are signed off. Training and feedback stay face to face.",
-   "approvals": [],
+   "design": "When a system release or coding rule changes, a bounded step drafts the revised work instruction from the release notes and the current instruction, citing each change; the technologist reads each change against its source, edits it, checks the final instruction and publishes it once. Audit samples of staff work are drawn by a fixed rule from the coding worklist. Completion is recorded in the hospital's {LMS} when staff finish the e-learning or are signed off. Training and feedback stay face to face.",
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s2c",
+     "approved_version": "The work instruction exactly as checked by the technologist in s2b, published once to the medical records staff it is meant for; any change needs a new check.",
+     "approval_step_id": "s2b",
+     "approver": "health information technologist"
+    }
+   ],
    "previous_blocker": "Work instructions were rewritten by hand after every release.",
    "enabler_now": "Models that draft revised instructions with citations, and LMS completion records.",
    "still_hard": "Teaching judgement on unclear notes.",
@@ -495,7 +668,7 @@
     "Boundary: training medical records staff; hiring is separate.",
     "Input contract for s2: release notes from the record system's supplier and the coding manual; no patient records go into the drafting step.",
     "Input contract for s5: completion records written by the {LMS} when e-learning is finished or the trainer signs off.",
-    "Training sessions and planning keep their full time."
+    "Training sessions, planning, the final check and publishing keep their full time. s2 keeps 70 for reading and editing the draft and writing new material; s4 keeps 80 because only drawing the sample goes; s5 keeps 40 for sign-offs the trainer records."
    ],
    "unknowns": [
     "Staff turnover and the number of releases per year."
@@ -523,16 +696,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 4,
-    "high": 11,
-    "basis": "Low: a stable team and few releases; high: many new staff and frequent system and rule changes."
+    "low": 8.0,
+    "high": 12.6,
+    "basis": "Low: release notes are thin, so drafts need much rewriting and s2 keeps 90 (8.0); high: clear release notes and frequent changes (12.6)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 13.5,
+   "gross_time_saved_pct": 12.9,
    "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 13.2,
-   "speedup": 1.152074,
+   "time_saved_pct": 12.6,
+   "speedup": 1.144165,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -594,7 +767,7 @@
       "purpose": "draft",
       "input": "The query specification and the data dictionary of the warehouse tables; no patient data.",
       "output": "A draft query or change to a stored procedure.",
-      "check": "The draft must run on the test database and pass the reference result tests for that query, or it goes back with the error; the technologist reads every line before review.",
+      "check": "The draft must run on the test database and pass the reference result tests for that query, or it goes back with the error; for a new query without reference results the technologist checks the output against the specification by hand; the technologist reads every line before review.",
       "stop": "Three drafts per specification; then the technologist writes it.",
       "why_not_simpler": "Templates cover standard extracts; new questions need new joins and filters."
      },
@@ -655,7 +828,7 @@
      "handoff_to": "data colleague",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 60,
+     "remaining_pct": 70,
      "block": "artefact_generator",
      "rung": "configure",
      "loop": null,
@@ -700,8 +873,8 @@
      "approval_refs": []
     },
     {
-     "id": "s6",
-     "what": "Health information technologist deploys the approved query to production",
+     "id": "s5b",
+     "what": "Health information technologist checks the change to deploy: the same code the colleague approved, what it returns, and the production database and schedule it goes to",
      "actor": "health information technologist",
      "today_means": "system_screen",
      "systems": [
@@ -711,10 +884,40 @@
       "change approved"
      ],
      "outputs": [
+      "deploy checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "data-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6",
+     "what": "Health information technologist deploys the approved query to production",
+     "actor": "health information technologist",
+     "today_means": "system_screen",
+     "systems": [
+      "DATA_PLATFORM"
+     ],
+     "inputs": [
+      "deploy checked"
+     ],
+     "outputs": [
       "query in production"
      ],
      "handoff_to": "none",
-     "share_pct": 10,
+     "share_pct": 9,
      "fate": "person_does",
      "remaining_pct": 100,
      "block": "none",
@@ -724,7 +927,7 @@
      "human_gate": true,
      "boundary": "system_or_means",
      "workflow": "data-to-report",
-     "approver": "data colleague",
+     "approver": "health information technologist",
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": [
@@ -736,12 +939,12 @@
     {
      "id": "a1",
      "action_step_id": "s6",
-     "approved_version": "the query change as reviewed and approved by the data colleague in s5; any later edit needs a new review",
-     "approval_step_id": "s5",
-     "approver": "data colleague"
+     "approved_version": "The query change exactly as reviewed and approved by the data colleague in s5 and checked by the technologist in s5b, deployed once to the named production database; any later edit needs a new review and check.",
+     "approval_step_id": "s5b",
+     "approver": "health information technologist"
     }
    ],
-   "design": "Each production query gets stored reference results on the test database, and a test run compares a changed query's output with them, so testing is mostly reading the differences. A bounded step drafts new queries from the specification and the data dictionary only, and a draft counts only if it runs and passes the tests. Documentation is filled from the query's metadata and the technologist adds the purpose. A colleague reviews every change before the technologist deploys it.",
+   "design": "Each production query gets stored reference results on the test database, and a test run compares a changed query's output with them, so testing is mostly reading the differences. A bounded step drafts new queries from the specification and the data dictionary only, and a draft counts only if it runs and passes the tests. Documentation is filled from the query's metadata and the technologist writes the purpose and limits. A colleague reviews every change; the technologist checks the approved version and deploys it once.",
    "previous_blocker": "Queries were written from scratch and tested by comparing outputs by eye.",
    "enabler_now": "Models that draft SQL from a data dictionary, and test runs against reference results.",
    "still_hard": "Knowing what the user really means by a count.",
@@ -789,7 +992,7 @@
     "Boundary: from request to query in production; using the results is the requester's work.",
     "Input contract for s3: reference result sets per production query on pseudonymised test data, built by the technologist when a query is first tested; about 70% of queries have them; s3 is priced at that share.",
     "Input contract for s2: the data dictionary of the warehouse kept by the data team.",
-    "Requests, review and deployment keep their full time; the colleague's review is outside the technologist's savings."
+    "Requests, review, the deploy check and deployment keep their full time; the colleague's review is outside the technologist's savings. s4 keeps 70 because tables and fields fill from metadata and the technologist writes the purpose."
    ],
    "unknowns": [
     "How many queries are changed per month."
@@ -825,16 +1028,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 7,
-    "high": 20,
-    "basis": "Low: few query changes and old queries without reference results; high: frequent changes to registry and management extracts."
+    "low": 9.2,
+    "high": 21.3,
+    "basis": "Low: few queries have reference results yet and drafts often fail, so s2 keeps 90 and s3 keeps 85 (9.2); high: about 70% of queries with reference results (21.3)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
-   "gross_time_saved_pct": 23.947368,
+   "gross_time_saved_pct": 22.894737,
    "incremental_hours_per_100_baseline_hours": 1.5,
-   "time_saved_pct": 22.447368,
-   "speedup": 1.289447,
+   "time_saved_pct": 21.394737,
+   "speedup": 1.272179,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -872,6 +1075,6 @@
   "digest": "research/digests-minor/29-9.md",
   "digest_sha256": "aef39fdc37aa3e3ae909c350e89f36a45d8b2930aa07ee7f3cfa405bafd5c286",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T22:43:55"
+  "finalized": "2026-10-17T08:26:32"
  }
 }

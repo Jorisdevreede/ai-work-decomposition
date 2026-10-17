@@ -216,7 +216,7 @@
     },
     {
      "id": "s8",
-     "what": "Nurse stops for a reaction, informs the doctor and reports to the blood bank",
+     "what": "Nurse stops the transfusion for a reaction and informs the doctor",
      "actor": "nurse",
      "today_means": "paper_phone",
      "systems": [
@@ -226,14 +226,14 @@
       "transfusion observations"
      ],
      "outputs": [
-      "reaction report"
+      "reaction handled"
      ],
      "handoff_to": "physician",
-     "share_pct": 10,
+     "share_pct": 6,
      "fate": "person_does",
-     "remaining_pct": 80,
-     "block": "artefact_generator",
-     "rung": "deterministic",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "act_external",
      "human_gate": false,
@@ -243,9 +243,102 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s8a",
+     "what": "Nurse fills the reaction report for the blood bank: typed today, pre-filled from the transfusion record after the change",
+     "actor": "nurse",
+     "today_means": "document",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "reaction handled",
+      "transfusion record"
+     ],
+     "outputs": [
+      "reaction report draft"
+     ],
+     "handoff_to": "none",
+     "share_pct": 2,
+     "fate": "person_reviews",
+     "remaining_pct": 50,
+     "block": "artefact_generator",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s8b",
+     "what": "Nurse checks the final reaction report: product number, times, symptoms and vitals match what happened, and it goes to the blood bank",
+     "actor": "nurse",
+     "today_means": "document",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "reaction report draft"
+     ],
+     "outputs": [
+      "reaction report checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s8c",
+     "what": "Nurse sends the checked reaction report to the blood bank",
+     "actor": "nurse",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "reaction report checked"
+     ],
+     "outputs": [
+      "reaction report"
+     ],
+     "handoff_to": "blood bank",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "compliance-and-risk",
+     "approver": "nurse",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
     }
    ],
-   "design": "Bedside barcode scanning of wristband, product label and nurse badge in the electronic health record ({OTHER}) speeds the identity checks, while the second nurse's independent verification stays. The pump takes its rate from the order, start and stop times and monitor vitals write into the transfusion record, and a reaction report is pre-filled from that record for the blood bank.",
+   "design": "Bedside barcode scanning of wristband, product label and nurse badge in the electronic health record ({OTHER}) speeds the identity checks, while the second nurse's independent verification stays. The pump takes its rate from the order, start and stop times and monitor vitals write into the transfusion record, and a reaction report is pre-filled from that record; the nurse checks it and sends it to the blood bank.",
    "previous_blocker": "Transfusion checks and records were paper-based protocols, and pumps and monitors were not linked to the record.",
    "enabler_now": "Bedside scanning, pump integration and monitor data feeds are standard options in hospital records.",
    "still_hard": "Spotting a reaction early is clinical vigilance; double-check rules come from protocol and cannot be skipped.",
@@ -293,7 +386,8 @@
     "Boundary: from checking the order to the transfusion recorded or a reaction reported; ordering and blood bank work are outside.",
     "Input contract: barcoded wristbands from admission, product labels from the blood bank, nurse badges, physician orders in the record; fallback is the paper checklist.",
     "The second independent check stays as hospital protocol requires.",
-    "Second nurse and physician time is outside this nurse's savings."
+    "Second nurse and physician time is outside this nurse's savings.",
+    "s3 keeps 70 for the scan and looking at the patient; reading numbers aloud goes. s5 keeps 80 for starting the transfusion; typing the rate goes. s7 keeps 30 for checking the record. A reaction keeps its full time for stopping and informing (s8); the report (s8a) keeps 50, and its check (s8b) and send (s8c) take 1 each."
    ],
    "unknowns": [
     "Whether pumps and monitors are integrated with the record.",
@@ -325,22 +419,29 @@
     {
      "id": "a1",
      "action_step_id": "s5",
-     "approved_version": "Product unit number matched to this patient's wristband and order at the bedside in s4; a different unit needs a new check.",
+     "approved_version": "The product unit matched to this patient's wristband and order at the bedside in s4, started once on this patient with the pump rate taken from the order; a different unit or rate needs a new check.",
      "approval_step_id": "s4",
      "approver": "second nurse"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s8c",
+     "approved_version": "The reaction report with product number, times, symptoms and vitals exactly as checked by the nurse in s8b, sent once to the blood bank; any change needs a new check.",
+     "approval_step_id": "s8b",
+     "approver": "nurse"
     }
    ],
    "time_saved_range_pct": {
-    "low": 6,
-    "high": 12,
-    "basis": "Units without pump and monitor integration keep manual recording; monitoring time does not change."
+    "low": 3.2,
+    "high": 16.3,
+    "basis": "Low: units without pump and monitor integration keep programming and recording by hand, so s5 and s7 keep 100 (3.2); high: integrated pumps and monitors as designed (16.3)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
-   "gross_time_saved_pct": 18.421053,
+   "gross_time_saved_pct": 17.368421,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 17.421053,
-   "speedup": 1.210962,
+   "time_saved_pct": 16.368421,
+   "speedup": 1.195721,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -602,9 +703,9 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 2,
-    "high": 5,
-    "basis": "Units where earlier ECGs are seldom needed save almost nothing; interpretation is unchanged."
+    "low": 1.7,
+    "high": 7.2,
+    "basis": "Low: earlier ECGs are seldom needed or not in the system, so s4 keeps 80 (1.7); high: the previous ECG opens beside most new ones (7.2)."
    },
    "focal_role_share_pct": 90,
    "excluded_labour_share_pct": 10,
@@ -635,9 +736,9 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 80,
-     "block": "workflow_automation",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -741,7 +842,7 @@
     },
     {
      "id": "s5",
-     "what": "Nurse arranges the transfer: calls bed management and the receiving ward",
+     "what": "Nurse arranges the transfer: calls to bed management and the receiving ward today; after the change prepares a request in the bed management module and hands over to the receiving ward",
      "actor": "nurse",
      "today_means": "paper_phone",
      "systems": [
@@ -751,10 +852,10 @@
       "verified medication list"
      ],
      "outputs": [
-      "transfer request"
+      "transfer request draft"
      ],
      "handoff_to": "bed manager",
-     "share_pct": 20,
+     "share_pct": 18,
      "fate": "person_does",
      "remaining_pct": 60,
      "block": "workflow_automation",
@@ -768,6 +869,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s5b",
+     "what": "Nurse checks the transfer request: patient, ward type, care needs, isolation and time",
+     "actor": "nurse",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "transfer request draft"
+     ],
+     "outputs": [
+      "transfer request checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5c",
+     "what": "Nurse sends the checked request to bed management",
+     "actor": "nurse",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "transfer request checked"
+     ],
+     "outputs": [
+      "transfer request"
+     ],
+     "handoff_to": "bed manager",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "nurse",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
     },
     {
      "id": "s6",
@@ -813,25 +976,87 @@
       "nursing reports"
      ],
      "outputs": [
-      "nursing transfer letter"
+      "draft transfer documents"
      ],
-     "handoff_to": "external",
-     "share_pct": 20,
+     "handoff_to": "none",
+     "share_pct": 16,
      "fate": "person_reviews",
-     "remaining_pct": 40,
+     "remaining_pct": 45,
      "block": "artefact_generator",
      "rung": "deterministic_plus_loop",
      "loop": {
       "purpose": "draft",
       "input": "Structured record fields (diagnoses, medication, lines, wounds, mobility, allergies) and nursing reports of the stay.",
       "output": "A nursing transfer or discharge letter in the receiving organisation's format.",
-      "check": "Structured sections are filled from fields, not the model; narrative lines must cite a report; medication and allergy sections must match the verified list word for word; the nurse signs before sending.",
+      "check": "Structured sections are filled from fields, not the model; narrative lines must cite a report, and the nurse reads each line against its report to see it says what the report says; medication and allergy sections must match the verified list word for word.",
       "stop": "One draft and one retry; then the nurse writes the narrative.",
       "why_not_simpler": "The narrative of the stay is spread over free-text reports; fields alone miss what the next team needs to know."
      },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "nursing-transfer-letter",
+     "approval_refs": []
+    },
+    {
+     "id": "s7b",
+     "what": "Nurse checks the final transfer or discharge letter: narrative, medication and appointments match the record, and it goes to the receiving ward or the patient's GP",
+     "actor": "nurse",
+     "today_means": "document",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "draft transfer documents"
+     ],
+     "outputs": [
+      "letter checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "nursing-transfer-letter",
+     "approval_refs": []
+    },
+    {
+     "id": "s7c",
+     "what": "Nurse signs and sends the checked transfer or discharge letter",
+     "actor": "nurse",
+     "today_means": "document",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "letter checked"
+     ],
+     "outputs": [
+      "nursing transfer letter"
+     ],
+     "handoff_to": "external",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
      "authority": "act_external",
      "human_gate": true,
-     "boundary": "artefact",
+     "boundary": "actor",
      "workflow": "documents-and-records",
      "approver": "nurse",
      "labour_scope": "focal_role",
@@ -839,9 +1064,73 @@
      "approval_refs": [
       "a1"
      ]
+    },
+    {
+     "id": "s7cb",
+     "what": "Nurse checks the final home care referral: care needs, start date and contact details match the record and what was agreed with the patient, and it goes to the right home care provider",
+     "actor": "nurse",
+     "today_means": "document",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "draft transfer documents"
+     ],
+     "outputs": [
+      "referral checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "nursing-transfer-letter",
+     "approval_refs": []
+    },
+    {
+     "id": "s7d",
+     "what": "Nurse sends the checked home care referral to the home care provider",
+     "actor": "nurse",
+     "today_means": "document",
+     "systems": [
+      "OTHER",
+      "DOCS"
+     ],
+     "inputs": [
+      "referral checked"
+     ],
+     "outputs": [
+      "home care referral"
+     ],
+     "handoff_to": "external",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "nurse",
+     "labour_scope": "focal_role",
+     "shared_step_id": "nursing-transfer-letter",
+     "approval_refs": [
+      "a3"
+     ]
     }
    ],
-   "design": "Admission forms in the electronic health record ({OTHER}) pre-fill from the emergency or theatre record and earlier admissions, and the home medication history is imported from the national exchange for reconciliation. Transfers go as requests in the bed management module, and transfer and discharge letters are built from fields plus a drafted narrative that the nurse checks and signs before sending.",
+   "design": "Admission forms in the electronic health record ({OTHER}) pre-fill from the emergency or theatre record and earlier admissions, and the home medication history is imported from the national exchange for reconciliation. Transfers go as requests in the bed management module after the nurse checks them, and transfer and discharge letters are built from fields plus a drafted narrative; the nurse checks each letter and home care referral and sends them.",
    "previous_blocker": "Admission and transfer data were re-typed between departments, and letters were written from scratch.",
    "enabler_now": "Records exchange data between departments and with community pharmacies, and letter drafting from the record is offered by Dutch scribe vendors.",
    "still_hard": "Medication reconciliation needs the pharmacist's check; summaries can miss things, and the inspectorate expects testing and monitoring.",
@@ -895,7 +1184,8 @@
     "Boundary: from the admission request to the patient transferred or discharged with documents; clinical care is outside.",
     "Input contract: emergency and theatre records written by those teams; home medication from the national exchange; bed requests handled by bed managers in the bed module; fallback is phone and typed letters.",
     "Drafting runs in the hospital's governed environment.",
-    "Pharmacist and bed manager time is outside the nurse's savings."
+    "Pharmacist and bed manager time is outside the nurse's savings.",
+    "s1 keeps its full time; nothing in the design changes receiving requests or preparing the bed. s5 keeps 60 for preparing the request and handing over to the receiving ward; the request check (s5b) and send (s5c) take 1 each. s7 keeps 45 for reading drafts; the letter check (s7b), letter send (s7c), referral check (s7cb) and referral send (s7d) take 1 each."
    ],
    "unknowns": [
     "Whether the record imports home medication automatically.",
@@ -939,23 +1229,37 @@
    "approvals": [
     {
      "id": "a1",
-     "action_step_id": "s7",
-     "approved_version": "Transfer or discharge letter as signed by the nurse; any change after signing needs a new signature.",
-     "approval_step_id": "s7",
+     "action_step_id": "s7c",
+     "approved_version": "The transfer or discharge letter exactly as checked by the nurse in s7b, signed and sent once to the receiving ward or the patient's GP; any change needs a new check.",
+     "approval_step_id": "s7b",
+     "approver": "nurse"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s5c",
+     "approved_version": "The transfer request with patient, ward type, care needs, isolation and time exactly as checked by the nurse in s5b, sent once to bed management in the bed module; any change needs a new check.",
+     "approval_step_id": "s5b",
+     "approver": "nurse"
+    },
+    {
+     "id": "a3",
+     "action_step_id": "s7d",
+     "approved_version": "The home care referral with care needs and start date exactly as checked by the nurse in s7cb, sent once to the named home care provider; any change needs a new check.",
+     "approval_step_id": "s7cb",
      "approver": "nurse"
     }
    ],
    "time_saved_range_pct": {
-    "low": 15,
-    "high": 28,
-    "basis": "Units that still reconcile medication by phone and get many drafts that fail the check keep most paperwork time."
+    "low": 19.5,
+    "high": 30.8,
+    "basis": "Low: the unit still reconciles medication by phone, so s3 keeps 100, and many drafts fail the check, so s7 keeps 80 (19.5); high: exchange import and drafts as designed (30.8)."
    },
    "focal_role_share_pct": 85,
    "excluded_labour_share_pct": 15,
-   "gross_time_saved_pct": 39.411765,
+   "gross_time_saved_pct": 32.352941,
    "incremental_hours_per_100_baseline_hours": 1.5,
-   "time_saved_pct": 37.911765,
-   "speedup": 1.610611,
+   "time_saved_pct": 30.852941,
+   "speedup": 1.446193,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -1007,9 +1311,9 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 50,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -1042,7 +1346,7 @@
      "block": "dashboard",
      "rung": "configure",
      "loop": null,
-     "authority": "act_external",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "other",
@@ -1231,7 +1535,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Configure due-time prompts for pain and sedation scores at the bedside in the electronic health record ({OTHER}), show the hospital's approved protocol step for the current score next to the medication screen as a fixed lookup, and add a trend view of scores against doses and vital signs. The nurse decides every intervention; no software doses.",
+   "design": "Configure due-time prompts for pain and sedation scores at the bedside in the electronic health record ({OTHER}), where scoring stays a first record, show the hospital's approved protocol step for the current score next to the medication screen as a fixed lookup, and add a trend view of scores against doses and vital signs. The nurse decides every intervention; no software doses.",
    "previous_blocker": "Scores, doses and vitals were in separate screens, and protocols were on paper.",
    "enabler_now": "Records support bedside entry, due-time prompts and trend views as configuration.",
    "still_hard": "Pain and sedation management is continuous clinical judgement; dosing software would be a high-class medical device.",
@@ -1279,7 +1583,8 @@
     "Boundary: from assessment to the care plan updated; prescribing by the intensivist is outside.",
     "Input contract: scores entered by nurses at the bedside; approved sedation and pain protocol table maintained by the unit's protocol committee; vitals from monitors; fallback is the paper protocol.",
     "The protocol lookup is fixed text tied to score bands, not a recommendation engine.",
-    "Intensivist time is outside the nurse's savings."
+    "Intensivist time is outside the nurse's savings.",
+    "s2 keeps its full time: each score is the nurse's own reading, and entering it at the bedside instead of at the station is not counted as a saving. s3 keeps 70 for reading the protocol step; s7 keeps 70 for reading the trend view."
    ],
    "unknowns": [
     "Whether scores are entered at the bedside today.",
@@ -1300,16 +1605,16 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 2,
-    "high": 6,
-    "basis": "Units already scoring at the bedside save only on the trend view; clinical work does not change."
+    "low": 0.9,
+    "high": 2.0,
+    "basis": "Low: the trend view adds little where nurses already chart scores beside doses, so s7 keeps 90 (0.9); high: trend view and protocol lookup as designed (2.0)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
-   "gross_time_saved_pct": 7.789474,
+   "gross_time_saved_pct": 2.526316,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 7.289474,
-   "speedup": 1.078626,
+   "time_saved_pct": 2.026316,
+   "speedup": 1.020682,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1365,6 +1670,6 @@
   "digest": "research/digests-minor/29-1.md",
   "digest_sha256": "5d7bc5777e3c199c076be82fc8847b59d13a24aa68c707151f0b858f326e00d7",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T23:48:15"
+  "finalized": "2026-10-17T08:34:59"
  }
 }

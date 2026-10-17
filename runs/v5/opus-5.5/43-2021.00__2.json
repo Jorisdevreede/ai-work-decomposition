@@ -169,7 +169,7 @@
     },
     {
      "id": "s6",
-     "what": "Operator checks the final credit or charge",
+     "what": "Operator checks the final credit or charge: the call, amount and account match the decision or the third party's acceptance",
      "actor": "telephone operator",
      "today_means": "system_screen",
      "systems": [
@@ -339,8 +339,7 @@
    ],
    "assumptions": [
     "Boundary: special billing requests; keeping call records (task 13258 in this set) is a separate task.",
-    "s5 keeps 20 for checking the pre-filled form.",
-    "Calls are counted as phone time under mail and phone; the means prior counts them as in-person meetings (62%), so the buckets differ by convention, not by work."
+    "s5 keeps 20 for checking the pre-filled form."
    ],
    "unknowns": [
     "Billing requests per day."
@@ -352,16 +351,16 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "No new work.",
+      "description": "No new work: the pre-filled form is a setting of the billing system, and the operator's check is already in s5 and s6.",
       "labour_scope": "focal_role",
       "hours_per_100_baseline_hours": 0
      }
     ]
    },
    "time_saved_range_pct": {
-    "low": 2.9,
-    "high": 7.2,
-    "basis": "Low: few credits; high: many third-party charges."
+    "low": 4.8,
+    "high": 9.6,
+    "basis": "Low: many requests concern calls carried by other carriers, which are not in the platform's record, so about half are still typed (4.8); high: most calls are in the record (9.6)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
@@ -436,8 +435,8 @@
      "approval_refs": []
     },
     {
-     "id": "s3",
-     "what": "Operator types tickets into the billing log spreadsheet at shift end",
+     "id": "s4",
+     "what": "Operator reconciles the shift's call records with the switch's call counts: from the typed log today, from the platform's flagged gaps after the change",
      "actor": "telephone operator",
      "today_means": "spreadsheet",
      "systems": [
@@ -445,36 +444,6 @@
      ],
      "inputs": [
       "charges computed"
-     ],
-     "outputs": [
-      "billing log"
-     ],
-     "handoff_to": "none",
-     "share_pct": 20,
-     "fate": "gone",
-     "remaining_pct": 0,
-     "block": "integration",
-     "rung": "configure",
-     "loop": null,
-     "authority": "write_internal",
-     "human_gate": false,
-     "boundary": "system_or_means",
-     "workflow": "documents-and-records",
-     "approver": "none",
-     "labour_scope": "focal_role",
-     "shared_step_id": "",
-     "approval_refs": []
-    },
-    {
-     "id": "s4",
-     "what": "Operator reconciles the log with the switch's call counts",
-     "actor": "telephone operator",
-     "today_means": "spreadsheet",
-     "systems": [
-      "SPREADSHEET"
-     ],
-     "inputs": [
-      "billing log"
      ],
      "outputs": [
       "log reconciled"
@@ -494,6 +463,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s4c",
+     "what": "Operator checks the shift's call records before export: call types and charges look right for the calls handled, and flagged gaps are resolved",
+     "actor": "telephone operator",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "log reconciled"
+     ],
+     "outputs": [
+      "log checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "The shift's call records go to billing: typed into the billing log spreadsheet at shift end today, exported by the platform after the change",
+     "actor": "telephone operator",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "log checked"
+     ],
+     "outputs": [
+      "billing log"
+     ],
+     "handoff_to": "none",
+     "share_pct": 19,
+     "fate": "gone",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "telephone operator",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s5",
@@ -586,8 +617,16 @@
      "approval_refs": []
     }
    ],
-   "approvals": [],
-   "design": "The phone platform records time, numbers, duration and charge for every call and exports them for billing, so tickets, rate lookups, the billing log and paper filing fall away; the operator adds the call type on screen and reviews exceptions in the reconciliation. The record is used for billing only, not for per-operator statistics. Questions and disputes stay with the operator.",
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3",
+     "approved_version": "The shift's call records with numbers, times, durations, call types and charges exactly as checked by the operator in s4c, exported once to the billing system for that shift; any correction needs a new check.",
+     "approval_step_id": "s4c",
+     "approver": "telephone operator"
+    }
+   ],
+   "design": "The phone platform records time, numbers, duration and charge for every call and exports them for billing, so tickets, rate lookups, the billing log and paper filing fall away; the operator adds the call type on screen, reviews exceptions in the reconciliation and checks the shift's records before they are exported. The record is used for billing only, not for per-operator statistics. Questions and disputes stay with the operator.",
    "previous_blocker": "Calls were recorded on paper and typed into a log.",
    "enabler_now": "Phone platforms that keep call and charge records.",
    "still_hard": "Calls routed through other carriers.",
@@ -654,16 +693,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 21.6,
-    "high": 54,
-    "basis": "Low: many calls through other carriers; high: all calls through the platform."
+    "low": 42.0,
+    "high": 71.0,
+    "basis": "Low: many assisted calls go through other carriers and are not recorded by the platform, so about half are still written, rated and typed (42.0); high: every assisted call passes through the platform as assumed (71.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 72.5,
+   "gross_time_saved_pct": 71.5,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 72.0,
-   "speedup": 3.571429,
+   "time_saved_pct": 71.0,
+   "speedup": 3.448276,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -821,8 +860,8 @@
      "approval_refs": []
     },
     {
-     "id": "s6",
-     "what": "Operator mails offer details to the customer",
+     "id": "s5c",
+     "what": "Operator checks the offer details before mailing: the offer the customer asked about, its price and terms, and the customer's address",
      "actor": "telephone operator",
      "today_means": "email_chat",
      "systems": [
@@ -832,26 +871,66 @@
       "interest recorded"
      ],
      "outputs": [
+      "offer details checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6",
+     "what": "Operator mails offer details to the customer",
+     "actor": "telephone operator",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "offer details checked"
+     ],
+     "outputs": [
       "details mailed"
      ],
      "handoff_to": "none",
-     "share_pct": 5,
+     "share_pct": 4,
      "fate": "person_does",
      "remaining_pct": 100,
      "block": "none",
      "rung": "stays_manual",
      "loop": null,
      "authority": "act_external",
-     "human_gate": false,
+     "human_gate": true,
      "boundary": "actor",
      "workflow": "other",
-     "approver": "none",
+     "approver": "telephone operator",
      "labour_scope": "focal_role",
      "shared_step_id": "",
-     "approval_refs": []
+     "approval_refs": [
+      "a1"
+     ]
     }
    ],
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s6",
+     "approved_version": "The offer details exactly as checked by the operator in s5c, mailed once to the customer's address on the account; any change needs a new check.",
+     "approval_step_id": "s5c",
+     "approver": "telephone operator"
+    }
+   ],
    "design": "Eligibility rules on the customer's plan show the offers that apply on the account screen, instead of the operator searching the offer list. Choosing the moment, explaining, recording and mailing stay with the operator.",
    "previous_blocker": "Offers were looked up in a separate list.",
    "enabler_now": "Eligibility rules on the account screen.",
@@ -886,8 +965,7 @@
    ],
    "assumptions": [
     "Boundary: promoting products; directory assistance (task 13243) is a sibling task.",
-    "s3 keeps 30 for offers outside the rules.",
-    "Calls are counted under mail and phone; the means prior counts them as in-person (68%), a difference of convention."
+    "s3 keeps 30 for offers outside the rules."
    ],
    "unknowns": [
     "Offers made per day."
@@ -899,16 +977,16 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "No new work.",
+      "description": "No new work: the eligibility rules are kept by the product team, and offers outside the rules are in s3's remaining time.",
       "labour_scope": "focal_role",
       "hours_per_100_baseline_hours": 0
      }
     ]
    },
    "time_saved_range_pct": {
-    "low": 2.1,
-    "high": 5.3,
-    "basis": "Low: few offers; high: many plans and offers."
+    "low": 3.0,
+    "high": 7.0,
+    "basis": "Low: many offers fall outside the rules, so the operator still searches the list for most (3.0); high: rules cover most offers (7.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
@@ -945,6 +1023,6 @@
   "digest": "research/digests-minor/43-2.md",
   "digest_sha256": "20c34fbd7814dcb9129ee9efd3d66fb272f0a48c5a66fead8a58b64c841a3f4c",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-17T06:30:10"
+  "finalized": "2026-10-17T08:28:44"
  }
 }

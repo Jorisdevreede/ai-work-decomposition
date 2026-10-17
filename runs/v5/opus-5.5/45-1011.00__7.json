@@ -6,9 +6,9 @@
    "short": "Collect leave, availability and machine status, plan the work schedule in a spreadsheet, decide the crew and machine assignments, and tell workers their shifts.",
    "steps": [
     {
-     "id": "s1",
-     "what": "Farm supervisor collects leave requests, availability and machine status by phone and messages",
-     "actor": "farm supervisor",
+     "id": "s0",
+     "what": "Workers enter leave and availability in the scheduling app",
+     "actor": "farm worker",
      "today_means": "email_chat",
      "systems": [
       "EMAIL",
@@ -18,10 +18,42 @@
       "next week due"
      ],
      "outputs": [
+      "worker availability"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "strategy-and-planning",
+     "approver": "none",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s1",
+     "what": "Farm supervisor collects leave requests, availability and machine status: by phone and messages today; after the change reads them in the app and chases the gaps",
+     "actor": "farm supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "next week due",
+      "worker availability"
+     ],
+     "outputs": [
       "availability known"
      ],
      "handoff_to": "none",
-     "share_pct": 20,
+     "share_pct": 19,
      "fate": "person_does",
      "remaining_pct": 30,
      "block": "crud_app",
@@ -97,8 +129,8 @@
      "approval_refs": []
     },
     {
-     "id": "s4",
-     "what": "Farm supervisor tells workers their shifts by posting the paper schedule and phoning changes",
+     "id": "s3c",
+     "what": "Farm supervisor checks the final schedule: every job has a crew and machine, skills fit, leave and rest times are respected",
      "actor": "farm supervisor",
      "today_means": "paper_phone",
      "systems": [
@@ -108,10 +140,72 @@
       "schedule decided"
      ],
      "outputs": [
+      "schedule checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "strategy-and-planning",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3p",
+     "what": "Farm supervisor publishes the checked schedule to the workers' app",
+     "actor": "farm supervisor",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "schedule checked"
+     ],
+     "outputs": [
+      "schedule published"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "strategy-and-planning",
+     "approver": "farm supervisor",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
+     "id": "s4",
+     "what": "Farm supervisor tells workers their shifts: posts the paper schedule and phones changes today; phones only same-day changes and workers without the app after the change",
+     "actor": "farm supervisor",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "schedule published"
+     ],
+     "outputs": [
       "workers told"
      ],
      "handoff_to": "none",
-     "share_pct": 20,
+     "share_pct": 18,
      "fate": "person_does",
      "remaining_pct": 40,
      "block": "notification",
@@ -127,7 +221,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Workers enter leave and availability in a scheduling app on their phone, and machines out of use come from the maintenance list ({OPS_SYSTEM}), so the supervisor does not collect them by phone. Fixed rules fill a first schedule from the week's work, the available workers' skills and the free machines, and mark clashes. The supervisor decides assignments and resolves clashes; the published schedule shows in each worker's app, so only same-day changes are phoned.",
+   "design": "Workers enter leave and availability in a scheduling app on their phone, and machines out of use come from the maintenance list ({OPS_SYSTEM}), so the supervisor does not collect them by phone. Fixed rules fill a first schedule from the week's work, the available workers' skills and the free machines, and mark clashes. The supervisor decides assignments, resolves clashes, checks the schedule and publishes it to each worker's app, so only same-day changes are phoned.",
    "previous_blocker": "Availability came by phone and the schedule was built by hand in a spreadsheet.",
    "enabler_now": "Scheduling apps take availability from workers and fill schedules by rules.",
    "still_hard": "Seasonal workers change availability at short notice.",
@@ -174,8 +268,8 @@
    "assumptions": [
     "Boundary: from next week due to workers told; hiring seasonal staff is outside.",
     "Input contract: workers use the app; fallback is phone and paper.",
-    "Workers enter availability in about the time a phone call took.",
-    "Assignment decisions stay with the supervisor."
+    "Workers enter availability (s0, share 1) in about the time a phone call took; this is outside the supervisor's savings.",
+    "Assignment decisions, the schedule check and publishing stay with the supervisor at full time. s1 keeps 30 for reading entries and chasing gaps. s2 keeps 50 because the supervisor still adjusts the first schedule. s4 keeps 40 for same-day changes and workers without the app."
    ],
    "unknowns": [
     "Workers scheduled per week."
@@ -193,18 +287,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3p",
+     "approved_version": "The week's schedule with crews, machines and shifts exactly as checked by the supervisor in s3c, published once to the workers in the scheduling app; any change needs a new check and publication.",
+     "approval_step_id": "s3c",
+     "approver": "farm supervisor"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 15,
-    "high": 29,
-    "basis": "Low: a small permanent crew; high: a large seasonal crew with changing availability."
+    "low": 29.8,
+    "high": 41.0,
+    "basis": "Low: a small permanent crew where many workers do not use the app, so availability and shifts still go by phone (29.8); high: a large seasonal crew using the app (41.0)."
    },
-   "focal_role_share_pct": 100,
-   "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 43.5,
+   "focal_role_share_pct": 99,
+   "excluded_labour_share_pct": 1,
+   "gross_time_saved_pct": 42.020202,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 42.5,
-   "speedup": 1.73913,
+   "time_saved_pct": 41.020202,
+   "speedup": 1.695496,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -262,6 +364,6 @@
   "digest": "research/digests-minor/45-1.md",
   "digest_sha256": "1d578eac8bf28a2fc529135a9584b6c098892925e596debb0bc7fdc89c85ec66",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T19:42:12"
+  "finalized": "2026-10-17T08:31:14"
  }
 }

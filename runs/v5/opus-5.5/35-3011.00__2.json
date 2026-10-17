@@ -48,14 +48,14 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_reviews",
-     "remaining_pct": 50,
+     "remaining_pct": 75,
      "block": "artefact_generator",
      "rung": "deterministic_plus_loop",
      "loop": {
       "purpose": "draft",
       "input": "The bartender's brief (base spirit, flavour direction, glass, target price) and the bar's ingredient list with costs and allergen tags.",
       "output": "Three recipe variants with quantities in millilitres and a method line.",
-      "check": "Only ingredients on the bar's list may appear; pour cost is computed from list prices and must stay under the target percentage; allergen tags and the VAT treatment are computed from ingredients, not from the draft.",
+      "check": "Only ingredients on the bar's list may appear; pour cost and allergen tags are computed from list prices and ingredients, not taken from the draft. The bartender reads each variant against the brief and drops any whose combination does not make sense; only variants they would actually mix go to tasting.",
       "stop": "Three variants per brief, one redraft; then the bartender writes the recipe.",
       "why_not_simpler": "Proposing balanced combinations from a flavour direction is creative drafting; a cost calculator only checks a recipe that already exists."
      },
@@ -98,7 +98,7 @@
     },
     {
      "id": "s4",
-     "what": "Bartender works out pour cost and sale price in a spreadsheet",
+     "what": "Bartender works out pour cost and sale price: in a spreadsheet today; after the change pour cost is computed in the recipe system and the bartender sets the sale price",
      "actor": "bartender",
      "today_means": "spreadsheet",
      "systems": [
@@ -113,8 +113,8 @@
      ],
      "handoff_to": "bar manager",
      "share_pct": 15,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -147,7 +147,7 @@
      "block": "judgement_step",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "content-to-publish",
@@ -158,7 +158,7 @@
     },
     {
      "id": "s6",
-     "what": "Bartender writes the recipe card with method, glass, garnish and allergens",
+     "what": "Bartender writes the recipe card with method, glass, garnish and allergens: by hand today; after the change quantities and allergen lines fill from the approved record and the bartender writes method, glass and garnish",
      "actor": "bartender",
      "today_means": "document",
      "systems": [
@@ -168,20 +168,81 @@
       "approved drink"
      ],
      "outputs": [
-      "drink recipe card"
+      "recipe card draft"
      ],
-     "handoff_to": "bar staff",
-     "share_pct": 15,
-     "fate": "person_reviews",
-     "remaining_pct": 30,
+     "handoff_to": "none",
+     "share_pct": 13,
+     "fate": "person_does",
+     "remaining_pct": 50,
      "block": "artefact_generator",
      "rung": "deterministic",
      "loop": null,
-     "authority": "write_internal",
-     "human_gate": true,
+     "authority": "draft",
+     "human_gate": false,
      "boundary": "artefact",
      "workflow": "content-to-publish",
-     "approver": "bar manager",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6c",
+     "what": "Bartender checks the final recipe card against the tested drink: quantities, method, glass, garnish and allergen lines",
+     "actor": "bartender",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "recipe card draft",
+      "tested recipe"
+     ],
+     "outputs": [
+      "recipe card checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "content-to-publish",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6p",
+     "what": "Bartender publishes the checked recipe card to the team's recipe tablet",
+     "actor": "bartender",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "recipe card checked"
+     ],
+     "outputs": [
+      "drink recipe card"
+     ],
+     "handoff_to": "bar staff",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "content-to-publish",
+     "approver": "bartender",
      "labour_scope": "focal_role",
      "shared_step_id": "drink-recipe-card",
      "approval_refs": [
@@ -189,7 +250,7 @@
      ]
     }
    ],
-   "design": "Drink recipes live in the recipe system ({OTHER}) with ingredient costs and allergen tags; a bounded model step drafts three variants from the bartender's brief using only the bar's own ingredients, and costing, allergens and VAT treatment are computed. The bartender tests and tastes, the bar manager approves, and the recipe card for the team is generated from the approved record.",
+   "design": "Drink recipes live in the recipe system ({OTHER}) with ingredient costs and allergen tags; a bounded model step drafts three variants from the bartender's brief using only the bar's own ingredients, and costing, allergens and VAT treatment are computed. The bartender tests and tastes and sets the sale price, the bar manager approves, and the card fills quantities and allergen lines from the approved record; the bartender writes method, glass and garnish, checks the card and publishes it to the team.",
    "previous_blocker": "Recipes lived on paper and in heads, so every new drink was costed by hand.",
    "enabler_now": "Recipe tools hold costs and allergen data per recipe, pour-cost calculators set prices from a target, and language models draft combinations a calculator can check.",
    "still_hard": "Taste and balance are only found by mixing and tasting; drafts can be unbalanced or derivative.",
@@ -242,7 +303,7 @@
    "assumptions": [
     "Boundary: from the idea to the approved recipe card; putting the drink on the menu is outside.",
     "Input contract: ingredient list with unit cost and allergen tags, kept by the bar manager in the recipe system from supplier prices; fallback is the spreadsheet.",
-    "The tasting and approval do not change.",
+    "Gathering ideas, tasting, the manager's approval, checking and publishing the card keep their full time. s2 keeps 75 because choosing the combination stays with the bartender and only writing out variants with quantities drops. s4 keeps 20 for setting the sale price. s6 keeps 50 because quantities and allergen lines fill from the record and the bartender still writes method, glass and garnish.",
     "Bar manager time is outside the bartender's savings."
    ],
    "unknowns": [
@@ -255,7 +316,7 @@
    "new_work": {
     "already_counted": [
      {
-      "description": "Bartender reviews drafted variants and picks one to test.",
+      "description": "Bartender reads the drafted variants against the brief and picks those to test.",
       "labour_scope": "focal_role",
       "hours_per_100_baseline_hours": 5,
       "counted_step_ids": [
@@ -263,7 +324,7 @@
       ]
      },
      {
-      "description": "Bartender checks the generated recipe card.",
+      "description": "Bartender writes method, glass and garnish into the approved record.",
       "labour_scope": "focal_role",
       "hours_per_100_baseline_hours": 3,
       "counted_step_ids": [
@@ -287,23 +348,23 @@
    "approvals": [
     {
      "id": "a1",
-     "action_step_id": "s6",
-     "approved_version": "Recipe with quantities, method and price as tasted and approved by the bar manager in s5; any change needs a new tasting.",
-     "approval_step_id": "s5",
-     "approver": "bar manager"
+     "action_step_id": "s6p",
+     "approved_version": "The recipe card with quantities, method, glass, garnish and allergen lines exactly as checked by the bartender in s6c, published once to the team's recipe tablet for that drink; any change needs a new check.",
+     "approval_step_id": "s6c",
+     "approver": "bartender"
     }
    ],
    "time_saved_range_pct": {
-    "low": 12,
-    "high": 25,
-    "basis": "Bartenders who develop by tasting from the start use drafts little; the costing saving holds only if ingredient prices are kept current."
+    "low": 14.8,
+    "high": 21.9,
+    "basis": "Low: the bartender does not use the drafts and ingredient prices are often out of date, so s2 keeps 100 and s4 keeps 40 (14.8); high: drafts are used and prices are current (21.9)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
-   "gross_time_saved_pct": 34.736842,
+   "gross_time_saved_pct": 23.421053,
    "incremental_hours_per_100_baseline_hours": 1.5,
-   "time_saved_pct": 33.236842,
-   "speedup": 1.497832,
+   "time_saved_pct": 21.921053,
+   "speedup": 1.280755,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -439,7 +500,7 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_does",
-     "remaining_pct": 85,
+     "remaining_pct": 90,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -454,7 +515,7 @@
     },
     {
      "id": "s6",
-     "what": "Head bartender reports staff issues and hours to the bar manager",
+     "what": "Head bartender reports staff issues of the shift to the bar manager",
      "actor": "head bartender",
      "today_means": "email_chat",
      "systems": [
@@ -467,9 +528,39 @@
       "shift report"
      ],
      "handoff_to": "bar manager",
-     "share_pct": 10,
+     "share_pct": 5,
      "fate": "person_does",
-     "remaining_pct": 50,
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "performance-cycle",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6h",
+     "what": "Head bartender records each bartender's actual hours: typed into a message today; after the change the rostered times show in the scheduling app and the head bartender corrects them to the hours actually worked",
+     "actor": "head bartender",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "station plan"
+     ],
+     "outputs": [
+      "hours draft"
+     ],
+     "handoff_to": "none",
+     "share_pct": 3,
+     "fate": "person_does",
+     "remaining_pct": 70,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -481,9 +572,71 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s6c",
+     "what": "Head bartender checks the shift's hours per bartender against who actually worked and the breaks taken",
+     "actor": "head bartender",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "hours draft"
+     ],
+     "outputs": [
+      "hours checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "performance-cycle",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6r",
+     "what": "Head bartender confirms the checked hours to the bar manager in the scheduling app",
+     "actor": "head bartender",
+     "today_means": "system_screen",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "hours checked"
+     ],
+     "outputs": [
+      "confirmed hours"
+     ],
+     "handoff_to": "bar manager",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "performance-cycle",
+     "approver": "head bartender",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     }
    ],
-   "design": "A shift briefing note is generated from the {OTHER} point-of-sale system (specials, sold-out items, large reservations) for the head bartender to use at the briefing; recipe cards sit on a tablet behind the bar for training. Hours are confirmed in the scheduling app instead of by message; supervision and responsible serving stay fully with the head bartender.",
+   "design": "A shift briefing note is generated from the {OTHER} point-of-sale system (specials, sold-out items, large reservations) for the head bartender to use at the briefing; recipe cards sit on a tablet behind the bar for training. The scheduling app shows the rostered times, the head bartender corrects them to the hours actually worked, checks them and confirms them once instead of typing a message; staff issues are still reported as today; supervision and responsible serving stay fully with the head bartender.",
    "previous_blocker": "Little blocked it: supervising a bar is live, in-person work.",
    "enabler_now": "Tills can export the day's specials and sold-out items; recipe cards and hour approvals are standard app features.",
    "still_hard": "Watching quality, keeping order and refusing service are judgement calls in the moment.",
@@ -531,7 +684,7 @@
     "Boundary: one shift's supervision from briefing to the shift report; rostering is outside.",
     "Input contract: specials and sold-out items set in the till by the bar manager and kitchen; recipe cards from the recipe system; fallback is the head bartender's own notes.",
     "No per-bartender performance view is added.",
-    "Supervision, station choices and responsible serving do not change."
+    "Supervision, station choices, responsible serving, reporting staff issues and checking and confirming hours keep their full time. s1 keeps 80 because the note gathers specials, sold-out items and reservations the head bartender now collects by asking around. s5 keeps 90 because trainees look up recipe cards on the tablet instead of asking for each one. s6h keeps 70 because only the rostered times fill in."
    ],
    "unknowns": [
     "How much of the shift the head bartender spends serving versus supervising."
@@ -558,18 +711,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s6r",
+     "approved_version": "The shift's actual hours per bartender exactly as checked by the head bartender in s6c, confirmed once in the scheduling app for the bar manager's pay run; any correction needs a new check.",
+     "approval_step_id": "s6c",
+     "approver": "head bartender"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 3,
-    "high": 7,
-    "basis": "In a small bar the head bartender briefs in a minute and reports by voice, so little paperwork is saved."
+    "low": 1.1,
+    "high": 4.9,
+    "basis": "Low: the briefing note is often incomplete and trainees still ask for every recipe, so s1 keeps 95 and s5 keeps 100 (1.1); high: note and recipe tablet are used as designed (4.9)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 10.25,
+   "gross_time_saved_pct": 5.4,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 9.75,
-   "speedup": 1.108033,
+   "time_saved_pct": 4.9,
+   "speedup": 1.051525,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -634,8 +795,8 @@
      "approval_refs": []
     },
     {
-     "id": "s3",
-     "what": "Bartender places orders with the drinks wholesaler and brewery",
+     "id": "s3c",
+     "what": "Bartender checks the final wholesaler order: items, quantities against the count and the budget, and the wholesaler account",
      "actor": "bartender",
      "today_means": "email_chat",
      "systems": [
@@ -647,12 +808,44 @@
       "liquor order draft"
      ],
      "outputs": [
+      "wholesaler lines checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Bartender places the checked wholesaler order through the wholesaler's webshop: by e-mail or phone today, by one release after the change",
+     "actor": "bartender",
+     "today_means": "email_chat",
+     "systems": [
+      "PARTNER_PORTAL",
+      "EMAIL",
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "wholesaler lines checked"
+     ],
+     "outputs": [
       "supplier order"
      ],
      "handoff_to": "external",
-     "share_pct": 25,
+     "share_pct": 16,
      "fate": "person_does",
-     "remaining_pct": 30,
+     "remaining_pct": 10,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -668,6 +861,72 @@
      ]
     },
     {
+     "id": "s3d",
+     "what": "Bartender checks the brewery lines: kegs, quantities and the delivery day",
+     "actor": "bartender",
+     "today_means": "email_chat",
+     "systems": [
+      "PARTNER_PORTAL",
+      "EMAIL",
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "liquor order draft"
+     ],
+     "outputs": [
+      "brewery lines checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3e",
+     "what": "Bartender phones the checked brewery order to the brewery",
+     "actor": "bartender",
+     "today_means": "paper_phone",
+     "systems": [
+      "PARTNER_PORTAL",
+      "EMAIL",
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "brewery lines checked"
+     ],
+     "outputs": [
+      "brewery order"
+     ],
+     "handoff_to": "external",
+     "share_pct": 7,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "bartender",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
+    },
+    {
      "id": "s4",
      "what": "Bartender receives deliveries and puts them away in the cellar and bar",
      "actor": "bartender",
@@ -675,7 +934,8 @@
      "systems": [],
      "inputs": [
       "delivery",
-      "supplier order"
+      "supplier order",
+      "brewery order"
      ],
      "outputs": [
       "delivery stored"
@@ -711,7 +971,7 @@
      "handoff_to": "none",
      "share_pct": 6,
      "fate": "person_does",
-     "remaining_pct": 60,
+     "remaining_pct": 80,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -726,7 +986,7 @@
     },
     {
      "id": "s6",
-     "what": "Bartender reports missing or wrong items to the supplier",
+     "what": "Bartender reports missing or wrong items to the supplier: by phone today; after the change a message is drafted from the ticked-off lines and the bartender adds what is wrong",
      "actor": "bartender",
      "today_means": "paper_phone",
      "systems": [
@@ -737,16 +997,16 @@
       "checked delivery"
      ],
      "outputs": [
-      "delivery complaint"
+      "complaint draft"
      ],
      "handoff_to": "external",
-     "share_pct": 10,
+     "share_pct": 8,
      "fate": "person_does",
      "remaining_pct": 50,
      "block": "artefact_generator",
      "rung": "deterministic",
      "loop": null,
-     "authority": "act_external",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "procure-to-pay",
@@ -754,9 +1014,73 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s6c",
+     "what": "Bartender checks the complaint: lines, quantities, what is wrong and the supplier it goes to",
+     "actor": "bartender",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY",
+      "EMAIL"
+     ],
+     "inputs": [
+      "complaint draft"
+     ],
+     "outputs": [
+      "complaint checked"
+     ],
+     "handoff_to": "external",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6s",
+     "what": "Bartender sends the checked complaint to the supplier",
+     "actor": "bartender",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY",
+      "EMAIL"
+     ],
+     "inputs": [
+      "complaint checked"
+     ],
+     "outputs": [
+      "delivery complaint"
+     ],
+     "handoff_to": "external",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "bartender",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a3"
+     ]
     }
    ],
-   "design": "The bar counts on a tablet in shelf order in the stock module of the {OTHER} point-of-sale system, which proposes an order from par levels and expected use from drinks sold; orders above the weekly budget are blocked for the bar manager. The bartender confirms the proposal, orders go to the wholesaler's {PARTNER_PORTAL}, deliveries are ticked off on the tablet, and short or wrong lines become a complaint message to the supplier.",
+   "design": "The bar counts on a tablet in shelf order in the stock module of the {OTHER} point-of-sale system, which proposes an order from par levels and expected use from drinks sold; orders above the weekly budget are blocked for the bar manager. The bartender adjusts the proposal, checks the wholesaler lines and releases them once to the wholesaler's {PARTNER_PORTAL}, and checks and phones the brewery lines. Deliveries are ticked off on the tablet, and short or wrong lines are drafted into a complaint that the bartender checks and sends.",
    "previous_blocker": "Counts and orders were on clipboards, and each supplier was called or e-mailed separately.",
    "enabler_now": "Till stock modules hold par levels and drink recipes, and drinks wholesalers take orders through webshops.",
    "still_hard": "Counting partly used bottles stays manual; small breweries and local suppliers take orders by phone.",
@@ -805,7 +1129,7 @@
     "Input contract: par levels per item set by the bar manager in the stock module; drink recipes in millilitres from the recipe records; fallback is the clipboard.",
     "Orders above the weekly budget go to the bar manager outside this flow.",
     "Scenario: the main wholesaler takes webshop orders; breweries are still phoned.",
-    "Receiving and putting away (s4) keep their full time; only the check against the order (s5) is priced, at what ticking off order lines on the tablet removes: finding the paper order and writing down differences."
+    "Receiving and putting away (s4), phoning breweries, the checks and the complaint send keep their full time. s5 keeps 80 because only finding the paper order drops; noting each difference is still the bartender's own record. s3 keeps 10 for the release and its follow-up. s6 keeps 50 because the lines and quantities fill from the tick-off and a message replaces a call."
    ],
    "unknowns": [
     "Whether the till has a stock module.",
@@ -842,22 +1166,36 @@
     {
      "id": "a1",
      "action_step_id": "s3",
-     "approved_version": "Order lines as confirmed by the bartender in s2; later edits need a new confirmation.",
-     "approval_step_id": "s2",
+     "approved_version": "The wholesaler order lines with items and quantities exactly as checked by the bartender in s3c, sent once through the wholesaler's webshop; any change needs a new check.",
+     "approval_step_id": "s3c",
+     "approver": "bartender"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s3e",
+     "approved_version": "The brewery order with kegs, quantities and delivery day exactly as checked by the bartender in s3d, phoned once to the brewery; any change needs a new check.",
+     "approval_step_id": "s3d",
+     "approver": "bartender"
+    },
+    {
+     "id": "a3",
+     "action_step_id": "s6s",
+     "approved_version": "The complaint with lines, quantities and what is wrong exactly as checked by the bartender in s6c, sent once to the supplier of that delivery; any change needs a new check.",
+     "approval_step_id": "s6c",
      "approver": "bartender"
     }
    ],
    "time_saved_range_pct": {
-    "low": 15,
-    "high": 28,
-    "basis": "Bars that buy mostly from small local suppliers keep phoning, and counting partly used bottles stays slow."
+    "low": 20.7,
+    "high": 31.6,
+    "basis": "Low: the stock module proposes poor orders for slow sellers and half of wholesaler lines still need a call, so s2 keeps 60 and s3 keeps 50 (20.7); high: the proposal is used and the webshop takes the wholesaler order (31.6)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 38.4,
+   "gross_time_saved_pct": 33.1,
    "incremental_hours_per_100_baseline_hours": 1.5,
-   "time_saved_pct": 36.9,
-   "speedup": 1.584786,
+   "time_saved_pct": 31.6,
+   "speedup": 1.461988,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -910,19 +1248,12 @@
      ],
      "handoff_to": "none",
      "share_pct": 25,
-     "fate": "person_reviews",
-     "remaining_pct": 60,
+     "fate": "person_does",
+     "remaining_pct": 100,
      "block": "judgement_step",
-     "rung": "deterministic_plus_loop",
-     "loop": {
-      "purpose": "draft",
-      "input": "Drink performance per item, the house recipe records, the season and the bartender's goals for the menu.",
-      "output": "Two menu line-ups of the set length with a one-line description per drink.",
-      "check": "Every drink must exist in the recipe records; margin per drink is computed and must meet the target; allergen lines and VAT codes come from the records; prices that are promotions are checked against local promotion rules.",
-      "stop": "Two line-ups, one redraft; then the bartender plans alone.",
-      "why_not_simpler": "Balancing variety, season and margin across a menu is a drafting task; the dashboard ranks drinks but does not compose a menu."
-     },
-     "authority": "draft",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "content-to-publish",
@@ -933,7 +1264,7 @@
     },
     {
      "id": "s3",
-     "what": "Bartender costs and prices the new line-up in a spreadsheet",
+     "what": "Bartender costs and prices the new line-up: in a spreadsheet today; after the change margins are computed from the recipe records and the bartender sets the prices",
      "actor": "bartender",
      "today_means": "spreadsheet",
      "systems": [
@@ -947,8 +1278,8 @@
      ],
      "handoff_to": "bar manager",
      "share_pct": 15,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -963,7 +1294,7 @@
     },
     {
      "id": "s5",
-     "what": "Bartender writes menu descriptions and allergen information",
+     "what": "Bartender writes menu descriptions and allergen information: by hand today; after the change allergen lines fill from the records and descriptions are drafted for the bartender to check and rewrite",
      "actor": "bartender",
      "today_means": "document",
      "systems": [
@@ -978,10 +1309,17 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_reviews",
-     "remaining_pct": 40,
+     "remaining_pct": 60,
      "block": "artefact_generator",
-     "rung": "deterministic",
-     "loop": null,
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "The chosen line-up, the house recipe records and the bar's house style for menu text.",
+      "output": "One draft description per drink, with allergen lines and VAT codes taken from the records.",
+      "check": "Allergen lines and VAT codes come from the records, not the draft. A check lists any ingredient, garnish or claim in a description that is not in that drink's recipe record. The bartender reads each description against the recipe and rewrites what does not match; unclear ones are written by hand.",
+      "stop": "One draft and one redraft per drink; then the bartender writes it.",
+      "why_not_simpler": "Short descriptions in the house style are prose; a template fills allergens but not the description."
+     },
      "authority": "draft",
      "human_gate": false,
      "boundary": "artefact",
@@ -1011,7 +1349,7 @@
      "block": "judgement_step",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "content-to-publish",
@@ -1021,24 +1359,54 @@
      "approval_refs": []
     },
     {
-     "id": "s6",
-     "what": "Bartender updates till items and the printed and QR menus",
+     "id": "s6c",
+     "what": "Bartender checks the final menu before release: line-up, prices, descriptions and allergen lines exactly as approved, and the till and QR menu it goes to",
      "actor": "bartender",
      "today_means": "system_screen",
      "systems": [
       "OTHER"
      ],
      "inputs": [
-      "menu text",
-      "approved menu"
+      "approved menu",
+      "menu text"
+     ],
+     "outputs": [
+      "menu checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "content-to-publish",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6",
+     "what": "Bartender publishes the approved menu: updates till items and the printed and QR menus by hand today; after the change one release updates till items and the QR menu and makes the print file",
+     "actor": "bartender",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "menu checked"
      ],
      "outputs": [
       "published bar menu"
      ],
      "handoff_to": "none",
-     "share_pct": 15,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "share_pct": 14,
+     "fate": "person_does",
+     "remaining_pct": 10,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -1046,7 +1414,7 @@
      "human_gate": true,
      "boundary": "system_or_means",
      "workflow": "content-to-publish",
-     "approver": "bar manager",
+     "approver": "bartender",
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": [
@@ -1082,7 +1450,7 @@
      "approval_refs": []
     }
    ],
-   "design": "A menu view built on till sales and recipe costs sorts drinks by popularity and margin; a bounded model step drafts two line-ups with descriptions from the house recipes, and margin, allergen lines, VAT codes and promotion-price rules are computed from the records. After the bar manager approves line-up, prices and the menu text with allergen lines, the menu publishes to the {OTHER} point-of-sale items and the QR menu, and the print file is generated.",
+   "design": "A menu view built on till sales and recipe costs sorts drinks by popularity and margin; the bartender chooses the line-up and sets prices, and margins, allergen lines and VAT codes are computed from the records. A bounded model step drafts a description per drink from the house recipe, a check lists anything not in the recipe, and the bartender rewrites what does not match. After the bar manager approves line-up, prices and menu text, the bartender checks the final menu and releases it once to the {OTHER} point-of-sale items and the QR menu, and the print file is generated.",
    "previous_blocker": "Sales, costs and menu text lived in different files, so menu changes were rare and slow.",
    "enabler_now": "Recipe tools sort dishes in a profitability matrix, QR menus update from the till, and language models draft line-ups a calculator can check.",
    "still_hard": "Choosing a menu that fits the bar's identity is taste; local promotion rules differ per city.",
@@ -1136,7 +1504,7 @@
     "Boundary: from reviewing sales to the menu published and staff briefed; developing new drinks is outside.",
     "Input contract: till sales per drink; recipe records with costs, allergens and VAT treatment kept by the bar manager; local promotion rules entered by the bar manager; fallback is the spreadsheet menu.",
     "Bar manager time is outside the bartender's savings.",
-    "The staff briefing does not change."
+    "Choosing the line-up, the approval, the check before release and the staff briefing keep their full time. s1 keeps 30 because the view replaces compiling sales and costs by hand. s3 keeps 20 for setting prices. s5 keeps 60 because allergen lines fill from records and drafts save some writing, but each description is read and often rewritten. s6 keeps 10 for the release and checking the till afterwards."
    ],
    "unknowns": [
     "Whether all drinks are in the recipe records with costs.",
@@ -1156,17 +1524,9 @@
       ]
      },
      {
-      "description": "Bartender reviews the drafted line-ups and descriptions.",
+      "description": "Bartender reads drafted descriptions against the recipes, rewrites what does not match and checks allergen lines.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 8,
-      "counted_step_ids": [
-       "s2"
-      ]
-     },
-     {
-      "description": "Bartender checks generated allergen lines and menu text.",
-      "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 3,
+      "hours_per_100_baseline_hours": 5,
       "counted_step_ids": [
        "s5"
       ]
@@ -1189,22 +1549,22 @@
     {
      "id": "a1",
      "action_step_id": "s6",
-     "approved_version": "Menu line-up, prices and menu text with allergen lines as approved by the bar manager in s4; any change needs a new approval.",
-     "approval_step_id": "s4",
-     "approver": "bar manager"
+     "approved_version": "The menu with line-up, prices, descriptions and allergen lines exactly as approved by the bar manager in s4 and checked by the bartender in s6c, released once to the till items, the QR menu and the print file; any change needs a new approval and check.",
+     "approval_step_id": "s6c",
+     "approver": "bartender"
     }
    ],
    "time_saved_range_pct": {
-    "low": 25,
-    "high": 45,
-    "basis": "Bars whose drinks are not yet in recipe records keep costing by hand, and a small menu changes too rarely to save much."
+    "low": 34.5,
+    "high": 43.6,
+    "basis": "Low: many drinks are not yet in the recipe records and drafts are mostly rewritten, so s1 keeps 60 and s5 keeps 85 (34.5); high: records are complete and drafts used (43.6)."
    },
    "focal_role_share_pct": 90,
    "excluded_labour_share_pct": 10,
-   "gross_time_saved_pct": 66.111111,
+   "gross_time_saved_pct": 45.666667,
    "incremental_hours_per_100_baseline_hours": 2,
-   "time_saved_pct": 64.111111,
-   "speedup": 2.786378,
+   "time_saved_pct": 43.666667,
+   "speedup": 1.775148,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1248,6 +1608,6 @@
   "digest": "research/digests-minor/35-3.md",
   "digest_sha256": "9c37bd6e4230b6d76f4a66b24a4ebb16d252bae0b46d34eb20ea2e1fa9030e91",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-17T01:26:09"
+  "finalized": "2026-10-17T08:18:28"
  }
 }

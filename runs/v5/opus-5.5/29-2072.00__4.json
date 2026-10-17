@@ -27,7 +27,7 @@
       "purpose": "answer",
       "input": "The coding question and the licensed classification, its index and the national coding guidelines; no patient data.",
       "output": "The relevant manual sections and candidate codes, each with a citation.",
-      "check": "Code accepts only codes that exist in the current code table and links each to its section; the specialist reads the cited section.",
+      "check": "Code accepts only codes that exist in the current code table and links each to its section; the specialist reads each cited section and judges whether it supports the code for this question, and questions the sections do not settle go to the printed manual or a senior coder.",
       "stop": "One answer per question; no cited section means the specialist searches the manual.",
       "why_not_simpler": "Questions are phrased in clinical language that a keyword index often misses."
      },
@@ -117,9 +117,9 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_does",
-     "remaining_pct": 70,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -159,7 +159,7 @@
      "approval_refs": []
     }
    ],
-   "design": "An answer desk over the licensed classification, its index, the national coding guidelines and the team's decision log ({DOCS}) returns the relevant sections and candidate codes with citations; the specialist reads each cited section and chooses. Decisions go into a structured decision log that the desk also searches, and a list of codes changed in the yearly update shows which tips need review. Judging the code and asking colleagues stay with people.",
+   "design": "An answer desk over the licensed classification, its index, the national coding guidelines and the team's decision log ({DOCS}) returns the relevant sections and candidate codes with citations; the specialist reads each cited section and chooses. Decisions go into a structured decision log that the desk also searches (writing them takes the same time), and a list of codes changed in the yearly update shows which tips need review. Judging the code and asking colleagues stay with people.",
    "previous_blocker": "Each question meant paging through the manual, index and old e-mails.",
    "enabler_now": "Language models can answer questions over licensed manuals and cite sections.",
    "still_hard": "The manual's licence must allow this use, and answers must be checked in the cited section.",
@@ -200,7 +200,7 @@
    "assumptions": [
     "Boundary: from a coding question to updated tips; coding the record is outside.",
     "Input contract: licensed classification and guidelines from the national coding body; decision log kept by the coding team; fallback is the printed manual.",
-    "Judging and asking do not change.",
+    "Judging, asking and writing each decision keep their full time. s1 keeps 40 because the desk finds the sections and the specialist still reads each one; s5 keeps 50 because the list of changed codes shows which tips to review, and the review stays.",
     "No patient data go into the answer desk."
    ],
    "unknowns": [
@@ -230,16 +230,16 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 10,
-    "high": 19,
-    "basis": "Hard questions still need colleagues."
+    "low": 15.0,
+    "high": 25.5,
+    "basis": "Low: the desk settles only about half of the questions, so the specialist still searches the manual and s1 keeps 70 (15.0); high: the desk finds the sections for most questions (25.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 30.5,
+   "gross_time_saved_pct": 26.0,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 30.0,
-   "speedup": 1.428571,
+   "time_saved_pct": 25.5,
+   "speedup": 1.342282,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -270,7 +270,7 @@
       "purpose": "transform",
       "input": "The clinician's dictation audio and the hospital's medical word list.",
       "output": "Report text in the dictated order, with unclear words marked.",
-      "check": "Code checks drug names and doses against the drug list and left or right against the order; the specialist corrects the text and the clinician signs.",
+      "check": "Code checks drug names and doses against the drug list and left or right against the order and marks words recognised with low confidence; the specialist listens to every marked passage, reads the whole text against the dictation for meaning, and passages they cannot resolve go to the clinician.",
       "stop": "One pass per dictation; poor audio goes to the specialist to type.",
       "why_not_simpler": "Speech varies too much for fixed rules."
      },
@@ -403,7 +403,7 @@
     },
     {
      "id": "s6",
-     "what": "Medical records specialist files the signed report in the patient record",
+     "what": "Medical records specialist files the signed report in the patient record; after the change the report is in the record once the clinician signs it there",
      "actor": "medical records specialist",
      "today_means": "email_chat",
      "systems": [
@@ -423,21 +423,19 @@
      "rung": "configure",
      "loop": null,
      "authority": "write_internal",
-     "human_gate": true,
+     "human_gate": false,
      "boundary": "system_or_means",
      "workflow": "documents-and-records",
-     "approver": "clinician",
+     "approver": "none",
      "labour_scope": "focal_role",
      "shared_step_id": "",
-     "approval_refs": [
-      "a1"
-     ]
+     "approval_refs": []
     },
     {
-     "id": "s7",
-     "what": "Medical records specialist sends a copy of the report to the GP",
+     "id": "s6b",
+     "what": "Medical records specialist checks the signed report before it goes out: the signed version for this patient, content that matches the request, and the patient's current GP",
      "actor": "medical records specialist",
-     "today_means": "email_chat",
+     "today_means": "system_screen",
      "systems": [
       "EMAIL"
      ],
@@ -445,12 +443,42 @@
       "signed report"
      ],
      "outputs": [
+      "report checked for sending"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s7",
+     "what": "Medical records specialist sends a copy of the checked report to the GP: by mail today, by one release through secure mail after the change",
+     "actor": "medical records specialist",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "report checked for sending"
+     ],
+     "outputs": [
       "report sent"
      ],
      "handoff_to": "external",
-     "share_pct": 4,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "share_pct": 3,
+     "fate": "person_does",
+     "remaining_pct": 30,
      "block": "notification",
      "rung": "configure",
      "loop": null,
@@ -458,7 +486,7 @@
      "human_gate": true,
      "boundary": "system_or_means",
      "workflow": "documents-and-records",
-     "approver": "clinician",
+     "approver": "medical records specialist",
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": [
@@ -466,7 +494,7 @@
      ]
     }
    ],
-   "design": "Speech recognition trained on the hospital's medical word list turns dictations into report text, marks unclear words and checks drug names, doses and sides against the drug list and the order; the specialist corrects the text. The department template fills automatically, and once the clinician has signed in the record system ({OTHER}), the report is filed and sent to the GP by secure mail. Asking clinicians about inaudible parts stays with the specialist.",
+   "design": "Speech recognition trained on the hospital's medical word list turns dictations into report text, marks unclear words and checks drug names, doses and sides against the drug list and the order; the specialist corrects the text. The department template fills automatically, and once the clinician has signed in the record system ({OTHER}), the report is in the patient record. The specialist checks the signed report and the GP, then releases it once by secure mail. Asking clinicians about inaudible parts stays with the specialist.",
    "previous_blocker": "Every dictation was typed from audio.",
    "enabler_now": "Medical speech recognition produces usable text from dictation.",
    "still_hard": "Accents, noise and new drug names cause errors that must be corrected.",
@@ -513,7 +541,7 @@
    "assumptions": [
     "Boundary: from dictation to the report filed and sent; the clinical content is outside.",
     "Input contract: dictations from clinicians; the order with side, drug and dose fields in its current version, entered by the requesting clinician in order entry; drug list from the hospital pharmacy; fallback is typing.",
-    "Clinicians still sign every report.",
+    "Clinicians still sign every report; signing in the record files it, so filing needs no separate approval. The check before sending keeps its full time and s7 keeps 30 for the release. s1 keeps 30 for correcting recognised text and listening to marked passages; s2 keeps 50 because drug names are checked against the list and other words are still looked up.",
     "Clinicians' time is outside the specialist's savings."
    ],
    "unknowns": [
@@ -548,31 +576,24 @@
    },
    "approvals": [
     {
-     "id": "a1",
-     "action_step_id": "s6",
-     "approved_version": "The report as signed by the clinician in s5; any change needs a new signature before sending.",
-     "approval_step_id": "s5",
-     "approver": "clinician"
-    },
-    {
      "id": "a2",
      "action_step_id": "s7",
-     "approved_version": "The report as signed by the clinician in s5; a corrected report needs a new signature.",
-     "approval_step_id": "s5",
-     "approver": "clinician"
+     "approved_version": "The report exactly as signed by the clinician in s5 and checked by the specialist in s6b, sent once by secure mail to the patient's current GP; a corrected report needs a new signature and a new check.",
+     "approval_step_id": "s6b",
+     "approver": "medical records specialist"
     }
    ],
    "time_saved_range_pct": {
-    "low": 20,
-    "high": 38,
-    "basis": "Poor audio and heavy accents keep more typing."
+    "low": 42.7,
+    "high": 63.2,
+    "basis": "Low: poor audio and strong accents mean much retyping, so s1 keeps 60 and s2 keeps 80 (42.7); high: recognition works for most dictations (63.2)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
-   "gross_time_saved_pct": 65.789474,
+   "gross_time_saved_pct": 63.789474,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 65.289474,
-   "speedup": 2.88097,
+   "time_saved_pct": 63.289474,
+   "speedup": 2.724014,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -700,21 +721,49 @@
      "approval_refs": []
     },
     {
-     "id": "s4",
-     "what": "Medical records specialist posts the appointment letter with preparation instructions",
+     "id": "s3b",
+     "what": "Medical records specialist checks the final letter: date, time, clinic, the preparation instructions for this appointment type, and the patient's portal account or address",
      "actor": "medical records specialist",
-     "today_means": "document",
+     "today_means": "system_screen",
      "systems": [],
      "inputs": [
       "agreed appointment"
      ],
      "outputs": [
+      "letter checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Medical records specialist sends the appointment letter with preparation instructions: by post today, by one release to the portal after the change, still by post for patients without the portal",
+     "actor": "medical records specialist",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "letter checked"
+     ],
+     "outputs": [
       "appointment letter sent"
      ],
      "handoff_to": "customer",
-     "share_pct": 10,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "share_pct": 9,
+     "fate": "person_does",
+     "remaining_pct": 15,
      "block": "notification",
      "rung": "configure",
      "loop": null,
@@ -760,7 +809,7 @@
      "approval_refs": []
     }
    ],
-   "design": "The agenda in the record system ({OTHER}) proposes slots that fit the clinic's rules for urgency, appointment type and clinician, and non-urgent patients pick from the offered slots in the patient portal, so fewer calls are needed; the patient's own time moves from the call to choosing a slot online and is counted as customer time. Once the specialist has confirmed the agreed date, the letter with preparation instructions goes out through the portal. A waiting list shows who can take a cancelled slot. Reading referrals stays with the specialist.",
+   "design": "The agenda in the record system ({OTHER}) proposes slots that fit the clinic's rules for urgency, appointment type and clinician, and non-urgent patients pick from the offered slots in the patient portal, so fewer calls are needed; the patient's own time moves from the call to choosing a slot online and is counted as customer time. Once the date is agreed, the specialist checks the letter with its preparation instructions and releases it once through the portal, or by post for patients without the portal. A waiting list shows who can take a cancelled slot. Reading referrals stays with the specialist.",
    "previous_blocker": "Slots were searched by hand and every appointment agreed by phone.",
    "enabler_now": "Record systems propose slots by rule, and patient portals offer self-booking.",
    "still_hard": "Frail and older patients often need a call.",
@@ -801,7 +850,7 @@
    "assumptions": [
     "Boundary: from referral to refilled slots; the visit itself is outside.",
     "Input contract: referrals from GPs through the referral system; slot rules set by the outpatient planner; fallback is phone and post.",
-    "Reading referrals does not change.",
+    "Reading referrals and the letter check keep their full time. s2 keeps 40 for checking proposed slots; s3 keeps 50 for urgent patients and those who phone; s4 keeps 15 for the release and posted letters; s5 keeps 70 because the waiting list shows who to call and calling stays.",
     "Patient time is priced as customer time, not as the specialist's savings."
    ],
    "unknowns": [
@@ -846,22 +895,22 @@
     {
      "id": "a1",
      "action_step_id": "s4",
-     "approved_version": "The appointment as agreed and confirmed by the specialist in s3; a changed date needs a new confirmation before the letter goes out.",
-     "approval_step_id": "s3",
+     "approved_version": "The appointment letter with date, time, clinic and the preparation instructions for this appointment type exactly as checked by the specialist in s3b, sent once to the patient's portal account, or posted to the address in the record for patients without the portal; a changed date needs a new check and letter.",
+     "approval_step_id": "s3b",
      "approver": "medical records specialist"
     }
    ],
    "time_saved_range_pct": {
-    "low": 15,
-    "high": 28,
-    "basis": "Clinics with many frail patients save less."
+    "low": 27.8,
+    "high": 38.7,
+    "basis": "Low: few patients use the portal, so most are still phoned and posted letters and s3 keeps 80, s4 keeps 40 (27.8); high: non-urgent patients pick slots online (38.7)."
    },
    "focal_role_share_pct": 90,
    "excluded_labour_share_pct": 10,
-   "gross_time_saved_pct": 43.333333,
+   "gross_time_saved_pct": 40.722222,
    "incremental_hours_per_100_baseline_hours": 2,
-   "time_saved_pct": 41.333333,
-   "speedup": 1.704545,
+   "time_saved_pct": 38.722222,
+   "speedup": 1.631913,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -911,6 +960,6 @@
   "digest": "research/digests-minor/29-2.md",
   "digest_sha256": "b8bd66fb5c85e7c8a1fa26f1cded445238cbc7e74ade18211b6edeb0116b4232",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T15:42:11"
+  "finalized": "2026-10-17T08:20:36"
  }
 }

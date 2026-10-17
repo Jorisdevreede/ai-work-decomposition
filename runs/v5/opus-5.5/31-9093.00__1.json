@@ -63,7 +63,7 @@
     },
     {
      "id": "s3",
-     "what": "Sterile processing technician records defects and sends items for repair on paper forms",
+     "what": "Sterile processing technician records defects for repair: on paper forms today, by scanning the item and choosing the defect type after the change",
      "actor": "sterile processing technician",
      "today_means": "document",
      "systems": [],
@@ -71,12 +71,12 @@
       "leaks tested"
      ],
      "outputs": [
-      "repairs requested"
+      "repair order draft"
      ],
      "handoff_to": "none",
-     "share_pct": 15,
+     "share_pct": 13,
      "fate": "person_does",
-     "remaining_pct": 40,
+     "remaining_pct": 50,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -88,9 +88,67 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s3b",
+     "what": "Sterile processing technician checks the repair order: item, defect described, the set it leaves and the repair service it goes to",
+     "actor": "sterile processing technician",
+     "today_means": "system_screen",
+     "systems": [],
+     "inputs": [
+      "repair order draft"
+     ],
+     "outputs": [
+      "repair order checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3c",
+     "what": "Sterile processing technician submits the checked repair order",
+     "actor": "sterile processing technician",
+     "today_means": "system_screen",
+     "systems": [],
+     "inputs": [
+      "repair order checked"
+     ],
+     "outputs": [
+      "repairs requested"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "sterile processing technician",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     }
    ],
-   "design": "Each instrument carries a scannable code in the instrument tracking system ({OPS_SYSTEM}); a defect is logged by scanning the item and choosing the defect type, which creates the repair order and removes the item from its set list, instead of a paper form. Inspecting and leak testing stay with the technician.",
+   "design": "Each instrument carries a scannable code in the instrument tracking system ({OPS_SYSTEM}); a defect is logged by scanning the item and choosing the defect type, which drafts the repair order and removes the item from its set list, instead of a paper form; the technician checks the order and submits it once. Inspecting and leak testing stay with the technician.",
    "previous_blocker": "Defects were written on paper forms that travelled with the instrument.",
    "enabler_now": "Instrument tracking systems log defects and repairs per item.",
    "still_hard": "Older instruments are not individually marked.",
@@ -125,7 +183,7 @@
    "assumptions": [
     "Boundary: from cleaned instruments to repairs requested; the repair itself is outside.",
     "Input contract: instruments marked with codes; fallback is paper forms.",
-    "Inspecting and testing do not change.",
+    "Inspecting, testing, the order check and the submit keep their full time. s3 keeps 50 because the scan replaces writing item details and updating the set list, and the technician still records each defect.",
     "Repair staff handle scanned orders as they did paper ones."
    ],
    "unknowns": [
@@ -144,18 +202,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3c",
+     "approved_version": "The repair order with item, defect and set exactly as checked by the technician in s3b, submitted once to the repair service's queue; any change needs a new check.",
+     "approval_step_id": "s3b",
+     "approver": "sterile processing technician"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 3,
-    "high": 6,
-    "basis": "Low: few defects; high: many instruments with repairs."
+    "low": 2.1,
+    "high": 6.0,
+    "basis": "Low: many instruments are not yet marked, so paper forms stay for most defects and s3 keeps 80 (2.1); high: instruments marked with codes (6.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 9.0,
+   "gross_time_saved_pct": 6.5,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 8.5,
-   "speedup": 1.092896,
+   "time_saved_pct": 6.0,
+   "speedup": 1.06383,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -163,19 +229,48 @@
    "short": "Walk the sterile storage to check expiry dates, remove outdated packs for reprocessing, and record removed packs.",
    "steps": [
     {
+     "id": "s0p",
+     "what": "Storage staff scan each pack into its storage location at put-away",
+     "actor": "storage assistant",
+     "today_means": "system_screen",
+     "systems": [],
+     "inputs": [
+      "packs put away"
+     ],
+     "outputs": [
+      "pack locations"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s1",
      "what": "Sterile processing technician checks sterile supplies to ensure they are not outdated",
      "actor": "sterile processing technician",
      "today_means": "in_person",
      "systems": [],
      "inputs": [
-      "storage round"
+      "storage round",
+      "pack locations"
      ],
      "outputs": [
       "expired packs found"
      ],
      "handoff_to": "none",
-     "share_pct": 60,
+     "share_pct": 59,
      "fate": "person_does",
      "remaining_pct": 40,
      "block": "dashboard",
@@ -220,7 +315,7 @@
     },
     {
      "id": "s3",
-     "what": "Sterile processing technician records removed packs on a list",
+     "what": "Sterile processing technician records removed packs: on a list today, by scanning each pack out for reprocessing after the change",
      "actor": "sterile processing technician",
      "today_means": "document",
      "systems": [],
@@ -283,7 +378,7 @@
     "Boundary: from the storage round to removals recorded; reprocessing is outside.",
     "Input contract: packs scanned at put-away; fallback is reading every label.",
     "Packs are still checked for damage when picked.",
-    "Storage staff scan at put-away in about the time it took to place packs."
+    "Storage staff scan at put-away (s0p, other-role time). s1 keeps 40 for walking to the listed packs and checking them; s3 keeps 30 for scanning each pack out."
    ],
    "unknowns": [
     "Packs in storage."
@@ -303,16 +398,16 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 10,
-    "high": 20,
-    "basis": "Low: small stores; high: large central stores with many locations."
+    "low": 23.9,
+    "high": 41.8,
+    "basis": "Low: many packs are moved without a scan, so locations are unreliable and s1 keeps 70 (23.9); high: packs scanned at put-away (41.8)."
    },
-   "focal_role_share_pct": 100,
-   "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 43.0,
+   "focal_role_share_pct": 99,
+   "excluded_labour_share_pct": 1,
+   "gross_time_saved_pct": 42.828283,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 42.0,
-   "speedup": 1.724138,
+   "time_saved_pct": 41.828283,
+   "speedup": 1.719048,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -377,7 +472,7 @@
     },
     {
      "id": "s3",
-     "what": "Sterile processing technician records sterilizer test results and cycle data in a paper logbook",
+     "what": "Sterile processing technician records cycle data: in a paper logbook today; after the change checks the data the sterilizer sent",
      "actor": "sterile processing technician",
      "today_means": "document",
      "systems": [],
@@ -388,7 +483,7 @@
       "results recorded"
      ],
      "handoff_to": "none",
-     "share_pct": 30,
+     "share_pct": 20,
      "fate": "person_does",
      "remaining_pct": 10,
      "block": "integration",
@@ -404,25 +499,54 @@
      "approval_refs": []
     },
     {
-     "id": "s4",
-     "what": "Sterile processing technician signs off the load release",
+     "id": "s3i",
+     "what": "Sterile processing technician records the indicator results: in the logbook today, on screen against the cycle after the change",
      "actor": "sterile processing technician",
      "today_means": "document",
      "systems": [],
      "inputs": [
-      "results recorded"
+      "results read"
      ],
      "outputs": [
-      "load released"
+      "indicator results recorded"
      ],
      "handoff_to": "none",
      "share_pct": 10,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
+     "what": "Sterile processing technician checks the load before release: cycle data within limits, indicators passed, and the load list",
+     "actor": "sterile processing technician",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "results recorded",
+      "indicator results recorded"
+     ],
+     "outputs": [
+      "load checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 9,
      "fate": "person_reviews",
      "remaining_pct": 100,
      "block": "judgement_step",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "compliance-and-risk",
@@ -430,6 +554,36 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s4r",
+     "what": "Sterile processing technician releases the checked load in the tracking system",
+     "actor": "sterile processing technician",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "load checked"
+     ],
+     "outputs": [
+      "load released"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_reviews",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "compliance-and-risk",
+     "approver": "sterile processing technician",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s5",
@@ -460,7 +614,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Sterilizers send cycle data (time, temperature, pressure) to the tracking system ({OPS_SYSTEM}) after each cycle, and the technician enters the indicator result on screen against that cycle, so nothing is written in a logbook or filed as printouts. Running tests, reading indicators and releasing loads stay with the technician.",
+   "design": "Sterilizers send cycle data (time, temperature, pressure) to the tracking system ({OPS_SYSTEM}) after each cycle, and the technician enters the indicator result on screen against that cycle, so cycle data are not written in a logbook or filed as printouts. The technician checks each load and releases it once. Running tests, reading indicators and releasing loads stay with the technician.",
    "previous_blocker": "Cycle data and results were written in logbooks and printouts filed in binders.",
    "enabler_now": "Sterilizers export cycle data to tracking systems.",
    "still_hard": "Older sterilizers only print.",
@@ -495,7 +649,7 @@
    "assumptions": [
     "Boundary: from the sterilizer cycle to printouts filed; reprocessing failed loads is outside.",
     "Input contract: sterilizers connected; fallback is the logbook.",
-    "Load release stays with the technician.",
+    "Load release stays with the technician: the check and the release keep their full time. Entering indicator results is still done by eye and keeps its full time; s3 keeps 10 for checking the sent cycle data.",
     "The system is validated before paper records stop."
    ],
    "unknowns": [
@@ -514,18 +668,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4r",
+     "approved_version": "The load with its cycle data and indicator results exactly as checked by the technician in s4, released once in the tracking system for use; any failed result or change needs a new check.",
+     "approval_step_id": "s4",
+     "approver": "sterile processing technician"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 12,
-    "high": 24,
-    "basis": "Low: mostly old sterilizers; high: all sterilizers connected."
+    "low": 8.0,
+    "high": 26.0,
+    "basis": "Low: mostly old sterilizers without a link, so cycle data are still written and printouts filed; s3 and s5 keep 70 (8.0); high: all sterilizers connected (26.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 36.0,
+   "gross_time_saved_pct": 27.0,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 35.0,
-   "speedup": 1.538462,
+   "time_saved_pct": 26.0,
+   "speedup": 1.351351,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -534,7 +696,7 @@
    "steps": [
     {
      "id": "s1",
-     "what": "Sterile processing technician counts supplies on the shelves",
+     "what": "Sterile processing technician tracks supplies: counts the shelves today, scans the barcode of each empty bin after the change",
      "actor": "sterile processing technician",
      "today_means": "in_person",
      "systems": [],
@@ -621,7 +783,7 @@
     },
     {
      "id": "s4",
-     "what": "Sterile processing technician checks the final order",
+     "what": "Sterile processing technician checks the final order: items and quantities against usage and coming procedures, and the purchasing account",
      "actor": "sterile processing technician",
      "today_means": "document",
      "systems": [],
@@ -649,7 +811,7 @@
     },
     {
      "id": "s5",
-     "what": "Sterile processing technician e-mails the order to purchasing",
+     "what": "Sterile processing technician sends the checked order to purchasing: by e-mail today, by one release in the purchasing system after the change",
      "actor": "sterile processing technician",
      "today_means": "email_chat",
      "systems": [
@@ -663,8 +825,8 @@
      ],
      "handoff_to": "none",
      "share_pct": 5,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_does",
+     "remaining_pct": 20,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -708,7 +870,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Supplies sit on two-bin shelves with barcodes; scanning an empty bin adds the item to an order in the purchasing system ({PROCUREMENT}), so shelves are not counted by eye. Equipment usage comes from the tracking system's scans of sets per procedure instead of a spreadsheet. The technician checks the order, and once checked it goes to purchasing in the system. Receiving and storing deliveries stay with the technician.",
+   "design": "Supplies sit on two-bin shelves with barcodes; scanning an empty bin adds the item to an order in the purchasing system ({PROCUREMENT}), so shelves are not counted by eye. Equipment usage comes from the tracking system's scans of sets per procedure instead of a spreadsheet. The technician checks the order and releases it once to purchasing in the system. Receiving and storing deliveries stay with the technician.",
    "previous_blocker": "Shelves were counted by eye, usage kept in spreadsheets and orders typed.",
    "enabler_now": "Two-bin scanning and set tracking feed purchasing systems.",
    "still_hard": "Loan instrument sets from suppliers are tracked separately.",
@@ -743,7 +905,7 @@
    "assumptions": [
     "Boundary: from the stock round to the delivery stored; supplier contracts are outside.",
     "Input contract: standing list kept by purchasing; fallback is counting and typing.",
-    "The technician checks every order.",
+    "The technician checks every order. s1 keeps 50 for scanning empty bins and counting special items; s3 keeps 30 for adding special items; s5 keeps 20 for the release.",
     "Purchasing handles system orders as they did e-mails."
    ],
    "unknowns": [
@@ -766,22 +928,22 @@
     {
      "id": "a1",
      "action_step_id": "s5",
-     "approved_version": "The order as checked by the technician in s4.",
+     "approved_version": "The order with items and quantities exactly as checked by the technician in s4, released once to purchasing in the purchasing system; any change needs a new check.",
      "approval_step_id": "s4",
      "approver": "sterile processing technician"
     }
    ],
    "time_saved_range_pct": {
-    "low": 15,
-    "high": 31,
-    "basis": "Low: many special items; high: mostly standard supplies."
+    "low": 32.0,
+    "high": 45.5,
+    "basis": "Low: many special items stay off the bins, so s1 keeps 80 and s3 keeps 60 (32.0); high: mostly standard supplies (45.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 47.5,
+   "gross_time_saved_pct": 46.5,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 46.5,
-   "speedup": 1.869159,
+   "time_saved_pct": 45.5,
+   "speedup": 1.834862,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -822,6 +984,6 @@
   "digest": "research/digests-minor/31-9.md",
   "digest_sha256": "f3ce26d648888b585d966df912b62996ed079388a146e14c8c833ed41e893467",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T18:26:24"
+  "finalized": "2026-10-17T08:37:00"
  }
 }

@@ -48,7 +48,7 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_does",
-     "remaining_pct": 20,
+     "remaining_pct": 100,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -78,8 +78,8 @@
      ],
      "handoff_to": "none",
      "share_pct": 30,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_does",
+     "remaining_pct": 20,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -109,7 +109,7 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_does",
-     "remaining_pct": 70,
+     "remaining_pct": 100,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -140,7 +140,7 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_reviews",
-     "remaining_pct": 30,
+     "remaining_pct": 50,
      "block": "dashboard",
      "rung": "deterministic",
      "loop": null,
@@ -155,7 +155,7 @@
     },
     {
      "id": "s5",
-     "what": "Teacher compiles attendance and enrolment figures for the administrator as required by administrative policy",
+     "what": "Teacher compiles attendance and enrolment figures for the administrator: by hand today; after the change the register drafts them and the teacher adds students who enrolled by e-mail",
      "actor": "course teacher",
      "today_means": "spreadsheet",
      "systems": [
@@ -166,16 +166,16 @@
       "records check"
      ],
      "outputs": [
-      "term figures"
+      "term figures draft"
      ],
-     "handoff_to": "course administrator",
-     "share_pct": 15,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "handoff_to": "none",
+     "share_pct": 13,
+     "fate": "person_reviews",
+     "remaining_pct": 10,
      "block": "dashboard",
      "rung": "deterministic",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "actor",
      "workflow": "data-to-report",
@@ -183,9 +183,73 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s5b",
+     "what": "Teacher checks the term figures before they go: students, attendance and payments per class match the register and the known drop-outs",
+     "actor": "course teacher",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "EMAIL"
+     ],
+     "inputs": [
+      "term figures draft"
+     ],
+     "outputs": [
+      "term figures checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "data-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5c",
+     "what": "Teacher sends the checked term figures to the course administrator",
+     "actor": "course teacher",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET",
+      "EMAIL"
+     ],
+     "inputs": [
+      "term figures checked"
+     ],
+     "outputs": [
+      "term figures"
+     ],
+     "handoff_to": "course administrator",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "data-to-report",
+     "approver": "course teacher",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     }
    ],
-   "design": "Students enrol and pay in a booking tool for classes ({OTHER}), which creates their record; the teacher ticks attendance on the phone in the same tool and writes short progress notes in a notes field visible only to teachers. A missing-items list (payment, consent, contact) and the term figures for the administrator come from the register.",
+   "design": "Students enrol and pay in a booking tool for classes ({OTHER}), which creates their record; the teacher takes attendance on the phone in the same tool instead of on paper and writes progress notes, as today, in a notes field visible only to teachers. A missing-items list (payment, consent, contact) comes from the register. The register drafts the term figures; the teacher adds e-mail enrolments, checks the figures and sends them to the administrator once.",
    "previous_blocker": "Enrolments came by e-mail and lived in a spreadsheet next to paper attendance lists.",
    "enabler_now": "Class booking tools handle schedules, online booking and payment, memberships, attendance reports and messages.",
    "still_hard": "Progress notes still take thought; access must be limited to the people who need it.",
@@ -227,7 +291,7 @@
     "Boundary: from enrolment to term figures; course pricing is outside.",
     "Input contract: course schedule and prices set by the course administrator in the booking tool; enrolment data entered by students; fallback is e-mail and spreadsheet.",
     "Administrator time is outside the teacher's savings.",
-    "Progress notes keep their content.",
+    "Coverage: about 85% of students enrol and pay in the booking tool; the teacher still copies the rest from e-mails, so s2 keeps 20. Taking attendance and writing progress notes are first records and keep their full time (s1, s3). s4 keeps 50: the missing-items list replaces the search for gaps, but checking that records are right stays.",
     "Students' enrolment time is priced as customer time, not as the teacher's savings."
    ],
    "unknowns": [
@@ -250,7 +314,7 @@
     ],
     "incremental": [
      {
-      "description": "Teacher learns the register on the phone.",
+      "description": "Teacher answers students' questions about online enrolment and failed payments.",
       "labour_scope": "focal_role",
       "hours_per_100_baseline_hours": 0.5
      },
@@ -266,18 +330,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5c",
+     "approved_version": "The term figures per class (students enrolled, attendance and payments) exactly as checked by the teacher in s5b, sent once from the register to the course administrator for this term; any change needs a new check.",
+     "approval_step_id": "s5b",
+     "approver": "course teacher"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 35,
-    "high": 55,
-    "basis": "Teachers whose students will not book online keep much of the copying."
+    "low": 32.9,
+    "high": 47.5,
+    "basis": "Low: only half of students enrol online, so the teacher still copies about half the e-mails (s2 55) and adds more students to the figures by hand (s5 30) (32.9); high: about 85% enrol online as assumed (47.5)."
    },
    "focal_role_share_pct": 90,
    "excluded_labour_share_pct": 10,
-   "gross_time_saved_pct": 80.0,
+   "gross_time_saved_pct": 48.0,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 79.5,
-   "speedup": 4.878049,
+   "time_saved_pct": 47.5,
+   "speedup": 1.904762,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -358,7 +430,7 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 60,
+     "remaining_pct": 100,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -430,7 +502,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Right after class the teacher sets a level per course objective for each student with a few taps in the register of the class booking tool ({OTHER}) and adds a note if needed. A term view lists who is behind on which objective; watching, reviewing and talking to students stay as they are, and no AI judges students.",
+   "design": "Right after class the teacher records a level per course objective for each student in the register of the class booking tool ({OTHER}) and adds a note if needed; this first record keeps its time. A term view lists who is behind on which objective; watching, reviewing and talking to students stay as they are, and no AI judges students.",
    "previous_blocker": "Progress lived in the teacher's memory and loose notes.",
    "enabler_now": "Class booking tools keep a register with attendance reports per student.",
    "still_hard": "Levels per objective are the teacher's judgement and take discipline to record.",
@@ -471,7 +543,7 @@
    "assumptions": [
     "Boundary: from class practice to the term check; final grading is outside.",
     "Input contract: course objectives set by the teacher in the register; fallback is notes.",
-    "Teaching and feedback do not change.",
+    "Teaching, feedback and writing each student's progress keep their full time. s5 keeps 40: the term view replaces paging through notes, but judging who is behind stays with the teacher.",
     "Levels are for the teacher and student only."
    ],
    "unknowns": [
@@ -492,16 +564,16 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 2,
-    "high": 5,
-    "basis": "Most of this task is live teaching, which does not change."
+    "low": 1.0,
+    "high": 2.5,
+    "basis": "Low: levels are entered unevenly, so the teacher still pages through notes for most students (s5 70) (1.0); high: the term view is complete (2.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 7.0,
+   "gross_time_saved_pct": 3.0,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 6.5,
-   "speedup": 1.069519,
+   "time_saved_pct": 2.5,
+   "speedup": 1.025641,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -525,14 +597,14 @@
      "handoff_to": "none",
      "share_pct": 20,
      "fate": "person_reviews",
-     "remaining_pct": 50,
+     "remaining_pct": 60,
      "block": "artefact_generator",
      "rung": "deterministic_plus_loop",
      "loop": {
       "purpose": "draft",
       "input": "The teacher's lesson notes for the level and the number and type of items wanted.",
       "output": "A draft test with closed items, an answer key and two open tasks, each item tagged with the lesson it tests.",
-      "check": "Code checks that each closed item has one and only one keyed answer and a lesson tag that exists in the notes; the teacher reads every item and marks the key correct or changes it.",
+      "check": "Code checks that each closed item has exactly one keyed answer and a lesson tag that exists in the notes. The teacher reads every item against the lesson it is tagged to: does it test what was taught, is the key right, is the wording clear. Unclear items are rewritten by hand.",
       "stop": "Approved, or after two redrafts the teacher writes the test.",
       "why_not_simpler": "Fresh items each term from changing lesson notes cannot come from a fixed bank without students passing answers on."
      },
@@ -558,7 +630,7 @@
       "test sittings"
      ],
      "handoff_to": "none",
-     "share_pct": 35,
+     "share_pct": 34,
      "fate": "person_does",
      "remaining_pct": 100,
      "block": "conversation",
@@ -574,13 +646,42 @@
      "approval_refs": []
     },
     {
+     "id": "s2b",
+     "what": "Students answer the closed items on the test form instead of on paper",
+     "actor": "student",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "draft test"
+     ],
+     "outputs": [
+      "form answers"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "customer",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s3",
-     "what": "Teacher marks closed written items by hand",
+     "what": "Teacher marks closed written items: by hand today; after the change the form marks them against the key and the teacher checks flagged answers",
      "actor": "course teacher",
      "today_means": "document",
      "systems": [],
      "inputs": [
-      "test sittings"
+      "test sittings",
+      "form answers"
      ],
      "outputs": [
       "closed item scores"
@@ -631,7 +732,7 @@
     },
     {
      "id": "s5",
-     "what": "Teacher issues grades and writes certificates by hand",
+     "what": "Teacher records grades and fills certificates: by hand today; after the change the teacher enters each grade in the register and certificates fill from it",
      "actor": "course teacher",
      "today_means": "document",
      "systems": [
@@ -642,16 +743,16 @@
       "performance judgements"
      ],
      "outputs": [
-      "grades and certificates"
+      "grades and certificates draft"
      ],
-     "handoff_to": "customer",
-     "share_pct": 10,
+     "handoff_to": "none",
+     "share_pct": 8,
      "fate": "person_does",
-     "remaining_pct": 30,
+     "remaining_pct": 40,
      "block": "artefact_generator",
      "rung": "deterministic",
      "loop": null,
-     "authority": "act_external",
+     "authority": "write_internal",
      "human_gate": false,
      "boundary": "artefact",
      "workflow": "other",
@@ -659,9 +760,71 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s5b",
+     "what": "Teacher checks each student's grade and certificate before issue: name, course, level and grade match the teacher's own judgements",
+     "actor": "course teacher",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "grades and certificates draft"
+     ],
+     "outputs": [
+      "grades and certificates checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5c",
+     "what": "Teacher issues the checked grades and certificates to students",
+     "actor": "course teacher",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "grades and certificates checked"
+     ],
+     "outputs": [
+      "grades and certificates"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "artefact",
+     "workflow": "other",
+     "approver": "course teacher",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     }
    ],
-   "design": "A bounded step drafts a written test with an answer key from the teacher's own lesson notes, and the teacher checks every item; students take the closed part on a form that marks it against the key. The teacher judges open work and performances and sets every grade, and certificates fill from the register; no AI grades.",
+   "design": "A bounded step drafts a written test with an answer key from the teacher's own lesson notes, and the teacher checks every item; students take the closed part on a form that marks it against the key. The teacher judges open work and performances and sets every grade, and certificates fill from the grades the teacher enters in the register. The teacher checks each grade and certificate and issues them once; no AI grades.",
    "previous_blocker": "Tests were written from scratch and marked by hand.",
    "enabler_now": "Lesson editors' AI tools rewrite and summarise text and pull word lists, and online forms mark closed items.",
    "still_hard": "Drafted items can be off-level or ambiguous; performances can only be judged by the teacher.",
@@ -703,7 +866,8 @@
     "Boundary: from writing the test to issuing certificates; recognised external exams are outside.",
     "Input contract: lesson notes written by the teacher; certificate template set by the course administrator; fallback is writing tests by hand.",
     "No student data goes into the drafting step.",
-    "Oral and performance tests do not change."
+    "Oral and performance tests do not change.",
+    "s1 keeps 60: the draft saves writing closed items from scratch, but the teacher still reads and fixes every item and writes open tasks. s3 keeps 20 for checking flagged answers. s5 keeps 40 because entering each grade is the teacher's record of the decision; only copying onto certificates goes. Students answering on the form instead of paper (s2b) is not extra work for them."
    ],
    "unknowns": [
     "How many courses end with a written test."
@@ -730,18 +894,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5c",
+     "approved_version": "Each student's grade and certificate exactly as checked by the teacher in s5b, issued once to that student from the register; any change needs a new check.",
+     "approval_step_id": "s5b",
+     "approver": "course teacher"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 10,
-    "high": 20,
-    "basis": "Courses tested only by performance have no written items to draft or mark."
+    "low": 16.0,
+    "high": 24.0,
+    "basis": "Low: lesson notes are too thin to draft from, so the teacher writes tests as today (s1 100) (16.0); high: drafts are usable and the form marks closed items (24.0)."
    },
-   "focal_role_share_pct": 100,
-   "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 29.0,
+   "focal_role_share_pct": 99,
+   "excluded_labour_share_pct": 1,
+   "gross_time_saved_pct": 25.050505,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 28.0,
-   "speedup": 1.388889,
+   "time_saved_pct": 24.050505,
+   "speedup": 1.316664,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -793,7 +965,7 @@
      "handoff_to": "none",
      "share_pct": 20,
      "fate": "person_does",
-     "remaining_pct": 50,
+     "remaining_pct": 60,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -836,7 +1008,7 @@
     },
     {
      "id": "s4",
-     "what": "Teacher e-mails each week's objectives and materials to students",
+     "what": "Teacher prepares each week's message with objectives and materials: written by hand today; after the change the booking tool fills it from the course plan",
      "actor": "course teacher",
      "today_means": "email_chat",
      "systems": [
@@ -846,16 +1018,16 @@
       "lesson objectives"
      ],
      "outputs": [
-      "weekly message"
+      "weekly message draft"
      ],
-     "handoff_to": "customer",
-     "share_pct": 15,
-     "fate": "person_does",
-     "remaining_pct": 30,
+     "handoff_to": "none",
+     "share_pct": 13,
+     "fate": "person_reviews",
+     "remaining_pct": 20,
      "block": "notification",
      "rung": "configure",
      "loop": null,
-     "authority": "act_external",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "system_or_means",
      "workflow": "other",
@@ -863,9 +1035,71 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s4b",
+     "what": "Teacher checks the week's message before it goes: objectives and materials match the lesson as now planned, files open, and it is addressed to this class",
+     "actor": "course teacher",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "weekly message draft"
+     ],
+     "outputs": [
+      "weekly message checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4c",
+     "what": "Teacher releases the checked message to the class through the booking tool",
+     "actor": "course teacher",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "weekly message checked"
+     ],
+     "outputs": [
+      "weekly message"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "other",
+     "approver": "course teacher",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     }
    ],
-   "design": "The course plan lives in one template in {DOCS} with objectives per lesson that the teacher reuses and adjusts each term instead of rewriting. Each lesson's objectives and materials go out automatically through the class booking tool's messages ({OTHER}) the day before; deciding and explaining objectives stay with the teacher.",
+   "design": "The course plan lives in one template in {DOCS} with objectives per lesson that the teacher reuses and adjusts each term instead of rewriting. Each lesson's message with objectives and materials is filled from the plan in the class booking tool's messages ({OTHER}); the teacher checks it and releases it the day before; deciding and explaining objectives stay with the teacher.",
    "previous_blocker": "Plans were rewritten each term and objectives sent by hand.",
    "enabler_now": "Class booking tools send messages to the students of each class.",
    "still_hard": "Good objectives come from knowing the students; reused plans can go stale.",
@@ -906,7 +1140,7 @@
    "assumptions": [
     "Boundary: from setting goals to students informed; teaching is outside.",
     "Input contract: course plan template kept by the teacher; class lists from the booking tool; fallback is e-mail.",
-    "Deciding and explaining do not change.",
+    "Deciding and explaining keep their full time. s2 keeps 60: the teacher reuses last term's objectives but reads and adjusts each one. s4 keeps 20 for fixing the filled message; checking and releasing it are their own steps.",
     "Courses repeat at least once a year."
    ],
    "unknowns": [
@@ -919,24 +1153,32 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "Teacher schedules the weekly messages once per term.",
+      "description": "Teacher keeps material links in the course plan current each term.",
       "labour_scope": "focal_role",
       "hours_per_100_baseline_hours": 0.5
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4c",
+     "approved_version": "This week's message with its objectives and materials exactly as checked by the teacher in s4b, sent once through the class booking tool's messages to this course's class list; any change needs a new check.",
+     "approval_step_id": "s4b",
+     "approver": "course teacher"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 7,
-    "high": 14,
-    "basis": "Teachers who run each course only once reuse little."
+    "low": 9.9,
+    "high": 17.9,
+    "basis": "Low: the course runs only once, so objectives are written fresh (s2 100) (9.9); high: the course repeats and last term's plan is reused (17.9)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 20.5,
+   "gross_time_saved_pct": 18.4,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 20.0,
-   "speedup": 1.25,
+   "time_saved_pct": 17.9,
+   "speedup": 1.218027,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1000,6 +1242,6 @@
   "digest": "research/digests-minor/25-3.md",
   "digest_sha256": "c2080a8727abc0319479d3b720e45dde8a147c43867ab2bb8ce43dc12b4983d5",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T15:28:21"
+  "finalized": "2026-10-17T08:06:43"
  }
 }

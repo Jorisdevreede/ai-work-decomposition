@@ -30,7 +30,7 @@
       "purpose": "draft",
       "input": "Nursing reports since the last meeting, plus structured vitals trends, scores, medication changes and lab results from the record.",
       "output": "Per patient a short summary with bullets, each linked to the report it comes from.",
-      "check": "Each bullet cites a report of that patient in the period; values and doses must appear verbatim in the source; every flagged event (fall, pressure ulcer, early-warning trigger, medication change) must appear, else the patient is marked 'read full record'.",
+      "check": "Each bullet cites a report of that patient in the period; values and doses must appear verbatim in the source; every flagged event (fall, pressure ulcer, early-warning trigger, medication change) must appear, else the patient is marked 'read full record'; the nurse reads each bullet against its linked report to see it says what the report says.",
       "stop": "One draft and one retry per patient; on failure the nurse sees the structured list and raw reports.",
       "why_not_simpler": "Nursing reports are free text by many colleagues; structured fields alone miss what happened."
      },
@@ -122,15 +122,13 @@
      "rung": "configure",
      "loop": null,
      "authority": "write_internal",
-     "human_gate": true,
+     "human_gate": false,
      "boundary": "artefact",
      "workflow": "documents-and-records",
-     "approver": "nurse",
+     "approver": "none",
      "labour_scope": "focal_role",
      "shared_step_id": "nursing-care-plan",
-     "approval_refs": [
-      "a1"
-     ]
+     "approval_refs": []
     },
     {
      "id": "s5",
@@ -195,7 +193,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Before the team meeting the electronic health record ({OTHER}) assembles per patient the structured trends and a drafted summary of nursing reports, each line linked to its source. Agreements are captured as actions with owner and due date; the nurse validates the care plan changes before they are written back, owners get the actions as tasks, and a goal view supports the next evaluation.",
+   "design": "Before the team meeting the electronic health record ({OTHER}) assembles per patient the structured trends and a drafted summary of nursing reports, each line linked to its source. Agreements are captured as actions with owner and due date; the nurse validates the care plan changes and saves them in the care plan, owners get the actions the nurse entered as tasks, and a goal view supports the next evaluation.",
    "previous_blocker": "Preparing meetings meant reading every report, and agreements were re-typed and passed on by phone.",
    "enabler_now": "Record tools now answer clinicians' questions on the record and scribes draft notes that clinicians validate, and care plan actions can become tasks.",
    "still_hard": "Summaries can miss or invent; the inspectorate expects providers to test, train and monitor generative tools, and team judgement cannot be shortened.",
@@ -249,7 +247,8 @@
     "Boundary: from meeting preparation to the next evaluation; delivering care is outside.",
     "Input contract: nursing reports written by nurses; vitals, scores, medication and lab results from the record; meeting agreements entered as actions with owner and due date by the nurse; fallback is reading the record.",
     "The drafting runs inside the hospital's governed environment under a processing agreement.",
-    "Physician and therapist time is outside the nurse's savings."
+    "Physician and therapist time is outside the nurse's savings.",
+    "Saving the validated care plan is the nurse's own save in the record, and the tasks come from actions the nurse entered, so neither needs an approval."
    ],
    "unknowns": [
     "Whether the record system can export reports to a governed model service.",
@@ -290,19 +289,11 @@
      }
     ]
    },
-   "approvals": [
-    {
-     "id": "a1",
-     "action_step_id": "s4",
-     "approved_version": "Care plan changes as validated by the nurse before write-back; later edits create a new version to validate.",
-     "approval_step_id": "s4",
-     "approver": "nurse"
-    }
-   ],
+   "approvals": [],
    "time_saved_range_pct": {
-    "low": 8,
-    "high": 18,
-    "basis": "Wards where summaries often fail the check go back to reading the record, and meetings themselves do not shorten."
+    "low": 18.5,
+    "high": 26.2,
+    "basis": "Low: summaries often fail the check, so nurses go back to reading the record and s1 keeps 85 (18.5); high: summaries pass for most patients (26.2)."
    },
    "focal_role_share_pct": 90,
    "excluded_labour_share_pct": 10,
@@ -443,10 +434,10 @@
       "staffing check"
      ],
      "outputs": [
-      "replacement request"
+      "replacement need"
      ],
      "handoff_to": "flex pool planner",
-     "share_pct": 10,
+     "share_pct": 8,
      "fate": "person_does",
      "remaining_pct": 60,
      "block": "workflow_automation",
@@ -460,6 +451,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s5b",
+     "what": "Shift coordinator checks the replacement request: shift, times, qualification needed and unit",
+     "actor": "nurse",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "replacement need"
+     ],
+     "outputs": [
+      "request checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5c",
+     "what": "Shift coordinator sends the checked request to the flex pool in the scheduling app",
+     "actor": "nurse",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "request checked"
+     ],
+     "outputs": [
+      "replacement request"
+     ],
+     "handoff_to": "flex pool planner",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "nurse",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s6",
@@ -572,7 +625,8 @@
     "Boundary: one shift from staffing check to unit status report; rostering weeks ahead is outside.",
     "Input contract: nursing workload score per patient recorded by nurses each shift in the record; roster and qualifications from the scheduling system kept by the unit planner; fallback is the whiteboard.",
     "Workload views show patients and shifts, not individual nurse performance.",
-    "Flex pool planner time is outside the coordinator's savings."
+    "Flex pool planner time is outside the coordinator's savings.",
+    "s5 keeps 60 for taking sick calls and deciding what replacement is needed; the request check (s5b) and send (s5c) take 1 each."
    ],
    "unknowns": [
     "Whether workload scores are recorded per patient today.",
@@ -605,18 +659,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5c",
+     "approved_version": "The replacement request with shift, times, qualification and unit exactly as checked by the coordinator in s5b, sent once to the flex pool in the scheduling app; any change needs a new check.",
+     "approval_step_id": "s5b",
+     "approver": "nurse"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 8,
-    "high": 17,
-    "basis": "Small units with stable teams allocate in minutes already, so the proposal saves little."
+    "low": 13.4,
+    "high": 22.8,
+    "basis": "Low: a small stable unit where allocation takes minutes already, so the proposal saves little (s2 keeps 90) and the staffing check little (s1 keeps 80) (13.4); high: a large unit with changing staff (22.8)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
-   "gross_time_saved_pct": 24.736842,
+   "gross_time_saved_pct": 23.894737,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 23.736842,
-   "speedup": 1.311249,
+   "time_saved_pct": 22.894737,
+   "speedup": 1.296928,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -653,7 +715,7 @@
     },
     {
      "id": "s2",
-     "what": "Nurse records diet intake, fluid balance and physical activity on bedside lists",
+     "what": "Nurse records diet intake, fluid balance and physical activity: on bedside paper lists today, by bedside mobile entry after the change, where the fluid balance adds up by itself",
      "actor": "nurse",
      "today_means": "document",
      "systems": [],
@@ -666,7 +728,7 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_does",
-     "remaining_pct": 60,
+     "remaining_pct": 85,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -697,7 +759,7 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_reviews",
-     "remaining_pct": 60,
+     "remaining_pct": 70,
      "block": "dashboard",
      "rung": "deterministic",
      "loop": null,
@@ -727,9 +789,9 @@
      "handoff_to": "physician",
      "share_pct": 15,
      "fate": "person_does",
-     "remaining_pct": 80,
-     "block": "notification",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "conversation",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -760,18 +822,23 @@
      "fate": "person_reviews",
      "remaining_pct": 100,
      "block": "artefact_generator",
-     "rung": "stays_manual",
-     "loop": null,
+     "rung": "deterministic_plus_loop",
+     "loop": {
+      "purpose": "draft",
+      "input": "The nurse's spoken note and the day's entries in the record.",
+      "output": "A draft daily nursing report.",
+      "check": "The nurse reads each sentence against their own observations and the day's entries; statements the nurse did not observe or record are removed, and unclear drafts are written by hand.",
+      "stop": "Days with incidents are written by hand.",
+      "why_not_simpler": "The daily report is free text."
+     },
      "authority": "draft",
-     "human_gate": true,
+     "human_gate": false,
      "boundary": "artefact",
      "workflow": "documents-and-records",
-     "approver": "nurse",
+     "approver": "none",
      "labour_scope": "focal_role",
      "shared_step_id": "daily-care-report",
-     "approval_refs": [
-      "a1"
-     ]
+     "approval_refs": []
     }
    ],
    "design": "Configure bedside mobile entry for intake, fluids and mobility in the electronic health record ({OTHER}) and a per-patient monitoring view with fixed alerts, such as intake under half for two days suggesting a dietitian referral. A bounded model step drafts the daily nursing report from the nurse's spoken note and the day's entries, and the nurse validates it before it enters the record.",
@@ -830,7 +897,8 @@
     "Drafting runs in the hospital's governed environment.",
     "Other professionals' time is outside the nurse's savings.",
     "Vital signs are entered or validated by nurses as today; a monitor import is used only on wards where monitors are connected, and s3's saving comes from the one-screen view, not from the import.",
-    "s5 is the nurse's own daily report and keeps its full time; the answer for sibling task 1840 also keeps recording at full time."
+    "s5 is the nurse's own daily report and keeps its full time; it is saved by the nurse in the record, so it needs no approval. The answer for sibling task 1840 also keeps recording at full time.",
+    "s2 keeps 85: intake, fluids and mobility are first records made by eye; only adding up the fluid balance goes. s3 keeps 70 for reading the one-screen view. s4 keeps its full time because alerts do not replace the calls or the decision."
    ],
    "unknowns": [
     "Whether the ward has mobile devices for bedside entry.",
@@ -871,26 +939,18 @@
      }
     ]
    },
-   "approvals": [
-    {
-     "id": "a1",
-     "action_step_id": "s5",
-     "approved_version": "Daily nursing report text as validated by the nurse; later edits are a new version.",
-     "approval_step_id": "s5",
-     "approver": "nurse"
-    }
-   ],
+   "approvals": [],
    "time_saved_range_pct": {
-    "low": 6,
-    "high": 13,
-    "basis": "Wards without bedside devices keep paper lists, and nurses who distrust drafts rewrite reports."
+    "low": 0.7,
+    "high": 5.2,
+    "basis": "Low: wards without bedside devices keep paper lists, so s2 keeps 100 and s3 keeps 85 (0.7); high: bedside entry and the monitoring view on every ward (5.2)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 15.0,
+   "gross_time_saved_pct": 6.75,
    "incremental_hours_per_100_baseline_hours": 1.5,
-   "time_saved_pct": 13.5,
-   "speedup": 1.156069,
+   "time_saved_pct": 5.25,
+   "speedup": 1.055409,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -938,10 +998,10 @@
       "approved patient leaflets"
      ],
      "outputs": [
-      "information pack"
+      "draft information pack"
      ],
-     "handoff_to": "patient",
-     "share_pct": 20,
+     "handoff_to": "none",
+     "share_pct": 18,
      "fate": "person_reviews",
      "remaining_pct": 50,
      "block": "answer_desk",
@@ -950,13 +1010,73 @@
       "purpose": "draft",
       "input": "Topics the nurse selects, the hospital's approved leaflets and vetted public patient information, and the patient's language and reading level.",
       "output": "A personal information pack in plain language with the patient's own care plan items.",
-      "check": "Every sentence must cite a paragraph of an approved source or a care plan item; no advice beyond the care plan; reading-level score within the set band; the nurse approves before handing it over.",
+      "check": "Every sentence must cite a paragraph of an approved source or a care plan item; no advice beyond the care plan; reading-level score within the set band; the nurse reads each sentence against its source and the care plan, and removes or rewrites what does not fit this patient.",
       "stop": "One redraft; then the nurse uses the standard leaflets.",
       "why_not_simpler": "Combining several leaflets into one plain-language pack for one patient needs rewriting; a template can only staple them."
      },
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2b",
+     "what": "Nurse checks the final information pack: it matches this patient's care plan and needs, and it goes to this patient",
+     "actor": "nurse",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "draft information pack"
+     ],
+     "outputs": [
+      "information pack checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2c",
+     "what": "Nurse hands the checked information pack to the patient",
+     "actor": "nurse",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "information pack checked"
+     ],
+     "outputs": [
+      "information pack"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
      "authority": "act_external",
      "human_gate": true,
-     "boundary": "artefact",
+     "boundary": "actor",
      "workflow": "other",
      "approver": "nurse",
      "labour_scope": "focal_role",
@@ -1039,7 +1159,7 @@
      "handoff_to": "none",
      "share_pct": 4,
      "fate": "person_does",
-     "remaining_pct": 50,
+     "remaining_pct": 85,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -1140,8 +1260,38 @@
      "approval_refs": []
     },
     {
+     "id": "s8b",
+     "what": "Nurse checks the materials before publishing: exactly the version the committee approved, and the right pages on the intranet and patient portal",
+     "actor": "nurse",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "approved education programme"
+     ],
+     "outputs": [
+      "materials checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "content-to-publish",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s9",
-     "what": "Nurse publishes the approved materials on the intranet and patient portal",
+     "what": "Nurse publishes the checked materials on the intranet and patient portal: uploaded by hand today, by one release in the workflow after the change",
      "actor": "nurse",
      "today_means": "system_screen",
      "systems": [
@@ -1149,15 +1299,15 @@
       "CMS"
      ],
      "inputs": [
-      "approved education programme"
+      "materials checked"
      ],
      "outputs": [
       "published education materials"
      ],
      "handoff_to": "none",
-     "share_pct": 3,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "share_pct": 2,
+     "fate": "person_does",
+     "remaining_pct": 30,
      "block": "workflow_automation",
      "rung": "configure",
      "loop": null,
@@ -1165,7 +1315,7 @@
      "human_gate": true,
      "boundary": "system_or_means",
      "workflow": "content-to-publish",
-     "approver": "patient education committee",
+     "approver": "nurse",
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": [
@@ -1173,7 +1323,7 @@
      ]
     }
    ],
-   "design": "A bounded model step assembles a personal plain-language information pack from the hospital's approved leaflets and vetted public patient information, citing a source paragraph for every sentence, and the nurse approves it before handing it over. Education given is recorded with a short checklist in the record ({OTHER}); group programmes are built from a module library in {DOCS} and published to the portal only after the committee approves.",
+   "design": "A bounded model step assembles a personal plain-language information pack from the hospital's approved leaflets and vetted public patient information, citing a source paragraph for every sentence, and the nurse checks it before handing it over. Education given is recorded with a short checklist in the record ({OTHER}); group programmes are built from a module library in {DOCS} and published to the portal by the nurse only after the committee approves and the nurse checks the version.",
    "previous_blocker": "Packs were stapled together from generic leaflets, because rewriting for each patient took too long.",
    "enabler_now": "Vetted, guideline-based patient information exists, and language models can rewrite it when each sentence must cite its source.",
    "still_hard": "Teaching skills and checking understanding stay hands-on; personal advice beyond the care plan needs a clinician.",
@@ -1227,7 +1377,8 @@
     "Boundary: from assessing education needs to materials published; clinical treatment is outside.",
     "Input contract: approved leaflets kept by the patient education committee; vetted public texts the hospital licenses or links; care plan items from the record; fallback is the standard leaflets.",
     "Committee time is outside the nurse's savings.",
-    "Teaching and teach-back do not change."
+    "Teaching and teach-back do not change.",
+    "s2 keeps 50 for reading each assembled pack and its sources; the pack check (s2b) and hand-over (s2c) take 1 each. s5 keeps 85: the checklist saves some typing, but the education record is the nurse's own. s9 keeps 30 for the release; the nurse's version check (s8b) takes 1 of its old share."
    ],
    "unknowns": [
     "Whether the hospital may reuse public patient texts in its own packs.",
@@ -1263,30 +1414,30 @@
    "approvals": [
     {
      "id": "a1",
-     "action_step_id": "s2",
-     "approved_version": "The information pack as approved by the nurse for this patient; any change needs a new approval.",
-     "approval_step_id": "s2",
+     "action_step_id": "s2c",
+     "approved_version": "The information pack exactly as checked by the nurse in s2b, handed once to this patient; any change needs a new check.",
+     "approval_step_id": "s2b",
      "approver": "nurse"
     },
     {
      "id": "a2",
      "action_step_id": "s9",
-     "approved_version": "Programme materials as approved by the committee in s8; later edits need a new approval.",
-     "approval_step_id": "s8",
-     "approver": "patient education committee"
+     "approved_version": "The programme materials exactly as approved by the committee in s8 and checked by the nurse in s8b, published once on the intranet and the patient portal; any change needs a new committee approval and check.",
+     "approval_step_id": "s8b",
+     "approver": "nurse"
     }
    ],
    "time_saved_range_pct": {
-    "low": 6,
-    "high": 13,
-    "basis": "Wards with few education moments, or nurses who prefer standard leaflets, save little on preparation."
+    "low": 5.8,
+    "high": 13.7,
+    "basis": "Low: nurses prefer standard leaflets and rewrite packs, so s2 keeps 80, and the module library fits few programmes, so s7 keeps 80 (5.8); high: packs and modules used as designed (13.7)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
-   "gross_time_saved_pct": 19.473684,
+   "gross_time_saved_pct": 15.263158,
    "incremental_hours_per_100_baseline_hours": 1.5,
-   "time_saved_pct": 17.973684,
-   "speedup": 1.219121,
+   "time_saved_pct": 13.763158,
+   "speedup": 1.159597,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1344,6 +1495,6 @@
   "digest": "research/digests-minor/29-1.md",
   "digest_sha256": "5d7bc5777e3c199c076be82fc8847b59d13a24aa68c707151f0b858f326e00d7",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-17T07:50:00"
+  "finalized": "2026-10-17T08:27:00"
  }
 }

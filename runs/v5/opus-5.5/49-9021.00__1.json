@@ -6,21 +6,52 @@
    "short": "Ask about symptoms before and at the visit, explain the repair, check with the user that it works, follow up later and note what was said.",
    "steps": [
     {
+     "id": "s0",
+     "what": "Customer answers the booking questions: error code, thermostat reading and a photo of the unit's display",
+     "actor": "customer",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "service request"
+     ],
+     "outputs": [
+      "booking answers"
+     ],
+     "handoff_to": "HVAC mechanic",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "ticket-to-resolution",
+     "approver": "none",
+     "labour_scope": "customer",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s1",
-     "what": "Mechanic phones the customer before the visit to ask about the symptoms",
+     "what": "Mechanic finds out the symptoms before the visit: by phone today; after the change by reading the booking answers and phoning only when they are unclear",
      "actor": "HVAC mechanic",
      "today_means": "paper_phone",
      "systems": [
       "TELEPHONY"
      ],
      "inputs": [
-      "service request"
+      "service request",
+      "booking answers"
      ],
      "outputs": [
       "symptom notes"
      ],
      "handoff_to": "none",
-     "share_pct": 15,
+     "share_pct": 14,
      "fate": "person_does",
      "remaining_pct": 60,
      "block": "crud_app",
@@ -28,7 +59,7 @@
      "loop": null,
      "authority": "read",
      "human_gate": false,
-     "boundary": "start",
+     "boundary": "actor",
      "workflow": "ticket-to-resolution",
      "approver": "none",
      "labour_scope": "focal_role",
@@ -120,8 +151,8 @@
      "approval_refs": []
     },
     {
-     "id": "s5",
-     "what": "Mechanic phones the customer days later to check the fix held",
+     "id": "s4c",
+     "what": "Mechanic checks the follow-up text for the job: customer, phone number and wording",
      "actor": "HVAC mechanic",
      "today_means": "paper_phone",
      "systems": [
@@ -131,10 +162,72 @@
       "repair verified"
      ],
      "outputs": [
+      "follow-up text checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "ticket-to-resolution",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4s",
+     "what": "Mechanic releases the follow-up text to be sent three days after the visit",
+     "actor": "HVAC mechanic",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "follow-up text checked"
+     ],
+     "outputs": [
+      "follow-up text sent"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "ticket-to-resolution",
+     "approver": "HVAC mechanic",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
+     "id": "s5",
+     "what": "Mechanic follows up days later to check the fix held: by phone to every customer today; after the change by phone only to customers who reply 'no'",
+     "actor": "HVAC mechanic",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "follow-up text sent"
+     ],
+     "outputs": [
       "follow-up result"
      ],
      "handoff_to": "customer",
-     "share_pct": 10,
+     "share_pct": 8,
      "fate": "person_does",
      "remaining_pct": 40,
      "block": "notification",
@@ -164,9 +257,9 @@
      "handoff_to": "none",
      "share_pct": 5,
      "fate": "person_does",
-     "remaining_pct": 50,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -178,7 +271,7 @@
      "approval_refs": []
     }
    ],
-   "design": "The booking form in the firm's field service app ({OTHER}) asks the customer for the error code, what the thermostat shows and a photo of the unit's display, so the mechanic reads it before driving out. Three days after the visit an automatic text asks whether the system works; only 'no' replies get a call. Talking with the user on site stays as it is.",
+   "design": "The booking form in the firm's field service app ({OTHER}) asks the customer for the error code, what the thermostat shows and a photo of the unit's display, so the mechanic reads it before driving out. The mechanic checks and releases a follow-up text that goes three days after the visit to ask whether the system works; only 'no' replies get a call. Writing the user's account stays as it is. Talking with the user on site stays as it is.",
    "previous_blocker": "Symptoms were gathered by phone, and follow-ups were calls the mechanic often had no time for.",
    "enabler_now": "Field service apps for installers handle the job from request to invoice on the phone.",
    "still_hard": "Users describe symptoms loosely; photos of a home need care under privacy rules.",
@@ -219,7 +312,7 @@
    "assumptions": [
     "Boundary: from the service request to the follow-up; the repair itself is outside.",
     "Input contract: booking questions set by the service manager; answers and photos given by customers; fallback is the phone call.",
-    "Customer time is outside the mechanic's savings.",
+    "Customer time is outside the mechanic's savings; answering the booking questions is step s0 (share 1). s1 keeps 60 for reading the answers and calling when they are unclear; s5 keeps 40 for calls after a 'no'. The user's account is a first record and keeps its full time; the text check and release keep theirs.",
     "Conversations on site do not change."
    ],
    "unknowns": [
@@ -233,30 +326,68 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "Mechanic reads the booking answers before the visit.",
+      "description": "No new upkeep: reading the booking answers is s1's remaining time.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 1
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4s",
+     "approved_version": "The follow-up text exactly as checked by the mechanic in s4c, sent once three days after the visit to the customer's number on the job; any change needs a new check.",
+     "approval_step_id": "s4c",
+     "approver": "HVAC mechanic"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 4,
-    "high": 9,
-    "basis": "Customers who phone instead of using the form keep the pre-visit call."
+    "low": 6.2,
+    "high": 10.5,
+    "basis": "Low: most customers phone instead of using the form, so the pre-visit call stays (6.2); high: most customers answer the booking questions (10.5)."
    },
-   "focal_role_share_pct": 100,
-   "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 14.5,
-   "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 13.5,
-   "speedup": 1.156069,
+   "focal_role_share_pct": 99,
+   "excluded_labour_share_pct": 1,
+   "gross_time_saved_pct": 10.505051,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 10.505051,
+   "speedup": 1.117381,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
    "uid": "49-9021.00:23575",
    "short": "Agree visit times with customers, write work orders, requisition parts, order from stock, let the planner adjust, and confirm appointments.",
    "steps": [
+    {
+     "id": "s0",
+     "what": "Customer picks a visit slot from the times the planning board offers",
+     "actor": "customer",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "service request"
+     ],
+     "outputs": [
+      "slot booked"
+     ],
+     "handoff_to": "HVAC mechanic",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "ticket-to-resolution",
+     "approver": "none",
+     "labour_scope": "customer",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
     {
      "id": "s1",
      "what": "Mechanic phones customers to schedule work and agree visit times",
@@ -266,13 +397,14 @@
       "TELEPHONY"
      ],
      "inputs": [
-      "service request"
+      "service request",
+      "slot booked"
      ],
      "outputs": [
       "agreed visit"
      ],
      "handoff_to": "customer",
-     "share_pct": 30,
+     "share_pct": 29,
      "fate": "person_reviews",
      "remaining_pct": 50,
      "block": "workflow_automation",
@@ -280,7 +412,7 @@
      "loop": null,
      "authority": "act_external",
      "human_gate": false,
-     "boundary": "start",
+     "boundary": "actor",
      "workflow": "ticket-to-resolution",
      "approver": "none",
      "labour_scope": "focal_role",
@@ -375,7 +507,7 @@
     },
     {
      "id": "s5",
-     "what": "Mechanic places orders from stock or with the wholesaler by phone",
+     "what": "Mechanic prepares orders from stock or with the wholesaler: by phone today, from the work order after the change",
      "actor": "HVAC mechanic",
      "today_means": "paper_phone",
      "systems": [
@@ -385,16 +517,16 @@
       "house requisition"
      ],
      "outputs": [
-      "stock order"
+      "stock order draft"
      ],
-     "handoff_to": "external",
-     "share_pct": 15,
+     "handoff_to": "none",
+     "share_pct": 13,
      "fate": "person_does",
      "remaining_pct": 60,
      "block": "integration",
      "rung": "configure",
      "loop": null,
-     "authority": "act_external",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "system_or_means",
      "workflow": "procure-to-pay",
@@ -404,8 +536,70 @@
      "approval_refs": []
     },
     {
-     "id": "s6",
-     "what": "Mechanic rings each customer the day before to confirm",
+     "id": "s5c",
+     "what": "Mechanic checks the final order: parts, quantities, supplier or warehouse and delivery point",
+     "actor": "HVAC mechanic",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "stock order draft"
+     ],
+     "outputs": [
+      "stock order checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5s",
+     "what": "Mechanic sends the checked order to the warehouse or wholesaler",
+     "actor": "HVAC mechanic",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "stock order checked"
+     ],
+     "outputs": [
+      "stock order"
+     ],
+     "handoff_to": "external",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "HVAC mechanic",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
+     "id": "s6c",
+     "what": "Mechanic checks the next day's reminder texts: customers, addresses, dates and times",
      "actor": "HVAC mechanic",
      "today_means": "paper_phone",
      "systems": [
@@ -415,26 +609,58 @@
       "adjusted schedule"
      ],
      "outputs": [
-      "confirmed appointment"
+      "reminders checked"
      ],
-     "handoff_to": "customer",
-     "share_pct": 10,
-     "fate": "machine",
-     "remaining_pct": 0,
-     "block": "notification",
-     "rung": "deterministic",
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
      "loop": null,
-     "authority": "act_external",
+     "authority": "read",
      "human_gate": false,
-     "boundary": "actor",
+     "boundary": "decision",
      "workflow": "ticket-to-resolution",
      "approver": "none",
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s6",
+     "what": "Mechanic confirms the next day's appointments: by ringing each customer today, by releasing the checked reminder texts after the change",
+     "actor": "HVAC mechanic",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "reminders checked"
+     ],
+     "outputs": [
+      "confirmed appointment"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 9,
+     "fate": "person_does",
+     "remaining_pct": 20,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "ticket-to-resolution",
+     "approver": "HVAC mechanic",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
     }
    ],
-   "design": "Customers pick a slot from times offered by the planning board of the firm's field service app ({OTHER}), which proposes slots by rules on skills, region and job length; the mechanic handles exceptions. The booking creates the work order with the unit's history, requisitions and stock orders start from it, and a reminder text replaces the confirmation call; the planner still reshuffles for emergencies.",
+   "design": "Customers pick a slot from times offered by the planning board of the firm's field service app ({OTHER}), which proposes slots by rules on skills, region and job length; the mechanic handles exceptions. The booking creates the work order with the unit's history, requisitions and stock orders start from it and the mechanic checks each order before sending it, and checked reminder texts replace the confirmation call; the planner still reshuffles for emergencies.",
    "previous_blocker": "Scheduling and orders ran on phone calls and paper.",
    "enabler_now": "Field service apps run work orders from quote to invoice and offer booking slots.",
    "still_hard": "Emergencies upset the plan; some customers only phone.",
@@ -482,7 +708,7 @@
     "Boundary: from the service request to the confirmed appointment and ordered parts; the visit is outside.",
     "Input contract: skills, regions and job lengths kept by the service planner; unit history from past work orders; stock levels kept by the warehouse clerk; fallback is the phone.",
     "Planner and warehouse time is outside the mechanic's savings.",
-    "Emergency reshuffling does not change."
+    "Emergency reshuffling does not change. The customer's slot choice is step s0 (share 1). s1 keeps 50 for customers who phone and for exceptions; s2 keeps 40 for work orders from phone bookings; s3 keeps 50; s5 keeps 60 for building the order; s6 keeps 20 for releasing the texts; both checks and the send keep their full time."
    ],
    "unknowns": [
     "Share of customers who self-book.",
@@ -504,29 +730,44 @@
     ],
     "incremental": [
      {
-      "description": "Mechanic learns the planning and order screens.",
-      "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 0.5
-     },
-     {
       "description": "Service planner keeps job lengths and regions current.",
       "labour_scope": "other_role",
       "hours_per_100_baseline_hours": 0.5
+     },
+     {
+      "description": "No ongoing upkeep for the mechanic: learning the planning and order screens is a one-off.",
+      "labour_scope": "focal_role",
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5s",
+     "approved_version": "The order with parts, quantities and delivery point exactly as checked by the mechanic in s5c, sent once to the warehouse or the named wholesaler; any change needs a new check.",
+     "approval_step_id": "s5c",
+     "approver": "HVAC mechanic"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s6",
+     "approved_version": "The next day's reminder texts with customer, address, date and time exactly as checked by the mechanic in s6c, sent once to the customers' numbers on the work orders; any change needs a new check.",
+     "approval_step_id": "s6c",
+     "approver": "HVAC mechanic"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 20,
-    "high": 38,
-    "basis": "Firms whose customers mostly phone keep much of the scheduling by hand."
+    "low": 31.7,
+    "high": 52.1,
+    "basis": "Low: most customers phone instead of booking, so scheduling and work orders stay largely by hand (31.7); high: most customers book a slot (52.1)."
    },
-   "focal_role_share_pct": 90,
-   "excluded_labour_share_pct": 10,
-   "gross_time_saved_pct": 56.111111,
-   "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 55.611111,
-   "speedup": 2.252816,
+   "focal_role_share_pct": 89,
+   "excluded_labour_share_pct": 11,
+   "gross_time_saved_pct": 52.134831,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 52.134831,
+   "speedup": 2.089202,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -563,7 +804,7 @@
     },
     {
      "id": "s2",
-     "what": "Mechanic phones the wholesaler to order the materials",
+     "what": "Mechanic prepares the materials order: by phone to the wholesaler today, from the work order after the change",
      "actor": "HVAC mechanic",
      "today_means": "paper_phone",
      "systems": [
@@ -573,16 +814,16 @@
       "materials estimate"
      ],
      "outputs": [
-      "wholesale order"
+      "order draft"
      ],
-     "handoff_to": "external",
-     "share_pct": 15,
+     "handoff_to": "none",
+     "share_pct": 13,
      "fate": "person_does",
      "remaining_pct": 40,
      "block": "integration",
      "rung": "configure",
      "loop": null,
-     "authority": "act_external",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "system_or_means",
      "workflow": "procure-to-pay",
@@ -590,6 +831,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s2c",
+     "what": "Mechanic checks the final materials order: items, quantities, delivery day and van or pick-up point",
+     "actor": "HVAC mechanic",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "order draft"
+     ],
+     "outputs": [
+      "order checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2s",
+     "what": "Mechanic sends the checked order to the wholesaler's ordering link",
+     "actor": "HVAC mechanic",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "order checked"
+     ],
+     "outputs": [
+      "wholesale order"
+     ],
+     "handoff_to": "external",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "HVAC mechanic",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s3",
@@ -649,7 +952,7 @@
     },
     {
      "id": "s5",
-     "what": "Mechanic keeps receipts and lists the materials used for invoicing",
+     "what": "Mechanic books the materials actually used for invoicing: from receipts and lists today, on the work order starting from the ordered list after the change",
      "actor": "HVAC mechanic",
      "today_means": "document",
      "systems": [],
@@ -676,7 +979,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Standard materials lists per job type in the firm's field service app ({OTHER}) give a first estimate that the mechanic adjusts, and the order goes from the work order to the wholesaler's ordering link. Orders placed the day before are delivered to the van or a pick-up point; materials used are booked on the work order for the invoice, and installing stays manual.",
+   "design": "Standard materials lists per job type in the firm's field service app ({OTHER}) give a first estimate that the mechanic adjusts, and the mechanic checks the order and sends it once from the work order to the wholesaler's ordering link. Orders placed the day before are delivered to the van or a pick-up point; the mechanic books the materials actually used on the work order for the invoice, and installing stays manual.",
    "previous_blocker": "Each job's materials were worked out, phoned in and fetched by the mechanic.",
    "enabler_now": "Field service apps run work orders from quote to invoice; wholesalers take electronic orders and deliver.",
    "still_hard": "Repairs reveal surprises; a missing part still means a trip.",
@@ -718,7 +1021,7 @@
     "Boundary: from the materials estimate to materials booked; invoicing is outside.",
     "Input contract: standard materials lists per job type kept by the service manager; wholesaler catalogue and ordering link from the wholesaler; fallback is phone and pick-up.",
     "Wholesaler time is outside the mechanic's savings.",
-    "Installing does not change."
+    "Installing, the order check and the send keep their full time. s1 keeps 60 for adjusting the standard list; s2 keeps 40 for building the order; s3 keeps 60 for pick-ups that remain; s5 keeps 30 for booking actual use."
    ],
    "unknowns": [
     "Whether the wholesaler delivers to vans in the region.",
@@ -746,18 +1049,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s2s",
+     "approved_version": "The materials order with items, quantities and delivery point exactly as checked by the mechanic in s2c, sent once to the wholesaler's ordering link; any change needs a new check.",
+     "approval_step_id": "s2c",
+     "approver": "HVAC mechanic"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 10,
-    "high": 20,
-    "basis": "Repair work with unknown parts still needs trips to the wholesaler."
+    "low": 17.5,
+    "high": 28.8,
+    "basis": "Low: mostly repair work with unknown parts, so standard lists fit poorly and trips to the wholesaler stay (17.5); high: mostly planned jobs ordered a day ahead (28.8)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 30.5,
+   "gross_time_saved_pct": 29.3,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 30.0,
-   "speedup": 1.428571,
+   "time_saved_pct": 28.8,
+   "speedup": 1.404494,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -766,7 +1077,7 @@
    "steps": [
     {
      "id": "s1",
-     "what": "Mechanic does a last-minute risk check on paper before starting",
+     "what": "Mechanic does a last-minute risk check before starting: on paper today, as a checklist in the work order after the change",
      "actor": "HVAC mechanic",
      "today_means": "document",
      "systems": [],
@@ -779,9 +1090,9 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 60,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -835,7 +1146,7 @@
      "handoff_to": "customer",
      "share_pct": 15,
      "fate": "person_does",
-     "remaining_pct": 40,
+     "remaining_pct": 80,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -905,7 +1216,7 @@
      "approval_refs": []
     }
    ],
-   "design": "The risk check is a short checklist in the mobile work order of the field service app ({OTHER}), and the refrigerant logbook fields (leak check, refrigerant type, amount added and recovered) sit in the same work order, so the record for the unit builds itself. Certificate expiry dates sit in the {LMS} with reminders; safe work and cleaning stay with the mechanic.",
+   "design": "The risk check is a short checklist in the mobile work order of the field service app ({OTHER}), and the refrigerant logbook fields (leak check, refrigerant type, amount added and recovered) sit in the same work order, so unit and refrigerant data fill from past work orders and the mechanic writes the amounts. Certificate expiry dates sit in the {LMS} with reminders; safe work and cleaning stay with the mechanic.",
    "previous_blocker": "Risk checks and refrigerant logbooks were paper kept at the unit or in the van.",
    "enabler_now": "Mobile work orders can carry checklists and logbook fields.",
    "still_hard": "Logbook entries must be right; a ticked checklist is not safe work.",
@@ -953,7 +1264,7 @@
     "Boundary: from the risk check to a clean work area; incident reporting is outside.",
     "Input contract: checklist items and logbook fields set by the service manager; unit data from past work orders; certificate dates entered by the office; fallback is paper.",
     "Checklists are not used to judge mechanics.",
-    "Safe work and cleaning do not change."
+    "Safe work, cleaning and the risk check keep their full time. s3 keeps 80 because only unit and refrigerant details fill in and the leak check and amounts are still written; s5 keeps 50 because reminders replace tracking dates on paper."
    ],
    "unknowns": [
     "Share of jobs with refrigerant work."
@@ -965,24 +1276,24 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "Mechanic learns the checklist and logbook screens.",
+      "description": "No ongoing upkeep: learning the checklist and logbook screens is a one-off.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 0.3
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 6,
-    "high": 12,
-    "basis": "Jobs without refrigerant work gain only from the checklist."
+    "low": 5.0,
+    "high": 8.0,
+    "basis": "Low: few units have past work orders in the app, so logbook details are still written in full (5.0); high: unit data on file (8.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 18.0,
-   "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 17.7,
-   "speedup": 1.215067,
+   "gross_time_saved_pct": 8.0,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 8.0,
+   "speedup": 1.086957,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1026,6 +1337,6 @@
   "digest": "research/digests-minor/49-9.md",
   "digest_sha256": "3849b8b576c7677a1e7ae770e6a9c9fcdb1d2658bb90352f893da1a8394bdd4b",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T13:09:53"
+  "finalized": "2026-10-17T08:30:35"
  }
 }

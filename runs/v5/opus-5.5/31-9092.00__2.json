@@ -7,7 +7,7 @@
    "steps": [
     {
      "id": "s1",
-     "what": "Patient arrives at the clinic and reports at the desk",
+     "what": "Patient arrives and reports: at the desk today; returning patients scan the QR code at the kiosk after the change",
      "actor": "patient",
      "today_means": "in_person",
      "systems": [],
@@ -18,7 +18,37 @@
       "patient at desk"
      ],
      "handoff_to": "medical assistant",
-     "share_pct": 10,
+     "share_pct": 9,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "start",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "customer",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s1p",
+     "what": "Patient updates contact details in the patient portal before the visit",
+     "actor": "patient",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "appointment"
+     ],
+     "outputs": [
+      "contact details updated"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
      "fate": "person_does",
      "remaining_pct": 100,
      "block": "none",
@@ -79,7 +109,7 @@
      "handoff_to": "physician",
      "share_pct": 25,
      "fate": "person_reviews",
-     "remaining_pct": 40,
+     "remaining_pct": 60,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -101,7 +131,8 @@
       "OTHER"
      ],
      "inputs": [
-      "arrival status"
+      "arrival status",
+      "contact details updated"
      ],
      "outputs": [
       "updated patient details"
@@ -228,7 +259,7 @@
    "assumptions": [
     "Boundary: from the patient's arrival to waiting for the consultation; the consultation is outside.",
     "Input contract: appointment with QR code from the confirmation message, produced by the agenda; insurance status from the insurers' check service the night before; contact details entered by patients in the portal; fallback is the desk.",
-    "Scenario: about half of returning patients use the kiosk after a year.",
+    "Scenario: about half of returning patients use the kiosk after a year, about 40% of arrivals; s2 keeps 70 and s3 keeps 60 for desk arrivals and kiosk mismatches; s4 keeps 30 because insurance is checked overnight and patients update contact details in the portal (s1p, customer time); s5 keeps 80.",
     "Patient time is outside the assistant's savings."
    ],
    "unknowns": [
@@ -272,22 +303,52 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 12,
-    "high": 28,
-    "basis": "A practice with many older patients sees few kiosk check-ins, so desk time falls far less."
+    "low": 21.5,
+    "high": 35.7,
+    "basis": "Low: a practice with many older patients sees few kiosk check-ins, so s2 keeps 90, s3 keeps 85 and s5 keeps 95 (21.5); high: about half of returning patients use the kiosk (35.7)."
    },
    "focal_role_share_pct": 90,
    "excluded_labour_share_pct": 10,
-   "gross_time_saved_pct": 42.777778,
+   "gross_time_saved_pct": 37.222222,
    "incremental_hours_per_100_baseline_hours": 1.5,
-   "time_saved_pct": 41.277778,
-   "speedup": 1.702933,
+   "time_saved_pct": 35.722222,
+   "speedup": 1.555748,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
    "uid": "31-9092.00:2038",
    "short": "Answer telephones, type letters from dictation, complete insurance forms and send them on.",
    "steps": [
+    {
+     "id": "s1i",
+     "what": "Patient states the request to the automated intake on the phone line",
+     "actor": "patient",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "patient call"
+     ],
+     "outputs": [
+      "request stated"
+     ],
+     "handoff_to": "medical assistant",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "customer",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
     {
      "id": "s1",
      "what": "Medical assistant answers telephones: results, prescriptions, appointments, questions",
@@ -297,13 +358,14 @@
       "TELEPHONY"
      ],
      "inputs": [
-      "patient call"
+      "patient call",
+      "request stated"
      ],
      "outputs": [
       "call handled"
      ],
      "handoff_to": "none",
-     "share_pct": 35,
+     "share_pct": 34,
      "fate": "person_does",
      "remaining_pct": 65,
      "block": "answer_desk",
@@ -449,8 +511,8 @@
      "approval_refs": []
     },
     {
-     "id": "s6",
-     "what": "Medical assistant sends signed letters to the hospital or patient",
+     "id": "s5b",
+     "what": "Medical assistant checks the signed letter before sending: it is the signed version, and the hospital department or patient address in secure messaging",
      "actor": "medical assistant",
      "today_means": "email_chat",
      "systems": [
@@ -461,10 +523,41 @@
       "signed letter"
      ],
      "outputs": [
+      "letter checked"
+     ],
+     "handoff_to": "external",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6",
+     "what": "Medical assistant sends signed letters to the hospital or patient",
+     "actor": "medical assistant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "letter checked"
+     ],
+     "outputs": [
       "sent letters"
      ],
      "handoff_to": "external",
-     "share_pct": 5,
+     "share_pct": 4,
      "fate": "person_does",
      "remaining_pct": 30,
      "block": "integration",
@@ -474,12 +567,43 @@
      "human_gate": true,
      "boundary": "system_or_means",
      "workflow": "documents-and-records",
-     "approver": "physician",
+     "approver": "medical assistant",
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": [
       "a1"
      ]
+    },
+    {
+     "id": "s6c",
+     "what": "Medical assistant checks the completed form before sending: patient, answers against the record, and the insurer",
+     "actor": "medical assistant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "completed insurance form"
+     ],
+     "outputs": [
+      "form checked"
+     ],
+     "handoff_to": "external",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
     },
     {
      "id": "s7",
@@ -491,13 +615,13 @@
       "PARTNER_PORTAL"
      ],
      "inputs": [
-      "completed insurance form"
+      "form checked"
      ],
      "outputs": [
       "sent forms"
      ],
      "handoff_to": "external",
-     "share_pct": 5,
+     "share_pct": 4,
      "fate": "person_does",
      "remaining_pct": 30,
      "block": "integration",
@@ -515,7 +639,7 @@
      ]
     }
    ],
-   "design": "A phone line with a disclosed automated intake routes routine requests (appointment changes, results, repeat prescriptions) to self-service and anything sounding urgent straight to the assistant. Dictation runs through a CE-marked speech tool inside the health record ({OTHER}), so the physician corrects and signs a draft; insurance forms are pre-filled from record fields, and signed letters go out through secure care messaging on the {PARTNER_PORTAL}.",
+   "design": "A phone line with a disclosed automated intake routes routine requests (appointment changes, repeat prescriptions, where to find results in the portal) to fixed self-service paths that give no medical content and anything sounding urgent straight to the assistant. Dictation runs through a CE-marked speech tool inside the health record ({OTHER}), so the physician corrects and signs a draft; insurance forms are pre-filled from record fields, and the assistant checks each signed letter and completed form before sending it once, letters through secure care messaging on the {PARTNER_PORTAL}.",
    "previous_blocker": "Calls were all answered by hand, dictation audio queued for typing, and forms were filled from the record field by field.",
    "enabler_now": "Ambient and dictation tools inside health records are used in Dutch practices, and phone systems take spoken intents with fixed routes.",
    "still_hard": "Telephone triage is a clinical judgement; speech tools make errors that the physician must spot, and patients may hold back when recorded.",
@@ -575,7 +699,7 @@
     "Boundary: from incoming calls and dictations to letters and forms sent; consultations are outside.",
     "Input contract: dictation audio recorded by the physician in the record; record fields for forms kept by clinicians; intent list and urgency words set by the practice manager with the GPs; fallback is answering and typing by hand.",
     "Physician time is outside the assistant's savings.",
-    "Telephone triage does not change."
+    "Telephone triage does not change. The patient's time with the automated intake is shown in s1i. Both checks before sending keep their full time; s6 and s7 keep 30 for the send."
    ],
    "unknowns": [
     "Whether the record system has an approved speech tool.",
@@ -620,29 +744,29 @@
     {
      "id": "a1",
      "action_step_id": "s6",
-     "approved_version": "Letter text as signed by the physician in s4; any edit after signing needs a new signature.",
-     "approval_step_id": "s4",
-     "approver": "physician"
+     "approved_version": "The letter exactly as signed by the physician in s4 and checked by the assistant in s5b, sent once by secure care messaging to the named hospital department or patient; any edit needs a new signature and check.",
+     "approval_step_id": "s5b",
+     "approver": "medical assistant"
     },
     {
      "id": "a2",
      "action_step_id": "s7",
-     "approved_version": "The form as completed and checked by the medical assistant in s5.",
-     "approval_step_id": "s5",
+     "approved_version": "The insurance or authorisation form with its answers exactly as checked by the assistant in s6c, sent once to the patient's insurer; any change needs a new check.",
+     "approval_step_id": "s6c",
      "approver": "medical assistant"
     }
    ],
    "time_saved_range_pct": {
-    "low": 18,
-    "high": 35,
-    "basis": "A practice whose callers mostly want to speak to a person keeps most phone time; speech drafts with many errors keep the assistant correcting."
+    "low": 28.8,
+    "high": 46.4,
+    "basis": "Low: most callers want to speak to a person and speech drafts have many errors, so s1 keeps 90 and s3 keeps 60 (28.8); high: as designed (46.4)."
    },
-   "focal_role_share_pct": 95,
-   "excluded_labour_share_pct": 5,
-   "gross_time_saved_pct": 49.736842,
+   "focal_role_share_pct": 94,
+   "excluded_labour_share_pct": 6,
+   "gross_time_saved_pct": 48.404255,
    "incremental_hours_per_100_baseline_hours": 2,
-   "time_saved_pct": 47.736842,
-   "speedup": 1.913394,
+   "time_saved_pct": 46.404255,
+   "speedup": 1.86582,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -772,7 +896,7 @@
     },
     {
      "id": "s5",
-     "what": "General practitioner reviews and authorizes the refill",
+     "what": "General practitioner reviews the prepared refill: medicine, dose, quantity, the repeat policy flags and the patient's pharmacy",
      "actor": "general practitioner",
      "today_means": "system_screen",
      "systems": [
@@ -785,13 +909,13 @@
       "authorized prescription"
      ],
      "handoff_to": "medical assistant",
-     "share_pct": 11,
+     "share_pct": 10,
      "fate": "person_reviews",
      "remaining_pct": 100,
      "block": "judgement_step",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "other",
@@ -801,9 +925,9 @@
      "approval_refs": []
     },
     {
-     "id": "s6",
-     "what": "Medical assistant sends the e-prescription to the patient's pharmacy",
-     "actor": "medical assistant",
+     "id": "s5s",
+     "what": "General practitioner signs and sends the reviewed e-prescription to the patient's pharmacy",
+     "actor": "general practitioner",
      "today_means": "system_screen",
      "systems": [
       "OTHER",
@@ -815,23 +939,54 @@
      "outputs": [
       "e-prescription"
      ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_reviews",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "general practitioner",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
+     "id": "s6",
+     "what": "Medical assistant sends the e-prescription to the patient's pharmacy; after the change the GP's signing sends it",
+     "actor": "medical assistant",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "PARTNER_PORTAL"
+     ],
+     "inputs": [
+      "authorized prescription"
+     ],
+     "outputs": [
+      "prescription sent by assistant"
+     ],
      "handoff_to": "external",
      "share_pct": 10,
-     "fate": "machine",
+     "fate": "gone",
      "remaining_pct": 0,
      "block": "integration",
      "rung": "configure",
      "loop": null,
      "authority": "act_external",
-     "human_gate": true,
+     "human_gate": false,
      "boundary": "system_or_means",
      "workflow": "other",
-     "approver": "general practitioner",
+     "approver": "none",
      "labour_scope": "focal_role",
      "shared_step_id": "",
-     "approval_refs": [
-      "a1"
-     ]
+     "approval_refs": []
     },
     {
      "id": "s7",
@@ -865,7 +1020,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Patients pick the medicine from their own active repeat list in the patient portal; fixed rules in the health record ({OTHER}) check chronic status, last control date and due lab tests against the GP's repeat policy per medicine, and put a prepared prescription in the GP's authorisation queue or flag it for the assistant. After the GP authorises, the e-prescription goes to the pharmacy automatically.",
+   "design": "Patients pick the medicine from their own active repeat list in the patient portal; fixed rules in the health record ({OTHER}) check chronic status, last control date and due lab tests against the GP's repeat policy per medicine, and put a prepared prescription in the GP's authorisation queue or flag it for the assistant. The GP reviews each prepared refill and signs and sends the e-prescription once to the patient's pharmacy.",
    "previous_blocker": "Repeat requests came in by phone and were checked record by record because repeat policies were not stored as fields.",
    "enabler_now": "Health records hold medication lists and dates, portals take structured requests, and e-prescribing to pharmacies is standard.",
    "still_hard": "Repeat policies per medicine must be set and kept by GPs; dosage and interaction questions need clinical knowledge.",
@@ -971,16 +1126,16 @@
    "approvals": [
     {
      "id": "a1",
-     "action_step_id": "s6",
-     "approved_version": "Prescription with medicine, dose and quantity as authorised by the GP in s5; any change needs a new authorisation.",
+     "action_step_id": "s5s",
+     "approved_version": "The prescription with medicine, dose and quantity exactly as reviewed by the GP in s5, signed and sent once to the patient's pharmacy; any change needs a new review.",
      "approval_step_id": "s5",
      "approver": "general practitioner"
     }
    ],
    "time_saved_range_pct": {
-    "low": 25,
-    "high": 45,
-    "basis": "Practices whose record system already queues repeats save less, and practices with few portal users keep phone intake."
+    "low": 42.7,
+    "high": 55.9,
+    "basis": "Low: few patients use the portal and many repeats lack a policy, so the rules match fewer requests and s2 and s3 keep 60 (42.7); high: as designed (55.9)."
    },
    "focal_role_share_pct": 84,
    "excluded_labour_share_pct": 16,
@@ -996,7 +1151,7 @@
    "steps": [
     {
      "id": "s1",
-     "what": "Patient asks for an appointment by phone, portal or at the desk",
+     "what": "Patient asks for an appointment: by phone or at the desk today, by booking online for routine types after the change",
      "actor": "patient",
      "today_means": "paper_phone",
      "systems": [
@@ -1114,7 +1269,7 @@
     },
     {
      "id": "s5",
-     "what": "Medical assistant reschedules cancellations and fills gaps from the waiting list",
+     "what": "Medical assistant reschedules cancellations and fills gaps from the waiting list: by phone today; after the change picks the waiting-list patients for each freed slot",
      "actor": "medical assistant",
      "today_means": "paper_phone",
      "systems": [
@@ -1125,10 +1280,10 @@
       "appointment"
      ],
      "outputs": [
-      "rescheduled appointment"
+      "slot offers drafted"
      ],
      "handoff_to": "patient",
-     "share_pct": 15,
+     "share_pct": 13,
      "fate": "person_does",
      "remaining_pct": 50,
      "block": "workflow_automation",
@@ -1144,8 +1299,70 @@
      "approval_refs": []
     },
     {
+     "id": "s5b",
+     "what": "Medical assistant checks each slot offer: slot, professional, appointment type and the waiting-list patients it goes to",
+     "actor": "medical assistant",
+     "today_means": "paper_phone",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "slot offers drafted"
+     ],
+     "outputs": [
+      "slot offers checked"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5c",
+     "what": "Medical assistant releases the checked slot offers by text message",
+     "actor": "medical assistant",
+     "today_means": "paper_phone",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "slot offers checked"
+     ],
+     "outputs": [
+      "rescheduled appointment"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "meetings-and-calendar",
+     "approver": "medical assistant",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
      "id": "s6",
-     "what": "Medical assistant sends reminders and calls patients who did not show",
+     "what": "Medical assistant sends reminders and calls patients who did not show: by phone today; after the change calls no-shows only",
      "actor": "medical assistant",
      "today_means": "paper_phone",
      "systems": [
@@ -1158,7 +1375,7 @@
       "reminder"
      ],
      "handoff_to": "patient",
-     "share_pct": 10,
+     "share_pct": 8,
      "fate": "person_does",
      "remaining_pct": 30,
      "block": "notification",
@@ -1172,9 +1389,71 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s6b",
+     "what": "Medical assistant checks the next day's reminders: patient, date, time, professional and mobile number",
+     "actor": "medical assistant",
+     "today_means": "paper_phone",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "appointment"
+     ],
+     "outputs": [
+      "reminders checked"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6c",
+     "what": "Medical assistant releases the checked reminders by text message",
+     "actor": "medical assistant",
+     "today_means": "paper_phone",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "reminders checked"
+     ],
+     "outputs": [
+      "reminders sent"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "meetings-and-calendar",
+     "approver": "medical assistant",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
     }
    ],
-   "design": "Configure online booking in the health record ({OTHER}) for routine appointment types with fixed reasons and slot lengths; a reason that contains a red-flag word is not bookable and asks the patient to call. Confirmations and reminders go by text message, and freed slots are offered automatically to patients on the waiting list.",
+   "design": "Configure online booking in the health record ({OTHER}) for routine appointment types with fixed reasons and slot lengths; a reason that contains a red-flag word is not bookable and asks the patient to call. Patients see their online booking confirmed on screen. The assistant checks the next day's reminders and releases them once by text message, and checks offers of freed slots to waiting-list patients before releasing them.",
    "previous_blocker": "Practices kept booking by phone to control urgency and slot lengths.",
    "enabler_now": "Health record agendas support online booking per appointment type, reminders and waiting lists.",
    "still_hard": "Choosing urgency and the right professional needs the assistant for anything but routine; some patients will not book online.",
@@ -1215,7 +1494,7 @@
    "assumptions": [
     "Boundary: from the request to the appointment kept or rescheduled; the consultation is outside.",
     "Input contract: bookable appointment types with reasons, professional and slot length, and the red-flag word list, set by the practice manager with the GPs; waiting list kept in the agenda; fallback is the phone.",
-    "Scenario: about 40% of routine bookings move online in the first year.",
+    "Scenario: about 40% of routine bookings move online in the first year. The offer and reminder checks and releases keep their full time; s5 keeps 50 for choosing waiting-list patients and phone rescheduling; s6 keeps 30 for calling no-shows.",
     "Patient time is outside the assistant's savings."
    ],
    "unknowns": [
@@ -1249,18 +1528,33 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5c",
+     "approved_version": "Each slot offer with slot, professional and appointment type exactly as checked by the assistant in s5b, sent once by text message to the named waiting-list patients; any change needs a new check.",
+     "approval_step_id": "s5b",
+     "approver": "medical assistant"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s6c",
+     "approved_version": "The next day's reminders with date, time and professional exactly as checked by the assistant in s6b, sent once by text message to each patient's mobile number in the agenda; any change needs a new check.",
+     "approval_step_id": "s6b",
+     "approver": "medical assistant"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 18,
-    "high": 35,
-    "basis": "If only a fifth of patients book online, phone scheduling stays most of the work."
+    "low": 26.6,
+    "high": 41.3,
+    "basis": "Low: only a fifth of patients book online, so phone scheduling stays most of the work; s2 keeps 85, s3 keeps 80 and s4 keeps 70 (26.6); high: about 40% online as assumed (41.3)."
    },
    "focal_role_share_pct": 90,
    "excluded_labour_share_pct": 10,
-   "gross_time_saved_pct": 45.555556,
+   "gross_time_saved_pct": 42.888889,
    "incremental_hours_per_100_baseline_hours": 1.5,
-   "time_saved_pct": 44.055556,
-   "speedup": 1.787488,
+   "time_saved_pct": 41.388889,
+   "speedup": 1.706161,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1307,6 +1601,6 @@
   "digest": "research/digests-minor/31-9.md",
   "digest_sha256": "f3ce26d648888b585d966df912b62996ed079388a146e14c8c833ed41e893467",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T23:40:47"
+  "finalized": "2026-10-17T08:43:18"
  }
 }

@@ -171,7 +171,7 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 60,
+     "remaining_pct": 85,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -185,7 +185,7 @@
      "approval_refs": []
     }
    ],
-   "design": "The record ({OTHER}) shows a problem-oriented summary with active problems, medication and recent reports, and results with trend lines where fixed rules flag values out of range or changed sharply. Outside records come through the national exchange with the patient's consent instead of phone requests. The diagnosis is recorded on a coded problem list. Analysing and diagnosing stay with the internist; no software proposes diagnoses.",
+   "design": "The record ({OTHER}) shows a problem-oriented summary with active problems, medication and recent reports, and results with trend lines where fixed rules flag values out of range or changed sharply. Outside records come through the national exchange with the patient's consent instead of phone requests. The internist writes the diagnosis and reasoning as today; the code is picked from the coded problem list. Analysing and diagnosing stay with the internist; no software proposes diagnoses.",
    "previous_blocker": "Data were spread over screens and outside records requested by phone.",
    "enabler_now": "Records show problem summaries and flagged trends; national exchanges carry outside records.",
    "still_hard": "Problem lists are often out of date.",
@@ -226,7 +226,7 @@
    "assumptions": [
     "Boundary: from the patient visit to the diagnosis recorded; treatment is outside.",
     "Input contract: patient consent for the exchange; fallback is phone requests.",
-    "Diagnosing stays with the internist.",
+    "Analysing and diagnosing keep their full time. s6 keeps 85 because only looking up the code goes; writing the diagnosis and reasoning stays.",
     "Patients' time does not change."
    ],
    "unknowns": [
@@ -247,16 +247,16 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 9,
-    "high": 17,
-    "basis": "Low: new patients with few records; high: complex patients with long histories."
+    "low": 12.5,
+    "high": 21.0,
+    "basis": "Low: the summary misses older reports (s1 keeps 80) and few outside records come through the exchange (s2 keeps 85) (12.5); high: summary and exchange work as designed (21.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 24.0,
+   "gross_time_saved_pct": 21.5,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 23.5,
-   "speedup": 1.30719,
+   "time_saved_pct": 21.0,
+   "speedup": 1.265823,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -323,7 +323,7 @@
     },
     {
      "id": "s3",
-     "what": "Internist prescribes the medication",
+     "what": "Internist writes the prescription: line by line today, from an order set with dose and duration after the change",
      "actor": "internist",
      "today_means": "system_screen",
      "systems": [
@@ -333,10 +333,10 @@
       "checks done"
      ],
      "outputs": [
-      "prescription written"
+      "prescription draft"
      ],
      "handoff_to": "none",
-     "share_pct": 15,
+     "share_pct": 13,
      "fate": "person_does",
      "remaining_pct": 60,
      "block": "crud_app",
@@ -350,6 +350,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s3c",
+     "what": "Internist checks the final prescription: drug, dose, duration and patient against the therapy chosen and the surveillance alerts",
+     "actor": "internist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "prescription draft"
+     ],
+     "outputs": [
+      "prescription checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3s",
+     "what": "Internist signs the checked prescription, releasing it to the pharmacy",
+     "actor": "internist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "prescription checked"
+     ],
+     "outputs": [
+      "prescription written"
+     ],
+     "handoff_to": "pharmacy",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "internist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s4",
@@ -408,7 +470,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Medication surveillance in the prescribing module ({OTHER}) checks interactions, contraindications and doses, adjusted to the latest kidney function, while the prescription is written, so the internist does not look them up. Order sets per common diagnosis fill dose and duration. Choosing the therapy, explaining it and giving care stay with the internist.",
+   "design": "Medication surveillance in the prescribing module ({OTHER}) checks interactions, contraindications and doses, adjusted to the latest kidney function, while the prescription is written, so the internist does not look them up. Order sets per common diagnosis fill dose and duration; the internist checks the final prescription and signs it once. Choosing the therapy, explaining it and giving care stay with the internist.",
    "previous_blocker": "Doses for kidney function and interactions were looked up separately.",
    "enabler_now": "Rule-based medication surveillance runs in prescribing modules.",
    "still_hard": "Too many alerts get clicked away.",
@@ -449,7 +511,7 @@
    "assumptions": [
     "Boundary: from the diagnosis to care given; dispensing is outside.",
     "Input contract: lab values linked to the prescribing module; fallback is looking up.",
-    "Prescribing stays with the internist.",
+    "Choosing, checking and signing the prescription stay with the internist and keep their full time. s2 keeps 40 for reading the alerts; s3 keeps 60 because order sets fill dose and duration for common diagnoses.",
     "Patients' time does not change."
    ],
    "unknowns": [
@@ -468,18 +530,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3s",
+     "approved_version": "The prescription with drug, dose and duration exactly as checked by the internist in s3c, signed once for this patient and released to the pharmacy; any change needs a new check.",
+     "approval_step_id": "s3c",
+     "approver": "internist"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 6,
-    "high": 11,
-    "basis": "Low: complex patients with many alerts; high: common prescriptions with order sets."
+    "low": 8.9,
+    "high": 16.2,
+    "basis": "Low: complex patients raise many alerts to read (s2 keeps 60) and few prescriptions fit an order set (s3 keeps 85) (8.9); high: common prescriptions with order sets (16.2)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 18.0,
+   "gross_time_saved_pct": 17.2,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 17.0,
-   "speedup": 1.204819,
+   "time_saved_pct": 16.2,
+   "speedup": 1.193317,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -561,14 +631,14 @@
      "handoff_to": "none",
      "share_pct": 20,
      "fate": "person_reviews",
-     "remaining_pct": 60,
+     "remaining_pct": 70,
      "block": "artefact_generator",
      "rung": "deterministic_plus_loop",
      "loop": {
       "purpose": "draft",
       "input": "The recorded consultation, with the patient's consent, and the structured data in the record.",
       "output": "A draft visit note.",
-      "check": "A validator flags any medication, dose or value in the draft that does not match the record; the internist edits and approves before saving.",
+      "check": "A validator flags any medication, dose or value in the draft that does not match the record, and lists every statement that cannot be found in the consultation transcript; the internist reads the draft against the visit, resolves each flag and edits the note before saving.",
       "stop": "One draft per visit; if the patient declines recording or the draft is rejected, the internist writes the note.",
       "why_not_simpler": "The visit is told in the patient's words; a form does not capture it."
      },
@@ -613,7 +683,7 @@
     },
     {
      "id": "s5",
-     "what": "Internist checks the final letter",
+     "what": "Internist checks the final letter: conclusion and medication changes against the note, and the patient's own GP as addressee",
      "actor": "internist",
      "today_means": "document",
      "systems": [],
@@ -641,7 +711,7 @@
     },
     {
      "id": "s6",
-     "what": "Internist sends the letter to the general practitioner",
+     "what": "Internist sends the checked letter to the general practitioner through the secure exchange",
      "actor": "internist",
      "today_means": "system_screen",
      "systems": [
@@ -655,8 +725,8 @@
      ],
      "handoff_to": "external",
      "share_pct": 5,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_does",
+     "remaining_pct": 20,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -672,7 +742,7 @@
      ]
     }
    ],
-   "design": "A chronic care view in the record ({OTHER}) shows the patient's disease values (blood pressure, HbA1c, kidney function) against targets over time. With consent, a scribe drafts the visit note; a validator flags medication and values that do not match the record, and the internist approves before saving. The GP letter template pulls in the note's conclusion and medication changes; once checked, it goes to the GP through the secure exchange. Seeing patients and managing care stay with the internist.",
+   "design": "A chronic care view in the record ({OTHER}) shows the patient's disease values (blood pressure, HbA1c, kidney function) against targets over time. With consent, a scribe drafts the visit note; a validator flags medication and values that do not match the record, and the internist approves before saving. The GP letter template pulls in the note's conclusion and medication changes; the internist checks the final letter and its addressee and sends it once to the GP through the secure exchange. Seeing patients and managing care stay with the internist.",
    "previous_blocker": "Values were gathered from several screens and notes and letters typed after visits.",
    "enabler_now": "Scribes draft notes the clinician validates; records show chronic care views.",
    "still_hard": "Drafts can add findings that were not discussed.",
@@ -719,7 +789,7 @@
    "assumptions": [
     "Boundary: from follow-up due to the letter sent; hospital admission is outside.",
     "Input contract: values in the record; fallback is gathering by hand.",
-    "The internist approves every note and letter.",
+    "The internist reads and edits every note and checks every letter. s1 keeps 60 because the view replaces gathering values; s3 keeps 70 because each draft is read against the visit and edited; s4 keeps 60 because the template pulls in the conclusion and medication changes; s6 keeps 20 for the send itself.",
     "A DPIA and works council consent come before recording."
    ],
    "unknowns": [
@@ -751,22 +821,22 @@
     {
      "id": "a1",
      "action_step_id": "s6",
-     "approved_version": "The letter as checked by the internist in s5.",
+     "approved_version": "The GP letter exactly as checked by the internist in s5, sent once through the secure exchange to the patient's own GP; any change needs a new check.",
      "approval_step_id": "s5",
      "approver": "internist"
     }
    ],
    "time_saved_range_pct": {
-    "low": 7,
-    "high": 15,
-    "basis": "Low: short visits; high: complex chronic patients with long notes."
+    "low": 13.0,
+    "high": 19.5,
+    "basis": "Low: few patients agree to recording (s3 keeps 90) and the template fills little (s4 keeps 85) (13.0); high: most patients recorded and the template works (19.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 23.0,
+   "gross_time_saved_pct": 20.0,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 22.5,
-   "speedup": 1.290323,
+   "time_saved_pct": 19.5,
+   "speedup": 1.242236,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -855,11 +925,41 @@
       "purpose": "draft",
       "input": "The patient's question, the record and the hospital's vetted patient information texts.",
       "output": "A draft reply quoting the vetted texts.",
-      "check": "Every advice sentence must cite a vetted text paragraph or it is dropped; questions about new symptoms are not drafted; the internist edits and approves every reply.",
+      "check": "Every advice sentence must cite a vetted text paragraph or it is dropped. A second check reads each sentence against its paragraph and flags sentences the paragraph does not support or that go beyond it; questions about new symptoms are not drafted; the internist edits every reply and resolves each flag.",
       "stop": "One draft per question; if no sentence passes, the internist writes the reply.",
       "why_not_simpler": "Patients ask in their own words; a fixed list of answers does not match them."
      },
      "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3c",
+     "what": "Internist checks the final reply: advice against the question, the record and the vetted texts, and that it goes to this patient",
+     "actor": "internist",
+     "today_means": "document",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "reply draft"
+     ],
+     "outputs": [
+      "reply checked"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "inquiry-to-answer",
@@ -877,15 +977,15 @@
       "EMAIL"
      ],
      "inputs": [
-      "reply draft"
+      "reply checked"
      ],
      "outputs": [
       "reply sent"
      ],
      "handoff_to": "customer",
-     "share_pct": 5,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "share_pct": 4,
+     "fate": "person_does",
+     "remaining_pct": 20,
      "block": "notification",
      "rung": "configure",
      "loop": null,
@@ -901,7 +1001,7 @@
      ]
     }
    ],
-   "design": "Patient information comes from a library of vetted, guideline-based texts linked to diagnosis and treatment codes in the record, instead of writing it per patient. For follow-up questions in the patient portal, a bounded step drafts replies only from those texts; symptom questions go to the internist, and the internist approves every reply before it is sent. Discussing results stays with the internist.",
+   "design": "Patient information comes from a library of vetted, guideline-based texts linked to diagnosis and treatment codes in the record, instead of writing it per patient. For follow-up questions in the patient portal, a bounded step drafts replies only from those texts; symptom questions go to the internist, and the internist edits every draft, checks the final reply and sends it once. Discussing results stays with the internist.",
    "previous_blocker": "Information sheets were assembled per patient and replies written from scratch.",
    "enabler_now": "Vetted patient texts exist; language models draft replies that cite them.",
    "still_hard": "Bad news must be given in person.",
@@ -942,7 +1042,7 @@
    "assumptions": [
     "Boundary: from results ready to the reply sent; treatment changes are outside.",
     "Input contract: vetted texts kept by the hospital; fallback is writing replies.",
-    "The internist approves every reply.",
+    "The internist edits and checks every reply; the check keeps its full time and the send keeps 20. s2 keeps 30 because the vetted texts replace writing information per patient; s3 keeps 60 because drafts come only from vetted texts and are checked for meaning.",
     "Patients read portal replies as before."
    ],
    "unknowns": [
@@ -974,22 +1074,22 @@
     {
      "id": "a1",
      "action_step_id": "s4",
-     "approved_version": "The reply as edited and approved by the internist in s3.",
-     "approval_step_id": "s3",
+     "approved_version": "Each reply exactly as checked by the internist in s3c, sent once in the patient portal to the patient who asked; any change needs a new check.",
+     "approval_step_id": "s3c",
      "approver": "internist"
     }
    ],
    "time_saved_range_pct": {
-    "low": 6,
-    "high": 11,
-    "basis": "Low: few portal questions; high: many questions after results."
+    "low": 8.9,
+    "high": 15.7,
+    "basis": "Low: the library lacks texts for many treatments (s2 keeps 60) and few questions fit a draft (s3 keeps 85) (8.9); high: the library covers most treatments and questions (15.7)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 18.0,
+   "gross_time_saved_pct": 16.2,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 17.5,
-   "speedup": 1.212121,
+   "time_saved_pct": 15.7,
+   "speedup": 1.18624,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1038,6 +1138,6 @@
   "digest": "research/digests-minor/29-1.md",
   "digest_sha256": "5d7bc5777e3c199c076be82fc8847b59d13a24aa68c707151f0b858f326e00d7",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T23:46:46"
+  "finalized": "2026-10-17T08:21:35"
  }
 }

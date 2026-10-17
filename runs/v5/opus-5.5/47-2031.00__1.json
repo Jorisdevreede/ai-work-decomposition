@@ -56,7 +56,7 @@
       "purpose": "extract",
       "input": "A photo of the carpenter's handwritten additions to the pre-filled material list.",
       "output": "Article codes and quantities matched to the merchant's catalogue.",
-      "check": "Every code must exist in the catalogue data; quantities must be numbers in the article's unit; lines with no confident match go to the carpenter unmatched.",
+      "check": "Every code must exist in the catalogue data and quantities must be numbers in the article's unit. The carpenter reads each line the model read against the handwritten addition: article, size and quantity must mean what was written; unclear or unmatched lines are typed by the carpenter.",
       "stop": "One pass per photo; unmatched lines are typed by the carpenter.",
       "why_not_simpler": "Handwritten site lists use trade shorthand and sizes that a lookup table cannot read."
      },
@@ -99,7 +99,7 @@
     },
     {
      "id": "s4",
-     "what": "Work planner checks the list against the job budget and approves",
+     "what": "Work planner checks the final material list against the job and its budget: articles, quantities, merchant and delivery address, and approves it",
      "actor": "work planner",
      "today_means": "email_chat",
      "systems": [
@@ -115,11 +115,11 @@
      "handoff_to": "carpenter",
      "share_pct": 5,
      "fate": "person_reviews",
-     "remaining_pct": 80,
-     "block": "workflow_automation",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "procure-to-pay",
@@ -192,7 +192,7 @@
     },
     {
      "id": "s7",
-     "what": "Carpenter checks the delivery against the order",
+     "what": "Carpenter checks the delivery against the order: counting what arrived, and ticking order lines on the phone instead of marking the paper note",
      "actor": "carpenter",
      "today_means": "paper_phone",
      "systems": [],
@@ -205,7 +205,7 @@
      "handoff_to": "none",
      "share_pct": 6,
      "fate": "person_does",
-     "remaining_pct": 60,
+     "remaining_pct": 80,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -268,7 +268,7 @@
     "Input contract: job calculation with quantities per article, produced by the estimator in the {ERP}; merchant catalogue with article codes and prices; fallback is a phoned order.",
     "Native configuration is tried first: the ERP's site ordering before custom code.",
     "Work planner time is outside the carpenter's savings.",
-    "Collecting and unloading (s6) keep their full time; only the check against the order (s7) is priced, at what ticking off order lines on the phone removes."
+    "Collecting and unloading (s6) keep their full time; the check against the order (s7) keeps 80 because counting what arrived stays and only marking the paper note goes."
    ],
    "unknowns": [
     "Whether the timber merchant accepts electronic orders.",
@@ -305,22 +305,22 @@
     {
      "id": "a1",
      "action_step_id": "s5",
-     "approved_version": "Material list with articles and quantities as approved by the work planner in s4; changes need a new approval.",
+     "approved_version": "The material list with articles and quantities exactly as approved by the work planner in s4, sent once as an order to the timber merchant through the {PARTNER_PORTAL} for delivery to this job; any change needs a new approval.",
      "approval_step_id": "s4",
      "approver": "work planner"
     }
    ],
    "time_saved_range_pct": {
-    "low": 12,
-    "high": 24,
-    "basis": "Renovation jobs where most materials are decided on site gain little from the calculation, and merchants without electronic ordering keep the phone."
+    "low": 10.7,
+    "high": 28.6,
+    "basis": "Low: renovation jobs where most materials are decided on site, and merchants without electronic ordering, so many orders are still phoned (10.7); high: new-build jobs with a full calculation and electronic ordering (28.6)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
-   "gross_time_saved_pct": 30.947368,
+   "gross_time_saved_pct": 29.684211,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 29.947368,
-   "speedup": 1.427498,
+   "time_saved_pct": 28.684211,
+   "speedup": 1.402214,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -358,7 +358,7 @@
     },
     {
      "id": "s2",
-     "what": "Lead carpenter phones subcontractors to check availability and price",
+     "what": "Lead carpenter checks subcontractors' availability and price: by phone today; on the planning board and portal after the change, phoning only small firms",
      "actor": "lead carpenter",
      "today_means": "paper_phone",
      "systems": [
@@ -371,7 +371,7 @@
       "subcontractor availability"
      ],
      "handoff_to": "external",
-     "share_pct": 25,
+     "share_pct": 24,
      "fate": "person_does",
      "remaining_pct": 60,
      "block": "crud_app",
@@ -387,6 +387,36 @@
      "approval_refs": []
     },
     {
+     "id": "s2k",
+     "what": "Regular subcontractors confirm availability and price in the partner portal",
+     "actor": "subcontractor",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "subcontract need"
+     ],
+     "outputs": [
+      "portal confirmations"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none",
+     "labour_scope": "supplier",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s3",
      "what": "Lead carpenter agrees scope and dates with the subcontractor",
      "actor": "lead carpenter",
@@ -396,7 +426,8 @@
       "CHAT"
      ],
      "inputs": [
-      "subcontractor availability"
+      "subcontractor availability",
+      "portal confirmations"
      ],
      "outputs": [
       "subcontract scope"
@@ -418,6 +449,37 @@
      "approval_refs": []
     },
     {
+     "id": "s3c",
+     "what": "Lead carpenter checks the drawings set before it goes: the right revision for the agreed scope, and the right subcontractor",
+     "actor": "lead carpenter",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "CHAT"
+     ],
+     "inputs": [
+      "subcontract scope"
+     ],
+     "outputs": [
+      "drawings checked"
+     ],
+     "handoff_to": "site manager",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s8",
      "what": "Lead carpenter sends the construction drawings to the subcontractor",
      "actor": "lead carpenter",
@@ -427,14 +489,14 @@
       "CHAT"
      ],
      "inputs": [
-      "subcontract scope",
+      "drawings checked",
       "construction drawings"
      ],
      "outputs": [
       "drawings shared"
      ],
      "handoff_to": "site manager",
-     "share_pct": 5,
+     "share_pct": 4,
      "fate": "machine",
      "remaining_pct": 0,
      "block": "integration",
@@ -529,7 +591,7 @@
       "site coordination"
      ],
      "handoff_to": "external",
-     "share_pct": 20,
+     "share_pct": 18,
      "fate": "person_does",
      "remaining_pct": 85,
      "block": "notification",
@@ -545,13 +607,75 @@
      "approval_refs": []
     },
     {
+     "id": "s6c",
+     "what": "Lead carpenter checks the site is ready before the readiness notice: preceding work done, access free and the date right",
+     "actor": "lead carpenter",
+     "today_means": "in_person",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "site coordination"
+     ],
+     "outputs": [
+      "readiness checked"
+     ],
+     "handoff_to": "external",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6n",
+     "what": "The readiness notice goes to the subcontractor from the planning app",
+     "actor": "lead carpenter",
+     "today_means": "in_person",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "readiness checked"
+     ],
+     "outputs": [
+      "readiness notice"
+     ],
+     "handoff_to": "external",
+     "share_pct": 1,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "project-intake-to-delivery",
+     "approver": "lead carpenter",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a3"
+     ]
+    },
+    {
      "id": "s7",
      "what": "Lead carpenter checks the heating or electrical work is done before closing in",
      "actor": "lead carpenter",
      "today_means": "in_person",
      "systems": [],
      "inputs": [
-      "site coordination"
+      "readiness notice"
      ],
      "outputs": [
       "closing-in check"
@@ -573,7 +697,7 @@
      "approval_refs": []
     }
    ],
-   "design": "A project planning board in the {PROJECT} or {ERP} planning app shows subcontractor slots, and regular subcontractors confirm availability through the {PARTNER_PORTAL}. A scope template per trade pulls drawings from the {DOCS} store, the approved scope becomes the subcontract order, and readiness notices go out automatically when the preceding work is marked done.",
+   "design": "A project planning board in the {PROJECT} or {ERP} planning app shows subcontractor slots, and regular subcontractors confirm availability through the {PARTNER_PORTAL}. A scope template per trade pulls drawings from the {DOCS} store, the approved scope becomes the subcontract order, and once the lead carpenter has checked that the preceding work is done, a readiness notice goes to the subcontractor.",
    "previous_blocker": "Subcontracting ran on phone calls and chat threads, and the order was retyped by the office.",
    "enabler_now": "Construction planning apps and partner portals share slots and documents, and order templates fill from approved scopes.",
    "still_hard": "Small subcontractors work by phone; good subcontractors are scarce and dates slip.",
@@ -620,8 +744,8 @@
    "assumptions": [
     "Boundary: from identifying subcontracted work to checking it before closing in; invoicing is outside.",
     "Input contract: project schedule with trade tasks, kept by the work planner; preferred subcontractor list with trades and rates, kept by the site manager; drawings in the {DOCS} store; fallback is the phone.",
-    "Site manager and office time is outside the lead carpenter's savings.",
-    "Checking the work before closing in does not change."
+    "Site manager, office and subcontractor time, including portal confirmations (s2k, share 1), is outside the lead carpenter's savings.",
+    "Checking the work before closing in, the drawings check and the readiness check keep their full time. s2 keeps 60 for small firms who only phone. s6 keeps 85 because most coordination stays on site."
    ],
    "unknowns": [
     "Whether regular subcontractors would use a portal.",
@@ -658,29 +782,36 @@
     {
      "id": "a1",
      "action_step_id": "s5",
-     "approved_version": "Subcontract scope with trade, dates and price as approved by the site manager in s4; changes need a new approval.",
+     "approved_version": "The subcontract scope with trade, dates and price exactly as approved by the site manager in s4, issued once as the subcontract order to the named subcontractor; any change needs a new approval.",
      "approval_step_id": "s4",
      "approver": "site manager"
     },
     {
      "id": "a2",
      "action_step_id": "s8",
-     "approved_version": "The drawings for the scope agreed by the lead carpenter in s3; a changed scope needs a new check.",
-     "approval_step_id": "s3",
+     "approved_version": "The drawings set at the revision for the agreed scope exactly as checked by the lead carpenter in s3c, shared once with the named subcontractor through the {PARTNER_PORTAL}; any change needs a new check.",
+     "approval_step_id": "s3c",
+     "approver": "lead carpenter"
+    },
+    {
+     "id": "a3",
+     "action_step_id": "s6n",
+     "approved_version": "The readiness notice with site, trade and start date exactly as checked by the lead carpenter in s6c, sent once to the booked subcontractor; any change needs a new check.",
+     "approval_step_id": "s6c",
      "approver": "lead carpenter"
     }
    ],
    "time_saved_range_pct": {
-    "low": 8,
-    "high": 15,
-    "basis": "Where subcontractors are small firms who only answer the phone, availability checks stay manual."
+    "low": 8.8,
+    "high": 19.5,
+    "basis": "Low: subcontractors are small firms who only answer the phone, so availability checks and coordination stay manual (8.8); high: regular subcontractors use the portal (19.5)."
    },
-   "focal_role_share_pct": 85,
-   "excluded_labour_share_pct": 15,
-   "gross_time_saved_pct": 21.176471,
+   "focal_role_share_pct": 84,
+   "excluded_labour_share_pct": 16,
+   "gross_time_saved_pct": 20.595238,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 20.176471,
-   "speedup": 1.252763,
+   "time_saved_pct": 19.595238,
+   "speedup": 1.243707,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -719,8 +850,8 @@
      "approval_refs": []
     },
     {
-     "id": "s2",
-     "what": "Foreman messages each crew member where and when to work",
+     "id": "s1c",
+     "what": "Foreman checks the week's crew plan before publishing: each job has a crew with the right skills, and addresses and times are right",
      "actor": "foreman",
      "today_means": "email_chat",
      "systems": [
@@ -731,10 +862,74 @@
       "crew schedule"
      ],
      "outputs": [
+      "crew plan checked"
+     ],
+     "handoff_to": "crew member",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s1p",
+     "what": "Foreman publishes the checked crew plan to the crew members' app",
+     "actor": "foreman",
+     "today_means": "email_chat",
+     "systems": [
+      "CHAT",
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "crew plan checked"
+     ],
+     "outputs": [
+      "crew plan published"
+     ],
+     "handoff_to": "crew member",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "project-intake-to-delivery",
+     "approver": "foreman",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
+    },
+    {
+     "id": "s2",
+     "what": "Foreman tells crew members where and when to work: messages each one today; after the change messages only changes",
+     "actor": "foreman",
+     "today_means": "email_chat",
+     "systems": [
+      "CHAT",
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "crew plan published"
+     ],
+     "outputs": [
       "crew instructions"
      ],
      "handoff_to": "crew member",
-     "share_pct": 18,
+     "share_pct": 16,
      "fate": "person_does",
      "remaining_pct": 30,
      "block": "notification",
@@ -791,7 +986,7 @@
       "daily job record"
      ],
      "handoff_to": "office administrator",
-     "share_pct": 29,
+     "share_pct": 28,
      "fate": "person_reviews",
      "remaining_pct": 40,
      "block": "artefact_generator",
@@ -800,13 +995,41 @@
       "purpose": "extract",
       "input": "The foreman's voice note about the day's progress and problems.",
       "output": "Checklist fields for the job and a short draft remark.",
-      "check": "Fields are validated against the job checklist; every item to be closed in needs a photo; numbers must match logged hours.",
+      "check": "Fields are validated against the job checklist; every item to be closed in needs a photo; numbers must match logged hours. The foreman reads the fields and remark against what was said and seen on site; anything unclear is typed by hand.",
       "stop": "One pass per note; the foreman confirms or types it.",
       "why_not_simpler": "Spoken site notes are free text; a form alone makes the foreman type on site."
      },
      "authority": "draft",
      "human_gate": false,
      "boundary": "artefact",
+     "workflow": "project-intake-to-delivery",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "daily-job-record",
+     "approval_refs": []
+    },
+    {
+     "id": "s4c",
+     "what": "Foreman checks the day's hours and materials per job against the crew plan and what was seen on site before approving",
+     "actor": "foreman",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "daily job record"
+     ],
+     "outputs": [
+      "day record checked"
+     ],
+     "handoff_to": "office administrator",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
      "workflow": "project-intake-to-delivery",
      "approver": "none",
      "labour_scope": "focal_role",
@@ -822,7 +1045,7 @@
       "ERP"
      ],
      "inputs": [
-      "daily job record"
+      "day record checked"
      ],
      "outputs": [
       "job cost record"
@@ -846,7 +1069,7 @@
      ]
     }
    ],
-   "design": "Configure the {ERP}'s planning board and mobile app: the foreman plans the crew by skills and availability, crew members see their jobs and log hours and materials per job in the app. The foreman approves the day's hours in the app, a voice note becomes checklist fields and a remark through a bounded model step.",
+   "design": "Configure the {ERP}'s planning board and mobile app: the foreman plans the crew by skills and availability, checks the plan and publishes it, and crew members see their jobs and log the hours and materials they actually used per job in the app. The foreman checks and approves the day's hours in the app, a voice note becomes checklist fields and a remark through a bounded model step.",
    "previous_blocker": "Site work ran on paper timesheets and phone calls, and the office retyped everything.",
    "enabler_now": "Construction ERPs plan crews and log hours and materials in an app.",
    "still_hard": "Crews must log consistently; logs per worker touch privacy and works council rights.",
@@ -943,22 +1166,29 @@
     {
      "id": "a1",
      "action_step_id": "s5",
-     "approved_version": "The day's hours and materials per job as approved by the foreman in s4; corrections reopen approval.",
-     "approval_step_id": "s4",
+     "approved_version": "The day's hours and materials per job exactly as checked by the foreman in s4c, posted once to the job cost record in the {ERP}; corrections reopen the check.",
+     "approval_step_id": "s4c",
+     "approver": "foreman"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s1p",
+     "approved_version": "The week's crew plan with jobs, addresses and times exactly as checked by the foreman in s1c, published once to the crew members in the {ERP} app; any change needs a new check.",
+     "approval_step_id": "s1c",
      "approver": "foreman"
     }
    ],
    "time_saved_range_pct": {
-    "low": 20,
-    "high": 36,
-    "basis": "If crew members log late or wrongly, the foreman keeps chasing and correcting, which eats much of the paperwork saving."
+    "low": 36.3,
+    "high": 48.3,
+    "basis": "Low: crew members log late or wrongly, so the foreman keeps chasing and correcting most days (36.3); high: crews log on time (48.3)."
    },
    "focal_role_share_pct": 70,
    "excluded_labour_share_pct": 30,
-   "gross_time_saved_pct": 52.714286,
+   "gross_time_saved_pct": 49.857143,
    "incremental_hours_per_100_baseline_hours": 1.5,
-   "time_saved_pct": 51.214286,
-   "speedup": 2.04978,
+   "time_saved_pct": 48.357143,
+   "speedup": 1.936376,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -967,7 +1197,7 @@
    "steps": [
     {
      "id": "s1",
-     "what": "Carpenter files the excavation notice for cable and pipe maps of the site",
+     "what": "Carpenter prepares the excavation notice for cable and pipe maps: by hand today, pre-filled from the work order after the change",
      "actor": "carpenter",
      "today_means": "system_screen",
      "systems": [
@@ -978,16 +1208,16 @@
       "construction drawings"
      ],
      "outputs": [
-      "cable and pipe map"
+      "notice draft"
      ],
      "handoff_to": "none",
-     "share_pct": 5,
+     "share_pct": 3,
      "fate": "person_does",
      "remaining_pct": 50,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
-     "authority": "act_external",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "start",
      "workflow": "compliance-and-risk",
@@ -995,6 +1225,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "excavation-notice",
      "approval_refs": []
+    },
+    {
+     "id": "s1c",
+     "what": "Carpenter checks the excavation notice: site address, dig area and dates match the job",
+     "actor": "carpenter",
+     "today_means": "system_screen",
+     "systems": [
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "notice draft"
+     ],
+     "outputs": [
+      "notice checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "excavation-notice",
+     "approval_refs": []
+    },
+    {
+     "id": "s1s",
+     "what": "Carpenter files the checked notice on the government portal",
+     "actor": "carpenter",
+     "today_means": "system_screen",
+     "systems": [
+      "GOV_PORTAL"
+     ],
+     "inputs": [
+      "notice checked"
+     ],
+     "outputs": [
+      "cable and pipe map"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "compliance-and-risk",
+     "approver": "carpenter",
+     "labour_scope": "focal_role",
+     "shared_step_id": "excavation-notice",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s2",
@@ -1112,7 +1404,7 @@
      "approval_refs": []
     }
    ],
-   "design": "The excavation notice is pre-filled from the job address and drawing in the work order of the {ERP} and filed on the {GOV_PORTAL}; the returned cable and pipe map opens on the phone at the location. Digging and setting poles do not change.",
+   "design": "The excavation notice is pre-filled from the job address and drawing in the work order of the {ERP}; the carpenter checks it and files it on the {GOV_PORTAL}; the returned cable and pipe map opens on the phone at the location. Digging and setting poles do not change.",
    "previous_blocker": "Little blocked it; the notice is short, and the work is physical.",
    "enabler_now": "Work orders hold the address and site plan that the notice needs.",
    "still_hard": "Digging, plumbing and fixing poles are hands-on; maps can be inaccurate, so hand digging near cables stays.",
@@ -1173,18 +1465,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s1s",
+     "approved_version": "The excavation notice with site address, dig area and dates exactly as checked by the carpenter in s1c, filed once on the {GOV_PORTAL}; any change needs a new check.",
+     "approval_step_id": "s1c",
+     "approver": "carpenter"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 1,
-    "high": 3,
-    "basis": "Jobs where the office already files notices leave nothing to save; the physical work dominates."
+    "low": 0.1,
+    "high": 2.5,
+    "basis": "Low: work orders often lack the dig area, so most of the notice is still typed and the map is read on paper (0.1); high: complete work orders and the map on the phone (2.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 4.0,
+   "gross_time_saved_pct": 3.0,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 3.5,
-   "speedup": 1.036269,
+   "time_saved_pct": 2.5,
+   "speedup": 1.025641,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1226,6 +1526,6 @@
   "digest": "research/digests-minor/47-2.md",
   "digest_sha256": "123ecb0454a3a1b1236742eb1c9535abbecffe9667e95881d14f41e990ac9dfc",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-17T01:26:14"
+  "finalized": "2026-10-17T08:37:38"
  }
 }

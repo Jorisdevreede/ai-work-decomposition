@@ -63,7 +63,7 @@
     },
     {
      "id": "s3",
-     "what": "Supervisor phones staff or leaves paper notes to pass on repair jobs",
+     "what": "Supervisor passes on repair jobs: phones staff or leaves paper notes today; writes each job as a work order with room, work and priority after the change, without calling round",
      "actor": "housekeeping supervisor",
      "today_means": "paper_phone",
      "systems": [
@@ -73,21 +73,113 @@
       "repair priorities"
      ],
      "outputs": [
-      "work orders"
+      "work order draft"
      ],
-     "handoff_to": "maintenance staff",
-     "share_pct": 15,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "handoff_to": "none",
+     "share_pct": 13,
+     "fate": "person_does",
+     "remaining_pct": 60,
      "block": "workflow_automation",
      "rung": "configure",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "system_or_means",
      "workflow": "facilities-and-workplace",
      "approver": "none",
      "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3c",
+     "what": "Supervisor checks each work order before sending: room, work needed, priority and the staff member it goes to",
+     "actor": "housekeeping supervisor",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "work order draft"
+     ],
+     "outputs": [
+      "work order checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "facilities-and-workplace",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3s",
+     "what": "Supervisor sends the checked work order to the staff member's phone",
+     "actor": "housekeeping supervisor",
+     "today_means": "system_screen",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "work order checked"
+     ],
+     "outputs": [
+      "work orders"
+     ],
+     "handoff_to": "maintenance staff",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "facilities-and-workplace",
+     "approver": "housekeeping supervisor",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
+     "id": "s4m",
+     "what": "Maintenance or laundry staff mark each job done with a photo in the facility system",
+     "actor": "maintenance staff",
+     "today_means": "system_screen",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "work orders"
+     ],
+     "outputs": [
+      "job marked done"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "facilities-and-workplace",
+     "approver": "none",
+     "labour_scope": "other_role",
      "shared_step_id": "",
      "approval_refs": []
     },
@@ -100,13 +192,14 @@
       "TELEPHONY"
      ],
      "inputs": [
-      "work orders"
+      "work orders",
+      "job marked done"
      ],
      "outputs": [
       "open job status"
      ],
      "handoff_to": "none",
-     "share_pct": 10,
+     "share_pct": 9,
      "fate": "person_reviews",
      "remaining_pct": 30,
      "block": "dashboard",
@@ -181,7 +274,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Repair and service jobs become digital work orders in the facility system ({OPS_SYSTEM}) that go to staff phones in the order the supervisor sets; staff mark them done with a photo, and the supervisor sees open jobs in one list instead of calling round. Rounds, priorities, supplier issues and coaching stay with the supervisor.",
+   "design": "The supervisor writes repair and service jobs as work orders in the facility system ({OPS_SYSTEM}), checks each and sends it to the staff member's phone in the order the supervisor sets; staff mark them done with a photo, and the supervisor sees open jobs in one list instead of calling round. Rounds, priorities, supplier issues and coaching stay with the supervisor.",
    "previous_blocker": "Jobs were passed on by phone and paper notes, and status was chased by calling.",
    "enabler_now": "Facility systems send work orders to phones and show status in one list.",
    "still_hard": "Staff must close jobs in the app; otherwise the list goes stale.",
@@ -222,7 +315,7 @@
    "assumptions": [
     "Boundary: from rounds to resolved jobs and coaching; capital repairs are outside.",
     "Input contract: work order types set by the facility manager; staff phones provided by the employer; fallback is phone and paper.",
-    "Rounds, priorities, suppliers and coaching do not change.",
+    "Rounds, priorities, suppliers, coaching and the check and send of each work order keep their full time. s3 keeps 60 because writing each job stays and only reaching staff by phone or on foot drops. s4 keeps 30 for reading the open job list and chasing late jobs. Staff's done mark (s4m) is an ordinary save in the facility system.",
     "Job data are not used to rate individual staff."
    ],
    "unknowns": [
@@ -244,24 +337,32 @@
     ],
     "incremental": [
      {
-      "description": "Supervisor enters jobs found on rounds in the app.",
+      "description": "No new work beyond the steps: writing each job is shown in s3, and staff's done marks in s4m.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 1
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3s",
+     "approved_version": "The work order with room, work needed and priority exactly as checked by the supervisor in s3c, sent once to the named staff member's phone in the facility system; any change needs a new check.",
+     "approval_step_id": "s3c",
+     "approver": "housekeeping supervisor"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 7,
-    "high": 14,
-    "basis": "Most of this task is rounds and people work."
+    "low": 5.6,
+    "high": 11.6,
+    "basis": "Low: many staff do not read their phones during shifts, so the supervisor still phones for half of jobs and chases more; s3 keeps 85 and s4 keeps 60 (5.6); high: staff work from the phone list (11.6)."
    },
-   "focal_role_share_pct": 100,
-   "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 22.0,
-   "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 21.0,
-   "speedup": 1.265823,
+   "focal_role_share_pct": 99,
+   "excluded_labour_share_pct": 1,
+   "gross_time_saved_pct": 11.616162,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 11.616162,
+   "speedup": 1.131429,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -472,9 +573,9 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 6,
-    "high": 13,
-    "basis": "Most of this task is inspecting and judging."
+    "low": 9.0,
+    "high": 19.0,
+    "basis": "Low: method sheets cover only the common surfaces, so the supervisor still searches for odd ones; s2 keeps 70 and s4 keeps 75 (9.0); high: sheets cover most surfaces (19.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
@@ -489,10 +590,10 @@
    "short": "Get room status from housekeepers, inspect cleaned rooms, tell the front desk which rooms are ready and handle early check-ins.",
    "steps": [
     {
-     "id": "s1",
-     "what": "Supervisor collects room status from housekeepers by radio and paper sheets",
-     "actor": "housekeeping supervisor",
-     "today_means": "paper_phone",
+     "id": "s0",
+     "what": "Housekeepers mark each room cleaned in the housekeeping app",
+     "actor": "housekeeper",
+     "today_means": "system_screen",
      "systems": [
       "TELEPHONY"
      ],
@@ -500,16 +601,46 @@
       "rooms cleaned"
      ],
      "outputs": [
+      "rooms marked cleaned"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "facilities-and-workplace",
+     "approver": "none",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s1",
+     "what": "Supervisor collects room status from housekeepers: by radio and paper sheets today; after the change the supervisor reads the list of rooms to inspect that builds from housekeepers' marks",
+     "actor": "housekeeping supervisor",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "rooms marked cleaned"
+     ],
+     "outputs": [
       "rooms to inspect"
      ],
      "handoff_to": "none",
-     "share_pct": 25,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "share_pct": 24,
+     "fate": "person_reviews",
+     "remaining_pct": 10,
      "block": "integration",
      "rung": "configure",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "start",
      "workflow": "facilities-and-workplace",
@@ -537,7 +668,7 @@
      "block": "judgement_step",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "facilities-and-workplace",
@@ -548,7 +679,7 @@
     },
     {
      "id": "s3",
-     "what": "Supervisor advises desk clerks by phone of rooms ready for occupancy",
+     "what": "Supervisor tells the front desk a room is ready: by phone today; after the change by marking it passed in the app, which sets it ready in the property system",
      "actor": "housekeeping supervisor",
      "today_means": "paper_phone",
      "systems": [
@@ -562,19 +693,21 @@
      ],
      "handoff_to": "front desk clerk",
      "share_pct": 20,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_does",
+     "remaining_pct": 10,
      "block": "integration",
      "rung": "configure",
      "loop": null,
      "authority": "write_internal",
-     "human_gate": false,
+     "human_gate": true,
      "boundary": "system_or_means",
      "workflow": "facilities-and-workplace",
-     "approver": "none",
+     "approver": "housekeeping supervisor",
      "labour_scope": "focal_role",
      "shared_step_id": "",
-     "approval_refs": []
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s4",
@@ -605,7 +738,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Housekeepers mark each room cleaned in a housekeeping app linked to the hotel's property system ({OPS_SYSTEM}), so the supervisor's list of rooms to inspect builds itself. When the supervisor passes a room on inspection in the app, its status turns ready at the front desk without a call. Inspecting and handling early check-ins stay with the supervisor.",
+   "design": "Housekeepers mark each room cleaned in a housekeeping app linked to the hotel's property system ({OPS_SYSTEM}), so the supervisor's list of rooms to inspect builds itself and the supervisor reads it instead of calling round. When the supervisor passes a room on inspection, they mark it passed in the app and its status turns ready at the front desk without a call. Inspecting and handling early check-ins stay with the supervisor.",
    "previous_blocker": "Room status passed by radio and paper sheets, and the desk was told by phone.",
    "enabler_now": "Housekeeping apps update room status in hotel property systems.",
    "still_hard": "Status is only as good as the taps; a room marked ready too early annoys a guest.",
@@ -646,7 +779,7 @@
    "assumptions": [
     "Boundary: from cleaned rooms to rooms ready at the desk; guest check-in is outside.",
     "Input contract: rooms marked cleaned by housekeepers in the app; departures from the property system; fallback is radio and paper.",
-    "Inspecting and early check-ins do not change.",
+    "Inspecting and early check-ins keep their full time. s1 keeps 10 for reading the list of rooms to inspect; s3 keeps 10 for marking each room passed. Housekeepers' marks (s0) are their own saves in the app.",
     "Room data are not used to rate individual cleaners."
    ],
    "unknowns": [
@@ -659,24 +792,32 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "Supervisor marks rooms passed in the app.",
+      "description": "No new work beyond the steps: marking rooms passed is shown in s3.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 2
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3",
+     "approved_version": "The ready status of the room exactly as passed by the supervisor's inspection in s2, set once in the property system for the front desk; a room found wrong later needs a new inspection.",
+     "approval_step_id": "s2",
+     "approver": "housekeeping supervisor"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 18,
-    "high": 32,
-    "basis": "Small hotels with few rooms gain less."
+    "low": 30.3,
+    "high": 40.0,
+    "basis": "Low: housekeepers forget to mark about half of rooms, so the supervisor still radios for them and s1 keeps 50 (30.3); high: housekeepers mark rooms as they finish (40.0)."
    },
-   "focal_role_share_pct": 100,
-   "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 45.0,
-   "incremental_hours_per_100_baseline_hours": 2,
-   "time_saved_pct": 43.0,
-   "speedup": 1.754386,
+   "focal_role_share_pct": 99,
+   "excluded_labour_share_pct": 1,
+   "gross_time_saved_pct": 40.0,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 40.0,
+   "speedup": 1.666667,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -714,10 +855,10 @@
      "approval_refs": []
     },
     {
-     "id": "s2",
-     "what": "Supervisor collects availability and leave requests by phone and paper",
-     "actor": "housekeeping supervisor",
-     "today_means": "paper_phone",
+     "id": "s2a",
+     "what": "Cleaners enter their availability and leave requests in the planning app",
+     "actor": "cleaner",
+     "today_means": "system_screen",
      "systems": [
       "TELEPHONY"
      ],
@@ -725,12 +866,43 @@
       "staff wishes"
      ],
      "outputs": [
+      "availability in app"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "employee-lifecycle",
+     "approver": "none",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2",
+     "what": "Supervisor collects availability and leave requests by phone and paper today; after the change only from cleaners who do not use the app",
+     "actor": "housekeeping supervisor",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "staff wishes",
+      "availability in app"
+     ],
+     "outputs": [
       "availability list"
      ],
      "handoff_to": "none",
-     "share_pct": 15,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "share_pct": 14,
+     "fate": "person_does",
+     "remaining_pct": 15,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -811,6 +983,68 @@
      "approval_refs": []
     },
     {
+     "id": "s6c",
+     "what": "Supervisor checks the final roster before publishing: each cleaner's shifts, sites and hours against approved leave, contract hours and the site needs",
+     "actor": "housekeeping supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "CHAT"
+     ],
+     "inputs": [
+      "approved roster"
+     ],
+     "outputs": [
+      "roster checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "employee-lifecycle",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6",
+     "what": "Supervisor publishes the roster to cleaners: by message and printout today; by one release to cleaners' phones after the change",
+     "actor": "housekeeping supervisor",
+     "today_means": "email_chat",
+     "systems": [
+      "CHAT"
+     ],
+     "inputs": [
+      "roster checked"
+     ],
+     "outputs": [
+      "roster published"
+     ],
+     "handoff_to": "none",
+     "share_pct": 9,
+     "fate": "person_does",
+     "remaining_pct": 10,
+     "block": "notification",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "employee-lifecycle",
+     "approver": "housekeeping supervisor",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
      "id": "s5",
      "what": "Supervisor handles shift swaps and sick calls during the week",
      "actor": "housekeeping supervisor",
@@ -819,7 +1053,7 @@
       "TELEPHONY"
      ],
      "inputs": [
-      "approved roster"
+      "roster published"
      ],
      "outputs": [
       "roster changes"
@@ -839,38 +1073,6 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
-    },
-    {
-     "id": "s6",
-     "what": "Supervisor sends the roster to cleaners by message and printout",
-     "actor": "housekeeping supervisor",
-     "today_means": "email_chat",
-     "systems": [
-      "CHAT"
-     ],
-     "inputs": [
-      "approved roster"
-     ],
-     "outputs": [
-      "roster published"
-     ],
-     "handoff_to": "none",
-     "share_pct": 10,
-     "fate": "machine",
-     "remaining_pct": 0,
-     "block": "notification",
-     "rung": "configure",
-     "loop": null,
-     "authority": "write_internal",
-     "human_gate": true,
-     "boundary": "system_or_means",
-     "workflow": "employee-lifecycle",
-     "approver": "housekeeping supervisor",
-     "labour_scope": "focal_role",
-     "shared_step_id": "",
-     "approval_refs": [
-      "a1"
-     ]
     }
    ],
    "design": "The planning system ({HCM}) computes hours per site from the client's room data, frequencies and norm minutes, and cleaners enter availability and leave requests in its app. A bounded step drafts the roster from these and the supervisor's brief; code rejects any draft that breaks the cao, working-time limits, contract hours or qualifications, and no shift uses behaviour or performance data. The supervisor adjusts and approves; only then is the roster published to cleaners' phones. Leave decisions, swaps and sick calls stay with the supervisor.",
@@ -927,7 +1129,7 @@
     "Boundary: from site hours to the published roster; payroll is outside.",
     "Input contract for s1: room data and cleaning frequencies entered in the planning system by the operations manager when a client contract starts or changes; norm minutes set by the operations manager; availability entered by cleaners; fallback is the spreadsheet.",
     "Leave decisions, swaps and sick calls do not change.",
-    "Cleaners' time entering availability is outside the supervisor's savings.",
+    "Cleaners' entries of availability and leave are shown as s2a and are outside the supervisor's savings. s2 keeps 15 for cleaners who still phone or hand in paper. s6 keeps 10 for the release itself; the check before it keeps its full time.",
     "The supervisor still checks the computed hours per site against what they know of each site, so s1 keeps 30%."
    ],
    "unknowns": [
@@ -965,22 +1167,22 @@
     {
      "id": "a1",
      "action_step_id": "s6",
-     "approved_version": "The roster as adjusted and approved by the supervisor in s4; changes need a new approval before publishing.",
-     "approval_step_id": "s4",
+     "approved_version": "The roster for the period with each cleaner's shifts, sites and hours exactly as checked by the supervisor in s6c, published once to cleaners' phones in the planning system; any change needs a new check before it is published.",
+     "approval_step_id": "s6c",
      "approver": "housekeeping supervisor"
     }
    ],
    "time_saved_range_pct": {
-    "low": 22,
-    "high": 40,
-    "basis": "Small sites with stable rosters save less."
+    "low": 39.0,
+    "high": 51.0,
+    "basis": "Low: half of cleaners keep phoning their availability and the supervisor reworks much of the draft, so s2 keeps 50 and s4 keeps 70 (39.0); high: most cleaners use the app and the draft needs only adjustments (51.0)."
    },
-   "focal_role_share_pct": 100,
-   "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 56.5,
+   "focal_role_share_pct": 99,
+   "excluded_labour_share_pct": 1,
+   "gross_time_saved_pct": 52.020202,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 55.5,
-   "speedup": 2.247191,
+   "time_saved_pct": 51.020202,
+   "speedup": 2.041658,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1035,6 +1237,6 @@
   "digest": "research/digests-minor/37-1.md",
   "digest_sha256": "31a058dfb45e5711f05514b5efada07503a73162eb8c04e1c2ca0e2e104b4866",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T22:10:34"
+  "finalized": "2026-10-17T08:25:52"
  }
 }

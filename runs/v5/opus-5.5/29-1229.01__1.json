@@ -108,14 +108,14 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_reviews",
-     "remaining_pct": 50,
+     "remaining_pct": 70,
      "block": "artefact_generator",
      "rung": "deterministic_plus_loop",
      "loop": {
       "purpose": "draft",
       "input": "The recorded consultation, with the patient's consent, and the structured data in the record.",
       "output": "A draft visit note.",
-      "check": "A validator flags any allergen, medication, dose or test result not in the record or transcript; the allergist edits and validates before saving.",
+      "check": "A validator flags any allergen, medication, dose or test result not in the record or transcript, and lists every statement that cannot be found in the transcript; the allergist reads the draft against the visit, resolves each flag and edits the note before saving.",
       "stop": "One draft per visit; if the patient declines recording or the draft is rejected, the allergist writes the note.",
       "why_not_simpler": "Patients describe reactions in their own words; a form does not capture them."
      },
@@ -176,7 +176,7 @@
    "assumptions": [
     "Boundary: from the referral to the note written; the letter to the GP is outside.",
     "Input contract: patient consent for recording; fallback is typing.",
-    "Diagnosing stays with the allergist.",
+    "Examining and diagnosing keep their full time. s1 keeps 60 because the summary gathers what was on several screens; s4 keeps 70 because the allergist reads each draft against the visit and edits it.",
     "A DPIA and works council consent come before recording."
    ],
    "unknowns": [
@@ -206,16 +206,16 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 5,
-    "high": 10,
-    "basis": "Low: new patients with little history; high: returning patients with many tests."
+    "low": 5.0,
+    "high": 12.0,
+    "basis": "Low: few patients agree to recording (s4 keeps 90) and the summary misses outside tests (s1 keeps 80) (5.0); high: most patients recorded and summary complete (12.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 15.5,
+   "gross_time_saved_pct": 12.5,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 15.0,
-   "speedup": 1.176471,
+   "time_saved_pct": 12.0,
+   "speedup": 1.136364,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -280,7 +280,7 @@
     },
     {
      "id": "s3",
-     "what": "Allergist writes the allergy action plan by hand",
+     "what": "Allergist writes the allergy action plan: by hand today; from a plan filled from the record after the change, adjusted for the patient",
      "actor": "allergist",
      "today_means": "document",
      "systems": [],
@@ -288,16 +288,16 @@
       "patient educated"
      ],
      "outputs": [
-      "plan given"
+      "plan draft"
      ],
      "handoff_to": "customer",
-     "share_pct": 10,
+     "share_pct": 8,
      "fate": "person_does",
      "remaining_pct": 40,
      "block": "artefact_generator",
      "rung": "deterministic",
      "loop": null,
-     "authority": "act_external",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "artefact",
      "workflow": "other",
@@ -305,6 +305,64 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s3c",
+     "what": "Allergist checks the final action plan: allergens, symptoms per stage and doses against the record and this patient",
+     "actor": "allergist",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "plan draft"
+     ],
+     "outputs": [
+      "plan checked"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3s",
+     "what": "Allergist gives the checked plan to the patient, printed or sent to the portal",
+     "actor": "allergist",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "plan checked"
+     ],
+     "outputs": [
+      "plan given"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "allergist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
     },
     {
      "id": "s4",
@@ -330,11 +388,41 @@
       "purpose": "draft",
       "input": "The patient's question, the record and vetted patient information texts.",
       "output": "A draft reply quoting the vetted texts.",
-      "check": "Every advice sentence must cite a vetted text paragraph or it is dropped; questions about new reactions are not drafted; the allergist edits and approves every reply.",
+      "check": "Every advice sentence must cite a vetted text paragraph or it is dropped. A second check reads each sentence against its paragraph and flags sentences the paragraph does not support; questions about new reactions are not drafted; the allergist edits every reply and resolves each flag.",
       "stop": "One draft per question; if no sentence passes, the allergist writes the reply.",
       "why_not_simpler": "Patients ask in their own words; a fixed list of answers does not match them."
      },
      "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4c",
+     "what": "Allergist checks the final reply: advice against the question, the record and the vetted texts, and that it goes to this patient",
+     "actor": "allergist",
+     "today_means": "document",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "reply draft"
+     ],
+     "outputs": [
+      "reply checked"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "inquiry-to-answer",
@@ -352,15 +440,15 @@
       "EMAIL"
      ],
      "inputs": [
-      "reply draft"
+      "reply checked"
      ],
      "outputs": [
       "reply sent"
      ],
      "handoff_to": "customer",
-     "share_pct": 5,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "share_pct": 4,
+     "fate": "person_does",
+     "remaining_pct": 20,
      "block": "notification",
      "rung": "configure",
      "loop": null,
@@ -376,7 +464,7 @@
      ]
     }
    ],
-   "design": "The allergy action plan is generated from the record ({OTHER}) with the patient's allergens, symptoms per stage and medication doses, so it is not written by hand. For portal questions, a bounded step drafts replies only from vetted patient texts; questions about new reactions go straight to the allergist, who approves every reply before it is sent. Explaining and showing device use stay with the allergist.",
+   "design": "The allergy action plan is generated from the record ({OTHER}) with the patient's allergens, symptoms per stage and medication doses, and the allergist adjusts it, checks it and gives it to the patient. For portal questions, a bounded step drafts replies only from vetted patient texts; questions about new reactions go straight to the allergist, who edits every draft, checks the final reply and sends it once. Explaining and showing device use stay with the allergist.",
    "previous_blocker": "Action plans were written by hand and replies written from scratch.",
    "enabler_now": "Records generate plans from structured data; vetted patient texts exist.",
    "still_hard": "Anxious parents ask many personal questions.",
@@ -417,7 +505,7 @@
    "assumptions": [
     "Boundary: from the diagnosis made to the reply sent; treatment changes are outside.",
     "Input contract: vetted texts kept by the clinic; fallback is writing replies.",
-    "The allergist approves every reply.",
+    "Explaining, showing device use and both checks keep their full time. s3 keeps 40 because allergens and doses fill from the record and the allergist adjusts the stages; s4 keeps 60 because drafts come only from vetted texts and are checked for meaning; s5 keeps 20 for the send.",
     "Patients read portal replies as before."
    ],
    "unknowns": [
@@ -449,22 +537,29 @@
     {
      "id": "a1",
      "action_step_id": "s5",
-     "approved_version": "The reply as edited and approved by the allergist in s4.",
-     "approval_step_id": "s4",
+     "approved_version": "Each reply exactly as checked by the allergist in s4c, sent once in the patient portal to the patient who asked; any change needs a new check.",
+     "approval_step_id": "s4c",
+     "approver": "allergist"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s3s",
+     "approved_version": "The allergy action plan exactly as checked by the allergist in s3c, given once to this patient on paper or in the portal; any change needs a new check.",
+     "approval_step_id": "s3c",
      "approver": "allergist"
     }
    ],
    "time_saved_range_pct": {
-    "low": 5,
-    "high": 10,
-    "basis": "Low: few portal questions; high: many new diagnoses with action plans."
+    "low": 6.1,
+    "high": 11.5,
+    "basis": "Low: plans need much adjusting (s3 keeps 70) and few questions fit a draft (s4 keeps 90) (6.1); high: plans and drafts as designed (11.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 15.0,
+   "gross_time_saved_pct": 12.0,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 14.5,
-   "speedup": 1.169591,
+   "time_saved_pct": 11.5,
+   "speedup": 1.129944,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -501,7 +596,7 @@
     },
     {
      "id": "s2",
-     "what": "Allergist orders tests on a paper form",
+     "what": "Allergist orders tests: on a paper form today, from an order set per suspected allergy after the change",
      "actor": "allergist",
      "today_means": "document",
      "systems": [],
@@ -509,10 +604,10 @@
       "tests chosen"
      ],
      "outputs": [
-      "tests ordered"
+      "order draft"
      ],
      "handoff_to": "none",
-     "share_pct": 10,
+     "share_pct": 8,
      "fate": "person_does",
      "remaining_pct": 40,
      "block": "crud_app",
@@ -526,6 +621,64 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s2c",
+     "what": "Allergist checks the final order: patient, allergens and tests against the choice made",
+     "actor": "allergist",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "order draft"
+     ],
+     "outputs": [
+      "order checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2s",
+     "what": "Allergist signs the checked order, releasing it to the test nurse and the lab",
+     "actor": "allergist",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "order checked"
+     ],
+     "outputs": [
+      "tests ordered"
+     ],
+     "handoff_to": "lab",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "allergist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s3",
@@ -557,7 +710,7 @@
     },
     {
      "id": "s4",
-     "what": "Allergist reads wheal sizes and writes them on a paper grid",
+     "what": "Allergist reads wheal sizes and notes them: on a paper grid today, on a tablet grid in the record after the change",
      "actor": "allergist",
      "today_means": "document",
      "systems": [],
@@ -570,9 +723,9 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_does",
-     "remaining_pct": 50,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -655,7 +808,7 @@
    "assumptions": [
     "Boundary: from the suspected allergy to results stored; interpretation is outside.",
     "Input contract: order sets and grids set up; fallback is paper.",
-    "Testing does not change.",
+    "Choosing, performing and reading tests keep their full time, and noting wheal sizes is a first record that keeps its time on the tablet. s2 keeps 40 because the order set fills the panel; s5 goes because results are not typed in again.",
     "Patients' time does not change."
    ],
    "unknowns": [
@@ -674,18 +827,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s2s",
+     "approved_version": "The test order with patient, allergens and tests exactly as checked by the allergist in s2c, signed once and released to the test nurse and the lab; any change needs a new check.",
+     "approval_step_id": "s2c",
+     "approver": "allergist"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 8,
-    "high": 15,
-    "basis": "Low: few tests per patient; high: large panels."
+    "low": 6.1,
+    "high": 14.3,
+    "basis": "Low: tablets are missing in some rooms, so half of the grids are still typed in (s5 keeps 50), and order sets fit few panels (s2 keeps 80) (6.1); high: grids entered on tablets everywhere (14.3)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 23.5,
+   "gross_time_saved_pct": 14.8,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 23.0,
-   "speedup": 1.298701,
+   "time_saved_pct": 14.3,
+   "speedup": 1.166861,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -752,7 +913,7 @@
     },
     {
      "id": "s3",
-     "what": "Allergist prescribes the medication",
+     "what": "Allergist writes the prescription: line by line today, from an order set with dose and duration after the change",
      "actor": "allergist",
      "today_means": "system_screen",
      "systems": [
@@ -762,10 +923,10 @@
       "checks done"
      ],
      "outputs": [
-      "prescription written"
+      "prescription draft"
      ],
      "handoff_to": "none",
-     "share_pct": 20,
+     "share_pct": 18,
      "fate": "person_does",
      "remaining_pct": 60,
      "block": "crud_app",
@@ -779,6 +940,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s3c",
+     "what": "Allergist checks the final prescription: drug, dose, duration and patient against the choice and the surveillance alerts",
+     "actor": "allergist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "prescription draft"
+     ],
+     "outputs": [
+      "prescription checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3s",
+     "what": "Allergist signs the checked prescription, releasing it to the pharmacy",
+     "actor": "allergist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "prescription checked"
+     ],
+     "outputs": [
+      "prescription written"
+     ],
+     "handoff_to": "pharmacy",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "allergist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s4",
@@ -809,7 +1032,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Medication surveillance in the prescribing module ({OTHER}) checks interactions, contraindications and doses while the prescription is written, so the allergist does not look them up. Order sets per common diagnosis fill dose and duration. Choosing the medication and explaining it stay with the allergist.",
+   "design": "Medication surveillance in the prescribing module ({OTHER}) checks interactions, contraindications and doses while the prescription is written, so the allergist does not look them up. Order sets per common diagnosis fill dose and duration; the allergist checks the final prescription and signs it once. Choosing the medication and explaining it stay with the allergist.",
    "previous_blocker": "Interactions and doses were looked up separately.",
    "enabler_now": "Rule-based medication surveillance runs in prescribing modules.",
    "still_hard": "Too many alerts get clicked away.",
@@ -850,7 +1073,7 @@
    "assumptions": [
     "Boundary: from the diagnosis to the patient instructed; dispensing is outside.",
     "Input contract: prescribing module with surveillance; fallback is looking up.",
-    "Prescribing stays with the allergist.",
+    "Choosing, checking and signing the prescription stay with the allergist and keep their full time. s2 keeps 40 for reading the alerts; s3 keeps 60 because order sets fill dose and duration for common diagnoses.",
     "Patients' time does not change."
    ],
    "unknowns": [
@@ -869,18 +1092,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3s",
+     "approved_version": "The prescription with drug, dose and duration exactly as checked by the allergist in s3c, signed once for this patient and released to the pharmacy; any change needs a new check.",
+     "approval_step_id": "s3c",
+     "approver": "allergist"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 6,
-    "high": 13,
-    "basis": "Low: complex patients with many alerts; high: common prescriptions with order sets."
+    "low": 9.7,
+    "high": 18.2,
+    "basis": "Low: complex patients raise many alerts to read (s2 keeps 60) and few prescriptions fit an order set (s3 keeps 85) (9.7); high: common prescriptions with order sets (18.2)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 20.0,
+   "gross_time_saved_pct": 19.2,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 19.0,
-   "speedup": 1.234568,
+   "time_saved_pct": 18.2,
+   "speedup": 1.222494,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -928,6 +1159,6 @@
   "digest": "research/digests-minor/29-1.md",
   "digest_sha256": "5d7bc5777e3c199c076be82fc8847b59d13a24aa68c707151f0b858f326e00d7",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T19:22:29"
+  "finalized": "2026-10-17T08:25:14"
  }
 }

@@ -128,7 +128,7 @@
       "purpose": "draft",
       "input": "The recorded consultation, with the patient's consent, and the structured data in the record.",
       "output": "A draft of the treatment plan in the record template.",
-      "check": "The ophthalmologist reads and corrects every draft before it is saved; a monthly sample audit looks for omissions.",
+      "check": "A check lists every statement in the draft that cannot be found in the consultation transcript, and every item in the transcript missing from the draft; the ophthalmologist reads the draft against the consult, resolves each listed item and corrects every line before it is saved. A monthly sample audit looks for omissions.",
       "stop": "The ophthalmologist writes it when the recording is incomplete or the patient declines recording.",
       "why_not_simpler": "Each consultation is free conversation."
      },
@@ -143,7 +143,7 @@
     },
     {
      "id": "s5",
-     "what": "Ophthalmologist fills the surgery booking form, retyping patient details, procedure and lens data from the record",
+     "what": "Ophthalmologist fills the surgery booking form: retyping patient details, procedure and lens data today; filled from the plan and biometry after the change",
      "actor": "ophthalmologist",
      "today_means": "system_screen",
      "systems": [
@@ -153,10 +153,10 @@
       "plan saved"
      ],
      "outputs": [
-      "surgery booked"
+      "booking draft"
      ],
      "handoff_to": "none",
-     "share_pct": 4,
+     "share_pct": 2,
      "fate": "person_does",
      "remaining_pct": 30,
      "block": "integration",
@@ -172,8 +172,70 @@
      "approval_refs": []
     },
     {
+     "id": "s5c",
+     "what": "Ophthalmologist checks the final booking: patient, eye, procedure and lens power against the plan and biometry",
+     "actor": "ophthalmologist",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "booking draft"
+     ],
+     "outputs": [
+      "booking checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5s",
+     "what": "Ophthalmologist releases the checked booking to surgery planning",
+     "actor": "ophthalmologist",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "booking checked"
+     ],
+     "outputs": [
+      "surgery booked"
+     ],
+     "handoff_to": "surgery planning",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "ophthalmologist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
      "id": "s6",
-     "what": "Ophthalmologist prints the consent form and procedure leaflet",
+     "what": "Ophthalmologist chooses the consent form and procedure leaflet: printed today, picked for the portal after the change",
      "actor": "ophthalmologist",
      "today_means": "document",
      "systems": [
@@ -183,16 +245,16 @@
       "plan saved"
      ],
      "outputs": [
-      "forms given"
+      "forms chosen"
      ],
      "handoff_to": "patient",
-     "share_pct": 3,
+     "share_pct": 1,
      "fate": "person_does",
      "remaining_pct": 50,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
-     "authority": "act_external",
+     "authority": "read",
      "human_gate": false,
      "boundary": "artefact",
      "workflow": "other",
@@ -200,6 +262,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s6c",
+     "what": "Ophthalmologist checks the consent form and leaflet match the planned procedure and eye, and that they go to this patient",
+     "actor": "ophthalmologist",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "forms chosen"
+     ],
+     "outputs": [
+      "forms checked"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6s",
+     "what": "Ophthalmologist sends the checked consent form and leaflet to the patient portal",
+     "actor": "ophthalmologist",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "forms checked"
+     ],
+     "outputs": [
+      "forms given"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "ophthalmologist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
     },
     {
      "id": "s7",
@@ -260,8 +384,23 @@
      "approval_refs": []
     }
    ],
-   "design": "With consent, a certified scribe drafts the treatment plan, and the ophthalmologist corrects it. The surgery booking fills patient details, procedure and lens data from the plan and biometry, instead of retyping. Consent forms and leaflets go to the patient portal. Reviewing, discussing, deciding, the team meeting and questions stay with the ophthalmologist.",
-   "approvals": [],
+   "design": "With consent, a certified scribe drafts the treatment plan, and the ophthalmologist corrects it. The surgery booking fills patient details, procedure and lens data from the plan and biometry, instead of retyping; the ophthalmologist checks it and releases it once. The ophthalmologist checks the consent form and leaflet and sends them once to the patient portal. Reviewing, discussing, deciding, the team meeting and questions stay with the ophthalmologist.",
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5s",
+     "approved_version": "The surgery booking with patient, eye, procedure and lens power exactly as checked by the ophthalmologist in s5c, released once to surgery planning; any change needs a new check.",
+     "approval_step_id": "s5c",
+     "approver": "ophthalmologist"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s6s",
+     "approved_version": "The consent form and leaflet for this procedure and eye exactly as checked by the ophthalmologist in s6c, sent once to this patient's portal; any change needs a new check.",
+     "approval_step_id": "s6c",
+     "approver": "ophthalmologist"
+    }
+   ],
    "previous_blocker": "Plans were typed and bookings filled by hand.",
    "enabler_now": "Certified scribes and booking forms filled from the record.",
    "still_hard": "Patients weighing risky surgery for small gains.",
@@ -315,7 +454,7 @@
     "Boundary: developing treatment plans; collaborating with multidisciplinary teams (task 17165) and consulting with other professionals (task 17159) are sibling tasks.",
     "s7 is discussion in the team meeting; it is conversation and keeps its full time.",
     "Each task in this set carries the scribe or template saving only for its own part of the record: the history in task 17167, the treatment plan in task 17171, the education note in task 17163 and the test interpretation in task 17170.",
-    "s4 is priced at 75; s5 saves retyping data already in the record and keeps 30; s6 keeps half.",
+    "s4 is priced at 75; s5 saves retyping data already in the record and keeps 30; s6 keeps half for choosing the forms; the booking and form checks and releases keep their full time.",
     "The means prior puts 25% on documents; the steps show 31%, because reviewing results and writing the plan take more desk time."
    ],
    "unknowns": [
@@ -335,16 +474,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 1.9,
-    "high": 4.9,
-    "basis": "Low: few recordings and bookings; high: surgery-heavy clinics."
+    "low": 1.6,
+    "high": 4.1,
+    "basis": "Low: few patients agree to recording (s4 keeps 92) and lens data often need retyping (s5 keeps 70) (1.6); high: surgery-heavy clinics with most patients recorded (4.1)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 6.8,
+   "gross_time_saved_pct": 4.4,
    "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 6.5,
-   "speedup": 1.069519,
+   "time_saved_pct": 4.1,
+   "speedup": 1.042753,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -409,7 +548,7 @@
     },
     {
      "id": "s3",
-     "what": "Ophthalmologist selects and prints leaflets",
+     "what": "Ophthalmologist selects leaflets: printed today, picked from vetted texts for the portal after the change",
      "actor": "ophthalmologist",
      "today_means": "document",
      "systems": [
@@ -419,16 +558,16 @@
       "patient educated"
      ],
      "outputs": [
-      "leaflets given"
+      "leaflets chosen"
      ],
      "handoff_to": "patient",
-     "share_pct": 5,
+     "share_pct": 3,
      "fate": "person_does",
      "remaining_pct": 50,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
-     "authority": "act_external",
+     "authority": "read",
      "human_gate": false,
      "boundary": "artefact",
      "workflow": "other",
@@ -436,6 +575,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s3c",
+     "what": "Ophthalmologist checks the leaflets fit this patient's condition and the advice given, and that they go to this patient",
+     "actor": "ophthalmologist",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "leaflets chosen"
+     ],
+     "outputs": [
+      "leaflets checked"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3s",
+     "what": "Ophthalmologist sends the checked leaflets to the patient portal",
+     "actor": "ophthalmologist",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "leaflets checked"
+     ],
+     "outputs": [
+      "leaflets given"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "ophthalmologist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s4",
@@ -461,7 +662,7 @@
       "purpose": "draft",
       "input": "The recorded consultation, with the patient's consent, and the structured data in the record.",
       "output": "A draft of the education note in the record template.",
-      "check": "The ophthalmologist reads and corrects every draft before it is saved; a monthly sample audit looks for omissions.",
+      "check": "A check lists every statement in the draft that cannot be found in the consultation transcript, and every item in the transcript missing from the draft; the ophthalmologist reads the draft against the consult, resolves each listed item and corrects every line before it is saved. A monthly sample audit looks for omissions.",
       "stop": "The ophthalmologist writes it when the recording is incomplete or the patient declines recording.",
       "why_not_simpler": "Each consultation is free conversation."
      },
@@ -476,7 +677,7 @@
     },
     {
      "id": "s5",
-     "what": "Ophthalmologist answers follow-up questions in the portal",
+     "what": "Ophthalmologist writes replies to follow-up questions: from scratch today, from drafts citing vetted texts after the change",
      "actor": "ophthalmologist",
      "today_means": "email_chat",
      "systems": [
@@ -486,23 +687,23 @@
       "education noted"
      ],
      "outputs": [
-      "questions answered"
+      "reply draft"
      ],
      "handoff_to": "patient",
-     "share_pct": 6,
+     "share_pct": 4,
      "fate": "person_reviews",
-     "remaining_pct": 80,
+     "remaining_pct": 70,
      "block": "answer_desk",
      "rung": "deterministic_plus_loop",
      "loop": {
       "purpose": "draft",
       "input": "The patient's question and vetted, guideline-based patient texts.",
       "output": "A draft reply citing the text it draws on.",
-      "check": "Each reply cites its paragraph and the ophthalmologist reads and signs it before sending.",
+      "check": "Each reply sentence must cite its vetted paragraph. A second check reads each sentence against the cited paragraph and flags sentences the paragraph does not support; questions about new symptoms get no draft and the ophthalmologist answers them by hand.",
       "stop": "Questions about the patient's own diagnosis go to the ophthalmologist unanswered.",
       "why_not_simpler": "Patients ask in their own words."
      },
-     "authority": "act_external",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "actor",
      "workflow": "other",
@@ -510,6 +711,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s5c",
+     "what": "Ophthalmologist checks the final reply: advice against the question, the record and the vetted texts, and that it goes to this patient",
+     "actor": "ophthalmologist",
+     "today_means": "email_chat",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "reply draft"
+     ],
+     "outputs": [
+      "reply checked"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s5s",
+     "what": "Ophthalmologist sends the checked reply in the portal",
+     "actor": "ophthalmologist",
+     "today_means": "email_chat",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "reply checked"
+     ],
+     "outputs": [
+      "questions answered"
+     ],
+     "handoff_to": "patient",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "ophthalmologist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
     },
     {
      "id": "s6",
@@ -542,8 +805,23 @@
      "approval_refs": []
     }
    ],
-   "design": "Leaflets from vetted, guideline-based texts are linked in the patient portal. With consent, the scribe drafts the education note. Follow-up replies start from drafts citing vetted texts, and the ophthalmologist signs each. Screening recalls are set from the diagnosis code, and the ophthalmologist confirms them. Educating and demonstrating stay with the ophthalmologist.",
-   "approvals": [],
+   "design": "Leaflets from vetted, guideline-based texts are chosen, checked and sent once to the patient portal. With consent, the scribe drafts the education note. Follow-up replies start from drafts citing vetted texts; the ophthalmologist adapts each, checks the final reply and sends it once. Screening recalls are set from the diagnosis code, and the ophthalmologist confirms them. Educating and demonstrating stay with the ophthalmologist.",
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3s",
+     "approved_version": "The leaflets exactly as checked by the ophthalmologist in s3c, sent once to this patient's portal; any change needs a new check.",
+     "approval_step_id": "s3c",
+     "approver": "ophthalmologist"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s5s",
+     "approved_version": "Each reply exactly as checked by the ophthalmologist in s5c, sent once in the portal to the patient who asked; any change needs a new check.",
+     "approval_step_id": "s5c",
+     "approver": "ophthalmologist"
+    }
+   ],
    "previous_blocker": "Leaflets were printed and recalls set by hand.",
    "enabler_now": "Portal leaflets, scribes, reply drafting with citations and coded recalls.",
    "still_hard": "Patients who skip screening.",
@@ -590,7 +868,7 @@
    "assumptions": [
     "Boundary: educating patients on healthy vision; diagnosing and treating eye disorders (task 17176) is a sibling task.",
     "Each task in this set carries the scribe or template saving only for its own part of the record: the history in task 17167, the treatment plan in task 17171, the education note in task 17163 and the test interpretation in task 17170.",
-    "s3 keeps half; s4 is priced at 75; s5 is priced at 80; s6 keeps 30 for confirming recalls.",
+    "s3 keeps half; s4 is priced at 75; s5 keeps 70 because each draft is adapted; s6 keeps 30 for confirming recalls; the leaflet and reply checks and sends keep their full time.",
     "The means prior puts 15% on documents; the steps show 9%, because education happens in the room."
    ],
    "unknowns": [
@@ -603,23 +881,23 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "No new work.",
+      "description": "Ophthalmologist asks consent for recording.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 0
+      "hours_per_100_baseline_hours": 0.2
      }
     ]
    },
    "time_saved_range_pct": {
-    "low": 2.5,
-    "high": 6.2,
-    "basis": "Low: few screening patients; high: large diabetic and glaucoma lists."
+    "low": 4.3,
+    "high": 7.0,
+    "basis": "Low: few patients use the portal (s3 keeps 80), few agree to recording (s4 keeps 95) and few questions fit a draft (s5 keeps 95) (4.3); high: large diabetic and glaucoma lists using the portal (7.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 8.2,
-   "incremental_hours_per_100_baseline_hours": 0,
-   "time_saved_pct": 8.2,
-   "speedup": 1.089325,
+   "gross_time_saved_pct": 7.2,
+   "incremental_hours_per_100_baseline_hours": 0.2,
+   "time_saved_pct": 7.0,
+   "speedup": 1.075269,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -797,7 +1075,7 @@
      "block": "conversation",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "read",
+     "authority": "act_external",
      "human_gate": false,
      "boundary": "actor",
      "workflow": "other",
@@ -862,7 +1140,7 @@
       "purpose": "draft",
       "input": "The recorded consultation, with the patient's consent, and the structured data in the record.",
       "output": "A draft of the history in the record template.",
-      "check": "The ophthalmologist reads and corrects every draft before it is saved; a monthly sample audit looks for omissions.",
+      "check": "A check lists every statement in the draft that cannot be found in the consultation transcript or the questionnaire, and every item in the transcript missing from the draft; the ophthalmologist reads the draft against the consult, resolves each listed item and corrects every line before it is saved. A monthly sample audit looks for omissions.",
       "stop": "The ophthalmologist writes it when the recording is incomplete or the patient declines recording.",
       "why_not_simpler": "Each consultation is free conversation."
      },
@@ -961,9 +1239,9 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 4.6,
-    "high": 11.5,
-    "basis": "Low: few questionnaires and overviews; high: most patients complete both."
+    "low": 6.2,
+    "high": 15.3,
+    "basis": "Low: only a third of patients have an overview by integration (s4 keeps 70), half fill the questionnaire (s5 keeps 60) and few agree to recording (s8 keeps 90) (6.2); high: coverage as assumed (15.3)."
    },
    "focal_role_share_pct": 99,
    "excluded_labour_share_pct": 1,
@@ -1305,16 +1583,16 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "No new work.",
+      "description": "No new work: devices send results to the archive and the record without the ophthalmologist; the imaging team keeps the links.",
       "labour_scope": "focal_role",
       "hours_per_100_baseline_hours": 0
      }
     ]
    },
    "time_saved_range_pct": {
-    "low": 3,
-    "high": 7.6,
-    "basis": "Low: many older devices; high: all devices linked."
+    "low": 6.3,
+    "high": 10.1,
+    "basis": "Low: many older devices are not linked, so viewers are opened and values typed for them (s4 keeps 70, s5 keeps 60) (6.3); high: devices linked as designed (10.1)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
@@ -1358,6 +1636,6 @@
   "digest": "research/digests-minor/29-1.md",
   "digest_sha256": "5d7bc5777e3c199c076be82fc8847b59d13a24aa68c707151f0b858f326e00d7",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-17T07:50:50"
+  "finalized": "2026-10-17T08:30:12"
  }
 }

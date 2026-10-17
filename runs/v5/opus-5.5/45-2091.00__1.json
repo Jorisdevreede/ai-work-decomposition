@@ -63,7 +63,7 @@
     },
     {
      "id": "s3",
-     "what": "Farm equipment operator notifies supervisors by phone when machinery malfunctions",
+     "what": "Farm equipment operator reports a malfunction: by phone to the supervisor today; written in the farm app with a photo and the machine from a list after the change",
      "actor": "farm equipment operator",
      "today_means": "paper_phone",
      "systems": [
@@ -73,16 +73,16 @@
       "machine repaired"
      ],
      "outputs": [
-      "supervisor notified"
+      "malfunction report draft"
      ],
      "handoff_to": "none",
-     "share_pct": 10,
+     "share_pct": 8,
      "fate": "person_does",
-     "remaining_pct": 50,
+     "remaining_pct": 70,
      "block": "notification",
      "rung": "configure",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "other",
@@ -92,8 +92,70 @@
      "approval_refs": []
     },
     {
+     "id": "s3c",
+     "what": "Farm equipment operator checks the report: the right machine, what is wrong, the photo and how urgent it is",
+     "actor": "farm equipment operator",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "malfunction report draft"
+     ],
+     "outputs": [
+      "malfunction report checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3s",
+     "what": "Farm equipment operator sends the checked report to the supervisor",
+     "actor": "farm equipment operator",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "malfunction report checked"
+     ],
+     "outputs": [
+      "supervisor notified"
+     ],
+     "handoff_to": "farm supervisor",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "farm equipment operator",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
      "id": "s4",
-     "what": "Farm equipment operator records the service done in a paper logbook",
+     "what": "Farm equipment operator records the service done: in a paper logbook today, on the machine's record in the app with engine hours read from the machine after the change",
      "actor": "farm equipment operator",
      "today_means": "document",
      "systems": [],
@@ -106,7 +168,7 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 40,
+     "remaining_pct": 70,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -120,7 +182,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Malfunctions are reported in the farm app ({OPS_SYSTEM}) with a photo and the machine picked from a list, and the supervisor gets a notification, so most reports no longer need a call. Service is logged on the machine's record in the app, with engine hours read from the machine's own data, instead of a paper logbook. Servicing, adjusting and repairing stay with the operator.",
+   "design": "Malfunctions are reported in the farm app ({OPS_SYSTEM}) with a photo and the machine picked from a list, the operator checks the report and sends it, and the supervisor gets a notification, so most reports no longer need a call. Service is logged on the machine's record in the app, with engine hours read from the machine's own data, instead of a paper logbook. Servicing, adjusting and repairing stay with the operator.",
    "previous_blocker": "Faults were phoned through and service written in a paper logbook.",
    "enabler_now": "Farm apps log machine service and send notifications; machine data can be read.",
    "still_hard": "Urgent breakdowns at harvest still need a call.",
@@ -161,7 +223,7 @@
    "assumptions": [
     "Boundary: from the machine due to the service recorded; dealer repairs are outside.",
     "Input contract: machines in the app; fallback is phone and logbook.",
-    "Service and repair work do not change.",
+    "Service, repair work, checking and sending reports keep their full time. s3 keeps 70 because the operator still writes what is wrong; only reaching the supervisor by phone goes. s4 keeps 70 because the operator still records the service; only reading and writing engine hours goes.",
     "Supervisors read notifications as they took calls."
    ],
    "unknowns": [
@@ -180,18 +242,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3s",
+     "approved_version": "The malfunction report with machine, fault, photo and urgency exactly as checked by the operator in s3c, sent once to the supervisor in the farm app; any change needs a new check.",
+     "approval_step_id": "s3c",
+     "approver": "farm equipment operator"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 3,
-    "high": 7,
-    "basis": "Low: few faults; high: large fleets with frequent service."
+    "low": 1.3,
+    "high": 4.9,
+    "basis": "Low: older machines without data and supervisors who still want a call, so little changes (1.3); high: machines with data and supervisors reading the app (4.9)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 11.0,
+   "gross_time_saved_pct": 5.4,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 10.5,
-   "speedup": 1.117318,
+   "time_saved_pct": 4.9,
+   "speedup": 1.051525,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -256,7 +326,7 @@
     },
     {
      "id": "s3",
-     "what": "Farm equipment operator records hours and fields worked per crew member on paper",
+     "what": "Farm equipment operator records the actual hours and fields worked per crew member: on paper today; after the change ticks the crew members present and the field on the map and enters actual start and end times",
      "actor": "farm equipment operator",
      "today_means": "document",
      "systems": [],
@@ -269,7 +339,7 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_does",
-     "remaining_pct": 40,
+     "remaining_pct": 70,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -283,7 +353,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Hours and fields are recorded in the farm app ({OPS_SYSTEM}) by ticking the crew list and the field on the map, with times defaulting to the day's plan, so they are not written on paper and typed in by the office. Assigning tasks and directing crews stay with the operator.",
+   "design": "Hours and fields are recorded in the farm app ({OPS_SYSTEM}) by ticking the crew members present and the field on the map and entering the actual start and end times, so names are not written out and the office does not type the paper in. Assigning tasks and directing crews stay with the operator.",
    "previous_blocker": "Hours were written on paper per crew member.",
    "enabler_now": "Farm apps record crew hours per field.",
    "still_hard": "Crews that move between fields during the day need corrections.",
@@ -324,7 +394,7 @@
    "assumptions": [
     "Boundary: from the day's work to hours recorded; pay is outside.",
     "Input contract: crew lists in the app; fallback is paper.",
-    "Directing crews does not change.",
+    "Assigning and directing crews keep their full time. s3 keeps 70 because the operator still enters actual times per crew member; only writing names and field details goes.",
     "Works council consent comes before use."
    ],
    "unknowns": [
@@ -345,16 +415,16 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 3,
-    "high": 6,
-    "basis": "Low: small crews; high: large seasonal crews."
+    "low": 1.0,
+    "high": 4.0,
+    "basis": "Low: small crews whose names take little time to write, so ticking saves little (1.0); high: large seasonal crews (4.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 9.0,
+   "gross_time_saved_pct": 4.5,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 8.5,
-   "speedup": 1.092896,
+   "time_saved_pct": 4.0,
+   "speedup": 1.041667,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -391,7 +461,7 @@
     },
     {
      "id": "s2",
-     "what": "Farm equipment operator records weights and other identifying information on a paper sheet",
+     "what": "Farm equipment operator records weights and identifying information: on a paper sheet today; after the change the weight comes from the scale and the operator picks the picker and checks the line",
      "actor": "farm equipment operator",
      "today_means": "document",
      "systems": [],
@@ -403,8 +473,8 @@
      ],
      "handoff_to": "none",
      "share_pct": 35,
-     "fate": "person_does",
-     "remaining_pct": 20,
+     "fate": "person_reviews",
+     "remaining_pct": 30,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -517,7 +587,7 @@
    "assumptions": [
     "Boundary: from containers filled to containers labelled; sales are outside.",
     "Input contract: scale with a data link; fallback is paper sheets.",
-    "Weighing does not change.",
+    "Weighing keeps its full time. s2 keeps 30 for picking the picker and checking each line. s4 keeps 50 for sticking the printed labels.",
     "Works council consent comes before weights are tied to pickers."
    ],
    "unknowns": [
@@ -538,16 +608,16 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 16,
-    "high": 31,
-    "basis": "Low: older scales; high: linked scales and label printers."
+    "low": 25.5,
+    "high": 43.5,
+    "basis": "Low: older scales without a data link at some fields, so about half the weights are still written and typed in (25.5); high: linked scales and label printers (43.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 48.0,
+   "gross_time_saved_pct": 44.5,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 47.0,
-   "speedup": 1.886792,
+   "time_saved_pct": 43.5,
+   "speedup": 1.769912,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -584,6 +654,6 @@
   "digest": "research/digests-minor/45-2.md",
   "digest_sha256": "5af4b2a29e22b775d8b3e62bb6488b528a826bd03193f9a67af3f9fd17cee44f",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T19:03:42"
+  "finalized": "2026-10-17T08:32:20"
  }
 }

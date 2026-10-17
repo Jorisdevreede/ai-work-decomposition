@@ -32,14 +32,14 @@
      "handoff_to": "none",
      "share_pct": 30,
      "fate": "person_reviews",
-     "remaining_pct": 45,
+     "remaining_pct": 80,
      "block": "crud_app",
      "rung": "deterministic_plus_loop",
      "loop": {
       "purpose": "draft",
       "input": "The mechanic's voice note at the door.",
       "output": "Draft work text and a suggested fault and cause code from the company's lists.",
-      "check": "The code must exist in the company's fault list; the mechanic confirms or picks another.",
+      "check": "The code must exist in the company's fault list. The mechanic reads the drafted text against the work done and the suggested code against the stated fault and cause, corrects what does not match, and writes unclear notes by hand.",
       "stop": "No matching code goes to the planner; the mechanic types the text when the draft is wrong.",
       "why_not_simpler": "Mechanics describe the same fault in many ways."
      },
@@ -82,7 +82,7 @@
     },
     {
      "id": "s3",
-     "what": "Door mechanic notes recommended further work",
+     "what": "Door mechanic notes recommended further work: on the paper form today, from a list with a remark in the app after the change",
      "actor": "door mechanic",
      "today_means": "paper_phone",
      "systems": [],
@@ -95,9 +95,9 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_does",
-     "remaining_pct": 70,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -138,8 +138,8 @@
      "approval_refs": []
     },
     {
-     "id": "s5",
-     "what": "Door mechanic hands in the paper work orders at the office",
+     "id": "s4c",
+     "what": "Door mechanic checks the signed work order before sending: work, codes, parts, hours and recommendations",
      "actor": "door mechanic",
      "today_means": "paper_phone",
      "systems": [],
@@ -147,27 +147,65 @@
       "work order signed"
      ],
      "outputs": [
-      "work order at office"
+      "work order checked"
      ],
-     "handoff_to": "office",
-     "share_pct": 15,
-     "fate": "gone",
-     "remaining_pct": 0,
-     "block": "integration",
-     "rung": "configure",
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
-     "boundary": "actor",
+     "boundary": "decision",
      "workflow": "documents-and-records",
      "approver": "none",
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s5",
+     "what": "Door mechanic completes the required paperwork by sending the signed work order to the office: paper work orders handed in today, one sync from the app after the change",
+     "actor": "door mechanic",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "work order checked"
+     ],
+     "outputs": [
+      "work order at office"
+     ],
+     "handoff_to": "office",
+     "share_pct": 14,
+     "fate": "person_does",
+     "remaining_pct": 10,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "door mechanic",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     }
    ],
-   "design": "A mobile work order replaces the paper form. The mechanic speaks a short voice note at the door; the app drafts the work text and suggests a fault and cause code from the company's list, and the mechanic confirms or picks another. Parts are scanned from the van stock, and hours come from starting and stopping the job. Recommendations are picked from a list with room for a remark. The customer signs on the phone and the work order syncs to the office, so nothing is handed in. Time stamps are used for invoicing, and any other use is agreed with the works council first.",
-   "approvals": [],
+   "design": "A mobile work order replaces the paper form. The mechanic speaks a short voice note at the door; the app drafts the work text and suggests a fault and cause code from the company's list, and the mechanic confirms or picks another. Parts are scanned from the van stock, and hours come from starting and stopping the job. The mechanic still writes recommendations, picking from a list with room for a remark. The customer signs on the phone, the mechanic checks the signed work order and sends it once to the office, so nothing is handed in. Time stamps are used for invoicing, and any other use is agreed with the works council first.",
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5",
+     "approved_version": "The work order with work, codes, parts, hours and recommendations exactly as signed by the customer in s4 and checked by the mechanic in s4c, synced once to the office's work order queue; any change needs a new signature and check.",
+     "approval_step_id": "s4c",
+     "approver": "door mechanic"
+    }
+   ],
    "previous_blocker": "Paper forms were filled by hand and retyped by the office.",
    "enabler_now": "Mobile work orders with voice notes, fault lists and parts scanning.",
    "still_hard": "Mechanics who prefer writing to speaking.",
@@ -220,7 +258,7 @@
    "assumptions": [
     "Boundary: completing paperwork; ordering parts (task 8404) and collecting payment (task 8390) are sibling tasks.",
     "Input contract for s2: van stock with barcodes kept by the warehouse; parts not on the van are typed.",
-    "The signature conversation keeps its full time."
+    "The signature conversation, recommendations and the check before sending keep their full time. s1 keeps 80 because the mechanic still states the work, fault and cause and reads the draft, and only finding codes and writing out the form goes; s2 keeps 30 for scanning, taps and typing parts not on the van; s5 keeps 10 for the send."
    ],
    "unknowns": [
     "Share of mechanics using voice notes."
@@ -248,16 +286,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 18,
-    "high": 40,
-    "basis": "Low: mechanics typing instead of speaking and partial barcodes; high: full use of voice notes, scanning and sync."
+    "low": 23.1,
+    "high": 35.1,
+    "basis": "Low: mechanics type instead of speaking and many parts lack barcodes (23.1); high: voice notes, scanning and taps used as designed (35.1)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 53.5,
+   "gross_time_saved_pct": 36.1,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 52.5,
-   "speedup": 2.105263,
+   "time_saved_pct": 35.1,
+   "speedup": 1.540832,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -350,7 +388,7 @@
      "block": "judgement_step",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "procure-to-pay",
@@ -491,9 +529,9 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 9,
-    "high": 22,
-    "basis": "Low: many old doors and small suppliers; high: most parts from linked suppliers."
+    "low": 18.2,
+    "high": 29.0,
+    "basis": "Low: many old doors and small suppliers outside the app, so about half of parts are still looked up and phoned in (18.2); high: about 75% of parts from linked suppliers (29.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
@@ -622,7 +660,7 @@
     },
     {
      "id": "s5",
-     "what": "Door mechanic records measurements, photos and findings for the quote",
+     "what": "Door mechanic records measurements, photos and findings for the quote: on paper today, in the survey form in the app after the change",
      "actor": "door mechanic",
      "today_means": "paper_phone",
      "systems": [],
@@ -636,9 +674,9 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 40,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -686,7 +724,7 @@
    "assumptions": [
     "Boundary: inspecting sites; studying blueprints for opener installation (task 8402) is a sibling task.",
     "Input contract for s3: space requirements per door type entered from the manufacturers' specifications by the office.",
-    "Measuring, inspecting and choosing keep their full time."
+    "Measuring, inspecting, choosing and recording keep their full time; the survey is a first record. s3 keeps 30 because the form shows which door types fit and the mechanic reads the result."
    ],
    "unknowns": [
     "Number of door types offered."
@@ -705,16 +743,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 5,
-    "high": 12,
-    "basis": "Low: unusual openings; high: standard garage doors."
+    "low": 2.7,
+    "high": 10.2,
+    "basis": "Low: unusual openings that the space rules do not cover, so most checks are done from printed tables (2.7); high: standard garage doors (10.2)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 16.5,
+   "gross_time_saved_pct": 10.5,
    "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 16.2,
-   "speedup": 1.193317,
+   "time_saved_pct": 10.2,
+   "speedup": 1.113586,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -778,8 +816,8 @@
      "approval_refs": []
     },
     {
-     "id": "s3",
-     "what": "Door mechanic collects payment by card or cash",
+     "id": "s2c",
+     "what": "Door mechanic checks the amount on the terminal against the explained bill and the customer",
      "actor": "door mechanic",
      "today_means": "in_person",
      "systems": [],
@@ -787,18 +825,18 @@
       "bill explained"
      ],
      "outputs": [
-      "payment taken"
+      "amount checked"
      ],
      "handoff_to": "none",
-     "share_pct": 30,
+     "share_pct": 1,
      "fate": "person_does",
-     "remaining_pct": 70,
-     "block": "integration",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
      "loop": null,
-     "authority": "act_external",
+     "authority": "read",
      "human_gate": false,
-     "boundary": "actor",
+     "boundary": "decision",
      "workflow": "order-to-cash",
      "approver": "none",
      "labour_scope": "focal_role",
@@ -806,8 +844,38 @@
      "approval_refs": []
     },
     {
+     "id": "s3",
+     "what": "Door mechanic collects payment by card or cash",
+     "actor": "door mechanic",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "amount checked"
+     ],
+     "outputs": [
+      "payment taken"
+     ],
+     "handoff_to": "none",
+     "share_pct": 29,
+     "fate": "person_does",
+     "remaining_pct": 70,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "door mechanic",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
      "id": "s4",
-     "what": "Door mechanic writes the receipt and records the payment for the office",
+     "what": "Door mechanic prepares the receipt and payment record: written on paper today, filled from the terminal in the work order after the change",
      "actor": "door mechanic",
      "today_means": "paper_phone",
      "systems": [],
@@ -815,10 +883,10 @@
       "payment taken"
      ],
      "outputs": [
-      "payment recorded"
+      "payment record draft"
      ],
-     "handoff_to": "office",
-     "share_pct": 20,
+     "handoff_to": "none",
+     "share_pct": 18,
      "fate": "person_reviews",
      "remaining_pct": 25,
      "block": "integration",
@@ -832,6 +900,64 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s4c",
+     "what": "Door mechanic checks the payment record and receipt: amount, method, job and customer",
+     "actor": "door mechanic",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "payment record draft"
+     ],
+     "outputs": [
+      "payment record checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4s",
+     "what": "Door mechanic releases the checked payment record to the office's accounting",
+     "actor": "door mechanic",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "payment record checked"
+     ],
+     "outputs": [
+      "payment recorded"
+     ],
+     "handoff_to": "office",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "door mechanic",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
     },
     {
      "id": "s5",
@@ -864,8 +990,23 @@
      "approval_refs": []
     }
    ],
-   "design": "The work order app prices parts and hours from the price list, so the mechanic checks a total instead of calculating it. Explaining the bill stays personal. A mobile card terminal linked to the work order takes the amount without retyping, and the payment and receipt are recorded in the work order and accounting, instead of a paper receipt and cash slips handed to the office. Following up unpaid jobs stays a personal call.",
-   "approvals": [],
+   "design": "The work order app prices parts and hours from the price list, so the mechanic checks a total instead of calculating it. Explaining the bill stays personal. A mobile card terminal linked to the work order takes the amount without retyping once the mechanic has checked it. The payment and receipt fill from the terminal; the mechanic checks the record and releases it once to accounting, instead of a paper receipt and cash slips handed to the office. Following up unpaid jobs stays a personal call.",
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3",
+     "approved_version": "The amount for this work order exactly as checked by the mechanic in s2c, charged once to the customer's card on the linked terminal or taken once in cash; any change needs a new check.",
+     "approval_step_id": "s2c",
+     "approver": "door mechanic"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s4s",
+     "approved_version": "The payment record with amount, method, job and customer exactly as checked by the mechanic in s4c, posted once to the office's accounting for that work order; any correction needs a new check.",
+     "approval_step_id": "s4c",
+     "approver": "door mechanic"
+    }
+   ],
    "previous_blocker": "Amounts were calculated by hand and payments recorded on paper.",
    "enabler_now": "Work orders priced from the price list and card terminals linked to them.",
    "still_hard": "Customers who dispute the hours.",
@@ -900,7 +1041,7 @@
    "assumptions": [
     "Boundary: collecting payment; completing work orders (task 8391) is a sibling task.",
     "Input contract for s1: parts and hours recorded on the work order under task 8391 and the price list kept by the office.",
-    "Explaining and following up keep their full time."
+    "Explaining, following up and both checks keep their full time. s1 keeps 20 for checking the priced total; s3 keeps 70 because taking the card or cash stays and only typing the amount goes; s4 keeps 25 for cash payments and reading the filled record; the release keeps its full time."
    ],
    "unknowns": [
     "Share of jobs paid on site."
@@ -919,16 +1060,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 11,
-    "high": 27,
-    "basis": "Low: many cash payments; high: card payments linked to the work order."
+    "low": 21.8,
+    "high": 33.9,
+    "basis": "Low: many cash payments, so receipts and records are still written by hand (21.8); high: card payments linked to the work order (33.9)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 36.0,
+   "gross_time_saved_pct": 34.2,
    "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 35.7,
-   "speedup": 1.55521,
+   "time_saved_pct": 33.9,
+   "speedup": 1.512859,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -956,6 +1097,6 @@
   "digest": "research/digests-minor/49-9.md",
   "digest_sha256": "3849b8b576c7677a1e7ae770e6a9c9fcdb1d2658bb90352f893da1a8394bdd4b",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-17T00:49:36"
+  "finalized": "2026-10-17T08:29:39"
  }
 }

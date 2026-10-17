@@ -126,7 +126,7 @@
     },
     {
      "id": "s5",
-     "what": "Nurse specialist signs the prescription",
+     "what": "Nurse specialist checks the final prescription: drug, dose and schedule match the decision with the patient, and it goes to the patient's pharmacy; then signs it",
      "actor": "nurse specialist",
      "today_means": "system_screen",
      "systems": [
@@ -142,10 +142,10 @@
      "share_pct": 3,
      "fate": "person_reviews",
      "remaining_pct": 100,
-     "block": "none",
+     "block": "judgement_step",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "other",
@@ -156,7 +156,7 @@
     },
     {
      "id": "s8",
-     "what": "Nurse specialist sends the prescription to the patient's pharmacy",
+     "what": "Nurse specialist sends the signed prescription to the patient's pharmacy",
      "actor": "nurse specialist",
      "today_means": "system_screen",
      "systems": [
@@ -170,8 +170,8 @@
      ],
      "handoff_to": "pharmacist",
      "share_pct": 2,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_does",
+     "remaining_pct": 50,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -232,7 +232,7 @@
       "medication letter"
      ],
      "handoff_to": "general practitioner",
-     "share_pct": 14,
+     "share_pct": 13,
      "fate": "person_reviews",
      "remaining_pct": 40,
      "block": "artefact_generator",
@@ -241,6 +241,37 @@
      "authority": "draft",
      "human_gate": false,
      "boundary": "artefact",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s7b",
+     "what": "Nurse specialist checks the final letter: drug, dose and rationale match the signed prescription, and it goes to the patient's general practitioner",
+     "actor": "nurse specialist",
+     "today_means": "document",
+     "systems": [
+      "DOCS",
+      "EMAIL"
+     ],
+     "inputs": [
+      "medication letter"
+     ],
+     "outputs": [
+      "letter checked"
+     ],
+     "handoff_to": "general practitioner",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
      "workflow": "documents-and-records",
      "approver": "none",
      "labour_scope": "focal_role",
@@ -257,15 +288,15 @@
       "EMAIL"
      ],
      "inputs": [
-      "medication letter"
+      "letter checked"
      ],
      "outputs": [
       "letter sent"
      ],
      "handoff_to": "general practitioner",
      "share_pct": 1,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_does",
+     "remaining_pct": 100,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -335,7 +366,8 @@
     "Boundary: from gathering the medication history to the general practitioner informed; dispensing is outside.",
     "Input contract: dispensing data from community pharmacies through the national exchange, with the patient's consent recorded at intake; favourite regimens set by the nurse specialists with the hospital pharmacist; fallback is calling the pharmacy.",
     "Interaction checking already runs in the record; that runtime earns no saving.",
-    "Pharmacist time is outside the nurse specialist's savings."
+    "Pharmacist time is outside the nurse specialist's savings.",
+    "s8 keeps 50 and s9 keeps its time for the release of each send. s7 keeps 40 for the rationale line and reading the generated letter."
    ],
    "unknowns": [
     "Share of patients who consent to data exchange.",
@@ -380,29 +412,29 @@
     {
      "id": "a1",
      "action_step_id": "s8",
-     "approved_version": "The prescription as signed by the nurse specialist in s5; a change needs a new signature.",
+     "approved_version": "The prescription exactly as checked and signed by the nurse specialist in s5, sent once to the patient's pharmacy; a change needs a new check and signature.",
      "approval_step_id": "s5",
      "approver": "nurse specialist"
     },
     {
      "id": "a2",
      "action_step_id": "s9",
-     "approved_version": "The medication letter as written and checked by the nurse specialist in s7.",
-     "approval_step_id": "s7",
+     "approved_version": "The medication letter exactly as checked by the nurse specialist in s7b, sent once to the patient's general practitioner; any change needs a new check.",
+     "approval_step_id": "s7b",
      "approver": "nurse specialist"
     }
    ],
    "time_saved_range_pct": {
-    "low": 8,
-    "high": 16,
-    "basis": "Patients who refuse data exchange still need the phone history, and complex switches need letters written by hand."
+    "low": 10.1,
+    "high": 20.9,
+    "basis": "Low: many patients refuse data exchange, so the pharmacy is still called (s1 keeps 90), and complex switches need letters written by hand (s7 keeps 80) (10.1); high: exchange and generated letters for most patients (20.9)."
    },
    "focal_role_share_pct": 90,
    "excluded_labour_share_pct": 10,
-   "gross_time_saved_pct": 24.333333,
+   "gross_time_saved_pct": 21.444444,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 23.833333,
-   "speedup": 1.31291,
+   "time_saved_pct": 20.944444,
+   "speedup": 1.264933,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -496,7 +528,7 @@
     },
     {
      "id": "s3",
-     "what": "Nurse specialist works out which blood levels and metabolic checks are due and orders them",
+     "what": "Nurse specialist works out which blood levels and metabolic checks are due: by hand today, from the due list built by the monitoring schedule after the change",
      "actor": "nurse specialist",
      "today_means": "system_screen",
      "systems": [
@@ -506,18 +538,78 @@
       "treatment plan"
      ],
      "outputs": [
-      "monitoring order"
+      "due list confirmed"
      ],
      "handoff_to": "lab technician",
-     "share_pct": 15,
+     "share_pct": 13,
      "fate": "person_reviews",
      "remaining_pct": 50,
      "block": "workflow_automation",
      "rung": "deterministic",
      "loop": null,
+     "authority": "draft",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3b",
+     "what": "Nurse specialist checks the orders before they go: tests, patient, timing and lab",
+     "actor": "nurse specialist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "due list confirmed"
+     ],
+     "outputs": [
+      "monitoring order checked"
+     ],
+     "handoff_to": "lab technician",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3c",
+     "what": "Nurse specialist submits the checked orders to the lab",
+     "actor": "nurse specialist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "monitoring order checked"
+     ],
+     "outputs": [
+      "monitoring order"
+     ],
+     "handoff_to": "lab technician",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
      "authority": "act_external",
      "human_gate": true,
-     "boundary": "decision",
+     "boundary": "actor",
      "workflow": "other",
      "approver": "nurse specialist",
      "labour_scope": "focal_role",
@@ -647,7 +739,7 @@
      "approval_refs": []
     }
    ],
-   "design": "The patient fills in the side-effect scale in the portal of the electronic health record ({OTHER}) before the visit and it is scored automatically. A monitoring schedule per drug (lithium levels, metabolic checks for antipsychotics) builds a due list for the nurse specialist to confirm before orders go, a trend view shows levels, weight and refills together, and the follow-up note pre-fills scores and values.",
+   "design": "The patient fills in the side-effect scale in the portal of the electronic health record ({OTHER}) before the visit and it is scored automatically. A monitoring schedule per drug (lithium levels, metabolic checks for antipsychotics) builds a due list that the nurse specialist confirms, checks and submits as orders, a trend view shows levels, weight and refills together, and the follow-up note pre-fills scores and values.",
    "previous_blocker": "Monitoring depended on the clinician remembering what was due, and refill data meant a phone call.",
    "enabler_now": "Records support patient questionnaires, scheduled orders, trend views and medication data exchange as configuration.",
    "still_hard": "Judging whether a drug works needs the conversation; patients may not fill in scales before visits.",
@@ -695,7 +787,8 @@
     "Boundary: from the follow-up visit to the updated treatment plan; prescribing changes are a separate task.",
     "Input contract: side-effect scale completed by the patient in the portal before the visit (fallback paper in the waiting room); monitoring schedule per drug kept by the hospital pharmacist from the guideline; refill data from the national exchange with consent.",
     "Patients already fill in the scale on paper; filling it in the portal takes about the same time, priced as customer time.",
-    "The conversation and clinical judgement do not change."
+    "The conversation and clinical judgement do not change.",
+    "s3 keeps 50 for reading and confirming the due list; the order check (s3b) and submission (s3c) take 1 each. s7 keeps 70 because the note is written by the nurse specialist; only scores and values pre-fill."
    ],
    "unknowns": [
     "Share of patients who use the portal.",
@@ -739,23 +832,23 @@
    "approvals": [
     {
      "id": "a1",
-     "action_step_id": "s3",
-     "approved_version": "Due-list orders as confirmed by the nurse specialist; added tests need a new confirmation.",
-     "approval_step_id": "s3",
+     "action_step_id": "s3c",
+     "approved_version": "The monitoring orders with tests, patient and timing exactly as checked by the nurse specialist in s3b, submitted once to the lab; added tests need a new check.",
+     "approval_step_id": "s3b",
      "approver": "nurse specialist"
     }
    ],
    "time_saved_range_pct": {
-    "low": 10,
-    "high": 20,
-    "basis": "Patients who do not use the portal or consent to exchange keep paper scales and pharmacy calls."
+    "low": 19.5,
+    "high": 29.0,
+    "basis": "Low: many patients do not use the portal or consent to exchange, so paper scales (s2 keeps 80) and pharmacy calls (s5 keeps 80) stay (19.5); high: portal and exchange used by most (29.0)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
-   "gross_time_saved_pct": 31.052632,
+   "gross_time_saved_pct": 30.0,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 30.052632,
-   "speedup": 1.429646,
+   "time_saved_pct": 29.0,
+   "speedup": 1.408451,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -787,7 +880,7 @@
       "purpose": "draft",
       "input": "The referral letter and earlier treatment notes, discharge letters and medication lists in the record.",
       "output": "A one-page history with earlier diagnoses, treatments tried, medication and risk events, each line linked to its source.",
-      "check": "Every line must cite a document; diagnoses and medication must match coded record fields; risk events from the incident register must all appear, else the summary is marked incomplete.",
+      "check": "Every line must cite a document, and the nurse specialist reads each line against its source to see it says what the source says; diagnoses and medication must match coded record fields; risk events from the incident register must all appear, else the summary is marked incomplete and the records are read in full.",
       "stop": "One draft and one retry; then the nurse specialist reads the records.",
       "why_not_simpler": "Earlier treatment is described in free-text letters by different clinicians; coded fields miss what was tried and why it stopped."
      },
@@ -900,7 +993,7 @@
       "assessment report"
      ],
      "handoff_to": "none",
-     "share_pct": 25,
+     "share_pct": 24,
      "fate": "person_reviews",
      "remaining_pct": 100,
      "block": "artefact_generator",
@@ -916,23 +1009,53 @@
      "approval_refs": []
     },
     {
+     "id": "s5b",
+     "what": "Nurse specialist checks the final assessment letter: findings, diagnosis and advice match the validated report and the team's view, and it goes to the referring general practitioner",
+     "actor": "nurse specialist",
+     "today_means": "document",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "assessment report"
+     ],
+     "outputs": [
+      "assessment letter checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s6",
-     "what": "Nurse specialist sends the assessment letter to the referring general practitioner",
+     "what": "Nurse specialist sends the checked assessment letter to the referring general practitioner: by e-mail today, by one release through secure care messaging after the change",
      "actor": "nurse specialist",
      "today_means": "email_chat",
      "systems": [
       "EMAIL"
      ],
      "inputs": [
-      "assessment report"
+      "assessment letter checked"
      ],
      "outputs": [
       "assessment letter"
      ],
      "handoff_to": "general practitioner",
      "share_pct": 5,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_does",
+     "remaining_pct": 20,
      "block": "workflow_automation",
      "rung": "configure",
      "loop": null,
@@ -948,7 +1071,7 @@
      ]
     }
    ],
-   "design": "Before intake a bounded step drafts a one-page history from the referral and earlier records in the electronic health record ({OTHER}), each line linked to its source. With the patient's consent the session is recorded and a draft assessment report is produced for the nurse specialist to validate; once signed, the letter goes to the referring general practitioner through secure care messaging.",
+   "design": "Before intake a bounded step drafts a one-page history from the referral and earlier records in the electronic health record ({OTHER}), each line linked to its source. With the patient's consent the session is recorded and a draft assessment report is produced for the nurse specialist to validate; the nurse specialist checks the letter and releases it to the referring general practitioner through secure care messaging.",
    "previous_blocker": "Earlier records were read in full before each intake, and reports were typed after the session.",
    "enabler_now": "Dutch scribes record consultations for clinicians to validate, and record tools answer questions on the record.",
    "still_hard": "Many patients in mental health decline recording; drafts can miss nuance, and the inspectorate expects testing and monitoring.",
@@ -1048,22 +1171,22 @@
     {
      "id": "a1",
      "action_step_id": "s6",
-     "approved_version": "The assessment report as validated and signed by the nurse specialist in s5; any change needs a new signature.",
-     "approval_step_id": "s5",
+     "approved_version": "The assessment letter exactly as checked by the nurse specialist in s5b, sent once through secure care messaging to the referring general practitioner; any change needs a new check.",
+     "approval_step_id": "s5b",
      "approver": "nurse specialist"
     }
    ],
    "time_saved_range_pct": {
-    "low": 3,
-    "high": 10,
-    "basis": "Where most patients decline recording, only the history summary and letter sending save time."
+    "low": 5.5,
+    "high": 9.5,
+    "basis": "Low: records are often incomplete, so the history summary is marked incomplete and s1 keeps 85 (5.5); high: the summary passes for most intakes (9.5)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
-   "gross_time_saved_pct": 11.578947,
+   "gross_time_saved_pct": 10.526316,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 10.578947,
-   "speedup": 1.118305,
+   "time_saved_pct": 9.526316,
+   "speedup": 1.105294,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -1128,7 +1251,7 @@
     },
     {
      "id": "s3",
-     "what": "Nurse specialist picks screening lab tests one by one to rule out physical disorders",
+     "what": "Nurse specialist picks screening lab tests: one by one today, from the fixed screening order set after the change",
      "actor": "nurse specialist",
      "today_means": "system_screen",
      "systems": [
@@ -1138,16 +1261,16 @@
       "examination findings"
      ],
      "outputs": [
-      "screening lab order"
+      "screening order draft"
      ],
      "handoff_to": "lab technician",
-     "share_pct": 10,
+     "share_pct": 8,
      "fate": "person_does",
      "remaining_pct": 50,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
-     "authority": "act_external",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "artefact",
      "workflow": "other",
@@ -1155,6 +1278,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s3b",
+     "what": "Nurse specialist checks the screening order: tests fit the presentation, patient and urgency are right",
+     "actor": "nurse specialist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "screening order draft"
+     ],
+     "outputs": [
+      "screening order checked"
+     ],
+     "handoff_to": "lab technician",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3c",
+     "what": "Nurse specialist submits the checked screening order to the lab",
+     "actor": "nurse specialist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "screening order checked"
+     ],
+     "outputs": [
+      "screening lab order"
+     ],
+     "handoff_to": "lab technician",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "nurse specialist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s4",
@@ -1262,7 +1447,7 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 70,
+     "remaining_pct": 80,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -1324,7 +1509,8 @@
     "Boundary: from the somatic history to the coded diagnosis or referral; treatment is outside.",
     "Input contract: general practitioner summary through the national exchange with consent recorded at intake; order set content set by the psychiatry and internal medicine leads; screening lab results returned by the lab to the record; classification list in the record; fallback is phoning the practice.",
     "General practitioner and lab time is outside the nurse specialist's savings.",
-    "History, examination and the decision do not change."
+    "History, examination and the decision do not change.",
+    "s3 keeps 50 for choosing the set and adding single tests; the order check (s3b) and submission (s3c) take 1 each. s4 keeps 40 for reading the retrieved summary. s7 keeps 80: the diagnosis is the nurse specialist's own record; the picklist only saves looking up the code."
    ],
    "unknowns": [
     "Share of patients who consent to the exchange.",
@@ -1357,18 +1543,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3c",
+     "approved_version": "The screening lab order with tests, patient and urgency exactly as checked by the nurse specialist in s3b, submitted once to the lab; any change needs a new check.",
+     "approval_step_id": "s3b",
+     "approver": "nurse specialist"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 6,
-    "high": 13,
-    "basis": "Patients without a general practitioner on the exchange, or who refuse consent, keep the phone and letter route."
+    "low": 6.3,
+    "high": 15.6,
+    "basis": "Low: many general practitioners are not on the exchange or patients refuse consent, so s4 keeps 80, and the order set fits few presentations, so s3 keeps 80 (6.3); high: exchange and order set as designed (15.6)."
    },
    "focal_role_share_pct": 90,
    "excluded_labour_share_pct": 10,
-   "gross_time_saved_pct": 18.888889,
+   "gross_time_saved_pct": 16.666667,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 17.888889,
-   "speedup": 1.217862,
+   "time_saved_pct": 15.666667,
+   "speedup": 1.185771,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1423,6 +1617,6 @@
   "digest": "research/digests-minor/29-1.md",
   "digest_sha256": "5d7bc5777e3c199c076be82fc8847b59d13a24aa68c707151f0b858f326e00d7",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-17T00:21:57"
+  "finalized": "2026-10-17T08:29:17"
  }
 }

@@ -120,10 +120,10 @@
       "calculated dose"
      ],
      "outputs": [
-      "prescription signed"
+      "prescription draft"
      ],
      "handoff_to": "none",
-     "share_pct": 15,
+     "share_pct": 13,
      "fate": "person_does",
      "remaining_pct": 90,
      "block": "crud_app",
@@ -137,6 +137,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s4c",
+     "what": "Pediatrician checks the final prescription: drug, weight-based dose, route and timing for this child against the decision and the alerts",
+     "actor": "pediatrician",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "prescription draft"
+     ],
+     "outputs": [
+      "prescription checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4s",
+     "what": "Pediatrician signs the checked prescription, releasing it to the pharmacy and nurses",
+     "actor": "pediatrician",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "prescription checked"
+     ],
+     "outputs": [
+      "prescription signed"
+     ],
+     "handoff_to": "pharmacy",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "pediatrician",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s5",
@@ -197,7 +259,15 @@
      "approval_refs": []
     }
    ],
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4s",
+     "approved_version": "The prescription with drug, dose, route and timing exactly as checked by the pediatrician in s4c, signed once for this child and released to the pharmacy and nurses; any change needs a new check.",
+     "approval_step_id": "s4c",
+     "approver": "pediatrician"
+    }
+   ],
    "design": "The prescribing screen in the hospital record ({OPS_SYSTEM}) computes the children's dose from the weight the nurse measured today and the dosing rules loaded with the drug database, and the existing medication checks flag interactions, contraindications and doses out of range. The pediatrician checks the proposal and signs; nothing is prescribed without them. When a medicine or vaccine is given, scanning the package barcode records product, batch and time. Deciding and treating stay with the pediatrician; no model is used.",
    "previous_blocker": "Children's doses were looked up and calculated by hand, and batch numbers typed from the package.",
    "enabler_now": "Drug databases with dose rules and barcode scanning at the point of care.",
@@ -274,16 +344,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 3,
-    "high": 9,
-    "basis": "Low: an outpatient clinic with few prescriptions; high: a ward with many weight-based prescriptions and vaccinations."
+    "low": 5.2,
+    "high": 10.5,
+    "basis": "Low: dose rules cover few of the drugs used (s3 keeps 80) and fewer packages carry barcodes (s6 keeps 80) (5.2); high: rules for half of prescriptions and barcodes on 80% of products (10.5)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
-   "gross_time_saved_pct": 11.052632,
+   "gross_time_saved_pct": 10.842105,
    "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 10.752632,
-   "speedup": 1.120481,
+   "time_saved_pct": 10.542105,
+   "speedup": 1.117844,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -395,9 +465,9 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 90,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -492,7 +562,7 @@
       "purpose": "classify",
       "input": "The validated consultation note.",
       "output": "Suggested diagnosis codes from the hospital's code list.",
-      "check": "Only codes on the hospital's list are offered; the pediatrician picks or rejects; the diagnosis itself is theirs.",
+      "check": "Only codes on the hospital's list are offered. The pediatrician reads each suggested code's description against the diagnosis made and picks or rejects it, and searches the list when no suggestion fits; the diagnosis itself is theirs.",
       "stop": "One suggestion list per note.",
       "why_not_simpler": "Code search needs the right term; the note already holds it."
      },
@@ -553,8 +623,8 @@
    ],
    "assumptions": [
     "Boundary: from history to coded diagnosis; explaining results is a separate task.",
-    "Input contract for s3: consultation audio recorded by the scribe with the parents' consent, given in about 80% of consultations; the rest are typed; the 29% note time cut from the Swedish case is applied to that share.",
-    "History, examination, ordering and interpreting keep their full or nearly full time.",
+    "Input contract for the scribe: consultation audio recorded by the scribe with the parents' consent, given in about 80% of consultations; the rest are typed.",
+    "History, examination, ordering and interpreting keep their full time; the design does not change ordering.",
     "Pricing of s7: picking from codes suggested from the validated note replaces searching the code list; the pediatrician still checks the pick and searches when no suggestion fits, about 40% of the step.",
     "s3 is part of recording history and examination findings, which sibling task 29-1221.00:7822 covers; its saving is counted there, so s3 keeps its full time here."
    ],
@@ -584,16 +654,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 0,
-    "high": 3,
-    "basis": "Low: parents often decline recording and short consults; high: long outpatient consults with most parents agreeing."
+    "low": 0.0,
+    "high": 2.5,
+    "basis": "Low: suggested codes rarely fit, so the pediatrician searches the list (s7 keeps 90) (0.0); high: suggestions fit most diagnoses (2.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 4.0,
+   "gross_time_saved_pct": 3.0,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 3.5,
-   "speedup": 1.036269,
+   "time_saved_pct": 2.5,
+   "speedup": 1.025641,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -631,7 +701,7 @@
     },
     {
      "id": "s2",
-     "what": "Pediatrician finds and gives leaflets and links for the parents",
+     "what": "Pediatrician finds leaflets and links for the parents: searched today; offered for the diagnosis after the change, searched where no link exists",
      "actor": "pediatrician",
      "today_means": "document",
      "systems": [
@@ -641,16 +711,16 @@
       "advice given"
      ],
      "outputs": [
-      "leaflets given"
+      "leaflets chosen"
      ],
      "handoff_to": "none",
-     "share_pct": 10,
+     "share_pct": 8,
      "fate": "person_does",
-     "remaining_pct": 40,
+     "remaining_pct": 45,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
-     "authority": "act_external",
+     "authority": "read",
      "human_gate": false,
      "boundary": "artefact",
      "workflow": "inquiry-to-answer",
@@ -660,8 +730,70 @@
      "approval_refs": []
     },
     {
+     "id": "s2c",
+     "what": "Pediatrician checks the leaflets fit this child's diagnosis and the advice given, and that they go to these parents",
+     "actor": "pediatrician",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "leaflets chosen"
+     ],
+     "outputs": [
+      "leaflets checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2s",
+     "what": "Pediatrician gives the checked leaflets: handed over today; sent with one click to the parents' portal after the change",
+     "actor": "pediatrician",
+     "today_means": "document",
+     "systems": [
+      "DOCS"
+     ],
+     "inputs": [
+      "leaflets checked"
+     ],
+     "outputs": [
+      "leaflets given"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "none",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "inquiry-to-answer",
+     "approver": "pediatrician",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
      "id": "s3",
-     "what": "Pediatrician answers parents' follow-up questions sent through the patient portal",
+     "what": "Pediatrician writes replies to parents' follow-up questions sent through the patient portal",
      "actor": "pediatrician",
      "today_means": "email_chat",
      "systems": [
@@ -671,10 +803,10 @@
       "parent questions"
      ],
      "outputs": [
-      "questions answered"
+      "reply draft"
      ],
      "handoff_to": "none",
-     "share_pct": 15,
+     "share_pct": 13,
      "fate": "person_reviews",
      "remaining_pct": 75,
      "block": "answer_desk",
@@ -683,7 +815,7 @@
       "purpose": "draft",
       "input": "The parent's question and the hospital's vetted patient texts and public guideline-based texts.",
       "output": "A draft reply that quotes the relevant paragraph and links to it.",
-      "check": "Every statement must cite a paragraph from the vetted texts, or it is dropped; anything about this child's treatment is written by the pediatrician, who signs every reply.",
+      "check": "Every statement must cite a paragraph from the vetted texts, or it is dropped. A second check reads each statement against its paragraph and flags statements the paragraph does not support; anything about this child's treatment is written by the pediatrician, who resolves every flag.",
       "stop": "One draft per question; questions outside the texts get no draft.",
       "why_not_simpler": "Parents ask in their own words; the right paragraph has to be found."
      },
@@ -695,6 +827,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s3c",
+     "what": "Pediatrician checks the final reply: advice against the question, the child's record and the vetted texts, and that it goes to these parents",
+     "actor": "pediatrician",
+     "today_means": "email_chat",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "reply draft"
+     ],
+     "outputs": [
+      "reply checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3s",
+     "what": "Pediatrician sends the checked reply through the patient portal",
+     "actor": "pediatrician",
+     "today_means": "email_chat",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "reply checked"
+     ],
+     "outputs": [
+      "questions answered"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "inquiry-to-answer",
+     "approver": "pediatrician",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
     },
     {
      "id": "s4",
@@ -740,10 +934,10 @@
      ],
      "handoff_to": "none",
      "share_pct": 5,
-     "fate": "person_reviews",
-     "remaining_pct": 70,
-     "block": "artefact_generator",
-     "rung": "configure",
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -755,8 +949,23 @@
      "approval_refs": []
     }
    ],
-   "approvals": [],
-   "design": "The hospital's leaflet library is linked to diagnosis codes in the hospital record ({OPS_SYSTEM}), so the leaflets for this diagnosis are offered and sent to the parents' portal with one click. Portal questions get a draft reply quoting vetted texts, which the pediatrician edits and signs. The advice itself, talks for schools and clinics, and the note stay with the pediatrician; the advice note is part of the validated consultation note where a scribe is used.",
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s2s",
+     "approved_version": "The leaflets and links exactly as checked by the pediatrician in s2c, sent once to these parents' portal or handed to them; any change needs a new check.",
+     "approval_step_id": "s2c",
+     "approver": "pediatrician"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s3s",
+     "approved_version": "Each reply exactly as checked by the pediatrician in s3c, sent once through the portal to the parents who asked; any change needs a new check.",
+     "approval_step_id": "s3c",
+     "approver": "pediatrician"
+    }
+   ],
+   "design": "The hospital's leaflet library is linked to diagnosis codes in the hospital record ({OPS_SYSTEM}), so the leaflets for this diagnosis are offered; the pediatrician checks them and sends them to the parents' portal with one click. Portal questions get a draft reply quoting vetted texts, which the pediatrician edits, checks and sends once. The advice itself, talks for schools and clinics, and noting the advice stay with the pediatrician.",
    "previous_blocker": "Leaflets were searched per family, and portal questions answered from scratch.",
    "enabler_now": "Guideline-based public patient texts, and leaflet libraries linked to diagnosis codes.",
    "still_hard": "Advice families cannot follow because of money, time or culture.",
@@ -798,7 +1007,7 @@
     "Boundary: health advice to families and the community; treatment decisions are separate.",
     "Input contract for s2: leaflets linked to diagnosis codes by the outpatient clinic's nurse specialist; diagnoses without a link are searched as today; about 60% are covered.",
     "Input contract for s3: parents' questions in the portal; vetted texts maintained by the hospital's patient information office.",
-    "Advice in the consult and in the community keeps its full time."
+    "Advice in the consult and in the community, noting the advice, and both checks keep their full time. s2 keeps 45 because about 60% of diagnoses have linked leaflets; s3 keeps 75 because each draft is edited and checked for meaning."
    ],
    "unknowns": [
     "Portal questions per week."
@@ -826,16 +1035,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 3,
-    "high": 10,
-    "basis": "Low: advice mostly given in person; high: chronic conditions with many portal questions."
+    "low": 3.5,
+    "high": 7.8,
+    "basis": "Low: few diagnoses have linked leaflets (s2 keeps 75) and few questions fit a draft (s3 keeps 90) (3.5); high: 60% of diagnoses linked and drafts as designed (7.8)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 11.25,
+   "gross_time_saved_pct": 8.15,
    "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 10.95,
-   "speedup": 1.122965,
+   "time_saved_pct": 7.85,
+   "speedup": 1.085187,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -955,7 +1164,7 @@
       "purpose": "draft",
       "input": "The audio of the conversation, recorded with the parents' consent.",
       "output": "A draft note of what was explained, the parents' questions and the agreements.",
-      "check": "The pediatrician validates and edits the note before it is written to the record.",
+      "check": "A check lists every statement in the draft that cannot be found in the conversation transcript, and every agreement in the transcript missing from the draft; the pediatrician reads the draft against the talk, resolves each listed item and edits the note before it is written to the record.",
       "stop": "One draft per conversation.",
       "why_not_simpler": "The agreements come out of a conversation, not a form."
      },
@@ -1039,9 +1248,9 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 1,
-    "high": 3,
-    "basis": "Low: short talks and few recordings; high: long treatment talks with most parents agreeing to recording."
+    "low": 1.2,
+    "high": 3.4,
+    "basis": "Low: few parents agree to recording (s4 keeps 90) (1.2); high: about 70% of talks recorded (3.4)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
@@ -1084,6 +1293,6 @@
   "digest": "research/digests-minor/29-1.md",
   "digest_sha256": "5d7bc5777e3c199c076be82fc8847b59d13a24aa68c707151f0b858f326e00d7",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-17T00:22:00"
+  "finalized": "2026-10-17T08:23:55"
  }
 }

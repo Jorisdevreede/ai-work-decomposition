@@ -226,9 +226,9 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 8,
-    "high": 18,
-    "basis": "Location data covers only items on fixed planograms; promotion and seasonal items still go to the radio, and the walk to the shelf does not change."
+    "low": 11.8,
+    "high": 24.6,
+    "basis": "Low: location data covers only items on fixed planograms, so promotion and seasonal items still go to the radio and searches take longer (11.8); high: most items carry a location (24.6)."
    },
    "focal_role_share_pct": 80,
    "excluded_labour_share_pct": 20,
@@ -376,7 +376,7 @@
       "return transaction"
      ],
      "handoff_to": "store supervisor",
-     "share_pct": 20,
+     "share_pct": 19,
      "fate": "person_does",
      "remaining_pct": 70,
      "block": "crud_app",
@@ -422,8 +422,8 @@
      "approval_refs": []
     },
     {
-     "id": "s7",
-     "what": "Cashier pays the refund to card or cash and prints the receipt",
+     "id": "s6c",
+     "what": "Cashier checks the final refund: items, amount and tender match the return decision and the original sale, and flagged exceptions carry the supervisor's override",
      "actor": "cashier",
      "today_means": "system_screen",
      "systems": [
@@ -433,6 +433,37 @@
      "inputs": [
       "return transaction",
       "return override"
+     ],
+     "outputs": [
+      "refund checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s7",
+     "what": "Cashier pays the refund to card or cash and prints the receipt",
+     "actor": "cashier",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER",
+      "BANK"
+     ],
+     "inputs": [
+      "refund checked"
      ],
      "outputs": [
       "refund receipt"
@@ -448,7 +479,7 @@
      "human_gate": true,
      "boundary": "decision",
      "workflow": "order-to-cash",
-     "approver": "store supervisor",
+     "approver": "cashier",
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": [
@@ -457,7 +488,7 @@
     },
     {
      "id": "s8",
-     "what": "Cashier tags returned merchandise for restock, damage or supplier return",
+     "what": "Cashier puts the returned item in the bin for restock, damage or supplier return: with a handwritten tag today, with the till's printed bin label after the change",
      "actor": "cashier",
      "today_means": "paper_phone",
      "systems": [],
@@ -466,14 +497,14 @@
       "return decision"
      ],
      "outputs": [
-      "return disposition tag"
+      "item in bin"
      ],
      "handoff_to": "stock team",
-     "share_pct": 10,
+     "share_pct": 8,
      "fate": "person_does",
      "remaining_pct": 60,
-     "block": "integration",
-     "rung": "deterministic",
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -483,9 +514,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s8c",
+     "what": "Cashier checks the disposition before it is posted: the reason code and bin match the item's condition and, for a supplier return, the supplier",
+     "actor": "cashier",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "item in bin",
+      "return decision"
+     ],
+     "outputs": [
+      "disposition checked"
+     ],
+     "handoff_to": "stock team",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s8p",
+     "what": "The till posts the stock movement or supplier-return line for the item to the stock system",
+     "actor": "cashier",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "disposition checked"
+     ],
+     "outputs": [
+      "return disposition tag"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "machine",
+     "remaining_pct": 0,
+     "block": "integration",
+     "rung": "deterministic",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "system_or_means",
+     "workflow": "order-to-cash",
+     "approver": "cashier",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
     }
    ],
-   "design": "Configure the return rules (days since sale, excluded categories, refund to original tender) in the {OTHER} point-of-sale return module so the till shows the policy outcome and pre-fills the return lines and refund tender once the sale is found, and only flagged exceptions ask the supervisor for an override on a handheld. The reason code the cashier picks drives the disposition: the till prints a bin label and an integration posts the stock movement or supplier-return line to the {OPS_SYSTEM}.",
+   "design": "Configure the return rules (days since sale, excluded categories, refund to original tender) in the {OTHER} point-of-sale return module so the till shows the policy outcome and pre-fills the return lines and refund tender once the sale is found, and only flagged exceptions ask the supervisor for an override on a handheld. The cashier checks the final refund before paying it. The reason code the cashier picks drives the disposition: the till prints a bin label, the cashier checks code and bin against the item, and an integration then posts the stock movement or supplier-return line to the {OPS_SYSTEM}.",
    "previous_blocker": "Return rules sat in a printed policy and supervisors' heads, and disposition went on paper tags keyed later by the stock team.",
    "enabler_now": "Point-of-sale return modules hold rule settings and reason codes, and a small integration can turn reason codes into stock movements.",
    "still_hard": "Judging wear, missing parts and signs of use stays a person's call; receipts without a match still need a manual search.",
@@ -534,7 +624,8 @@
     "Input contract: original sale record with sale ID, date, items, prices and tender, produced by the till; fallback for no receipt is a manual search or a store-credit rule.",
     "Native configuration is tried first: the return module's rule and reason-code settings before custom code.",
     "Supervisor and customer time are outside the cashier's savings.",
-    "The refund payout itself does not change; integrated card terminals are assumed already in place."
+    "The refund payout itself does not change; integrated card terminals are assumed already in place.",
+    "For flagged exceptions the supervisor's override (s6) is recorded on the transaction; the cashier's check (s6c) confirms it is there before the refund is paid. Both checks keep their full time; s8 keeps 60 for placing the item with its label."
    ],
    "unknowns": [
     "Which return rules and limits the shop uses and how often supervisors are called today.",
@@ -579,22 +670,29 @@
     {
      "id": "a1",
      "action_step_id": "s7",
-     "approved_version": "For flagged exception returns only: return transaction number with refund amount and tender as keyed in s5; any change voids the override.",
-     "approval_step_id": "s6",
-     "approver": "store supervisor"
+     "approved_version": "The refund with items, amount and tender exactly as checked by the cashier in s6c, and for flagged exceptions carrying the supervisor's override from s6, paid once to the customer's original tender; any change needs a new check and, for exceptions, a new override.",
+     "approval_step_id": "s6c",
+     "approver": "cashier"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s8p",
+     "approved_version": "The stock movement or supplier-return line for this item, with the reason code and bin exactly as checked by the cashier in s8c, posted once to the {OPS_SYSTEM}; any change needs a new check.",
+     "approval_step_id": "s8c",
+     "approver": "cashier"
     }
    ],
    "time_saved_range_pct": {
-    "low": 10,
-    "high": 20,
-    "basis": "Shops with many receipt-less or disputed returns keep most manual searching and judgement; disposition saving holds only where the stock system takes reason-code movements."
+    "low": 15.3,
+    "high": 26.3,
+    "basis": "Low: many receipt-less or disputed returns, so the policy is checked by hand for about half and lines are mostly keyed (15.3); high: most returns come with a receipt and pre-filled lines (26.3)."
    },
    "focal_role_share_pct": 80,
    "excluded_labour_share_pct": 20,
-   "gross_time_saved_pct": 27.5,
+   "gross_time_saved_pct": 27.375,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 26.5,
-   "speedup": 1.360544,
+   "time_saved_pct": 26.375,
+   "speedup": 1.358234,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -753,7 +851,7 @@
     },
     {
      "id": "s6",
-     "what": "Supervisor recounts if needed and signs off the closing record",
+     "what": "Supervisor checks the closing record: counted against expected per tender, the variance and its explanation; recounts if needed and signs off",
      "actor": "store supervisor",
      "today_means": "document",
      "systems": [],
@@ -767,11 +865,11 @@
      "handoff_to": "finance team",
      "share_pct": 10,
      "fate": "person_reviews",
-     "remaining_pct": 70,
-     "block": "workflow_automation",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "actor",
      "workflow": "treasury-and-cash",
@@ -917,15 +1015,15 @@
     {
      "id": "a1",
      "action_step_id": "s7",
-     "approved_version": "Register closing record for one register and period, locked at supervisor sign-off; a recount or edit voids it.",
+     "approved_version": "The closing record for one register and period, with counted and expected totals per tender and the variance note, exactly as signed off by the supervisor in s6, posted once as that day's takings journal to the {ERP}; a recount or edit voids it and needs a new sign-off.",
      "approval_step_id": "s6",
      "approver": "store supervisor"
     }
    ],
    "time_saved_range_pct": {
-    "low": 22,
-    "high": 35,
-    "basis": "Stores whose card terminals are not integrated keep keying slip totals, and busy-shift variances still need long manual tracing."
+    "low": 27.7,
+    "high": 42.7,
+    "basis": "Low: card terminals are not integrated, so the cashier still keys slip totals, and busy-shift variances take long tracing (27.7); high: integrated terminals and the variance list (42.7)."
    },
    "focal_role_share_pct": 80,
    "excluded_labour_share_pct": 20,
@@ -1027,7 +1125,7 @@
     },
     {
      "id": "s4",
-     "what": "Cashier radios for extra coins or small notes when change is short",
+     "what": "Cashier asks for extra coins or small notes when change is short: by radio today; after the change the till prefills the request from the count",
      "actor": "cashier",
      "today_means": "paper_phone",
      "systems": [],
@@ -1035,12 +1133,12 @@
       "opening count"
      ],
      "outputs": [
-      "change request"
+      "change request draft"
      ],
      "handoff_to": "store supervisor",
-     "share_pct": 10,
+     "share_pct": 8,
      "fate": "person_reviews",
-     "remaining_pct": 40,
+     "remaining_pct": 30,
      "block": "notification",
      "rung": "deterministic",
      "loop": null,
@@ -1052,6 +1150,64 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s4c",
+     "what": "Cashier checks the prefilled change request: the denominations and amounts needed and the register",
+     "actor": "cashier",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "change request draft"
+     ],
+     "outputs": [
+      "change request checked"
+     ],
+     "handoff_to": "store supervisor",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "treasury-and-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4s",
+     "what": "Cashier sends the checked change request to the supervisor's handheld",
+     "actor": "cashier",
+     "today_means": "paper_phone",
+     "systems": [],
+     "inputs": [
+      "change request checked"
+     ],
+     "outputs": [
+      "change request"
+     ],
+     "handoff_to": "store supervisor",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "treasury-and-cash",
+     "approver": "cashier",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s5",
@@ -1083,7 +1239,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Configure the opening screen of the {OTHER} point-of-sale till so the cashier enters the count per denomination; the till compares it with the float issued and with a minimum per denomination, records cashier and time, and replaces the paper float sheet. When a denomination is below its minimum, a small automation sends a prefilled change request to the supervisor's handheld for the cashier to confirm.",
+   "design": "Configure the opening screen of the {OTHER} point-of-sale till so the cashier enters the count per denomination; the till compares it with the float issued and with a minimum per denomination, records cashier and time, and replaces the paper float sheet. When a denomination is below its minimum, a small automation prefills a change request; the cashier checks it and sends it to the supervisor's handheld.",
    "previous_blocker": "Float records lived on paper sheets because tills only tracked sales, not the cash handed over at opening.",
    "enabler_now": "Point-of-sale register opening screens take a counted float, and a simple rule on denomination counts can trigger a notification.",
    "still_hard": "The physical count stays; coin counting machines or cash recyclers need capital spend and are not assumed.",
@@ -1139,11 +1295,12 @@
    "new_work": {
     "already_counted": [
      {
-      "description": "Cashier confirms the prefilled change request.",
+      "description": "Cashier checks and sends the prefilled change request.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 5,
+      "hours_per_100_baseline_hours": 2,
       "counted_step_ids": [
-       "s4"
+       "s4c",
+       "s4s"
       ]
      }
     ],
@@ -1160,18 +1317,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4s",
+     "approved_version": "The change request with denominations, amounts and register exactly as checked by the cashier in s4c, sent once to the supervisor's handheld; any change needs a new check.",
+     "approval_step_id": "s4c",
+     "approver": "cashier"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 3,
-    "high": 8,
-    "basis": "Stores without handhelds keep the radio call, and cashiers who recount after a typo lose part of the recording saving."
+    "low": -0.5,
+    "high": 7.5,
+    "basis": "Low: the store has no handhelds, so the radio call stays and only the upkeep is added (-0.5); high: change requests go from the till (7.5)."
    },
    "focal_role_share_pct": 70,
    "excluded_labour_share_pct": 30,
-   "gross_time_saved_pct": 8.571429,
+   "gross_time_saved_pct": 8.0,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 8.071429,
-   "speedup": 1.087801,
+   "time_saved_pct": 7.5,
+   "speedup": 1.081081,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1231,6 +1396,6 @@
   "digest": "research/digests-minor/41-2.md",
   "digest_sha256": "c42f147b10b6000c098fa57b2e396aa9b69689f0a42896018a208c7b38558371",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-17T07:53:09"
+  "finalized": "2026-10-17T08:25:54"
  }
 }

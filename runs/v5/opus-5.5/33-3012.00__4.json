@@ -6,19 +6,48 @@
    "short": "Collect prisoners' requests, build the day schedule, check separation rules, tell prisoners their schedule and confirm slots with departments.",
    "steps": [
     {
-     "id": "s1",
-     "what": "Officer collects paper request slips for library visits, family visits and appointments",
-     "actor": "correctional officer",
-     "today_means": "document",
+     "id": "s0",
+     "what": "Prisoner enters their requests on the unit's self-service terminal",
+     "actor": "prisoner",
+     "today_means": "system_screen",
      "systems": [],
      "inputs": [
       "prisoner requests"
      ],
      "outputs": [
+      "terminal requests"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "facilities-and-workplace",
+     "approver": "none",
+     "labour_scope": "customer",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s1",
+     "what": "Officer collects requests for library visits, family visits and appointments: paper slips today; after the change requests from the terminal, plus slips from prisoners who cannot use it",
+     "actor": "correctional officer",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "prisoner requests",
+      "terminal requests"
+     ],
+     "outputs": [
       "request list"
      ],
      "handoff_to": "none",
-     "share_pct": 20,
+     "share_pct": 19,
      "fate": "person_does",
      "remaining_pct": 50,
      "block": "crud_app",
@@ -76,7 +105,7 @@
       "checked schedule"
      ],
      "handoff_to": "none",
-     "share_pct": 15,
+     "share_pct": 13,
      "fate": "person_reviews",
      "remaining_pct": 50,
      "block": "workflow_automation",
@@ -92,13 +121,71 @@
      "approval_refs": []
     },
     {
+     "id": "s3c",
+     "what": "Officer checks the final day schedule: each prisoner's slots, every flagged clash resolved, and that it goes to this unit's terminal and the departments' bookings",
+     "actor": "correctional officer",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "checked schedule"
+     ],
+     "outputs": [
+      "schedule approved"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3r",
+     "what": "Officer releases the checked day schedule to the prisoners' terminal and the departments' bookings",
+     "actor": "correctional officer",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "schedule approved"
+     ],
+     "outputs": [
+      "schedule released"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "compliance-and-risk",
+     "approver": "correctional officer",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
+    },
+    {
      "id": "s4",
      "what": "Officer tells each prisoner their work assignments and appointments in person",
      "actor": "correctional officer",
      "today_means": "in_person",
      "systems": [],
      "inputs": [
-      "checked schedule"
+      "schedule released"
      ],
      "outputs": [
       "prisoners informed"
@@ -128,7 +215,7 @@
       "TELEPHONY"
      ],
      "inputs": [
-      "checked schedule"
+      "schedule released"
      ],
      "outputs": [
       "slots confirmed"
@@ -150,7 +237,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Prisoners enter requests on the unit's self-service terminal linked to the prison information system ({OPS_SYSTEM}), and a planning board proposes the day schedule from department slots and capacity. Fixed rules flag clashes with separation orders and security restrictions for the officer to resolve; prisoners see their schedule on the terminal and departments see their bookings, while the officer still explains changes in person.",
+   "design": "Prisoners enter requests on the unit's self-service terminal linked to the prison information system ({OPS_SYSTEM}), and a planning board proposes the day schedule from department slots and capacity. Fixed rules flag clashes with separation orders and security restrictions for the officer to resolve; the officer checks the final schedule and releases it, so prisoners see their schedule on the terminal and departments see their bookings, while the officer still explains changes in person.",
    "previous_blocker": "Requests were paper slips and the schedule a spreadsheet checked by memory.",
    "enabler_now": "Self-service terminals and rule-based planning boards exist for institutions; no AI is needed.",
    "still_hard": "Separation orders must be complete; some prisoners cannot use a terminal.",
@@ -192,7 +279,7 @@
     "Boundary: from requests to the confirmed day schedule; transport to court is outside.",
     "Input contract: department slots kept by each department; separation orders and restrictions recorded by the security office; fallback is paper slips and the spreadsheet.",
     "Department and security office time is outside the officer's savings.",
-    "Explaining changes in person stays."
+    "Explaining changes in person stays. Prisoners' time at the terminal (s0, share 1) replaces filling in slips. The final check and release keep their full time."
    ],
    "unknowns": [
     "Whether the prison has unit terminals.",
@@ -233,18 +320,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s3r",
+     "approved_version": "The day schedule with each prisoner's slots exactly as checked by the officer in s3c, released once to this unit's terminal and the library, counselling and work departments' bookings for that day; any change needs a new check and release.",
+     "approval_step_id": "s3c",
+     "approver": "correctional officer"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 20,
-    "high": 35,
-    "basis": "Units with many prisoners who cannot use terminals keep paper slips."
+    "low": 41.6,
+    "high": 50.5,
+    "basis": "Low: about half of prisoners cannot or will not use the terminal, so slips and in-person telling stay for them (41.6); high: most prisoners use the terminal (50.5)."
    },
-   "focal_role_share_pct": 100,
-   "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 52.5,
+   "focal_role_share_pct": 99,
+   "excluded_labour_share_pct": 1,
+   "gross_time_saved_pct": 51.515152,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 51.5,
-   "speedup": 2.061856,
+   "time_saved_pct": 50.515152,
+   "speedup": 2.020821,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -406,7 +501,7 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 40,
+     "remaining_pct": 60,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -463,7 +558,8 @@
     "Input contract: committal orders sent by the prosecution through the chain exchange; translations approved by the prison's legal office; item barcodes from the stores; fallback is paper.",
     "Searching and screening do not change.",
     "Nurse time is outside the officer's savings.",
-    "s5 is mostly assigning a cell and handing out clothing and items in person; it keeps its full time."
+    "s5 is mostly assigning a cell and handing out clothing and items in person; it keeps its full time.",
+    "s1 keeps 70 because taking over custody stays and only the paper check changes; s3 keeps 85 because approved translations and videos replace finding words and the officer still explains; s6 keeps 60 because the order, cell and items fill in and the officer still ticks the search, rules and screening."
    ],
    "unknowns": [
     "Arrivals per day.",
@@ -476,24 +572,24 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "Officer learns the intake screens.",
+      "description": "No ongoing upkeep: learning the intake screens is a one-off.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 0.5
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 6,
-    "high": 12,
-    "basis": "Most of intake is searching, explaining and screening in person."
+    "low": 6.5,
+    "high": 11.5,
+    "basis": "Low: committal orders often arrive with the transport rather than before, so the paper check stays and less of the checklist fills (6.5); high: orders arrive before the transport (11.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 13.5,
-   "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 13.0,
-   "speedup": 1.149425,
+   "gross_time_saved_pct": 11.5,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 11.5,
+   "speedup": 1.129944,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -687,7 +783,8 @@
     "Boundary: one shift from briefing to report; rostering is outside.",
     "Input contract: roster and qualifications kept by the planning office; unit logs from the officers; fallback is the whiteboard.",
     "Post plans are rule-based, not ranking officers.",
-    "Planning office time is outside the senior officer's savings."
+    "Planning office time is outside the senior officer's savings.",
+    "s2 keeps 60 because matching qualifications to posts is proposed and the senior officer still decides; s5 keeps 50 because incidents and log entries are copied in and the senior officer writes the rest."
    ],
    "unknowns": [
     "Officers per shift."
@@ -708,24 +805,24 @@
     ],
     "incremental": [
      {
-      "description": "Senior officer learns the post plan screen.",
+      "description": "No ongoing upkeep: learning the post plan screen is a one-off.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 0.3
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 4,
-    "high": 9,
-    "basis": "Most of this task is leading people on the floor."
+    "low": 6.0,
+    "high": 13.5,
+    "basis": "Low: qualifications in the roster are out of date and unit logs are incomplete, so most of the plan and report are still done by hand (6.0); high: roster and logs are current (13.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
    "gross_time_saved_pct": 13.5,
-   "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 13.2,
-   "speedup": 1.152074,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 13.5,
+   "speedup": 1.156069,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -919,7 +1016,8 @@
     "Boundary: from taking prints to the result stored; identity disputes are outside.",
     "Input contract: personal details from the prisoner record kept by the records office; link set up by the information manager; fallback is typing.",
     "Taking prints and reading results do not change.",
-    "Information manager time is outside the officer's savings."
+    "Information manager time is outside the officer's savings.",
+    "s3 keeps 40 for checking the linked details and typing them when the link fails."
    ],
    "unknowns": [
     "Whether the fingerprint station supports a link."
@@ -931,24 +1029,24 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "Officer checks the linked details before scanning.",
+      "description": "No ongoing upkeep: checking the linked details before scanning is kept in s3.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 0.3
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 4,
-    "high": 9,
-    "basis": "Most of this task is taking the prints in person."
+    "low": 9.5,
+    "high": 14.0,
+    "basis": "Low: the link often fails or details are incomplete, so many are still typed (9.5); high: details link for most prisoners (14.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
    "gross_time_saved_pct": 14.0,
-   "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 13.7,
-   "speedup": 1.158749,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 14.0,
+   "speedup": 1.162791,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1001,6 +1099,6 @@
   "digest": "research/digests-minor/33-3.md",
   "digest_sha256": "2e3adc7320b1a841d41532b1b6ccbe0897ce25976e062e6a805b3544056dc6ae",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-17T07:51:45"
+  "finalized": "2026-10-17T08:21:20"
  }
 }

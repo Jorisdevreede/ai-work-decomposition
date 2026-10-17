@@ -6,6 +6,36 @@
    "short": "Sell tickets at the gate till, check tickets at the entrance, sort out refunds, and count the till.",
    "steps": [
     {
+     "id": "s1v",
+     "what": "Visitors buy tickets in the web shop or at a kiosk and scan them at the gate themselves",
+     "actor": "visitor",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "arriving visitors"
+     ],
+     "outputs": [
+      "self-service tickets"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "customer",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s1",
      "what": "Attendant sells tickets and collects fees from customers at the gate till",
      "actor": "recreation attendant",
@@ -20,7 +50,7 @@
       "tickets sold"
      ],
      "handoff_to": "customer",
-     "share_pct": 50,
+     "share_pct": 49,
      "fate": "person_does",
      "remaining_pct": 60,
      "block": "crud_app",
@@ -42,7 +72,8 @@
      "today_means": "in_person",
      "systems": [],
      "inputs": [
-      "tickets sold"
+      "tickets sold",
+      "self-service tickets"
      ],
      "outputs": [
       "visitors admitted"
@@ -95,7 +126,7 @@
     },
     {
      "id": "s4",
-     "what": "Attendant counts the cash drawer and fills in the daily takings sheet",
+     "what": "Attendant counts the cash drawer and fills in the daily takings: on a paper sheet today; after the change enters the counted cash next to the expected takings the till shows",
      "actor": "recreation attendant",
      "today_means": "document",
      "systems": [],
@@ -103,16 +134,16 @@
       "tickets sold"
      ],
      "outputs": [
-      "takings sheet"
+      "takings draft"
      ],
      "handoff_to": "facility manager",
-     "share_pct": 17,
+     "share_pct": 15,
      "fate": "person_does",
-     "remaining_pct": 40,
+     "remaining_pct": 55,
      "block": "integration",
      "rung": "configure",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "artefact",
      "workflow": "order-to-cash",
@@ -120,9 +151,67 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s4c",
+     "what": "Attendant checks the takings before closing: counted cash against expected takings per payment type, and a note for any difference",
+     "actor": "recreation attendant",
+     "today_means": "document",
+     "systems": [],
+     "inputs": [
+      "takings draft"
+     ],
+     "outputs": [
+      "takings checked"
+     ],
+     "handoff_to": "facility manager",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4s",
+     "what": "Attendant closes the till with the checked takings for the facility manager",
+     "actor": "recreation attendant",
+     "today_means": "system_screen",
+     "systems": [],
+     "inputs": [
+      "takings checked"
+     ],
+     "outputs": [
+      "takings sheet"
+     ],
+     "handoff_to": "facility manager",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "recreation attendant",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     }
    ],
-   "design": "One ticketing system ({OTHER}) serves the web shop, self-service kiosks and the gate till, so many visitors arrive with a ticket and scan it at the gate themselves while the attendant watches the gate and helps. Closing shows expected takings per payment type for the attendant to compare with the counted cash.",
+   "design": "One ticketing system ({OTHER}) serves the web shop, self-service kiosks and the gate till, so many visitors arrive with a ticket and scan it at the gate themselves while the attendant watches the gate and helps. Closing shows expected takings per payment type; the attendant counts the cash, compares, checks and closes the till once.",
    "previous_blocker": "Every ticket was sold and checked at the gate, and takings were counted by hand.",
    "enabler_now": "Attraction ticketing systems run web shop, gate till and kiosks on one back end with live reporting.",
    "still_hard": "Families with questions still queue at the till; cash visitors keep the count.",
@@ -164,7 +253,7 @@
     "Boundary: from ticket sale to the till counted; pricing is outside.",
     "Input contract: ticket types and prices set by the facility manager in the ticketing system; fallback is the gate till.",
     "Kiosk and web customers' time is outside the attendant's savings.",
-    "Refund handling does not change."
+    "Refund handling and the check and close of the till keep their full time. s1 keeps 60 and s2 keeps 60 because about 40% of visitors buy online or at a kiosk and scan themselves (s1v, visitor time). s4 keeps 55 because there is less cash to count and the expected totals are worked out by the till, while counting stays."
    ],
    "unknowns": [
     "Share of visitors who would buy online or at kiosks.",
@@ -183,18 +272,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4s",
+     "approved_version": "The day's takings per payment type with the counted cash and any difference note exactly as checked by the attendant in s4c, closed once in the ticketing system for the facility manager; any correction needs a new check.",
+     "approval_step_id": "s4c",
+     "approver": "recreation attendant"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 18,
-    "high": 32,
-    "basis": "Facilities with mostly walk-in, cash-paying visitors save less."
+    "low": 11.7,
+    "high": 33.5,
+    "basis": "Low: mostly walk-in, cash-paying visitors, so only about 15% buy ahead; s1 and s2 keep 85 and s4 keeps 80 (11.7); high: about 40% buy ahead as assumed (33.5)."
    },
-   "focal_role_share_pct": 100,
-   "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 39.0,
+   "focal_role_share_pct": 99,
+   "excluded_labour_share_pct": 1,
+   "gross_time_saved_pct": 35.505051,
    "incremental_hours_per_100_baseline_hours": 2,
-   "time_saved_pct": 37.0,
-   "speedup": 1.587302,
+   "time_saved_pct": 33.505051,
+   "speedup": 1.503874,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -231,7 +328,7 @@
     },
     {
      "id": "s2",
-     "what": "Attendant answers the same questions by phone and e-mail",
+     "what": "Attendant answers the same questions by phone and e-mail: types every reply today; after the change takes fewer calls and reads a drafted e-mail reply quoting the FAQ",
      "actor": "recreation attendant",
      "today_means": "email_chat",
      "systems": [
@@ -242,10 +339,10 @@
       "visitor question"
      ],
      "outputs": [
-      "reply sent"
+      "reply draft"
      ],
      "handoff_to": "customer",
-     "share_pct": 20,
+     "share_pct": 18,
      "fate": "person_reviews",
      "remaining_pct": 50,
      "block": "answer_desk",
@@ -254,7 +351,7 @@
       "purpose": "answer",
       "input": "A visitor's e-mail question and the facility's FAQ and house rules.",
       "output": "A draft reply quoting the matching FAQ entry or rule with its link.",
-      "check": "Code checks that the reply body is a verbatim quote of one FAQ or rule entry plus the fixed greeting; questions that match no entry, or mention health, accidents, complaints or refunds, go to the attendant unanswered; the attendant reads and sends every reply.",
+      "check": "Code checks that the reply body is a verbatim quote of one FAQ or rule entry plus the fixed greeting; questions that match no entry, or mention health, accidents, complaints or refunds, go to the attendant unanswered. The attendant reads the quoted entry against the visitor's question and only uses it if it answers that question; otherwise they write the reply.",
       "stop": "One match per e-mail; no match means the attendant writes the reply.",
       "why_not_simpler": "Visitors ask in their own words; a keyword filter misses most matches."
      },
@@ -266,6 +363,70 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s2c",
+     "what": "Attendant checks the final e-mail reply: it answers the question asked, the quoted entry is current, and the visitor's address",
+     "actor": "recreation attendant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "reply draft"
+     ],
+     "outputs": [
+      "reply checked"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s2s",
+     "what": "Attendant sends the checked reply to the visitor",
+     "actor": "recreation attendant",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL",
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "reply checked"
+     ],
+     "outputs": [
+      "reply sent"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "inquiry-to-answer",
+     "approver": "recreation attendant",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s3",
@@ -297,7 +458,7 @@
     },
     {
      "id": "s4",
-     "what": "Attendant hands out maps and show schedules",
+     "what": "Attendant hands out maps and show schedules: to every visitor today; only to those who ask for paper after the change",
      "actor": "recreation attendant",
      "today_means": "document",
      "systems": [],
@@ -309,8 +470,8 @@
      ],
      "handoff_to": "customer",
      "share_pct": 10,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_does",
+     "remaining_pct": 20,
      "block": "notification",
      "rung": "configure",
      "loop": null,
@@ -324,7 +485,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Opening hours, the day's shows, a map and the house rules sit on the website, entrance screens and the ticket confirmation, so fewer visitors need to ask. E-mail questions get a draft reply quoting the matching FAQ entry, which the attendant sends; health, accidents, complaints and refunds always go to staff, and rules at the ride are explained in person.",
+   "design": "Opening hours, the day's shows, a map and the house rules sit on the website, entrance screens and the ticket confirmation, so fewer visitors need to ask. E-mail questions get a draft reply quoting the matching FAQ entry, which the attendant reads against the question, checks and sends; health, accidents, complaints and refunds always go to staff, and rules at the ride are explained in person.",
    "previous_blocker": "Information lived in leaflets and staff memory; every e-mail was typed.",
    "enabler_now": "Ticketing systems send confirmations with information, and language models can match free-text questions to FAQ entries.",
    "still_hard": "A wrong quoted rule can mislead; the FAQ must be kept current.",
@@ -372,7 +533,7 @@
     "Boundary: from a visitor's question to the answer; complaints handling is outside.",
     "Input contract: FAQ, house rules and show schedule kept by the facility manager; fallback is typing replies.",
     "Manager time is outside the attendant's savings.",
-    "Rules at the ride are explained in person."
+    "Rules at the ride are explained in person, and the check and send of each reply keep their full time. s1 keeps 85 because fewer visitors ask; s2 keeps 50 because fewer people phone and e-mail drafts quote the FAQ; s4 keeps 20 for visitors who still want a paper map."
    ],
    "unknowns": [
     "E-mails and calls per day."
@@ -404,18 +565,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s2s",
+     "approved_version": "The reply text exactly as checked by the attendant in s2c, sent once by e-mail to the visitor who asked; any change needs a new check.",
+     "approval_step_id": "s2c",
+     "approver": "recreation attendant"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 10,
-    "high": 18,
-    "basis": "Facilities with few e-mails gain only from signs and screens."
+    "low": 13.8,
+    "high": 24.2,
+    "basis": "Low: few e-mails and visitors who do not read the website, so s1 keeps 95 and s2 keeps 80 (13.8); high: visitors read the information before they come (24.2)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 27.5,
+   "gross_time_saved_pct": 24.5,
    "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 27.2,
-   "speedup": 1.373626,
+   "time_saved_pct": 24.2,
+   "speedup": 1.319261,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -508,7 +677,7 @@
     },
     {
      "id": "s4",
-     "what": "Attendant signs the paper list that procedures were read",
+     "what": "Attendant confirms that procedures were read: signs the paper list today, confirms in the staff app after the change",
      "actor": "recreation attendant",
      "today_means": "document",
      "systems": [],
@@ -520,10 +689,10 @@
      ],
      "handoff_to": "none",
      "share_pct": 5,
-     "fate": "machine",
-     "remaining_pct": 0,
-     "block": "crud_app",
-     "rung": "deterministic",
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -605,7 +774,7 @@
     "Boundary: from reading procedures to knowing the changes; real emergencies are outside.",
     "Input contract: procedures per ride kept by the safety coordinator with change marks; ride assignments from the shift plan; fallback is the binder.",
     "Read records are for safety, not appraisal.",
-    "Drills and briefings do not change."
+    "Drills, briefings and confirming reading keep their full time; the confirmation is the attendant's own record. s1 keeps 60 because changed parts are marked and the attendant need not reread the whole binder. s5 keeps 60 because a message says what changed."
    ],
    "unknowns": [
     "How often procedures change."
@@ -617,24 +786,24 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "Attendant learns the staff app.",
+      "description": "No ongoing upkeep: procedures and change marks are kept by the safety coordinator.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 0.3
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 6,
-    "high": 11,
-    "basis": "Most of this task is drills and briefings, which do not change."
+    "low": 4.5,
+    "high": 12.0,
+    "basis": "Low: procedures change rarely and the coordinator marks changes late, so s1 and s5 keep 85 (4.5); high: changes are marked and messaged as designed (12.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 17.0,
-   "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 16.7,
-   "speedup": 1.20048,
+   "gross_time_saved_pct": 12.0,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 12.0,
+   "speedup": 1.136364,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -788,9 +957,9 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 2,
-    "high": 4,
-    "basis": "Almost all of this task is guiding people in person."
+    "low": 1.7,
+    "high": 5.7,
+    "basis": "Low: rider counts fail often or the queue has no gate counter, so the attendant still calls out times and s2 keeps 90 (1.7); high: the screen works as designed (5.7)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
@@ -845,6 +1014,6 @@
   "digest": "research/digests-minor/39-3.md",
   "digest_sha256": "63f21f4f64a3a0682aabd896127b71ce76bd90d8f4b638f3c1d814dbab515948",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T20:08:40"
+  "finalized": "2026-10-17T08:36:27"
  }
 }

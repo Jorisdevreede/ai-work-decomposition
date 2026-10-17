@@ -120,7 +120,7 @@
     },
     {
      "id": "s5",
-     "what": "Surgical technologist writes the fluids used on the paper list",
+     "what": "Surgical technologist records the fluids used: on the paper list today, by scanning each fluid and blood product into the operation record after the change",
      "actor": "surgical technologist",
      "today_means": "document",
      "systems": [],
@@ -188,7 +188,7 @@
    "assumptions": [
     "Boundary: from the operation plan to the fluid record; ordering fluids for the store is outside.",
     "Input contract: preference cards kept by surgeons and OR staff; barcodes on fluids and blood products; fallback is paper.",
-    "Collecting, checking and supplying do not change.",
+    "Collecting, checking and supplying keep their full time. s1 keeps 50 because the card shows with the day's list instead of being looked up on paper, and reading it stays. s5 keeps 30 for scanning each item, which replaces writing names and numbers; the scan is the technologist's own record.",
     "The blood bank's own checks do not change."
    ],
    "unknowns": [
@@ -209,9 +209,9 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 3,
-    "high": 7,
-    "basis": "Low: short operations with few fluids; high: long operations with many products."
+    "low": 6.0,
+    "high": 10.5,
+    "basis": "Low: preference cards in the OR module are often out of date, so the technologist still checks with the team and s1 keeps 80 (6.0); high: cards are kept current (10.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
@@ -240,7 +240,7 @@
       "request list"
      ],
      "handoff_to": "none",
-     "share_pct": 15,
+     "share_pct": 14,
      "fate": "person_does",
      "remaining_pct": 30,
      "block": "integration",
@@ -256,6 +256,36 @@
      "approval_refs": []
     },
     {
+     "id": "s1o",
+     "what": "Surgeon places the surgery request as an order in the patient record",
+     "actor": "surgeon",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "surgery requests"
+     ],
+     "outputs": [
+      "request order"
+     ],
+     "handoff_to": "surgical technologist",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s2",
      "what": "Surgical technologist checks each patient's pre-operative screening and consent",
      "actor": "surgical technologist",
@@ -264,7 +294,8 @@
       "OTHER"
      ],
      "inputs": [
-      "request list"
+      "request list",
+      "request order"
      ],
      "outputs": [
       "ready patients"
@@ -374,10 +405,10 @@
      "approval_refs": []
     },
     {
-     "id": "s6",
-     "what": "Surgical technologist phones patients with the date and fasting instructions",
+     "id": "s5b",
+     "what": "Surgical technologist checks each patient's message against the final day list: date, arrival time, fasting instructions and the patient's portal account",
      "actor": "surgical technologist",
-     "today_means": "paper_phone",
+     "today_means": "system_screen",
      "systems": [
       "TELEPHONY"
      ],
@@ -385,12 +416,42 @@
       "final day list"
      ],
      "outputs": [
+      "patient messages checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 2,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6",
+     "what": "Surgical technologist releases the checked date and fasting messages to the patients' portal",
+     "actor": "surgical technologist",
+     "today_means": "system_screen",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "patient messages checked"
+     ],
+     "outputs": [
       "patients informed"
      ],
      "handoff_to": "customer",
-     "share_pct": 15,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
      "block": "notification",
      "rung": "configure",
      "loop": null,
@@ -404,9 +465,39 @@
      "approval_refs": [
       "a1"
      ]
+    },
+    {
+     "id": "s6p",
+     "what": "Surgical technologist phones patients who do not use the portal with the date and fasting instructions",
+     "actor": "surgical technologist",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "patient messages checked"
+     ],
+     "outputs": [
+      "patients phoned"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 12,
+     "fate": "person_does",
+     "remaining_pct": 15,
+     "block": "conversation",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": false,
+     "boundary": "system_or_means",
+     "workflow": "meetings-and-calendar",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
     }
    ],
-   "design": "Surgeons place surgery requests as orders in the patient record ({OTHER}), and a worklist shows each patient's screening and consent status. The planning board estimates each procedure's duration from the surgeon's past cases and flags overbooked sessions. After the schedule is agreed and the technologist has finalised the day list, patients get the date and fasting instructions through the patient portal, with a call for those who do not use it. Agreeing the schedule stays with the technologist and the team.",
+   "design": "Surgeons place surgery requests as orders in the patient record ({OTHER}), and a worklist shows each patient's screening and consent status. The planning board estimates each procedure's duration from the surgeon's past cases and flags overbooked sessions. After the schedule is agreed and the technologist has finalised the day list, the technologist checks each patient's message against it and releases the messages once through the patient portal; patients who do not use the portal still get a call. Agreeing the schedule stays with the technologist and the team.",
    "previous_blocker": "Requests came on paper and by e-mail, durations were guessed and patients were phoned one by one.",
    "enabler_now": "OR planning modules estimate durations from past cases and send portal messages.",
    "still_hard": "Emergencies break the schedule every day.",
@@ -448,7 +539,7 @@
     "Boundary: from surgery requests to patients informed; the operation itself is outside.",
     "Input contract: requests ordered by surgeons; screening status from the pre-operative clinic; fallback is paper and phone.",
     "Patients read the portal message in about the time a call took; no added patient time.",
-    "Agreeing the schedule does not change."
+    "Agreeing and finalising the schedule, the message check and the release keep their full time. s1 keeps 30 because orders replace collecting paper and e-mail, with emergencies still phoned in; s2 keeps 60 because the worklist shows status and checking stays; s3 keeps 70 because durations are estimated and overbooking is flagged, while the technologist still plans. s6p keeps 15 for the share of patients who do not use the portal. The surgeon's order (s1o) is other-role time."
    ],
    "unknowns": [
     "Operations scheduled per week."
@@ -460,9 +551,9 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "Surgical technologist phones patients who do not use the portal.",
+      "description": "No separate upkeep: calls to patients without the portal are kept in s6p.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 1.5
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
@@ -470,22 +561,22 @@
     {
      "id": "a1",
      "action_step_id": "s6",
-     "approved_version": "The day list as finalised by the technologist in s5.",
-     "approval_step_id": "s5",
+     "approved_version": "Each patient's message with operation date, arrival time and fasting instructions exactly as checked by the technologist in s5b against the final day list, sent once to that patient's portal account; any change to the day list needs a new check and message.",
+     "approval_step_id": "s5b",
      "approver": "surgical technologist"
     }
    ],
    "time_saved_range_pct": {
-    "low": 13,
-    "high": 26,
-    "basis": "Low: many patients without portal use and frequent emergencies; high: elective lists with most patients on the portal."
+    "low": 26.8,
+    "high": 35.3,
+    "basis": "Low: half of patients do not use the portal and surgeons still e-mail many requests, so s6p keeps 50 and s1 keeps 60 (26.8); high: most patients use the portal and requests come as orders (35.3)."
    },
-   "focal_role_share_pct": 100,
-   "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 40.5,
-   "incremental_hours_per_100_baseline_hours": 1.5,
-   "time_saved_pct": 39.0,
-   "speedup": 1.639344,
+   "focal_role_share_pct": 99,
+   "excluded_labour_share_pct": 1,
+   "gross_time_saved_pct": 35.353535,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 35.353535,
+   "speedup": 1.546875,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -494,7 +585,7 @@
    "steps": [
     {
      "id": "s1",
-     "what": "Surgical technologist checks stock of sterile supplies in the OR store",
+     "what": "Surgical technologist checks stock of sterile supplies in the OR store: by counting shelves today, by scanning the cards of empty bins after the change",
      "actor": "surgical technologist",
      "today_means": "in_person",
      "systems": [],
@@ -562,10 +653,10 @@
       "order proposal"
      ],
      "outputs": [
-      "checked order"
+      "adjusted order"
      ],
      "handoff_to": "none",
-     "share_pct": 18,
+     "share_pct": 17,
      "fate": "person_reviews",
      "remaining_pct": 100,
      "block": "judgement_step",
@@ -581,8 +672,38 @@
      "approval_refs": []
     },
     {
+     "id": "s3b",
+     "what": "Surgical technologist checks the final order: items, quantities against coming operations, supplier and delivery date",
+     "actor": "surgical technologist",
+     "today_means": "system_screen",
+     "systems": [
+      "PROCUREMENT"
+     ],
+     "inputs": [
+      "adjusted order"
+     ],
+     "outputs": [
+      "checked order"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_reviews",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s4",
-     "what": "Surgical technologist orders surgical supplies in the purchasing system",
+     "what": "Surgical technologist releases the checked order to suppliers in the purchasing system: by typing it today, by one release after the change",
      "actor": "surgical technologist",
      "today_means": "system_screen",
      "systems": [
@@ -596,8 +717,8 @@
      ],
      "handoff_to": "external",
      "share_pct": 12,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_does",
+     "remaining_pct": 10,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -613,6 +734,36 @@
      ]
     },
     {
+     "id": "s4b",
+     "what": "Surgical technologist checks the loan set and implant request: operation, sets, sizes and the supplier to call",
+     "actor": "surgical technologist",
+     "today_means": "system_screen",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "adjusted order"
+     ],
+     "outputs": [
+      "loan request checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s5",
      "what": "Surgical technologist arranges loan sets and implants with suppliers by phone",
      "actor": "surgical technologist",
@@ -621,13 +772,13 @@
       "TELEPHONY"
      ],
      "inputs": [
-      "checked order"
+      "loan request checked"
      ],
      "outputs": [
       "loan sets arranged"
      ],
      "handoff_to": "external",
-     "share_pct": 18,
+     "share_pct": 17,
      "fate": "person_does",
      "remaining_pct": 100,
      "block": "conversation",
@@ -645,7 +796,7 @@
      ]
     }
    ],
-   "design": "The OR store runs a two-bin system: scanning the barcode of an empty bin adds it to an order proposal in the purchasing system ({PROCUREMENT}), so shelves are not counted. The technologist checks the proposal against coming operations, and once checked the order goes to suppliers electronically. Arranging loan sets and implants for special cases stays a call with the supplier.",
+   "design": "The OR store runs a two-bin system: scanning the barcode of an empty bin adds it to an order proposal in the purchasing system ({PROCUREMENT}), so shelves are not counted. The technologist checks the proposal against coming operations, checks the final order and releases it once to suppliers electronically. Arranging loan sets and implants for special cases stays a call with the supplier.",
    "previous_blocker": "Shelves were counted and orders typed from handwritten lists.",
    "enabler_now": "Two-bin scanning and purchasing systems create order proposals and send them electronically.",
    "still_hard": "Loan sets for rare procedures need personal contact with suppliers.",
@@ -680,7 +831,7 @@
    "assumptions": [
     "Boundary: from the OR store to the order placed; receiving deliveries and paying invoices are outside.",
     "Input contract: bin sizes set by the OR and purchasing; supplier catalogues in the purchasing system; fallback is counting and typing.",
-    "Checking against the schedule and arranging loan sets stay with the technologist.",
+    "Checking against the schedule, both final checks and arranging loan sets keep their full time. s1 keeps 40 for the round scanning empty bins; s2 keeps 30 for adding items outside the bins; s4 keeps 10 for the release.",
     "Suppliers take electronic orders."
    ],
    "unknowns": [
@@ -703,29 +854,29 @@
     {
      "id": "a1",
      "action_step_id": "s4",
-     "approved_version": "The order as checked against coming operations by the technologist in s3.",
-     "approval_step_id": "s3",
+     "approved_version": "The order with items, quantities, supplier and delivery date exactly as checked by the technologist in s3b, sent once electronically to that supplier; any change needs a new check.",
+     "approval_step_id": "s3b",
      "approver": "surgical technologist"
     },
     {
      "id": "a2",
      "action_step_id": "s5",
-     "approved_version": "The loan sets and implants as listed in the order checked by the technologist in s3.",
-     "approval_step_id": "s3",
+     "approved_version": "The loan sets and implants with sizes and operation date exactly as checked by the technologist in s4b, requested once from the named supplier; any change needs a new check.",
+     "approval_step_id": "s4b",
      "approver": "surgical technologist"
     }
    ],
    "time_saved_range_pct": {
-    "low": 13,
-    "high": 27,
-    "basis": "Low: many special items and loan sets; high: mostly standard sterile supplies."
+    "low": 27.7,
+    "high": 43.3,
+    "basis": "Low: many special items stay outside the bins, so they are still counted and typed and s1 keeps 70, s2 keeps 60 (27.7); high: standard supplies run on bins as designed (43.3)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 45.5,
+   "gross_time_saved_pct": 44.3,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 44.5,
-   "speedup": 1.801802,
+   "time_saved_pct": 43.3,
+   "speedup": 1.763668,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -747,9 +898,9 @@
      "handoff_to": "none",
      "share_pct": 20,
      "fate": "person_does",
-     "remaining_pct": 40,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -762,7 +913,7 @@
     },
     {
      "id": "s2",
-     "what": "Surgical technologist sticks implant labels and writes lot numbers in the paper file",
+     "what": "Surgical technologist records implants and lot numbers: by sticking labels and writing in the paper file today, by scanning each implant barcode after the change",
      "actor": "surgical technologist",
      "today_means": "document",
      "systems": [],
@@ -852,7 +1003,7 @@
     },
     {
      "id": "s5",
-     "what": "Surgical technologist files the operation record in the patient file",
+     "what": "Surgical technologist files the operation record in the patient file: on paper today, by saving it in the record after the change",
      "actor": "surgical technologist",
      "today_means": "document",
      "systems": [
@@ -866,25 +1017,23 @@
      ],
      "handoff_to": "none",
      "share_pct": 5,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_does",
+     "remaining_pct": 20,
      "block": "integration",
      "rung": "configure",
      "loop": null,
      "authority": "write_internal",
-     "human_gate": true,
+     "human_gate": false,
      "boundary": "system_or_means",
      "workflow": "documents-and-records",
-     "approver": "surgical technologist",
+     "approver": "none",
      "labour_scope": "focal_role",
      "shared_step_id": "",
-     "approval_refs": [
-      "a1"
-     ]
+     "approval_refs": []
     },
     {
      "id": "s6",
-     "what": "Surgical technologist files instrument set and sterilisation labels",
+     "what": "Surgical technologist files instrument set and sterilisation labels: by sticking them in the file today, by scanning each set after the change",
      "actor": "surgical technologist",
      "today_means": "document",
      "systems": [],
@@ -911,7 +1060,7 @@
      "approval_refs": []
     }
    ],
-   "design": "The OR module of the patient record ({OTHER}) takes counts on screen during the two-person count, implant identifiers and lot numbers by barcode scan, and times from the OR's own time stamps, with a template per procedure for positioning and devices. Instrument sets are scanned so the sterilisation batch links to the patient. Once the technologist has checked the record complete, it is saved to the patient file. The counts themselves stay a two-person check.",
+   "design": "The OR module of the patient record ({OTHER}) takes counts on screen during the two-person count (this takes the same time as the paper sheet), implant identifiers and lot numbers by barcode scan, and times from the OR's own time stamps, with a template per procedure for positioning and devices. Instrument sets are scanned so the sterilisation batch links to the patient. Once the technologist has checked the record complete, they save it in the patient file; this is their own save in the same system and needs no approval. The counts themselves stay a two-person check.",
    "previous_blocker": "Counts, implant stickers and set labels lived on paper sheets filed with the record.",
    "enabler_now": "OR modules record counts, scan implants and sets, and take time stamps.",
    "still_hard": "Busy emergencies leave entries for after the operation.",
@@ -952,7 +1101,7 @@
    "assumptions": [
     "Boundary: from counts done and implants used to the record filed; billing is outside.",
     "Input contract: barcodes on implants and sets; time stamps from the OR system; fallback is paper sheets and stickers.",
-    "The two-person count does not change.",
+    "The two-person count, recording the counts and checking the record keep their full time. s2 keeps 20 for scanning implants; s3 keeps 70 because time stamps come from the OR and the template gives standard positioning, and the technologist still records what was done; s5 keeps 20 for the save; s6 keeps 40 for scanning sets.",
     "Scanners are within reach in every OR."
    ],
    "unknowns": [
@@ -971,26 +1120,18 @@
      }
     ]
    },
-   "approvals": [
-    {
-     "id": "a1",
-     "action_step_id": "s5",
-     "approved_version": "The operation record as checked complete by the technologist in s4.",
-     "approval_step_id": "s4",
-     "approver": "surgical technologist"
-    }
-   ],
+   "approvals": [],
    "time_saved_range_pct": {
-    "low": 17,
-    "high": 34,
-    "basis": "Low: older ORs without scanners and many emergencies; high: scanners in every OR and mostly elective lists."
+    "low": 24.0,
+    "high": 38.0,
+    "basis": "Low: older ORs have no scanner within reach, so half of implants and sets are still labelled by hand and s2 keeps 60, s6 keeps 70 (24.0); high: scanners in every OR (38.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 52.5,
+   "gross_time_saved_pct": 39.5,
    "incremental_hours_per_100_baseline_hours": 1.5,
-   "time_saved_pct": 51.0,
-   "speedup": 2.040816,
+   "time_saved_pct": 38.0,
+   "speedup": 1.612903,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1033,6 +1174,6 @@
   "digest": "research/digests-minor/29-2.md",
   "digest_sha256": "b8bd66fb5c85e7c8a1fa26f1cded445238cbc7e74ade18211b6edeb0116b4232",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T20:08:30"
+  "finalized": "2026-10-17T08:16:52"
  }
 }

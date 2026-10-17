@@ -80,9 +80,9 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 50,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -94,7 +94,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Each test has an information page with a short video in the patient portal ({OTHER}), linked from the appointment, covering preparation and what will happen, so fewer patients phone with preparation questions. That the patient was informed is recorded with a tick box in the test record instead of a free-text note. Explaining the test at the start stays with the technologist.",
+   "design": "Each test has an information page with a short video in the patient portal ({OTHER}), linked from the appointment, covering preparation and what will happen, so fewer patients phone with preparation questions. The technologist records that the patient was informed as today. Explaining the test at the start stays with the technologist.",
    "previous_blocker": "Preparation questions came by phone and information was noted in free text.",
    "enabler_now": "Patient portals host information pages and videos per test.",
    "still_hard": "Patients who do not use the portal still call.",
@@ -136,7 +136,7 @@
     "Boundary: from the patient arrived to information recorded; the test is outside.",
     "Input contract: information page per test; fallback is phone questions.",
     "Patients read or watch the page before the test; a little patient time is priced.",
-    "Explaining at the start does not change."
+    "Explaining at the start and recording that the patient was informed keep their full time; a tick box instead of a note is not a saving. s2 keeps 60 because fewer patients phone with preparation questions."
    ],
    "unknowns": [
     "Preparation calls per week."
@@ -161,16 +161,16 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 3,
-    "high": 6,
-    "basis": "Low: few preparation calls; high: many first-time patients."
+    "low": 1.0,
+    "high": 3.5,
+    "basis": "Low: few patients open the page, so most still phone (s2 keeps 85) (1.0); high: many first-time patients use the page (3.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 9.0,
+   "gross_time_saved_pct": 4.0,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 8.5,
-   "speedup": 1.092896,
+   "time_saved_pct": 3.5,
+   "speedup": 1.036269,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -352,9 +352,9 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 4,
-    "high": 8,
-    "basis": "Low: older monitors; high: linked monitors in every room."
+    "low": 5.5,
+    "high": 11.5,
+    "basis": "Low: older monitors in half of the rooms are not linked, so readings are still written there (s4 keeps 60) (5.5); high: linked monitors in every room (11.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
@@ -368,6 +368,34 @@
    "uid": "29-2031.00:4134",
    "short": "Check the patient's identity, ask about medical history and medication, type the answers into the test system, and enter test results into the record.",
    "steps": [
+    {
+     "id": "s0",
+     "what": "Patient fills the history and medication questionnaire in the patient portal before the visit",
+     "actor": "patient",
+     "today_means": "system_screen",
+     "systems": [],
+     "inputs": [
+      "appointment"
+     ],
+     "outputs": [
+      "questionnaire answers"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "customer",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
     {
      "id": "s1",
      "what": "Cardiovascular technologist obtains patient identification at the desk",
@@ -398,18 +426,19 @@
     },
     {
      "id": "s2",
-     "what": "Cardiovascular technologist asks about medical history and medication",
+     "what": "Cardiovascular technologist asks about medical history and medication: from scratch today; confirming and adding to the patient's questionnaire answers after the change",
      "actor": "cardiovascular technologist",
      "today_means": "in_person",
      "systems": [],
      "inputs": [
-      "identity checked"
+      "identity checked",
+      "questionnaire answers"
      ],
      "outputs": [
       "history taken"
      ],
      "handoff_to": "customer",
-     "share_pct": 35,
+     "share_pct": 34,
      "fate": "person_does",
      "remaining_pct": 60,
      "block": "crud_app",
@@ -456,7 +485,7 @@
     },
     {
      "id": "s4",
-     "what": "Cardiovascular technologist records test results in the patient record",
+     "what": "Cardiovascular technologist records test results: typed into the record today; sent by the device and completed by hand where needed after the change",
      "actor": "cardiovascular technologist",
      "today_means": "system_screen",
      "systems": [
@@ -466,10 +495,10 @@
       "history recorded"
      ],
      "outputs": [
-      "results recorded"
+      "device results"
      ],
      "handoff_to": "none",
-     "share_pct": 30,
+     "share_pct": 28,
      "fate": "person_does",
      "remaining_pct": 20,
      "block": "integration",
@@ -483,9 +512,71 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s4c",
+     "what": "Cardiovascular technologist checks the device results attached to the record: patient, test type and values against the device",
+     "actor": "cardiovascular technologist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "device results"
+     ],
+     "outputs": [
+      "results checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4s",
+     "what": "Cardiovascular technologist releases the checked results to the patient record",
+     "actor": "cardiovascular technologist",
+     "today_means": "system_screen",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "results checked"
+     ],
+     "outputs": [
+      "results recorded"
+     ],
+     "handoff_to": "physician",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "cardiovascular technologist",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     }
    ],
-   "design": "Patients fill a history and medication questionnaire in the patient portal before the visit, and the answers and the record's medication list appear in the test system ({OTHER}), so the technologist confirms and adds to them instead of asking from scratch and typing. Test results go from the EKG, echo or stress-test device into the record through an integration instead of being typed. Checking identity stays with the technologist.",
+   "design": "Patients fill a history and medication questionnaire in the patient portal before the visit, and the answers and the record's medication list appear in the test system ({OTHER}), so the technologist confirms and adds to them instead of asking from scratch and typing. Test results go from the EKG, echo or stress-test device to the record through an integration instead of being typed; the technologist checks patient, test and values and releases them once. Checking identity stays with the technologist.",
    "previous_blocker": "History was asked from scratch and typed, and results retyped from the device.",
    "enabler_now": "Portals take pre-visit questionnaires; test devices export results to the record.",
    "still_hard": "Older devices print results only.",
@@ -526,7 +617,7 @@
    "assumptions": [
     "Boundary: from the patient arrived to results recorded; reporting the test is outside.",
     "Input contract: devices linked to the record; fallback is typing.",
-    "Patients fill the questionnaire before the visit; a little patient time is priced.",
+    "Patients fill the questionnaire before the visit (s0); their time is shown there and is outside the technologist's savings. s2 keeps 60 because the technologist confirms and adds to the answers with the patient; the results check and release keep their full time.",
     "Identity checks do not change."
    ],
    "unknowns": [
@@ -539,29 +630,32 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "Cardiovascular technologist checks questionnaire answers with the patient.",
+      "description": "No new work: confirming answers with the patient is in s2's remaining time, and the patient's time is in s0.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 1
-     },
-     {
-      "description": "Patients fill the history questionnaire before the visit.",
-      "labour_scope": "customer",
-      "hours_per_100_baseline_hours": 1
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4s",
+     "approved_version": "The test results with patient, test type and values exactly as checked by the technologist in s4c, released once to this patient's record; any correction needs a new check.",
+     "approval_step_id": "s4c",
+     "approver": "cardiovascular technologist"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 17,
-    "high": 34,
-    "basis": "Low: older devices and few portal users; high: linked devices and most questionnaires filled."
+    "low": 22.5,
+    "high": 50.5,
+    "basis": "Low: older devices are not linked (s4 keeps 60) and few patients fill the questionnaire (s2 keeps 85, s3 keeps 70) (22.5); high: linked devices and most questionnaires filled (50.5)."
    },
-   "focal_role_share_pct": 100,
-   "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 52.0,
-   "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 51.0,
-   "speedup": 2.040816,
+   "focal_role_share_pct": 99,
+   "excluded_labour_share_pct": 1,
+   "gross_time_saved_pct": 50.505051,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 50.505051,
+   "speedup": 2.020408,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -641,7 +735,7 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_does",
-     "remaining_pct": 50,
+     "remaining_pct": 85,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -655,7 +749,7 @@
      "approval_refs": []
     }
    ],
-   "design": "The test report ({OTHER}) gets pick lists for common patient responses (chest pain, dizziness, test stopped early and why) with time stamps from the device, so the technologist adds free text only for unusual events. Watching the patient and alerting the physician stay with the technologist.",
+   "design": "The test report ({OTHER}) gets pick lists for common patient responses (chest pain, dizziness, test stopped early and why) with time stamps from the device, and the technologist records each response and incident as today. Watching the patient and alerting the physician stay with the technologist.",
    "previous_blocker": "Responses and incidents were written in free text.",
    "enabler_now": "Test reports can hold pick lists with device time stamps.",
    "still_hard": "Unusual events still need free text.",
@@ -690,7 +784,7 @@
    "assumptions": [
     "Boundary: from the test running to responses recorded; treatment of events is outside.",
     "Input contract: pick lists set up; fallback is free text.",
-    "Watching patients does not change.",
+    "Watching patients and alerting the physician keep their full time. s3 keeps 85 because only the device time stamps fill in; picking a response instead of typing it is not a saving.",
     "Patients' time does not change."
    ],
    "unknowns": [
@@ -703,24 +797,24 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "Cardiovascular technologist adds free text for unusual events.",
+      "description": "No new work: writing free text for unusual events is in s3's remaining time.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 0.5
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 2,
-    "high": 5,
-    "basis": "Low: few events; high: busy stress-test lists."
+    "low": 0.7,
+    "high": 2.2,
+    "basis": "Low: device time stamps are often missing, so times are still typed (s3 keeps 95) (0.7); high: busy stress-test lists with device times (2.2)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 7.5,
-   "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 7.0,
-   "speedup": 1.075269,
+   "gross_time_saved_pct": 2.25,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 2.25,
+   "speedup": 1.023018,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -766,6 +860,6 @@
   "digest": "research/digests-minor/29-2.md",
   "digest_sha256": "b8bd66fb5c85e7c8a1fa26f1cded445238cbc7e74ade18211b6edeb0116b4232",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T19:09:09"
+  "finalized": "2026-10-17T08:33:24"
  }
 }

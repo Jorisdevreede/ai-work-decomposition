@@ -67,14 +67,14 @@
      "handoff_to": "none",
      "share_pct": 40,
      "fate": "person_reviews",
-     "remaining_pct": 60,
+     "remaining_pct": 85,
      "block": "crud_app",
      "rung": "deterministic_plus_loop",
      "loop": {
       "purpose": "extract",
       "input": "The servicer's voice note about the job.",
       "output": "Draft job text and a suggested fault code from the company's list.",
-      "check": "The servicer confirms the text and picks or changes the code before closing the work order.",
+      "check": "The servicer reads the drafted text against the repair done and the suggested code against the stated cause, picks or changes the code, and types the text when the draft is unclear, before closing the work order.",
       "stop": "If no code fits, the job goes to the service planner to code.",
       "why_not_simpler": "Servicers describe faults in their own words, often with gloves on."
      },
@@ -196,7 +196,7 @@
    "assumptions": [
     "Boundary: records of maintenance and repair; the repair itself is outside.",
     "Input contract for s3: records come from work orders closed on the phone in s2; about 90% of machines carry labels; jobs on unlabelled machines are still typed; s3 is priced at that share.",
-    "Recording on the phone takes most of the time paper took."
+    "Recording on the phone takes most of the time paper took: s2 keeps 85 because only writing times goes to the start and stop taps. s1 keeps 60 because the scan opens the history; s4 keeps 50 because required fields stop most gaps."
    ],
    "unknowns": [
     "Share of machines with labels."
@@ -224,16 +224,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 20,
-    "high": 45,
-    "basis": "Low: many unlabelled machines and little phone use; high: 90% labelled machines, all jobs closed on the phone."
+    "low": 26.0,
+    "high": 43.5,
+    "basis": "Low: many unlabelled machines and little phone use, so histories are looked up and sheets typed as today (26.0); high: about 90% of machines labelled (43.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 54.0,
+   "gross_time_saved_pct": 44.0,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 53.5,
-   "speedup": 2.150538,
+   "time_saved_pct": 43.5,
+   "speedup": 1.769912,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -338,7 +338,7 @@
     },
     {
      "id": "s4",
-     "what": "Buyer approves the final order request",
+     "what": "Buyer checks the final order request: parts, quantities, price, supplier and delivery address",
      "actor": "buyer",
      "today_means": "email_chat",
      "systems": [
@@ -357,7 +357,7 @@
      "block": "judgement_step",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "procure-to-pay",
@@ -493,9 +493,9 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 12,
-    "high": 28,
-    "basis": "Low: old machines with few catalogue parts; high: current models at 70% catalogue coverage."
+    "low": 26.1,
+    "high": 34.5,
+    "basis": "Low: old machines with few catalogue parts, so part numbers are still found in manuals (26.1); high: current models at about 70% catalogue coverage (34.5)."
    },
    "focal_role_share_pct": 90,
    "excluded_labour_share_pct": 10,
@@ -567,7 +567,7 @@
     },
     {
      "id": "s3",
-     "what": "Servicer records transaction information: the cash count per machine",
+     "what": "Servicer records transaction information: the cash count per machine, on the collection form today and on the phone after the change",
      "actor": "vending machine servicer",
      "today_means": "paper_phone",
      "systems": [
@@ -582,9 +582,9 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 50,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -654,7 +654,7 @@
     },
     {
      "id": "s6",
-     "what": "Servicer notifies designated personnel of discrepancies",
+     "what": "Servicer writes the discrepancy and its cause: phoned through today, as a note on the flagged gap after the change",
      "actor": "vending machine servicer",
      "today_means": "paper_phone",
      "systems": [
@@ -665,16 +665,16 @@
       "cause found"
      ],
      "outputs": [
-      "discrepancy reported"
+      "discrepancy note"
      ],
-     "handoff_to": "finance office",
-     "share_pct": 10,
+     "handoff_to": "none",
+     "share_pct": 8,
      "fate": "person_does",
-     "remaining_pct": 30,
+     "remaining_pct": 70,
      "block": "notification",
      "rung": "configure",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "draft",
      "human_gate": false,
      "boundary": "artefact",
      "workflow": "record-to-report",
@@ -682,6 +682,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s6c",
+     "what": "Servicer checks the discrepancy report: machine, amounts, the gap and the stated cause",
+     "actor": "vending machine servicer",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "discrepancy note"
+     ],
+     "outputs": [
+      "report checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "record-to-report",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6s",
+     "what": "Servicer notifies designated personnel of discrepancies by sending the checked report to the named person in the finance office",
+     "actor": "vending machine servicer",
+     "today_means": "paper_phone",
+     "systems": [
+      "TELEPHONY"
+     ],
+     "inputs": [
+      "report checked"
+     ],
+     "outputs": [
+      "discrepancy reported"
+     ],
+     "handoff_to": "finance office",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "vending machine servicer",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s7",
@@ -712,8 +774,16 @@
      "approval_refs": []
     }
    ],
-   "design": "Telemetry units in the machines send sales counts to the vending management system, so the servicer no longer reads and writes counters; machines without telemetry are read on the phone. The servicer counts cash and enters the total on the phone. A rule compares cash with sales and flags gaps above a set amount. The servicer checks the machine for the cause, and the flag notifies the named person in the finance office with the servicer's note. The phone record replaces paper forms.",
-   "approvals": [],
+   "design": "Telemetry units in the machines send sales counts to the vending management system, so the servicer no longer reads and writes counters; machines without telemetry are read on the phone. The servicer counts cash and enters the total on the phone in about the time the form took. A rule compares cash with sales and flags gaps above a set amount. The servicer checks the machine for the cause, writes a note on the flagged gap, checks the report and sends it once to the named person in the finance office. The phone record replaces paper forms.",
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s6s",
+     "approved_version": "The discrepancy report with machine, amounts, gap and cause exactly as checked by the servicer in s6c, sent once to the named person in the finance office; any change needs a new check.",
+     "approval_step_id": "s6c",
+     "approver": "vending machine servicer"
+    }
+   ],
    "previous_blocker": "Counters were read by hand and gaps found when the office added up forms days later.",
    "enabler_now": "Machine telemetry and mobile collection records.",
    "still_hard": "Gaps from coins stuck in the mechanism versus theft.",
@@ -761,7 +831,7 @@
     "Boundary: transaction records and discrepancy reports for collections; banking the cash is outside.",
     "Input contract for s1: telemetry units fitted by the operator send sales counts; about 80% of machines have them; the rest are read on the phone; s1 is priced at that share.",
     "Input contract for s7: the record entered on the phone in s3 replaces the paper form.",
-    "Cash counting and finding causes keep their full time."
+    "Cash counting, recording the count, finding causes and the report check keep their full time; the count is a first record. s4 keeps 30 for reading the flags; s6 keeps 70 because the call goes and the note on the cause is still written."
    ],
    "unknowns": [
     "Share of machines with telemetry."
@@ -780,16 +850,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 18,
-    "high": 40,
-    "basis": "Low: few machines with telemetry; high: 80% telemetry coverage."
+    "low": 27.4,
+    "high": 38.6,
+    "basis": "Low: few machines with telemetry, so most counters are still read and entered (27.4); high: about 80% telemetry coverage (38.6)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 48.75,
+   "gross_time_saved_pct": 39.15,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 48.25,
-   "speedup": 1.932367,
+   "time_saved_pct": 38.65,
+   "speedup": 1.629992,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -826,7 +896,7 @@
     },
     {
      "id": "s2",
-     "what": "Servicer records the cash count per machine",
+     "what": "Servicer records the cash count per machine: on the route sheet today, on the phone after the change",
      "actor": "vending machine servicer",
      "today_means": "paper_phone",
      "systems": [
@@ -841,9 +911,9 @@
      "handoff_to": "none",
      "share_pct": 15,
      "fate": "person_does",
-     "remaining_pct": 50,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -917,7 +987,7 @@
     },
     {
      "id": "s5",
-     "what": "Servicer checks the daily totals and signs them",
+     "what": "Servicer checks the daily totals against the van stock and the cash in hand",
      "actor": "vending machine servicer",
      "today_means": "document",
      "systems": [
@@ -927,16 +997,16 @@
       "daily report"
      ],
      "outputs": [
-      "report signed"
+      "totals checked"
      ],
-     "handoff_to": "finance office",
-     "share_pct": 15,
+     "handoff_to": "none",
+     "share_pct": 14,
      "fate": "person_reviews",
      "remaining_pct": 100,
      "block": "judgement_step",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "record-to-report",
@@ -944,10 +1014,50 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s5s",
+     "what": "Servicer signs and submits the checked daily report to the finance office",
+     "actor": "vending machine servicer",
+     "today_means": "document",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "totals checked"
+     ],
+     "outputs": [
+      "report signed"
+     ],
+     "handoff_to": "finance office",
+     "share_pct": 1,
+     "fate": "person_reviews",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "record-to-report",
+     "approver": "vending machine servicer",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     }
    ],
-   "design": "Telemetry sends sales per column since the last visit, so the fill per column is known before the servicer opens the machine; the servicer confirms or corrects the fill on the phone. Cash is entered as a count per machine. Confirmed fills lower the van stock list, and the daily report totals merchandise and money from these records instead of a spreadsheet. The servicer checks and signs the totals.",
-   "approvals": [],
+   "design": "Telemetry sends sales per column since the last visit, so the fill per column is known before the servicer opens the machine; the servicer confirms or corrects the fill on the phone. Cash is entered as a count per machine in about the time the route sheet took. Confirmed fills lower the van stock list, and the daily report totals merchandise and money from these records instead of a spreadsheet. The servicer checks the totals, then signs and submits the report once to the finance office.",
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s5s",
+     "approved_version": "The daily report with merchandise and money totals exactly as checked by the servicer in s5, signed and submitted once to the finance office for that route and day; any correction needs a new check.",
+     "approval_step_id": "s5",
+     "approver": "vending machine servicer"
+    }
+   ],
    "previous_blocker": "Fills and cash were written on route sheets and added up by hand.",
    "enabler_now": "Machine telemetry and mobile route records.",
    "still_hard": "Products swapped between columns without updating the planogram.",
@@ -989,7 +1099,7 @@
     "Boundary: records of merchandise and money per route; filling the machines is outside.",
     "Input contract for s1: telemetry units fitted by the operator report sales per column; about 80% of machines have them; the rest are counted and entered on the phone; s1 is priced at that share.",
     "Input contract for s3 and s4: fills confirmed in s1 and cash entered in s2.",
-    "Checking and signing keep their full time."
+    "Checking, signing and recording the cash count keep their full time; the count is a first record. s1 keeps 30 for confirming fills; s3 keeps 30 and s4 keeps 10 for reading the derived figures."
    ],
    "unknowns": [
     "Share of machines with telemetry."
@@ -1008,16 +1118,16 @@
     ]
    },
    "time_saved_range_pct": {
-    "low": 22,
-    "high": 50,
-    "basis": "Low: few machines with telemetry; high: 80% telemetry coverage."
+    "low": 33.5,
+    "high": 52.5,
+    "basis": "Low: few machines with telemetry, so most fills are still counted and van stock updated by hand (33.5); high: about 80% telemetry coverage (52.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 60.5,
+   "gross_time_saved_pct": 53.0,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 60.0,
-   "speedup": 2.5,
+   "time_saved_pct": 52.5,
+   "speedup": 2.105263,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1047,6 +1157,6 @@
   "digest": "research/digests-minor/49-9.md",
   "digest_sha256": "3849b8b576c7677a1e7ae770e6a9c9fcdb1d2658bb90352f893da1a8394bdd4b",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T23:59:26"
+  "finalized": "2026-10-17T08:35:06"
  }
 }

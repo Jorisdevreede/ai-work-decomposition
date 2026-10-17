@@ -68,7 +68,7 @@
     },
     {
      "id": "s3",
-     "what": "Supervisor records sick calls and leave taken in a spreadsheet",
+     "what": "Supervisor records sick calls and leave taken, with dates and codes only: in a spreadsheet today, in the time and attendance system after the change",
      "actor": "production supervisor",
      "today_means": "spreadsheet",
      "systems": [
@@ -78,14 +78,14 @@
       "attendance exceptions"
      ],
      "outputs": [
-      "absence records"
+      "absence entries"
      ],
-     "handoff_to": "HR advisor",
-     "share_pct": 20,
+     "handoff_to": "none",
+     "share_pct": 18,
      "fate": "person_does",
-     "remaining_pct": 50,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -95,6 +95,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s3c",
+     "what": "Supervisor checks the week's absence entries: names, dates and codes, and that no cause of illness is recorded",
+     "actor": "production supervisor",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "absence entries"
+     ],
+     "outputs": [
+      "absence checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "absence-to-return",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3s",
+     "what": "Supervisor releases the checked absence entries to the HR system",
+     "actor": "production supervisor",
+     "today_means": "spreadsheet",
+     "systems": [
+      "SPREADSHEET"
+     ],
+     "inputs": [
+      "absence checked"
+     ],
+     "outputs": [
+      "absence records"
+     ],
+     "handoff_to": "HR advisor",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "absence-to-return",
+     "approver": "production supervisor",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
     },
     {
      "id": "s4",
@@ -129,7 +191,7 @@
     },
     {
      "id": "s5",
-     "what": "Supervisor checks and approves the weekly hours",
+     "what": "Supervisor checks the week's hours per employee against the roster, absences and approved overtime",
      "actor": "production supervisor",
      "today_means": "spreadsheet",
      "systems": [
@@ -144,11 +206,11 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_reviews",
-     "remaining_pct": 60,
-     "block": "workflow_automation",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "pay-cycle",
@@ -159,7 +221,7 @@
     },
     {
      "id": "s6",
-     "what": "Supervisor e-mails the weekly hours file to payroll",
+     "what": "Supervisor releases the approved week to payroll: by e-mail today, by one export in the time and attendance system after the change",
      "actor": "production supervisor",
      "today_means": "email_chat",
      "systems": [
@@ -173,8 +235,8 @@
      ],
      "handoff_to": "payroll administrator",
      "share_pct": 10,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_does",
+     "remaining_pct": 10,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -220,7 +282,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Configure the time and attendance system ({OTHER}) with the collective agreement's shift, break and overtime rules so hours and allowances are computed from clockings, and show the supervisor only exceptions: missed clockings, absentees, unplanned overtime. Absence and leave are recorded there with codes that flow to the {HCM}, and the approved week exports to the {PAYROLL} in its import format.",
+   "design": "Configure the time and attendance system ({OTHER}) with the collective agreement's shift, break and overtime rules so hours and allowances are computed from clockings, and show the supervisor only exceptions: missed clockings, absentees, unplanned overtime. The supervisor records absence and leave there with dates and codes, checks the week's entries and releases them once to the {HCM}; after checking the week's hours, the supervisor releases them once to the {PAYROLL} in its import format.",
    "previous_blocker": "Hours were rebuilt in spreadsheets because shift rules were never set up in the time system.",
    "enabler_now": "Time systems hold shift and overtime rules and export to payroll as standard configuration.",
    "still_hard": "Collective agreement rules have exceptions; any change to working-time rules or attendance registration needs works council consent.",
@@ -262,7 +324,8 @@
     "Boundary: from clocking to hours in payroll; the pay run is outside.",
     "Input contract: clockings by operators at terminals; shift and overtime rules set by HR from the collective agreement in the time system; absence codes agreed with HR; fallback is the weekly spreadsheet.",
     "No new monitoring of operators is added beyond today's clocking.",
-    "Operator and payroll time is outside the supervisor's savings."
+    "Operator and payroll time is outside the supervisor's savings.",
+    "Recording sick calls and leave is a first record and keeps its full time; the checks of absences and hours keep theirs. s2 keeps 50 for reading the exception list; s4 keeps 40 for resolving missed clockings; s6 keeps 10 for the release."
    ],
    "unknowns": [
     "Whether shift rules can be modelled in the current time system.",
@@ -307,22 +370,29 @@
     {
      "id": "a1",
      "action_step_id": "s6",
-     "approved_version": "The week's hours per employee as approved by the supervisor in s5; corrections after approval need a new approval.",
+     "approved_version": "The week's hours and allowances per employee exactly as checked by the supervisor in s5, exported once to the {PAYROLL} in its import format for that pay week; corrections after release need a new check.",
      "approval_step_id": "s5",
+     "approver": "production supervisor"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s3s",
+     "approved_version": "The week's absence entries with names, dates and codes exactly as checked by the supervisor in s3c, released once to the {HCM}; any correction needs a new check.",
+     "approval_step_id": "s3c",
      "approver": "production supervisor"
     }
    ],
    "time_saved_range_pct": {
-    "low": 25,
-    "high": 45,
-    "basis": "Plants with many special shift arrangements that the time system cannot model keep spreadsheet corrections."
+    "low": 29.0,
+    "high": 38.3,
+    "basis": "Low: many special shift arrangements the time system cannot model, so hours are still corrected in a spreadsheet (29.0); high: the agreement's rules set up in the time system (38.3)."
    },
    "focal_role_share_pct": 80,
    "excluded_labour_share_pct": 20,
-   "gross_time_saved_pct": 58.125,
+   "gross_time_saved_pct": 39.375,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 57.125,
-   "speedup": 2.332362,
+   "time_saved_pct": 38.375,
+   "speedup": 1.622718,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -414,7 +484,7 @@
       "purpose": "classify",
       "input": "Free-text notes on the day's work orders.",
       "output": "A flag per order with the requirement type (packing, tolerance, labelling, material, other) and the quoted note text.",
-      "check": "The quoted text must appear in the note; the type must come from the fixed list; orders with any note but no flag are listed for the supervisor; the step changes nothing in the order.",
+      "check": "The quoted text must appear in the note and the type must come from the fixed list; the supervisor reads each flagged note and checks the quote states that requirement. Orders with any note but no flag are listed for the supervisor; the step changes nothing in the order.",
       "stop": "One pass per order.",
       "why_not_simpler": "Notes are written freely by sales and customers; keyword rules miss special requirements phrased in other words."
      },
@@ -428,19 +498,50 @@
      "approval_refs": []
     },
     {
+     "id": "s3b",
+     "what": "Operators enter output counts and downtime reasons at the manual station terminal",
+     "actor": "production operator",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "daily order list"
+     ],
+     "outputs": [
+      "station counts"
+     ],
+     "handoff_to": "production supervisor",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "other",
+     "approver": "none",
+     "labour_scope": "other_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s4",
      "what": "Supervisor collects output counts from machine displays and operator tally sheets",
      "actor": "production supervisor",
      "today_means": "in_person",
      "systems": [],
      "inputs": [
-      "daily order list"
+      "daily order list",
+      "station counts"
      ],
      "outputs": [
       "production outputs"
      ],
      "handoff_to": "none",
-     "share_pct": 15,
+     "share_pct": 14,
      "fate": "person_reviews",
      "remaining_pct": 30,
      "block": "integration",
@@ -594,7 +695,7 @@
     "Boundary: from reading orders to deciding adjustments; schedule changes by the planner are outside.",
     "Input contract: bills of materials and routings kept by engineering in the {ERP}; machine counts from counters connected by maintenance; counts and downtime reasons at manual stations entered by operators on a terminal; fallback is tally sheets.",
     "Counts are per machine and line, not per operator.",
-    "Planner and operator time is outside the supervisor's savings."
+    "Planner and operator time is outside the supervisor's savings; the operators' entries at manual stations are step s3b (share 1, other role)."
    ],
    "unknowns": [
     "How many machines have counters that can be connected.",
@@ -637,11 +738,6 @@
       "hours_per_100_baseline_hours": 1.5
      },
      {
-      "description": "Operators enter counts and downtime reasons at manual stations.",
-      "labour_scope": "other_role",
-      "hours_per_100_baseline_hours": 1
-     },
-     {
       "description": "Engineering keeps routing times and bills of materials accurate.",
       "labour_scope": "other_role",
       "hours_per_100_baseline_hours": 1
@@ -650,16 +746,16 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 18,
-    "high": 32,
-    "basis": "Plants with old machines without counters keep tally sheets, and wrong routing times force manual estimates."
+    "low": 34.6,
+    "high": 43.2,
+    "basis": "Low: many old machines without counters, so tally sheets are still collected and gaps worked out by hand (34.6); high: counters on most machines (43.2)."
    },
-   "focal_role_share_pct": 90,
-   "excluded_labour_share_pct": 10,
-   "gross_time_saved_pct": 45.0,
+   "focal_role_share_pct": 89,
+   "excluded_labour_share_pct": 11,
+   "gross_time_saved_pct": 44.719101,
    "incremental_hours_per_100_baseline_hours": 1.5,
-   "time_saved_pct": 43.5,
-   "speedup": 1.769912,
+   "time_saved_pct": 43.219101,
+   "speedup": 1.761156,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -1002,9 +1098,9 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 14,
-    "high": 26,
-    "basis": "Job shops with one-off orders and no setup families gain little from proposed sequences."
+    "low": 21.8,
+    "high": 34.5,
+    "basis": "Low: a job shop with one-off orders and no setup families, so proposed sequences rarely fit (21.8); high: repeat orders in setup families (34.5)."
    },
    "focal_role_share_pct": 95,
    "excluded_labour_share_pct": 5,
@@ -1063,14 +1159,14 @@
      "handoff_to": "production supervisor",
      "share_pct": 15,
      "fate": "person_reviews",
-     "remaining_pct": 50,
+     "remaining_pct": 65,
      "block": "artefact_generator",
      "rung": "deterministic_plus_loop",
      "loop": {
       "purpose": "draft",
       "input": "The supervisor's brief notes and the shift's table of output, scrap and downtime per line.",
       "output": "A shift report draft with a short commentary per line and open issues.",
-      "check": "Every number in the text must match the table; a mismatch stops the draft; each open issue must come from the notes or the issue board.",
+      "check": "Every number in the text must match the table, and a mismatch stops the draft; each open issue must come from the notes or the issue board. The supervisor reads the draft against the brief notes, removes anything the notes do not say and adds what is missing.",
       "stop": "One draft per shift; on a stop the supervisor writes the commentary.",
       "why_not_simpler": "Commentary explains why a line ran badly from free-text notes; the table alone does not say it."
      },
@@ -1144,7 +1240,7 @@
     },
     {
      "id": "s5",
-     "what": "Maintenance and quality supervisors act on the agreed issues",
+     "what": "Maintenance and quality supervisors act on the agreed issues and update them on the issue board",
      "actor": "maintenance supervisor",
      "today_means": "in_person",
      "systems": [],
@@ -1246,7 +1342,7 @@
    "assumptions": [
     "Boundary: from preparing the meeting to following up agreed issues; the other departments' work is outside.",
     "Input contract: shift table from the plan-versus-actual dashboard; issues entered with owner and due date by the supervisor who raises them; fallback is the logbook.",
-    "Other supervisors' time is outside this supervisor's savings.",
+    "Other supervisors' time is outside this supervisor's savings; their board updates are part of s5. s2 keeps 65 because the supervisor still writes brief notes and reads the whole draft against them; s4 keeps 80 and s6 keeps 60 because the board shows status but talks stay.",
     "The meeting itself does not change."
    ],
    "unknowns": [
@@ -1272,26 +1368,21 @@
       "description": "Supervisor keeps own issues updated on the board.",
       "labour_scope": "focal_role",
       "hours_per_100_baseline_hours": 1
-     },
-     {
-      "description": "Other supervisors update the issues they own.",
-      "labour_scope": "other_role",
-      "hours_per_100_baseline_hours": 1
      }
     ]
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 10,
-    "high": 20,
-    "basis": "If other departments do not update the board, the supervisor goes back to walking and calling."
+    "low": 17.8,
+    "high": 24.2,
+    "basis": "Low: other departments do not update the board, so the supervisor goes back to walking and calling (17.8); high: owners keep their issues current (24.2)."
    },
    "focal_role_share_pct": 90,
    "excluded_labour_share_pct": 10,
-   "gross_time_saved_pct": 27.777778,
+   "gross_time_saved_pct": 25.277778,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 26.777778,
-   "speedup": 1.365706,
+   "time_saved_pct": 24.277778,
+   "speedup": 1.320616,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1344,6 +1435,6 @@
   "digest": "research/digests-minor/51-1.md",
   "digest_sha256": "bce2aba18a9826d9df09648df3a69f82270ae770ea6c876c25029d9105ac5cfd",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T23:40:11"
+  "finalized": "2026-10-17T08:36:34"
  }
 }

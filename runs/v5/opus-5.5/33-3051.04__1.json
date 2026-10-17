@@ -6,6 +6,36 @@
    "short": "Examine the travel document, capture data and biometrics, read database hits, interview the traveller, decide on admission and record the entry.",
    "steps": [
     {
+     "id": "s2k",
+     "what": "Traveller scans their passport and gives fingerprints and a face image at the self-service kiosk",
+     "actor": "traveller",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "traveller at booth"
+     ],
+     "outputs": [
+      "kiosk capture"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "customer",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s1",
      "what": "Officer examines passports and visas for signs of forgery",
      "actor": "customs officer",
@@ -35,20 +65,21 @@
     },
     {
      "id": "s2",
-     "what": "Officer captures passport data, fingerprints and face image at the booth",
+     "what": "Officer captures passport data, fingerprints and face image at the booth today; after the change the officer checks the traveller's kiosk capture and captures only when the kiosk failed",
      "actor": "customs officer",
      "today_means": "system_screen",
      "systems": [
       "OPS_SYSTEM"
      ],
      "inputs": [
-      "traveller at booth"
+      "traveller at booth",
+      "kiosk capture"
      ],
      "outputs": [
       "traveller capture"
      ],
      "handoff_to": "none",
-     "share_pct": 20,
+     "share_pct": 19,
      "fate": "person_reviews",
      "remaining_pct": 40,
      "block": "integration",
@@ -151,21 +182,51 @@
      "approval_refs": []
     },
     {
+     "id": "s5c",
+     "what": "Officer checks the entry record before it is written: traveller, document, entry date and border crossing point",
+     "actor": "customs officer",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "admission decision"
+     ],
+     "outputs": [
+      "entry record checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s6",
-     "what": "Officer stamps the passport with entry date and place",
+     "what": "Officer records the entry: by stamping the passport today; after the change by one confirmation that writes it to the EU entry and exit register",
      "actor": "customs officer",
      "today_means": "document",
      "systems": [],
      "inputs": [
-      "admission decision"
+      "entry record checked"
      ],
      "outputs": [
       "entry record"
      ],
      "handoff_to": "none",
-     "share_pct": 10,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "share_pct": 9,
+     "fate": "person_does",
+     "remaining_pct": 10,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -181,7 +242,7 @@
      ]
     }
    ],
-   "design": "Non-EU travellers capture their passport data, fingerprints and face image at self-service kiosks before the booth, and the border system ({OPS_SYSTEM}) shows the officer the capture and any database hits; the officer checks the capture instead of taking it. When the officer admits a traveller, the system writes the entry to the EU's electronic entry and exit register instead of a stamp. Examining documents, the interview and the decision stay with the officer; no AI scores travellers.",
+   "design": "Non-EU travellers capture their passport data, fingerprints and face image at self-service kiosks before the booth, and the border system ({OPS_SYSTEM}) shows the officer the capture and any database hits; the officer checks the capture instead of taking it. When the officer admits a traveller, the officer checks the entry record and confirms it once, which writes it to the EU's electronic entry and exit register instead of a stamp. Examining documents, the interview and the decision stay with the officer; no AI scores travellers.",
    "previous_blocker": "Data and biometrics were captured at the booth and entries were stamped by hand.",
    "enabler_now": "The EU's electronic entry and exit register and self-service kiosks at border crossings.",
    "still_hard": "Kiosks fail on worn passports and some travellers; forged documents need a trained eye.",
@@ -228,7 +289,7 @@
    "assumptions": [
     "Boundary: from the traveller at the booth to the recorded entry; asylum requests are outside.",
     "Input contract: watch lists and visa data from EU and national border systems; kiosks run by the border agency; fallback is capture at the booth.",
-    "Examining, the interview and the decision do not change.",
+    "Examining, the interview, the decision and the check of the entry record keep their full time. s2 keeps 40 for checking kiosk captures and capturing when a kiosk fails; recording the entry keeps 10. Travellers' kiosk time (s2k, share 1) is outside the officer's savings.",
     "EU citizens get a document check only and gain less."
    ],
    "unknowns": [
@@ -260,22 +321,22 @@
     {
      "id": "a1",
      "action_step_id": "s6",
-     "approved_version": "The admission decision taken by the officer in s5.",
-     "approval_step_id": "s5",
+     "approved_version": "The entry record with traveller, document, entry date and crossing point exactly as checked by the officer in s5c, written once to the EU entry and exit register; any correction needs a new check.",
+     "approval_step_id": "s5c",
      "approver": "customs officer"
     }
    ],
    "time_saved_range_pct": {
-    "low": 6,
-    "high": 14,
-    "basis": "Crossings with mostly EU travellers gain little."
+    "low": 12.9,
+    "high": 18.6,
+    "basis": "Low: kiosks fail or are skipped for about half of non-EU travellers, so the officer still captures at the booth (12.9); high: most non-EU travellers use kiosks (18.6)."
    },
-   "focal_role_share_pct": 100,
-   "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 22.0,
+   "focal_role_share_pct": 99,
+   "excluded_labour_share_pct": 1,
+   "gross_time_saved_pct": 19.69697,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 21.0,
-   "speedup": 1.265823,
+   "time_saved_pct": 18.69697,
+   "speedup": 1.229966,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -400,7 +461,7 @@
     },
     {
      "id": "s5",
-     "what": "Officer writes the seizure report on a paper form",
+     "what": "Officer writes the seizure report: on a paper form today, on a tablet with photos, seal numbers and fixed fields after the change",
      "actor": "customs officer",
      "today_means": "document",
      "systems": [],
@@ -413,9 +474,9 @@
      "handoff_to": "none",
      "share_pct": 10,
      "fate": "person_does",
-     "remaining_pct": 50,
-     "block": "crud_app",
-     "rung": "configure",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "write_internal",
      "human_gate": false,
@@ -427,21 +488,51 @@
      "approval_refs": []
     },
     {
+     "id": "s5c",
+     "what": "Officer checks the final seizure record before the receipt prints: goods, quantities, seal numbers and the owner's name",
+     "actor": "customs officer",
+     "today_means": "document",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "seizure record"
+     ],
+     "outputs": [
+      "seizure record checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "compliance-and-risk",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
      "id": "s6",
-     "what": "Officer writes a seizure receipt for the owner by hand",
+     "what": "Officer gives the owner a seizure receipt: written by hand today; after the change the officer confirms the checked record, which prints the receipt, and hands it over",
      "actor": "customs officer",
      "today_means": "document",
      "systems": [],
      "inputs": [
-      "seizure record"
+      "seizure record checked"
      ],
      "outputs": [
       "seizure receipt"
      ],
      "handoff_to": "customer",
-     "share_pct": 5,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "share_pct": 4,
+     "fate": "person_does",
+     "remaining_pct": 25,
      "block": "notification",
      "rung": "configure",
      "loop": null,
@@ -487,7 +578,7 @@
      "approval_refs": []
     }
    ],
-   "design": "The officer records the seizure on a tablet in the customs case system ({OPS_SYSTEM}) with photos, seal numbers and fixed fields for goods and quantities. Once the officer confirms the record, the system prints the receipt for the owner and opens the case without retyping. Selecting, reading images, searching and seizing stay with the officer.",
+   "design": "The officer records the seizure on a tablet in the customs case system ({OPS_SYSTEM}) with photos, seal numbers and fixed fields for goods and quantities. The officer writes the record in about the time the paper form took; once the officer checks and confirms it, the system prints the receipt for the owner and opens the case without retyping. Selecting, reading images, searching and seizing stay with the officer.",
    "previous_blocker": "Seizures were written on paper forms, receipts by hand and both retyped later.",
    "enabler_now": "Tablet forms with photos and printers in the inspection area are standard.",
    "still_hard": "Finding contraband is skill; the record must keep the chain of custody intact.",
@@ -528,7 +619,7 @@
    "assumptions": [
     "Boundary: from selection to the opened case; storage and destruction of goods are outside.",
     "Input contract: risk flags from the customs risk system; goods lists set by the customs administration; fallback is paper forms.",
-    "Selecting, searching and seizing do not change.",
+    "Selecting, searching, seizing, writing the seizure record (a first record) and checking it keep their full time. The receipt keeps 25 for confirming and handing it over; copying into the case system goes because the record is made there.",
     "No AI reads scanner images in this design."
    ],
    "unknowns": [
@@ -541,9 +632,9 @@
     "already_counted": [],
     "incremental": [
      {
-      "description": "Officer learns the tablet seizure form.",
+      "description": "No ongoing upkeep: learning the tablet seizure form is a one-off.",
       "labour_scope": "focal_role",
-      "hours_per_100_baseline_hours": 0.3
+      "hours_per_100_baseline_hours": 0
      }
     ]
    },
@@ -551,22 +642,22 @@
     {
      "id": "a1",
      "action_step_id": "s6",
-     "approved_version": "The seizure record as completed by the officer in s5; corrections need a new confirmation before a receipt is printed.",
-     "approval_step_id": "s5",
+     "approved_version": "The seizure receipt with goods, quantities and seal numbers exactly as checked by the officer in s5c, printed once and handed to the named owner; any correction needs a new check and receipt.",
+     "approval_step_id": "s5c",
      "approver": "customs officer"
     }
    ],
    "time_saved_range_pct": {
-    "low": 5,
-    "high": 11,
-    "basis": "Most of this task is searching in person."
+    "low": 4.1,
+    "high": 8.0,
+    "basis": "Low: small posts often lack a working tablet, so about half of seizures stay on paper (4.1); high: tablets used at most seizures (8.0)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 15.0,
-   "incremental_hours_per_100_baseline_hours": 0.3,
-   "time_saved_pct": 14.7,
-   "speedup": 1.172333,
+   "gross_time_saved_pct": 8.0,
+   "incremental_hours_per_100_baseline_hours": 0,
+   "time_saved_pct": 8.0,
+   "speedup": 1.086957,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -631,7 +722,7 @@
     },
     {
      "id": "s3",
-     "what": "Officer looks up duty measures and national rates for the code",
+     "what": "Officer looks up duty measures and national rates for the code today; after the change they show with the code and the officer reads them",
      "actor": "customs officer",
      "today_means": "system_screen",
      "systems": [
@@ -645,8 +736,8 @@
      ],
      "handoff_to": "none",
      "share_pct": 15,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_reviews",
+     "remaining_pct": 15,
      "block": "integration",
      "rung": "deterministic",
      "loop": null,
@@ -672,19 +763,19 @@
       "duty measures"
      ],
      "outputs": [
-      "rules explained to shipper"
+      "reply draft"
      ],
      "handoff_to": "customer",
-     "share_pct": 25,
+     "share_pct": 23,
      "fate": "person_reviews",
-     "remaining_pct": 50,
+     "remaining_pct": 65,
      "block": "answer_desk",
      "rung": "deterministic_plus_loop",
      "loop": {
       "purpose": "draft",
       "input": "The shipper's e-mailed question, the duty measures from s3 and the official customs guidance pages.",
       "output": "A draft reply that quotes the matching guidance passage and the duty measure, each with its link.",
-      "check": "Code checks that every quoted passage matches the guidance page word for word and every rate matches the looked-up measure; the officer reads, edits and sends every reply.",
+      "check": "Code checks that every quoted passage matches the guidance page word for word and every rate matches the looked-up measure. The officer reads each reply against the question and checks that the quoted guidance applies to the goods and procedure asked about; where it does not, or the question is unclear, the officer writes the reply.",
       "stop": "One draft per question; no matching guidance means the officer writes the reply.",
       "why_not_simpler": "Questions come in free text about many goods and procedures; a fixed FAQ does not match them."
      },
@@ -696,6 +787,68 @@
      "labour_scope": "focal_role",
      "shared_step_id": "",
      "approval_refs": []
+    },
+    {
+     "id": "s4c",
+     "what": "Officer checks the final reply: the answer, the quoted guidance and rate, and the shipper it goes to",
+     "actor": "customs officer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "reply draft"
+     ],
+     "outputs": [
+      "reply checked"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "inquiry-to-answer",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4s",
+     "what": "Officer sends the checked reply to the shipper",
+     "actor": "customs officer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "reply checked"
+     ],
+     "outputs": [
+      "rules explained to shipper"
+     ],
+     "handoff_to": "customer",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "inquiry-to-answer",
+     "approver": "customs officer",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a1"
+     ]
     },
     {
      "id": "s5",
@@ -728,7 +881,7 @@
      "approval_refs": []
     }
    ],
-   "design": "Once the officer picks a commodity code, the customs desk tool shows the EU duty measures and national rates for it from the EU tariff database ({GOV_PORTAL}). For e-mailed questions, a bounded step drafts a reply that quotes the official guidance and the measure, checked word for word by code, and the officer edits and sends it. Explaining rules at the border, classifying goods and phone calls stay with the officer.",
+   "design": "Once the officer picks a commodity code, the customs desk tool shows the EU duty measures and national rates for it from the EU tariff database ({GOV_PORTAL}). For e-mailed questions, a bounded step drafts a reply that quotes the official guidance and the measure, checked word for word by code; the officer checks that the guidance fits the question, edits the reply, checks the final text and recipient, and sends it. Explaining rules at the border, classifying goods and phone calls stay with the officer.",
    "previous_blocker": "Measures were looked up by hand and every e-mail was written from scratch.",
    "enabler_now": "EU duty measures are published daily in a database, and language models can match free text to guidance.",
    "still_hard": "Classifying goods is judgement; a wrong answer can cost a shipper money.",
@@ -769,7 +922,7 @@
    "assumptions": [
     "Boundary: from questions to answers given; formal rulings are outside.",
     "Input contract: guidance pages kept by the national customs administration; duty measures from the EU tariff database plus national rates; fallback is manual lookup and writing.",
-    "Explaining in person, classifying and calls do not change.",
+    "Explaining in person, classifying, calls and the final check and send keep their full time. s3 keeps 15 for reading the measures shown; s4 keeps 65 because the quotes and rates fill in and the officer still reads the question, checks the fit and edits.",
     "Shippers' time is outside the officer's savings."
    ],
    "unknowns": [
@@ -797,18 +950,26 @@
      }
     ]
    },
-   "approvals": [],
+   "approvals": [
+    {
+     "id": "a1",
+     "action_step_id": "s4s",
+     "approved_version": "The reply exactly as checked by the officer in s4c, sent once by e-mail to the shipper or manufacturer who asked; any change needs a new check.",
+     "approval_step_id": "s4c",
+     "approver": "customs officer"
+    }
+   ],
    "time_saved_range_pct": {
-    "low": 12,
-    "high": 24,
-    "basis": "Posts where most questions come in person save less."
+    "low": 16.2,
+    "high": 20.8,
+    "basis": "Low: most questions are about unusual goods, so drafted replies are mostly rewritten (16.2); high: drafts fit most questions (20.8)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 27.5,
+   "gross_time_saved_pct": 20.8,
    "incremental_hours_per_100_baseline_hours": 0,
-   "time_saved_pct": 27.5,
-   "speedup": 1.37931,
+   "time_saved_pct": 20.8,
+   "speedup": 1.262626,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -877,7 +1038,7 @@
     },
     {
      "id": "s3",
-     "what": "Officer types suspect and goods details into the official report",
+     "what": "Officer types suspect and goods details into the official report today; after the change they fill from the case and the officer checks them",
      "actor": "customs officer",
      "today_means": "system_screen",
      "systems": [
@@ -891,8 +1052,8 @@
      ],
      "handoff_to": "none",
      "share_pct": 10,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_reviews",
+     "remaining_pct": 10,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -938,7 +1099,7 @@
     },
     {
      "id": "s5",
-     "what": "Officer checks the case file and signs the official report",
+     "what": "Officer checks the final case file and report: evidence, details, narrative and the prosecutor's office it goes to",
      "actor": "customs officer",
      "today_means": "system_screen",
      "systems": [
@@ -950,7 +1111,7 @@
       "report narrative"
      ],
      "outputs": [
-      "signed case file"
+      "case file checked"
      ],
      "handoff_to": "none",
      "share_pct": 5,
@@ -959,7 +1120,7 @@
      "block": "judgement_step",
      "rung": "stays_manual",
      "loop": null,
-     "authority": "write_internal",
+     "authority": "read",
      "human_gate": false,
      "boundary": "decision",
      "workflow": "documents-and-records",
@@ -970,22 +1131,22 @@
     },
     {
      "id": "s6",
-     "what": "Officer e-mails the case file to the prosecutor and partner agencies",
+     "what": "Officer signs the checked report and sends the case file to the prosecutor: by e-mail today, through the secure logged channel after the change",
      "actor": "customs officer",
      "today_means": "email_chat",
      "systems": [
       "EMAIL"
      ],
      "inputs": [
-      "signed case file"
+      "case file checked"
      ],
      "outputs": [
-      "case file shared"
+      "case file sent"
      ],
      "handoff_to": "external",
-     "share_pct": 10,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "share_pct": 5,
+     "fate": "person_does",
+     "remaining_pct": 30,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -998,6 +1159,68 @@
      "shared_step_id": "",
      "approval_refs": [
       "a1"
+     ]
+    },
+    {
+     "id": "s6c",
+     "what": "Officer checks which parts of the case file may go to each partner agency under the sharing rules, and the agencies named",
+     "actor": "customs officer",
+     "today_means": "system_screen",
+     "systems": [
+      "OPS_SYSTEM"
+     ],
+     "inputs": [
+      "case file sent"
+     ],
+     "outputs": [
+      "partner share checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "documents-and-records",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s6p",
+     "what": "Officer shares the checked parts of the case file with the named partner agencies: by e-mail today, through the secure logged channel after the change",
+     "actor": "customs officer",
+     "today_means": "email_chat",
+     "systems": [
+      "EMAIL"
+     ],
+     "inputs": [
+      "partner share checked"
+     ],
+     "outputs": [
+      "case file shared"
+     ],
+     "handoff_to": "external",
+     "share_pct": 4,
+     "fate": "person_does",
+     "remaining_pct": 25,
+     "block": "integration",
+     "rung": "configure",
+     "loop": null,
+     "authority": "act_external",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "documents-and-records",
+     "approver": "customs officer",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
      ]
     },
     {
@@ -1029,7 +1252,7 @@
      "approval_refs": []
     }
    ],
-   "design": "When the officer opens a case, the customs case system ({OPS_SYSTEM}) links the seizure records, photos and documents already held and fills suspect and goods details into the official report. The narrative stays the officer's own writing: a randomised trial found AI-drafted police reports were not written faster. After the officer signs, the system sends the file through a secure, logged channel to the prosecutor and named partner agencies. Deciding to prosecute and joint investigations stay with people.",
+   "design": "When the officer opens a case, the customs case system ({OPS_SYSTEM}) links the seizure records, photos and documents already held and fills suspect and goods details into the official report. The narrative stays the officer's own writing: a randomised trial found AI-drafted police reports were not written faster. The officer checks the final file and signs it, and sends it through a secure, logged channel to the prosecutor; what may go to partner agencies is checked separately against the sharing rules before it is shared with them. Deciding to prosecute and joint investigations stay with people.",
    "previous_blocker": "Case files were gathered by hand from several places and e-mailed.",
    "enabler_now": "Case systems link records per case and share files through logged channels.",
    "still_hard": "Sharing with partners needs a legal basis per agency; the narrative must be the officer's own.",
@@ -1077,7 +1300,7 @@
     "Boundary: from the seizure case to joint investigation; the prosecutor's decision is outside.",
     "Input contract: seizure case entries made by officers at the border; partner list and sharing rules set by the customs administration's legal team; fallback is e-mail.",
     "Prosecutor and partner time is outside the officer's savings.",
-    "Deciding, writing the narrative and cooperation do not change."
+    "Deciding, writing the narrative, both checks and cooperation keep their full time. s2 keeps 30 for checking the linked file is complete; s3 keeps 10 for checking the details; the sends keep 30 and 25."
    ],
    "unknowns": [
     "Cases sent to the prosecutor per month."
@@ -1108,22 +1331,29 @@
     {
      "id": "a1",
      "action_step_id": "s6",
-     "approved_version": "The case file as signed by the officer in s5; any change needs a new signature before sending.",
+     "approved_version": "The case file and official report exactly as checked by the officer in s5, signed and sent once through the secure channel to the prosecutor's office handling the case in s6; any change needs a new check and signature.",
      "approval_step_id": "s5",
+     "approver": "customs officer"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s6p",
+     "approved_version": "The parts of the case file exactly as checked by the officer in s6c against the sharing rules, shared once through the secure channel with the partner agencies named there; any change needs a new check.",
+     "approval_step_id": "s6c",
      "approver": "customs officer"
     }
    ],
    "time_saved_range_pct": {
-    "low": 10,
-    "high": 20,
-    "basis": "Complex cases need long narratives and much joint work."
+    "low": 19.5,
+    "high": 29.5,
+    "basis": "Low: many documents arrive on paper and are not linked, so the file is still gathered and details typed (19.5); high: records are linked as designed (29.5)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 34.0,
+   "gross_time_saved_pct": 29.5,
    "incremental_hours_per_100_baseline_hours": 0,
-   "time_saved_pct": 34.0,
-   "speedup": 1.515152,
+   "time_saved_pct": 29.5,
+   "speedup": 1.41844,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -1166,6 +1396,6 @@
   "digest": "research/digests-minor/33-3.md",
   "digest_sha256": "2e3adc7320b1a841d41532b1b6ccbe0897ce25976e062e6a805b3544056dc6ae",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T15:40:22"
+  "finalized": "2026-10-17T08:28:08"
  }
 }

@@ -7,7 +7,7 @@
    "steps": [
     {
      "id": "s1",
-     "what": "Chemical operator counts supplies received against the delivery note",
+     "what": "Chemical operator counts supplies received: against the paper delivery note today; after the change by scanning each item against the purchase order on the handheld",
      "actor": "chemical operator",
      "today_means": "in_person",
      "systems": [],
@@ -15,12 +15,12 @@
       "delivery"
      ],
      "outputs": [
-      "receipt counted"
+      "receipt scanned"
      ],
      "handoff_to": "none",
-     "share_pct": 30,
+     "share_pct": 28,
      "fate": "person_does",
-     "remaining_pct": 60,
+     "remaining_pct": 80,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -34,8 +34,66 @@
      "approval_refs": []
     },
     {
+     "id": "s1b",
+     "what": "Chemical operator checks the receipt before posting: items, lots and quantities against the count, the delivery note and any damaged goods",
+     "actor": "chemical operator",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "receipt scanned"
+     ],
+     "outputs": [
+      "receipt checked"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "judgement_step",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "read",
+     "human_gate": false,
+     "boundary": "decision",
+     "workflow": "procure-to-pay",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s1c",
+     "what": "Chemical operator posts the checked goods receipt against the purchase order",
+     "actor": "chemical operator",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "receipt checked"
+     ],
+     "outputs": [
+      "receipt counted"
+     ],
+     "handoff_to": "none",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "none",
+     "rung": "stays_manual",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": true,
+     "boundary": "actor",
+     "workflow": "procure-to-pay",
+     "approver": "chemical operator",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": [
+      "a2"
+     ]
+    },
+    {
      "id": "s2",
-     "what": "Chemical operator records supplies received and consumed on the paper stock list",
+     "what": "Chemical operator records supplies received and consumed: on the paper stock list today; after the change receipts come from the posted scan and consumption from the batch records, and the operator checks the stock record",
      "actor": "chemical operator",
      "today_means": "document",
      "systems": [],
@@ -63,7 +121,7 @@
     },
     {
      "id": "s3",
-     "what": "Chemical operator counts the inventory on the shelves each week",
+     "what": "Chemical operator counts the inventory on the shelves each week: on a paper list compared with the stock list today; after the change entering each count on the handheld, which compares it with the booked stock",
      "actor": "chemical operator",
      "today_means": "in_person",
      "systems": [],
@@ -76,7 +134,7 @@
      "handoff_to": "none",
      "share_pct": 25,
      "fate": "person_does",
-     "remaining_pct": 70,
+     "remaining_pct": 85,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -91,7 +149,7 @@
     },
     {
      "id": "s4",
-     "what": "Chemical operator checks the reorder proposal",
+     "what": "Chemical operator checks the reorder proposal: items and quantities against the shelf count and the coming batches",
      "actor": "chemical operator",
      "today_means": "document",
      "systems": [],
@@ -119,7 +177,7 @@
     },
     {
      "id": "s5",
-     "what": "Chemical operator e-mails reorder needs to purchasing",
+     "what": "Chemical operator releases the checked reorder list to purchasing: by e-mail today, as one requisition release in the ERP after the change",
      "actor": "chemical operator",
      "today_means": "email_chat",
      "systems": [
@@ -133,8 +191,8 @@
      ],
      "handoff_to": "none",
      "share_pct": 10,
-     "fate": "machine",
-     "remaining_pct": 0,
+     "fate": "person_does",
+     "remaining_pct": 10,
      "block": "integration",
      "rung": "configure",
      "loop": null,
@@ -150,7 +208,7 @@
      ]
     }
    ],
-   "design": "Received supplies are scanned against the purchase order in the ERP ({ERP}), and consumption is booked from the batch records in the production system, so the paper stock list goes. The weekly shelf count uses a handheld that shows expected quantities. Reorder points in the ERP propose orders; once the operator has checked the list, it goes to purchasing as a requisition. Counting stays with the operator.",
+   "design": "Received supplies are scanned against the purchase order in the ERP ({ERP}) and the operator checks the receipt and posts it once, and consumption is booked from the batch records in the production system, so the paper stock list goes. The weekly shelf count uses a handheld that shows expected quantities. Reorder points in the ERP propose orders; the operator checks the list and releases it once to purchasing as a requisition. Counting stays with the operator.",
    "previous_blocker": "Receipts and use were written on paper lists and reorders e-mailed.",
    "enabler_now": "ERP goods receipt by scan and reorder points are standard.",
    "still_hard": "Partly used drums and bags are hard to count.",
@@ -191,7 +249,7 @@
    "assumptions": [
     "Boundary: from the delivery to the reorder sent; ordering from suppliers is outside.",
     "Input contract: purchase orders and batch records in the systems; fallback is paper lists.",
-    "Counting stays with the operator.",
+    "Counting, the receipt check, the posting and the reorder check stay with the operator. s1 keeps 80 because counting stays and only matching lines to the delivery note goes; s2 keeps 20 for checking the stock record; s3 keeps 85 because each count is still entered; s5 keeps 10 for the release itself.",
     "Purchasing works from requisitions as it did from e-mails."
    ],
    "unknowns": [
@@ -214,22 +272,29 @@
     {
      "id": "a1",
      "action_step_id": "s5",
-     "approved_version": "The reorder list as checked by the operator in s4.",
+     "approved_version": "The reorder requisition with items and quantities exactly as checked by the operator in s4, released once to purchasing as a requisition in the {ERP}; any change needs a new check.",
      "approval_step_id": "s4",
+     "approver": "chemical operator"
+    },
+    {
+     "id": "a2",
+     "action_step_id": "s1c",
+     "approved_version": "The goods receipt with items, lots and quantities exactly as checked by the operator in s1b, posted once against the purchase order in the {ERP}; any correction needs a new check and posting.",
+     "approval_step_id": "s1b",
      "approver": "chemical operator"
     }
    ],
    "time_saved_range_pct": {
-    "low": 17,
-    "high": 35,
-    "basis": "Low: few deliveries and many partial containers; high: frequent deliveries of barcoded goods."
+    "low": 29.5,
+    "high": 41.3,
+    "basis": "Low: many partly used drums and bags and goods without barcodes, so half of the stock record is still kept by hand (29.5); high: barcoded deliveries and batch records in the systems (41.3)."
    },
    "focal_role_share_pct": 100,
    "excluded_labour_share_pct": 0,
-   "gross_time_saved_pct": 53.5,
+   "gross_time_saved_pct": 42.35,
    "incremental_hours_per_100_baseline_hours": 1,
-   "time_saved_pct": 52.5,
-   "speedup": 2.105263,
+   "time_saved_pct": 41.35,
+   "speedup": 1.70503,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -272,6 +337,6 @@
   "digest": "research/digests-minor/51-9.md",
   "digest_sha256": "4f8634aaa9c1f88d56f0821f1dd7e74ca2b7c00e29157d3a064c77def6deb9d4",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T17:32:50"
+  "finalized": "2026-10-17T08:28:32"
  }
 }
