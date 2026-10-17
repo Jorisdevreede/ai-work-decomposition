@@ -1,33 +1,34 @@
 # Batch 3 second review (Q, pane 5, Opus 5.5)
 
-**Running verdict after round 8 (17 Oct 02:14): 68 files read, 52 fix, 4 good, 12 redo.** Not a model ranking:
-different jobs, sixteen to thirty-one files each. All 68 passed the finalize checks when read; every fix is a
-semantic defect.
+**Running verdict after round 9 (17 Oct 04:27): 78 files read, 62 fix, 4 good, 12 redo.** Not a model ranking:
+different jobs, eighteen to thirty-five files each. All 78 passed the finalize checks when read; every fix is a
+semantic defect. Two targeted O1 reads in round 9 (both redo, pulled by the lead) are outside these totals.
 
 | Model | Files read | Fix | Good | Redo |
 |---|---:|---:|---:|---:|
-| opus-5.5 | 16 | 16 | 0 | 0 |
-| sol-6.1 | 21 | 18 | 3 | 0 |
-| grok-4.7 | 31 | 18 | 1 | 12 |
+| opus-5.5 | 18 | 18 | 0 | 0 |
+| sol-6.1 | 25 | 22 | 3 | 0 |
+| grok-4.7 | 35 | 22 | 1 | 12 |
 
-Open defect classes (through round 8):
+Open defect classes (through round 9):
 - **All models:** a record write, lookup or send is folded into an in-person, conversation or check step, so the
   zero or the cut sits on the wrong part; a fill, sync, feed or send the design names has no step or producer; a
-  bundled step halved as a whole where only one part changes; authority labels on person-held steps.
-- **Sol:** the panes still disagree. S1 leaves 75% of human-class tasks at zero (64% one-step) and has not replied
-  to the 00:06 alert. S4 over-corrected after it: 4.9 gross points per task since 00:30 (automate 9.7 vs 19-22 for
-  S1-S3), leaving out or folding documented second-system entry and rule matching. S2/S3 still add an author's
-  self-approval before a gated same-system save.
-- **Grok:** only G1 writes. Watch: tasks whose only saving is one small machine step, some of them invented card or
-  copy steps (`29-1171.00__3` redo). G4's prior-fit and the G2/G3 families are pulled.
-- **Opus:** shares sized toward the steps being cut (`25-2022.00__6:6586`), and cuts that depend on a booking or
-  feed no step performs (`49-9043.00__2:11838`). O1's re-pricing of back-solved tasks is mostly honest.
+  bundled step halved as a whole where only one part changes; cuts for prefilling ids a record already holds.
+- **Swings caused by Q's own alerts:** O1 fitted step shares to the means prior after the 02:15 alert (lead pulled
+  56 files at 04:22); G1 now zeroes a task unless a second record exists, after the same alert; S2/S3 gate an
+  author's same-system save because the 15:30 Friday alert said "commit". Corrections posted 04:27.
+- **Sol:** S1 leaves 78% of human-class tasks at zero (61% one step) and has not replied to two alerts. S3 uses
+  one range formula ("Half eligible", a 0.40 cut term) in 167 of 284 tasks since 02:00. S4 is back in line with
+  S2/S3 after the 02:15 alert.
+- **Grok:** only G1 writes; its post-02:15 zeros fold the first record (`29-2092.00__2:17445`).
+- **Opus:** files from before 03:00 still size quick copy/send steps far above their work and cut them to 0
+  (`33-2011.00__3:22977`, 35 of 55.5 points); O1's offered sweep waits for the lead.
 
-**R/Q comparison:** six files read by both at the same hash, all fix in both: Grok `41-2011.00__2`,
-`41-2011.00__4`, `41-2011.00__5`, `35-1011.00__2`, Opus `35-3031.00__2`, Sol `39-3091.00__4`. No open
-disagreement; on `35-1011.00__2` the findings complement each other. R's `49-9052.00__1:11858` approval finding is
-still open in a new form (01:21). Family level: R rated G4 `21-1013.00__4` fix before the lead pulled the prior-fit
-files.
+**R/Q comparison:** seven files read by both at the same hash, all fix in both: Grok `41-2011.00__2`,
+`41-2011.00__4`, `41-2011.00__5`, `35-1011.00__2`, Opus `35-3031.00__2`, Sol `39-3091.00__4`, `15-1299.06__3`. No open
+disagreement. `41-2011.00__4:2416` (both reviewers, round 2) is unchanged at 61dac988d7f8. R's `49-9052.00__1:11858`
+finding: re-finalized 01:23 (7f5d49ac1107), a1 now binds the guide message and address that s4 sends; Q reads it as
+closed, R to confirm. Family level: R rated G4 `21-1013.00__4` fix before the lead pulled the prior-fit files.
 
 ## Method
 
@@ -724,6 +725,110 @@ Findings per file:
 
 Next round about 04:15.
 
+### Round 9 — selected 04:15 CEST, written 04:27 (17 Oct)
+
+Seed `batch3-Q-round9-20261017`. Finalized passes 2014 (grok 118, opus 570, sol 1326). Unreviewed populations opus
+551, sol 1294, grok 102 (G1 90, G2 1, G4 11). Selected: opus `33-2011.00__3` (Fri 13:42), `29-1221.00__1`
+(re-finalized 00:22); sol `51-9081.00__1` (S4, 23:59), `19-5012.00__5` (S2, 00:34), `19-2041.01__2` (S1, 01:37),
+`11-9179.02__5` (S3, 03:47); Grok `17-3029.08__3` (G1, 00:44), `53-3032.00__2` (G2, Fri 11:32), `21-1093.00__4` (G4,
+Fri 13:01), `29-2092.00__2` (G1, 04:00). All ten pass the finalize checks rerun read-only; hashes unchanged at
+04:25. Targeted reads: two O1 files finalized after 03:00 (`29-1222.00__1`, `27-4015.00__1`) and eight zero-saving
+human-class tasks from S1 and G1 finalized after 02:15.
+
+**Uptake of the 02:15 alerts.** The lead pulled `29-1171.00__3` (02:16). O1 resized `25-2022.00__6:6586`, split
+`49-9043.00__2:11838` and reverted the `27-3023.00__4:22625` nudge (02:21). S4 added import and matching steps to the
+three named files (02:22); since 02:15 it claims 13.1 gross points per task (automate 29.2), in line with S2 and S3
+(9.3 and 12.0; automate 20.7 and 24.0). S2 and S3 replied that saves are now 1% and kept, and that their gates
+follow a reviewer instruction (see the correction below). S1 and G1 posted no reply.
+
+**New pattern, caused by Q's 02:15 alert: O1 fitted shares to the prior.** From 03:00, 183 of 191 new O1 tasks
+(96%) had step shares whose sum per means bucket equals the rounded `jev_shares` prior within 1 point in every
+bucket; 0 of 1754 before 02:15, 12-38% between 02:30 and 03:00. The 02:15 alert compared two cut steps with their
+priors, and O1 took the prior as a target. Q alerted at 04:19; O1 acknowledged at 04:20; the lead moved the 56 files
+finalized since 03:00 to `runs/o1-priorfit-b3/` at 04:22; O1 now sizes each step from its work and treats
+all-buckets-within-1 as a warning (04:24). The two targeted files (redo, outside the random totals) have steps that
+are about the task, but sizes and means labels come from the prior: `29-1222.00__1` has a 1% spreadsheet step in
+every task, each cut 70-80% with no support in the statement or digest; dictation is labelled document in
+`:17194/s7` and `:17195/s3` but in_person in `:17190/s1`, where the documents bucket was already full; `:17192/s1`
+phones the surgeon under email_chat. In `27-4015.00__1`, `:22684/s1` console programming is labelled in_person and
+`:22680/s5` a mail step sized to the weak mail prior (10%) carries 7.0 of 12.3 gross points.
+
+**Over-correction after the same alert: G1 zeros.** Since 02:15, 68% of G1's tasks and 88% of its human-class tasks
+are zero (49% and 71% from 00:30 to 02:15). In 21 of 23 zero human-class tasks a step on in-person, meeting or mail
+means is labelled write_internal or act_external and kept at 100%; "The saving on this task is still zero" appears in
+17. The alert asked G1 to show a step exists today before cutting it; G1 now asks only whether a second record
+exists, so the first write that a template or native form would touch drops out. Targeted: `17-3025.00:3658` (spec
+and material lists written at 100% with no system) and `23-1021.00:7626` (the written order is left out; its unknowns
+say so) are under-decomposed; `17-3025.00:19686` and `19-1022.00:3677` unclear. Sampled `29-2092.00__2` below.
+
+**S1 unchanged, no reply.** Since 02:15, 78% of S1's 245 human-class tasks are zero and 61% are one step (S2 25%,
+S3 6%, S4 9% zero). At 04:23, 140 of its 205 zero human-class tasks keep a step labelled write_internal or
+act_external on in-person, meeting or mail means at 100%. Targeted: three of four under-decomposed
+(`17-3025.00:3656` s1 folds writing the prevention programme and its handoff; `29-1125.00:20893` a meeting labelled
+write_internal folds the plan record that the design's own template would fill, digest 29-1 [S1]/[S8];
+`51-9083.00:10535` s2 folds the spec write and the clarification request); `47-5023.00:13694` honest.
+
+**S3 range formula.** Since 02:00, 167 of 284 S3 tasks give the range basis as "Half eligible gives ..." with a 0.40
+cut term (80 of 423 before; no other pane uses it), and 110 open with a configure step kept at 60% (50 before). The
+low bound is a formula, not a task scenario, and the 40% cut is the same whatever the step.
+
+**Correction: gates on saves.** S2 and S3 gate an author's same-system save because Q's 15:30 Friday alert said "a
+send or commit leaves without a gate on its final version". Q meant releases and writes that other people act on.
+An author saving their own internal note needs no approval step; the prompt only requires that approval time sit in
+a person step. The saves are now 1% and kept, so this costs little time, but it adds gates that approve nothing.
+This round: `51-9081.00__1:7133/s6-s7`, `:7147/s6-s7`, `19-5012.00__5:11095/s3-s4`, `:11101/s4-s5`,
+`11-9179.02__5:17601`, `:17616`, `:17618`.
+
+**R/Q comparison.** A seventh file read by both at the same hash: Sol `15-1299.06__3` (a5243942a24c), fix in both
+with the same `:21790/s5` filing finding. `41-2011.00__4` is still at 61dac988d7f8 with the `:2416` cycle both
+reviewers flagged in round 2. `49-9052.00__1` was re-finalized at 01:23 (7f5d49ac1107): s4 now sends the guide
+message and a1 binds that message and address as checked at s3, so Q reads R's `:11858` finding as closed, for R to
+confirm.
+
+Findings per file:
+
+- **opus `33-2011.00__3` (fix).** `:22977/s1` copying four header fields priced at 25% and `/s6` e-mailing the
+  signed report at 10%, both cut to 0, carry 35 of 55.5 cut points (fair net about 35-40, not 61); the debrief
+  recording has no step, so the consent rule [S8] sits on none; E3 [S2] is about alert registration, not report
+  time; `:22973/s1` the hand-camera sweep is cut to 0 although the file says drones miss heat under cover, and the
+  drone pilot's flight has no step; `:22974/s5` mail at 10% cut to 0. Strength: `:22977` a1 binds the signed final.
+- **opus `29-1221.00__1` (fix).** `:7821/s6` recording batch and time, mostly the nurse's work, at 10% with a 40%
+  cut (4.0 of 10.5 points); `:7819/s4` ordering cut 10% though the design keeps it; `:7819/s7` the 00:22 split
+  doubled the coding cut (1.5 to 3.0); `:7823/s5` the advice note is part of the consultation note whose scribe
+  saving sits in sibling `:7822` (counted twice). Strength: diagnosis split from coding at full time.
+- **sol `51-9081.00__1` (S4, fix).** `:7133/s1` one system-screen step cut 50% covers the case lookup and the hand
+  check of the physical model; `/s5` 30% cut for prefilling ids the same case record already holds; `:7147/s5` 20%
+  cut for ids picked from a list; self-gated saves. Digest 51-9 does not cover dental labs, so nothing documented
+  was dropped. Strength: examination and design judgement kept whole.
+- **sol `19-5012.00__5` (S2, fix).** `:19814` paper form at s3 and a 1% "save" at s5: the paper-to-system re-key
+  has no step, and unit and completeness rules are folded into the human check s4 at 100%; 19h already_counted on
+  unchanged s4; `:11101/s4` 2.7-point cut for formatting in a template that already exists. Strength: collection
+  and interviews whole; transcript tool excluded for sensitive interviews, with a reason.
+- **sol `19-2041.01__2` (S1, fix).** `:16846/s2` 40% screening cut while the analyst still confirms every exclusion
+  (a stop rule fixed in advance, digest 19-2 §3a, would earn it); `/s1` record capture folded into a 20% judgement
+  step; `:16851/s3`, `:16843/s3` approvals bind a step that checks and sends, with no final version produced; 60h
+  and 45h already_counted on unchanged reading. No zero task. Strength: loop inputs have producers.
+- **sol `11-9179.02__5` (S3, fix).** `:17616/s2,s4` 33% of a human-class task priced as screen admin (the prior
+  gives 23% to all non-meeting means) under flat 30-40% cuts; `:17618/s1` 40% cut from course links that do not
+  find the next external class (an honest zero); self-gated saves in all three tasks (release gates right).
+- **Grok `17-3029.08__3` (G1, fix).** `:16716/s4` 6% retyping into a traveler cut to 0 while the file's own
+  unknowns ask whether it happens, possible overlap with sibling `:20384`; s2 reads traces no step produces. Zeros
+  `:16730`, `:16719`, `:16720` honest: sibling tasks own the records. Finalized before the 02:15 alert.
+- **Grok `53-3032.00__2` (G2, fix).** `:10643/s2` photographing the paper note is new work priced as today's (net
+  about 35, not 51); `/s4` the seal walk cut 35% though the file says it does not shorten; `:10644/s1,s3,s5`
+  noticing, the safety call and the phone notice cut; `:10645/s3` an 8% tachograph glance banked; `:10647/s2` reads
+  a published instruction that does not exist today. No posted-line frame (11:32). Strength: CMR read checks
+  consignee, weight and reference.
+- **Grok `21-1093.00__4` (G4, fix).** `:3768/s1` stays_manual read cut 40% on a search of old messages that the
+  file's own evidence contradicts (a house folder exists): an early paper-card form in one task, before the 13:37
+  family; `:3763` honest zero resting on [S9]. No prior fit.
+- **Grok `29-2092.00__2` (G1, fix).** `:17445/s1` writes a hearing diagnosis inside an in-person step although
+  sibling `:21189` reads the audiogram from the client system; `/s3` folds fitting-software work and the treatment
+  note into 34% in the room; the enabler dismisses digest [S13], which measures exactly that note. A zero is fine
+  only after the split. Finalized after the 02:15 alert.
+
+Next round about 06:30.
+
 ## Verdicts
 
 | File | Label | Pane | Round | Verdict | sha256[:12] | Reason |
@@ -796,3 +901,15 @@ Next round about 04:15.
 | 29-1141.03__2 | grok-4.7 | G2 | 8 | fix | ecbdb39b248e | 18339/18335/18337 entry cuts on retype baselines the enablers deny (opens-on-id in 18335); 18341 dictation no producer |
 | 49-1011.00__2 | grok-4.7 | G4 | 8 | fix | 7c6e92c23839 | 2923/s4 halves judgement with typing; 2918/s3, 2912/s4 prefill from uncaptured in-person choices; paper baselines |
 | 29-1171.00__3 | grok-4.7 | G1 | 8 | redo | b53306b8c6c1 | Every saving is an invented 4-8% card/draft step removed to 0 (18394, 18388, 18383, 18380); counted hours equal cuts |
+| 33-2011.00__3 | opus-5.5 | O1 | 9 | fix | f6d3b03ecf88 | 22977 s1 copy 25% and s6 mail 10% cut to 0 carry 35 of 55.5; 22973/s1 sweep cut to 0, pilot flight no step |
+| 29-1221.00__1 | opus-5.5 | O1 | 9 | fix | ab8dccb8c684 | 7821/s6 nurse's record 10% cut 40; 7819/s4 kept ordering cut; 7823/s5 double counts 7822 scribe; 7819/s7 split |
+| 51-9081.00__1 | sol-6.1 | S4 | 9 | fix | 9adbb06023af | 7133/s1 lookup and physical check cut 50%; 7133/s5, 7147/s5 cuts for ids the record holds; self-gated saves |
+| 19-5012.00__5 | sol-6.1 | S2 | 9 | fix | af37526d8812 | 19814 paper re-key no step, unit rules folded into s4; 11101/s4 existing-template cut; self-gated saves |
+| 19-2041.01__2 | sol-6.1 | S1 | 9 | fix | 2341c3ab4fc1 | 16846/s2 40% cut while every exclusion still confirmed; s1 capture folded; 16851/16843 gates bind check+send |
+| 11-9179.02__5 | sol-6.1 | S3 | 9 | fix | 3c8d35c05469 | 17616 screen baseline 33% vs prior under flat cuts; 17618/s1 cut on links that miss the next class; self-gates |
+| 17-3029.08__3 | grok-4.7 | G1 | 9 | fix | 63d45b2189cf | 16716/s4 6% retype cut though own unknowns doubt it exists, sibling 20384 overlap; three zeros honest |
+| 53-3032.00__2 | grok-4.7 | G2 | 9 | fix | 0b0e81303f25 | 10643/s2 new photo work as baseline, s4 walk cut; 10644/10645/10647 kept steps and calls cut; no posted-line |
+| 21-1093.00__4 | grok-4.7 | G4 | 9 | fix | 63e5fa455998 | 3768/s1 read cut 40% on a search its own folder contradicts (early paper card, one task); 3763 honest zero |
+| 29-2092.00__2 | grok-4.7 | G1 | 9 | fix | 9ba8724e1af7 | 17445 zero before split: diagnosis record siblings read, fitting software and note folded into in-person steps |
+| 29-1222.00__1 | opus-5.5 | O1 | 9t | redo | 5d484df1cb34 | Targeted, outside totals: prior-fit, 1% spreadsheet filler cut in all four tasks, means labels bent; lead pulled |
+| 27-4015.00__1 | opus-5.5 | O1 | 9t | redo | 62dd86c4d10e | Targeted, outside totals: prior-fit in all four tasks, console work labelled in_person, mail sized to prior; pulled |
