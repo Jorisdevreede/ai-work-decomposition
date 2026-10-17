@@ -2,11 +2,11 @@
 
 | Model | fix | good | redo | Reviewed files |
 |---|---:|---:|---:|---:|
-| grok-4.7 | 18 | 0 | 0 | 18 |
-| opus-5.5 | 17 | 1 | 0 | 18 |
-| sol-6.1 | 8 | 10 | 0 | 18 |
+| grok-4.7 | 19 | 1 | 0 | 20 |
+| opus-5.5 | 19 | 1 | 0 | 20 |
+| sol-6.1 | 9 | 11 | 0 | 20 |
 
-Through round 9: **43 fix, 11 good, 0 redo** across 54 files, 197 tasks and 902 steps, including one revised round-2 verdict. Savings remain provisional. Samples differ by job; these counts do not establish a model quality ranking.
+Through round 10: **47 fix, 13 good, 0 redo** across 60 files, 216 tasks and 992 steps, including one revised round-2 verdict. Savings remain provisional. Samples differ by job; these counts do not establish a model quality ranking.
 
 ## Review protocol and continuation
 
@@ -583,3 +583,38 @@ Q's G1 small-machine-step watch remains relevant, but this round does not call a
 Round 9: **5 fix, 1 good, 0 redo**. Cumulative: **43 fix, 11 good, 0 redo**, 54 distinct sampled files, 197 tasks and 902 steps. Supplements excluded.
 
 Next scheduled round: **17 October 2026, 05:16 CEST**. Continue every two hours through Sunday 23:59 CEST.
+
+## Round 10 — 17 October 2026, 05:16–05:20 CEST
+
+Selected at 05:16:11 from passed populations Grok125 / Opus557 / Sol1425; unreviewed eligible114 / 539 / 1407. Seeds: `batch3-R-round10-grok-4.7-20261017`, `batch3-R-round10-opus-5.5-20261017`, `batch3-R-round10-sol-6.1-20261017`. Two new paths per model. All19 original statements and90 steps read against the exact digital-task prompt set; all six rerun `checks + template_checks` results empty, sampled hashes unchanged. Four fix, two good. Cumulative47 fix /13 good /0 redo across60 files,216 tasks,992 steps.
+
+| File under runs/v5/ | Verdict | Findings |
+|---|---|---|
+| grok-4.7/27-2012.00__4.json | fix | :22538 ends with a rights request and a rightholder discussion; it does not produce the obtained grant/accepted rights outcome or allocate the producer's work closing it. Preserve the original “obtain rights” boundary rather than treating asking as the completed task. :22528 also substitutes scene breakdown lines and a crew briefing for compiling the scripts, notes and other production material: specify the actual compiled material/pack and its assembly, then price extraction only where actually needed. Liaison :22530 stays fully human; :22518 explicitly counts activity-field capture, checks the schedule and binds its send. |
+| grok-4.7/29-1229.03__2.json | good | Conditional consult-reply and prescription workflows retain clinical decisions, an8-hour field-entry stage on the clinical record, final fidelity checks and distinct recipient-bound sends. Read “states ... on the record” as the counted structured capture described in the design, not free speech transcription; no ambient capture is assumed. Ward direction and bedside teaching are explicitly spoken episodes with zero change and unresolved record/preparation ownership in unknowns. Native reply/prescription use is preferred; no model chooses treatment. The no-rewrite-queue explanation for zero upkeep is weak: zero remains conditional on native stable fields requiring no additional maintenance, and should be confirmed locally. No saving from already automated messaging may be counted. |
+| opus-5.5/53-5011.00__2.json | fix | :14474/s4 reduces ticking a cleaning checklist from5 to3 hours solely because paper ticks become tablet ticks. No removed transcription, filing or other changed action is identified; name the concrete saving or retain the tick's full effort. Physical inspection, directing and checking correctly stay100%; no additional author self-approval is required. [S5] matches the supplied digest context; no independent legal verification. |
+| opus-5.5/53-6031.00__2.json | fix | :10718/s2 cuts spoken directions10% despite design/assumptions saying local-knowledge directions do not change. s3 is labelled today's system screen although the blocker says phone/memory: establish the actual residual lookup before claiming50%. :10723/s1 cuts service recording60% without a counted producer/field contract for service type/date, plate association and next-due calculation; contact details and intervals alone are insufficient. Native reuse can save actual duplicate entry, but an actual completed service does not itself supply a digital transaction. Keep the real capture and exceptions. Reminder gate binds only the checked due list; explicitly bind final message/template and destination as well. |
+| sol-6.1/19-3099.01__2.json | fix | All four range bases produce their low by halving the central eligible benefit. They name no task-specific conservative case—unmatched scenario units/years, unavailable template reuse, incompatible geographic layers or missing output metadata could each require a different case and retained workload. Replace the shared arithmetic rule with explicit cases. Source checks, model construction/calibration, interpretation and writing are otherwise retained; saves are1% fully retained and earn no gain. The ordinary same-system author saves do not need their separate formal approval gates; merge ordinary author checking into writing without adding approval labour. |
+| sol-6.1/51-8013.03__1.json | good | Actual observations and field-only readings are captured before transfer; historian selection/tag/unit mappings and exception writing are counted. The record/report exists before the final check and the real internal send. Loading and mixing retain separate current-state readiness decisions and all physical labour; calculation uses captured quantities and an existing formula. Quality assessment remains an explicit zero episode, with actual record/report ownership left for local confirmation. Native automation already running earns no new gain. Small save/send tails remain fully retained; no new author-approval stage is needed for an ordinary same-system save. All savings remain conditional E1 allocations. |
+
+Hashes in table order:
+- `43ffab77c13f8b0b899d875b41b5dda61e94a4c497cdef2332df3d0155c96f9c`
+- `b3cef03a730cf7d2cc344a0437739722b222cefd4de6a82012bd6e4a6e69e9b1`
+- `1faebd40c8756acd7cb526c059cadb1dd25da1179dbce88ae4da35bfb4b6c14d`
+- `d2634b6cd73c1f01b4e1ddabbbffee9fbc08640d3edeb0e0420d35baba00923e`
+- `f20a235794668355881d2b46a32d82b50b853059078e99e2746e6cb5cd37d158`
+- `b81203dc7db05806877ba8f9d424fd103e16809215b034fe7109c5cb5514c8a2`
+
+Structural snapshot05:18:08: **2112 passed files,7521 tasks,31254 steps**. Grok125/437/1936; Opus559/1972/10829; Sol1428/5112/18489 (files/tasks/steps). Distinct normalized complete text sequences437 /1972 /5100; full shapes433 /1972 /4738; economic shapes410 /1961 /2889; largest coarse groups58 /38 /932. Exact repetitions remain confined to Sol's comparable full-time teaching, encouragement, lectures and student-advising actions. New adult/self-enrichment instruction and encouragement matches were read against identical or equivalent originals; no blanket template verdict follows. Seven live repeated adjacent-pair groups, all Opus: familiar advising/field trips/farm inspections plus newly read arbitration final-order check/send and academic/career-advising pairs. Their surrounding task actions differ meaningfully. Numerical similarity alone is not rejected.
+
+Every passed file was included in the initial structural scan. Follow-up scans covered the snapshot path list in bounded chunks, plus a whole-live-population adjacent-pair scan. Follow-up hashes were acquired immediately before each chunk; unlike rounds7–9, this round does not claim unchanged hashes for the entire frozen population. The six selected hashes are independently verified. Initial oversized scan output was rerun with compact metadata; an oversized follow-up command was rejected without execution and retried in bounded chunks. No worker data was written.
+
+Explicit dependency dispositions:
+- Grok cash-count :2416 cycle still persists. Prior-version reuse explains :16122, kindergarten :6471/:6470, and new equipment inventory :22434. Read :22434's explicit assumption: s1 reads last filed inventory (or empty first-time list), s5 writes the newly accepted count. No cycle.
+- Sol :20237 still uses post-course attendance evidence in the earlier enrolment/notice bundle. Remains open.
+- Opus has no current exact forward-reference hit. Of the six round9 flagged paths, four remain absent from passes in `runs/o1-priorfit-b3/`; quarantine is not a repair. Two replacement files were read: `19-1029.03__3.json` SHA `c3af95aa7df569207c7b405bfa2cb68515253ec31ed387e799dcdfac76a69101` now searches/chooses papers before reading and looks up candidate genes before using them. `25-1063.00__1.json` SHA `bd80549e1991faf7e429bbd5b3f92d140e8c64815ea45372a62a1b8d38310657` now chooses papers before reading; :5994 also submits the approved first manuscript, then handles referee revision, separately approves the revised manuscript/response and resubmits. These named ordering findings close; the files' full economic semantics are not certified. `25-1067.00__2.json` remains quarantined.
+- New late-draft candidates `11-9179.02__1/:17610` and `51-8099.01__2/:17831` are false positives: deposit transport preserves the checked bag/slip with recheck on change; storage notification is a separate artefact from the checked monitoring log. All other late candidates were previously read and preserve an unchanged payload or expressly require renewed checking. No new confirmed approval-cycle family.
+
+Q reconciliation: none of these six paths appears in Q's ledger. Q's04:27 correction is adopted: ordinary same-system author saves need no approval stage; retain release/send/posting/shared-register gates where others act on the result. This corrects earlier overbroad gate wording and must not create new approval labour. Independent follow-up confirms Q's closure of Opus `49-9052.00__1/:11858`: SHA `7f5d49ac11074545dac316301465c0e375d6341b806a3c38ecbfc254d5a2817d`, s3 checks the final guide message and subscriber address, and a1 binds that exact message/destination to s4. Only this gate finding closes; other task findings remain open. Q's prior-fit quarantine and S1 message-delivery issue are acknowledged as lead actions, not independently re-audited or folded into random verdict counts.
+
+Supplied digests27-2,53-5 and19-3 were checked for cited claim support. Model-knowledge-only claims remain E1. No source URLs were opened or freshly cited. Round10 alerts reiterate unchanged-human cuts in Opus and task-specific range scenarios in Sol. Next review07:16 CEST; weekend assignment continues through Sunday23:59.
