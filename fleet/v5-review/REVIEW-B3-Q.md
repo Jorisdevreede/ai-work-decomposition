@@ -1,34 +1,36 @@
 # Batch 3 second review (Q, pane 5, Opus 5.5)
 
-**Running verdict after round 9 (17 Oct 04:27): 78 files read, 62 fix, 4 good, 12 redo.** Not a model ranking:
-different jobs, eighteen to thirty-five files each. All 78 passed the finalize checks when read; every fix is a
-semantic defect. Two targeted O1 reads in round 9 (both redo, pulled by the lead) are outside these totals.
+**Running verdict after round 10 (17 Oct 06:37): 88 files read, 72 fix, 4 good, 12 redo.** Not a model ranking:
+different jobs, twenty to thirty-nine files each. All 88 passed the finalize checks when read; every fix is a
+semantic defect. Targeted reads (ledger rounds 9t and 10t: 4 redo, 3 fix) are outside these totals.
 
 | Model | Files read | Fix | Good | Redo |
 |---|---:|---:|---:|---:|
-| opus-5.5 | 18 | 18 | 0 | 0 |
-| sol-6.1 | 25 | 22 | 3 | 0 |
-| grok-4.7 | 35 | 22 | 1 | 12 |
+| opus-5.5 | 20 | 20 | 0 | 0 |
+| sol-6.1 | 29 | 26 | 3 | 0 |
+| grok-4.7 | 39 | 26 | 1 | 12 |
 
-Open defect classes (through round 9):
+Open defect classes (through round 10):
 - **All models:** a record write, lookup or send is folded into an in-person, conversation or check step, so the
-  zero or the cut sits on the wrong part; a fill, sync, feed or send the design names has no step or producer; a
-  bundled step halved as a whole where only one part changes; cuts for prefilling ids a record already holds.
-- **Swings caused by Q's own alerts:** O1 fitted step shares to the means prior after the 02:15 alert (lead pulled
-  56 files at 04:22); G1 now zeroes a task unless a second record exists, after the same alert; S2/S3 gate an
-  author's same-system save because the 15:30 Friday alert said "commit". Corrections posted 04:27.
-- **Sol:** S1 leaves 78% of human-class tasks at zero (61% one step) and has not replied to two alerts. S3 uses
-  one range formula ("Half eligible", a 0.40 cut term) in 167 of 284 tasks since 02:00. S4 is back in line with
-  S2/S3 after the 02:15 alert.
-- **Grok:** only G1 writes; its post-02:15 zeros fold the first record (`29-2092.00__2:17445`).
-- **Opus:** files from before 03:00 still size quick copy/send steps far above their work and cut them to 0
-  (`33-2011.00__3:22977`, 35 of 55.5 points); O1's offered sweep waits for the lead.
+  zero or the cut sits on the wrong part; a send, reminder, join or feed the design names has no step or producer
+  for its input; a step where only part of the work changes is cut as a whole; ranges set by a formula rather than
+  a task scenario.
+- **Swings after alerts:** each pane over-corrects after an alert. O1 fitted shares to the prior (pulled 04:22),
+  then hands savings to sibling tasks that do not claim them; G1 stopped decomposing (stood down 06:31); S1, once
+  the queued alerts reached it at 04:29, added trailing record steps and one flat cut on configure steps.
+- **Sol:** S1's zero rate fell from 78% to 2% when the lead's queued messages were delivered; its new splits are
+  mostly real. S3's range formula and the self-gated saves are gone since 04:30 in S3 and S4.
+- **Grok:** no pane writes. G1's files since 04:00 are pulled; G1's older files carry invented machine steps cut
+  to 0 (`19-2042.00__1:20390/s3`).
+- **Opus:** older files: machine sends or joins with no producer for their input, savings claimed in two sibling
+  tasks; O1's sweep of its pre-03:00 files is approved (04:30) and running.
 
-**R/Q comparison:** seven files read by both at the same hash, all fix in both: Grok `41-2011.00__2`,
-`41-2011.00__4`, `41-2011.00__5`, `35-1011.00__2`, Opus `35-3031.00__2`, Sol `39-3091.00__4`, `15-1299.06__3`. No open
-disagreement. `41-2011.00__4:2416` (both reviewers, round 2) is unchanged at 61dac988d7f8. R's `49-9052.00__1:11858`
-finding: re-finalized 01:23 (7f5d49ac1107), a1 now binds the guide message and address that s4 sends; Q reads it as
-closed, R to confirm. Family level: R rated G4 `21-1013.00__4` fix before the lead pulled the prior-fit files.
+**R/Q comparison:** eight files read by both at the same hash, all fix in both: Grok `41-2011.00__2`,
+`41-2011.00__4`, `41-2011.00__5`, `35-1011.00__2`, `27-1023.00__2`, Opus `35-3031.00__2`, Sol `39-3091.00__4`,
+`15-1299.06__3`. On `27-1023.00__2` the verdicts agree but the repair does not: R asks to make the note capture
+explicit in `:1727/s1`; Q finds the written care-line draft and check (s2/s3) invented and the loop needless, so
+capture time should lower the net, and adds `:1723/s5` and `:20751/s1`. `41-2011.00__4:2416` is unchanged at
+61dac988d7f8. R confirmed `49-9052.00__1:11858` fixed (05:20), closing the last open R/Q item.
 
 ## Method
 
@@ -829,6 +831,95 @@ Findings per file:
 
 Next round about 06:30.
 
+### Round 10 — selected 06:28 CEST, written 06:37 (17 Oct)
+
+Seed `batch3-Q-round10-20261017`. Finalized passes 2281 (grok 132, opus 610, sol 1539). Unreviewed populations opus
+589, sol 1501, grok 113 (G1 103, G4 10). Selected: opus `31-2021.00__3` (01:26), `19-4061.00__5` (00:13); sol
+`27-4031.00__1` (S4, 00:08), `25-2051.00__8` (S3, 00:38), `33-2021.00__2` (S2, 03:12), `19-2043.00__5` (S1, 05:48);
+Grok `31-9094.00__3` (G1, Fri 22:58), `29-1141.04__3` (G4, Fri 12:30), `27-1023.00__2` (G1, Fri 22:04, also read by
+R), `19-2042.00__1` (G1, 01:31). All ten pass the finalize checks rerun read-only; hashes unchanged at 06:36.
+Targeted reads, outside the totals: O1 `51-9195.00__1`, `19-1031.03__4` and S1 `19-3094.00__1` (finalized after
+04:30), G1 `17-2151.00__2`, `25-4012.00__3` (after 04:06).
+
+**Why S1 did not answer.** At 04:29 the lead found that the Sol panes had lead messages queued and unread (a queued
+message is only read when the worker's turn ends; S1's since about 13:30 Friday) and delivered them. S1's earlier
+silence was a delivery fault, not a refusal. Since 04:30 S1 leaves 2% of tasks at zero (78% from 02:15 to 04:29),
+with 5.5 steps per task and 14.0 gross points (S3 8.7, S4 13.9).
+
+**Uptake of the 04:27 alerts.** The lead stood G1 down at 06:31 after Q's 06:30 alert and moved its 19 files since
+04:00 to `runs/g1-rejected-b3/`; no Grok pane writes now. Since 04:30 the S3 range formula appears in 0 of 185 S3
+tasks (167 of 296 from 02:00 to 04:30), and gated same-system saves of an author's own record in 1 of about 200 tasks
+in each of S3 and S4 (about one per task before; older files keep them, a label issue only). O1's prior fit is gone
+(1 of 320 tasks since 04:24). The lead approved O1's sweep of its pre-03:00 files at 04:30, with the test "no cut
+step larger than its work".
+
+**G1 stopped decomposing.** From about 04:06, 58 of G1's 62 tasks were zero and 32 were one step, 21 of them the
+O*NET statement word for word; the same frames close them ("Incremental upkeep is zero. No template, mapping, or
+list is added." in 61 tasks, "No step in this task is removed. The high stays at zero."). Targeted: `17-2151.00__2`
+and `25-4012.00__3` redo; `:3566` puts watching labour rates at 100% system screen as "existing runtime" and skips
+the comparison with plan, `:1651` skips the budget work its statement names, `:1656` folds the insurance schedule
+and cover request into a call. This followed Q's 02:15 and 04:27 alerts about invented and folded record steps.
+
+**O1 now hands savings to siblings.** Since 04:30, 87 of O1's 318 tasks say a step's saving "is counted there", in
+a sibling task (127 of 1848 before). Q's 04:27 alert said "no record or scribe saving that a sibling task in the
+set covers"; O1 applies it without checking the sibling. `19-1031.03__4:3699/s6` keeps typing captions, dates and
+locations at 100% because sibling `3698` "covers" it, but `3698` is answered in another file (Sol `__5`) and cuts
+only its own step, so the saving vanishes; `:3694/s1` the same with `3696`. `51-9195.00__1:23677/s6` keeps writing
+mold numbers on the order at 100% as "too small to change" although the mold ids are in the system. Cut sizes are
+otherwise honest and zeros on hands-on work are real. Ranges: 238 of 254 non-zero O1 tasks since 04:30 set low and
+high as the same two fractions of the net (82 of 1823 before).
+
+**S1 overshoots in places.** Since 04:30, 312 of S1's 525 configure steps carry the same cut (24 of 997 before;
+S3 and S4 also rose, to 41% and 33%), and 51 of 267 tasks end with a "Record ..." step. Targeted
+`19-3094.00__1:5515/s5` adds a class-progress record in the learning system that nothing reads and teaching does not
+produce today; `:5516/s1` prices a new structured evidence brief as today's work. Its other splits are real: lookup,
+scanning and submission steps exist today and every human step keeps its time.
+
+**R/Q comparison.** An eighth file read by both at the same hash: Grok `27-1023.00__2` (e6e6cf466ea1), fix in both.
+Q agrees with R's `:1727/s1` finding, but R's repair (make the note capture explicit inside s1) leaves the invented
+draft and check of written care lines (s2/s3, 26% against a 6% documents prior) and a loop that only looks up a
+name she typed; counting capture time should lower the net. Q also finds `:1723/s5` (pressing send priced at 8%,
+half the gross) and `:20751/s1` (22% re-keying an order sibling `1719` produces). R confirmed `49-9052.00__1:11858`
+fixed at 05:20.
+
+Findings per file:
+
+- **opus `31-2021.00__3` (fix).** `:2021/s6` moving paper messages to a task list claims a saving sibling `:2009/s4`
+  already claims; `/s8` the claim send already runs through the practice system [S4], yet is priced at 5% and cut to
+  0; `/s3` and `:2023/s5` machine sends whose structured input no step produces; `:2017/s4-s6` sibling work pads the
+  task by 25%; `:15250/s6` a course record sized far above its work. Strength: hands-on steps at 100%.
+- **opus `19-4061.00__5` (fix).** `:12964/s2` 17.5 points from moving forms to online capture, ungraded, while
+  sibling `:12965` says questionnaires are already built in the survey tool; `:12972/s2` a reorder reminder with no
+  stock booking step; `/s3` a machine join of forms and bookings that no step performs, and booked is not attended.
+  Strength: `:12964/s3` loop on pseudonymised text, checked against a double-coded sample; works-council gate [S22].
+- **sol `27-4031.00__1` (S4, fix).** `:4031/s1`, `:4037/s1`, `:4039/s1` read-and-lookup steps cut 40-50% as a
+  whole; `:4037/s3`, `:4039/s3` cuts for ids the project record already holds; `:18663/s2` locate-and-inspect cut
+  50% while watching clips stays; `:4039/s6` a gate on her own spoken instruction. Strength: creative and physical
+  work at 100%, task-specific ranges.
+- **sol `25-2051.00__8` (S3, fix).** `:19096`, `:19091` range lows by the formula (before 04:30); `:19091/s3`
+  planned quantities have no producer and the comparison, mostly a glance while counting, is priced at 20% and cut
+  to 0. Strength: save and send priced small and kept, gate on the check.
+- **sol `33-2021.00__2` (S2, fix).** `:22999`, `:23001` range basis is the central sum with high equal to central;
+  self-gated saves (label). Zeros `:22996`, `:22997` honest: captions and custody records are realistic writes no
+  native feature removes. Closest to good this round.
+- **sol `19-2043.00__5` (S1, fix).** `:9122/s3,s5` machine 0% with no repair or layout remainder although the
+  assumptions say failed conversions stop for manual repair; `/s2` cut though it must now write the transformation
+  spec; `:9118` "E1 case [S11]" where S11 is applicant tooling; ranges back-solved in three tasks. New savings
+  otherwise real: cut steps exist today and the configuration touches them.
+- **Grok `31-9094.00__3` (G1, fix).** `:9420/s4` the feed writes the live clinical record before the check at s6;
+  `:9425/s2` 12% for placing headings cut to 0 (templates exist); `:9424/s3` a read step outputs fields no step
+  produces; `:20254/s3` typing cut overlaps sibling `9413`.
+- **Grok `29-1141.04__3` (G4, fix).** Read steps cut 45-55% while the assumptions say the specialist still reads;
+  note cuts of 45-50% from fixed fields against the digest's 29% with a full scribe [S8]; `:18003/s8` a manual
+  interaction read although rule surveillance exists [S6]; `:18003/s9` prescription send has no step. No early G4
+  family.
+- **Grok `27-1023.00__2` (G1, fix).** See R/Q comparison.
+- **Grok `19-2042.00__1` (G1, fix).** `:20390/s3` "reordering abstracts" at 10% does not happen today and is cut to
+  0; `/s2` locate cut in full though hand fetching stays; `:3712/s5` a machine journal submission cut to 0;
+  `:3703` the zero folds the field-log write that `:3705` reads.
+
+Next round about 08:40.
+
 ## Verdicts
 
 | File | Label | Pane | Round | Verdict | sha256[:12] | Reason |
@@ -913,3 +1004,18 @@ Next round about 06:30.
 | 29-2092.00__2 | grok-4.7 | G1 | 9 | fix | 9ba8724e1af7 | 17445 zero before split: diagnosis record siblings read, fitting software and note folded into in-person steps |
 | 29-1222.00__1 | opus-5.5 | O1 | 9t | redo | 5d484df1cb34 | Targeted, outside totals: prior-fit, 1% spreadsheet filler cut in all four tasks, means labels bent; lead pulled |
 | 27-4015.00__1 | opus-5.5 | O1 | 9t | redo | 62dd86c4d10e | Targeted, outside totals: prior-fit in all four tasks, console work labelled in_person, mail sized to prior; pulled |
+| 31-2021.00__3 | opus-5.5 | O1 | 10 | fix | 417221a33d88 | 2021/s6 double-claims sibling 2009; 2021/s8 existing send cut; 2021/s3, 2023/s5 sends no input producer |
+| 19-4061.00__5 | opus-5.5 | O1 | 10 | fix | 930ef3f511a1 | 12964/s2 capture-mode cut ungraded vs sibling 12965; 12972 s2 reminder no stock booking, s3 join no step |
+| 27-4031.00__1 | sol-6.1 | S4 | 10 | fix | 51a0499264cd | 4031/4037/4039 s1 read+lookup cut whole; 4037/4039 s3 cuts for held ids; 18663/s2 inspect cut |
+| 25-2051.00__8 | sol-6.1 | S3 | 10 | fix | 1bbddc264e3d | 19091/s3 planned qty no producer, glance at 20% cut to 0; 19096/19091 range formula lows |
+| 33-2021.00__2 | sol-6.1 | S2 | 10 | fix | 078278a99fb3 | 22999/23001 range basis = central sum, high = central; zeros 22996/22997 honest; self-gate labels |
+| 19-2043.00__5 | sol-6.1 | S1 | 10 | fix | 213f9185b723 | 9122 s3/s5 machine 0% without repair remainder, s2 cut; 9118 E1 case [S11]; back-solved ranges |
+| 31-9094.00__3 | grok-4.7 | G1 | 10 | fix | 63125346be58 | 9420/s4 feed writes live record before check; 9425/s2 12% headings cut to 0; 9424/s3 fields no producer |
+| 29-1141.04__3 | grok-4.7 | G4 | 10 | fix | 0b50e1b3791c | Read steps cut ~50% though still read; note cuts above [S8]; 18003/s8 invented manual read; s9 send no step |
+| 27-1023.00__2 | grok-4.7 | G1 | 10 | fix | e6e6cf466ea1 | R fix same hash: 1727 capture uncounted + invented draft/check + needless loop; 1723/s5 8% send; 20751/s1 |
+| 19-2042.00__1 | grok-4.7 | G1 | 10 | fix | 3f08c39c01bb | 20390/s3 invented 10% reorder step cut to 0; 3712/s5 machine journal submit; 3703 zero folds field log |
+| 51-9195.00__1 | opus-5.5 | O1 | 10t | fix | ef87203f2352 | Targeted, outside totals: 23677/s6 mold-number write kept 100 "too small" though ids in system; 23666 honest |
+| 19-1031.03__4 | opus-5.5 | O1 | 10t | fix | ad85a32e765f | Targeted, outside totals: 3699/s6, 3694/s1 savings handed to siblings that do not claim them; 3695 vs 3694 |
+| 19-3094.00__1 | sol-6.1 | S1 | 10t | fix | 959e52ccbdbb | Targeted, outside totals: 5515/s5 invented class-progress record; flat configure cuts; 5516/s1 new capture |
+| 17-2151.00__2 | grok-4.7 | G1 | 10t | redo | 8eb6a0005f28 | Targeted, outside totals: statement restated as one step, zeros skip named valuation/evaluation work; pulled |
+| 25-4012.00__3 | grok-4.7 | G1 | 10t | redo | b82786bf40ad | Targeted, outside totals: statement split at commas, budget/insurance/booking work skipped; pulled |

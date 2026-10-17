@@ -2,11 +2,11 @@
 
 | Model | fix | good | redo | Reviewed files |
 |---|---:|---:|---:|---:|
-| grok-4.7 | 19 | 1 | 0 | 20 |
-| opus-5.5 | 19 | 1 | 0 | 20 |
-| sol-6.1 | 9 | 11 | 0 | 20 |
+| grok-4.7 | 20 | 2 | 0 | 22 |
+| opus-5.5 | 21 | 1 | 0 | 22 |
+| sol-6.1 | 9 | 13 | 0 | 22 |
 
-Through round 10: **47 fix, 13 good, 0 redo** across 60 files, 216 tasks and 992 steps, including one revised round-2 verdict. Savings remain provisional. Samples differ by job; these counts do not establish a model quality ranking.
+Through round 11: **50 fix, 16 good, 0 redo** across 66 files, 240 tasks and 1094 steps, including one revised round-2 verdict. Savings remain provisional. Samples differ by job; these counts do not establish a model quality ranking.
 
 ## Review protocol and continuation
 
@@ -618,3 +618,55 @@ Explicit dependency dispositions:
 Q reconciliation: none of these six paths appears in Q's ledger. Q's04:27 correction is adopted: ordinary same-system author saves need no approval stage; retain release/send/posting/shared-register gates where others act on the result. This corrects earlier overbroad gate wording and must not create new approval labour. Independent follow-up confirms Q's closure of Opus `49-9052.00__1/:11858`: SHA `7f5d49ac11074545dac316301465c0e375d6341b806a3c38ecbfc254d5a2817d`, s3 checks the final guide message and subscriber address, and a1 binds that exact message/destination to s4. Only this gate finding closes; other task findings remain open. Q's prior-fit quarantine and S1 message-delivery issue are acknowledged as lead actions, not independently re-audited or folded into random verdict counts.
 
 Supplied digests27-2,53-5 and19-3 were checked for cited claim support. Model-knowledge-only claims remain E1. No source URLs were opened or freshly cited. Round10 alerts reiterate unchanged-human cuts in Opus and task-specific range scenarios in Sol. Next review07:16 CEST; weekend assignment continues through Sunday23:59.
+
+
+## Round 11 — 17 October 2026, 07:16–07:21 CEST
+
+Selection at 07:16:08 used sorted unreviewed finalized passes. Grok population 115, eligible 102, seed `batch3-R-round11-grok-4.7-20261017`; Opus 645/625, seed `batch3-R-round11-opus-5.5-20261017`; Sol 1640/1620, seed `batch3-R-round11-sol-6.1-20261017`. Six new files, **24 tasks and 102 steps: 3 fix, 3 good, 0 redo**. All original statements and prompt headers were read. Read-only exact-prompt-task `checks` and `template_checks` return empty lists; all six selection hashes remain unchanged. This is semantic review, not measured validation.
+
+| File | Verdict | Findings |
+|---|---|---|
+| `runs/v5/grok-4.7/49-1011.00__2.json` | fix | :2923/s4 halves identifying and reviewing resource needs together with recording them; fixed fields replace a blank page but do not perform the resource judgement. Split that work and retain the judgement. :2918/s3 says part, quantity, equipment and supplier chosen in s2 prefill the requisition, yet s2's in-person choice produces no captured field contract beyond “chosen part”; :2912/s4 similarly fills the assignee from a choice not captured on the board. Name and count the selection/entry that makes those values usable, without counting the same capture twice. The :2923 low of 3 and :2917 low of 2 describe corridor/floor talks with neither prior-note lookup nor subsequent writing; those cases remove both proposed changes and cannot support positive savings. Actual job-card/stock/open-order producers, retained conversations and the intrinsic final requisition release are sound. No extra approval stage is requested for ordinary note saving. |
+| `runs/v5/grok-4.7/33-9092.00__1.json` | good | Monitoring/patrolling, judging and making the emergency call, noticing hazards and warning people retain full effort with zero proposed saving. :5045 counts visual observations and treatment/incident capture; station fields, producer, missing-feed fallback, checks, confirmation and ongoing mapping upkeep are explicit. Its final filing is explicitly a second copy from the confirmed day sheet into the incident log, not a normal same-system save recast as a saving. Confirmation binds that completed version. Good conditional on the stated current double-entry and station-feed scenario; neither that baseline nor its duration is measured here. Do not invent another record or send for the fully retained spoken tasks. |
+| `runs/v5/opus-5.5/51-9061.00__1.json` | fix | :12485/s3 uses a model for short sentences from failed characteristics, limits and codes, but “the customer reads a short description” does not establish why a deterministic sentence template fails. Its executable check only matches numbers and limits; verify finding meaning, part/characteristic association and defect interpretation, with human correction/fallback, if a model remains. :12472/s6 posts actual scrap/rework to ERP without an approval reference bound to the completed reject record, quantity and applicable disposition. The value-limit disposition decision is not by itself an exact final posting check for all lots. :20299/s4 changes a paper/phone maintenance request into an automatically routed request without a final request/destination gate. Separate creation/check and the real release, retaining their actual effort. Physical movement, human rejection and line discussion stay fully retained; engineer/clerk labour is excluded from inspector savings. :20300/s6 needs a clearer split between the before/after view and actual post-action measurement/assessment: connected readings are a valid producer, but do not credit a chart with performing any hand measurement or judgement still required. |
+| `runs/v5/opus-5.5/25-2011.00__4.json` | fix | :6484/s5 combines taking photographs, checking actual child visibility/consent and posting to parents under one 30% cut; an automatic consent flag changes a lookup, not photography or the whole publication. Separate the real capture, final photo/audience check and release, and bind the final post to that check. :6473/s1 cuts the collector check to 80% while both design and assumptions say door checks do not change; isolate any shorter list lookup and retain identification/authorisation judgement. :6487/s3 goal-code presence can count tagged coverage but cannot by itself verify that the actual activities fulfil those goals; retain that meaning check. Its s4 also bundles internal calendar booking and messages to parent helpers under one cut, without a final message/recipient release boundary. Count the actual booking and communication work separately. Theme-plan semantic checks and retained classroom activity are substantially better specified; remedial-plan note capture and ongoing library upkeep are counted. Ordinary teacher saves do not need invented approval stages. |
+| `runs/v5/sol-6.1/19-3091.00__3.json` | good | Training keeps actual field instruction and tool correction; only existing illustration/instruction assembly shortens. Participatory research and co-design remain full, and the report loop checks sources, permission, disagreement, power and attribution with bounded revisions/manual fallback. Theory work retains substantive reading, analysis and actual theory recording; field survey keeps observation/capture and interpretation. Each positive range names a conservative case with less reusable material, rather than applying a fraction of the central net. Any internal training/research record is explicitly conditional on actual role ownership and must be dropped/reweighted if absent. Small native saves remain full, without artificial gates. All capability claims are E1 model knowledge. |
+| `runs/v5/sol-6.1/29-1011.00__2.json` | good | Treatment/lifestyle advice, exercise selection/demonstration/correction and X-ray interpretation/clinical assessment all remain fully human, with zero savings. The boundary expressly excludes new documentation or automatic referral/clinical outputs; no hypothetical trailing record is added to make the task digital. Reference information is not presented as a clinical decision tool. The cited mammography example is expressly not evidence for spinal-X-ray capability. Zero upkeep is consistent with no changed workflow. Good within these explicit task boundaries, not a certification of clinical practice. |
+
+Sample SHA-256 receipts:
+
+- `runs/v5/grok-4.7/49-1011.00__2.json`: `7c6e92c23839999deb134abd93d41a29dca31f6726956601f55a184c87751bff`.
+- `runs/v5/grok-4.7/33-9092.00__1.json`: `08a99b57a16ca3464e2966ab972b990411423396dfb25427ac224161a531b8e5`.
+- `runs/v5/opus-5.5/51-9061.00__1.json`: `2748f1a842625cf7f81eac1413745de963e8b51752bd64e764b7839ead5fd544`.
+- `runs/v5/opus-5.5/25-2011.00__4.json`: `ec04e0341fc012815299cbe5e3352a229a9a6a41bdac52934bc99db292641183`.
+- `runs/v5/sol-6.1/19-3091.00__3.json`: `69603372acc32ad68e54b57407923c080b957a4568158e5e7a2187ae793bff69`.
+- `runs/v5/sol-6.1/29-1011.00__2.json`: `823e997e2228622ecdc74973e5f978454c36ed5fabbfa77b4f5cff3bdaba6398`.
+
+### Structural scan and targeted follow-up
+
+Snapshot 07:16:16: **2401 finalized passes, 8528 tasks, 37368 steps**. One extra Opus file arrived after sampling. All passed paths were scanned for text/full/numerical repetition, explicit input/output order, approval references and approval-before-final-artifact heuristics. Supplemental checks ran in chunks over this path population; hashes were taken immediately before each chunk, not frozen across the whole growing population. Only the six sample hashes have a separate selection-to-completion comparison.
+
+| Model | Files | Tasks | Steps | Distinct task-step texts | Full shapes | Economic shapes | Largest coarse group |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| grok-4.7 | 115 | 404 | 1878 | 404 | 403 | 394 | 56 |
+| opus-5.5 | 646 | 2271 | 13184 | 2271 | 2271 | 2258 | 38 |
+| sol-6.1 | 1640 | 5853 | 22306 | 5841 | 5477 | 3567 | 934 |
+
+- Grok cash `41-2011.00__4:2416` retains the confirmed count/approval cycle. Earlier read-before-later-update hits :16122, :6471/:6470 and :22434 remain existing-version reuse, not new cycles. Sol `21-1091.00__4:20237` still consumes post-attendance evidence in a pre-enrolment step. No new explicit Opus forward dependency.
+- Six Sol exact-text groups are the previously read comparable teaching/instruction actions. The full live adjacent-pair scan has 15 Opus groups; new groups cover research final-check/submission and referee response, recruitment/admissions/placement, and class discussion/forum work. Read the new members and domain-specific surrounding steps. Repetition of these actual comparable actions does not establish copied answer templates; numerical shapes alone are not a defect.
+- The 20 later-draft candidates include one new Sol hit, `25-1053.00__1:5895`. Its actual examiner determines the final grade/identity in s3; feedback writing does not alter that decision, and assumptions require a fresh examiner decision on any later grade/identity change before transfer. This is not premature approval. Other candidates are the previously read independent artifacts, unchanged explanations or explicit rechecks.
+- Targeted research follow-up outside random totals: Opus `25-1043.00__4:5822` and `25-1192.00__5:6412` now put the first submission after the checked manuscript, so that initial ordering is sound. Both then produce a reviewer-response revision without an explicit checked resubmission branch. If that branch sends a revised manuscript, model that actual release against its revised version; do not reuse the first version's approval. This is a coverage clarification, not a claim that the current first submission consumes a future revision. The admissions-list producer is named in the surrounding prose despite a weak input label; it is not a new proven missing-producer family.
+
+### Evidence, Q comparison and fleet state
+
+Digest comparisons use the supplied 49-1, 33-9, 51-9, 25-2 and 29-1 source packs. Opus's lesson-assistant benchmark retains the 464-teacher/limited-coverage context; the pupil-plan research is described as pending, not proven. Product references support bounded tooling capabilities, not these savings. No linked page was opened or newly cited, and legal descriptions were not independently verified. Sol archaeology uses candid E1 model knowledge.
+
+Q previously read the maintenance-supervisor sample at the same hash `7c6e92c23839…`: both fix, with matching :2923 judgement and :2918/:2912 capture findings. The other five new samples have no Q overlap found.
+
+For the earlier shared florist `27-1023.00__2`, re-read unchanged SHA `e6e6cf466ea16eaab730617f322f294bec9330aa7c56ea86ae106c680f0eabb0`. Q is right that my round-7 repair emphasis was incomplete: making :1727 note capture explicit inside s1 cannot legitimise a new written care-draft/check baseline for a spoken bench conversation. Rebuild from the actual lookup, explanation and any actual existing note work, count genuinely added capture as new work, and prefer deterministic retrieval for named plants/approved handling points unless an actual language problem justifies a model. My round-7 concern about the unsupported 12% drafting baseline remains; the other-three-tasks shorthand was too broad. The unchanged file stays fix.
+
+There is still a narrower evidential difference with Q: :1723's 8% send share needs a real baseline, but its size alone does not prove it is inflated; R does not infer a defect solely from that number. For :20751, sibling Sol `27-1023.00__1:1719` expressly counts the agreed price/arrangement/delivery brief inside its fully retained conversation. Reuse that actual captured brief and allocate only genuine delivery-list assembly here; do not re-capture the same customer details. This agrees with Q's double-count risk, rather than proving every list-preparation hour is duplicate.
+
+Lead stood G1 down at 06:31 and quarantined its post-04:00 files; no Grok writer is now active. Historical sampled verdicts remain tied to their recorded hashes and are not cleared by quarantine. Worker acknowledgements of repaired patterns are not blanket re-review receipts.
+
+Cumulative: **50 fix, 16 good, 0 redo; 66 random files, 240 tasks, 1094 steps**. Targeted follow-ups do not enlarge random totals. Next round **09:16 CEST Saturday**; weekend reviewer remains active.
