@@ -3,11 +3,11 @@
  "tasks": [
   {
    "uid": "53-6031.00:10723",
-   "short": "Write each service on the customer card, find customers due for service, check the reminder list, send reminders, phone customers without e-mail, have customers book, and enter the bookings.",
+   "short": "Find and refile the customer card, record the service type, date, licence plate and mileage, take the customer's contact and consent, find customers due for service, check the reminder list, send reminders, phone customers without e-mail, have customers book, and enter the bookings.",
    "steps": [
     {
      "id": "s1",
-     "what": "Service attendant maintains customer records by writing each service on the customer card",
+     "what": "Service attendant finds the customer's card in the card box and files it back after each service",
      "actor": "service attendant",
      "today_means": "document",
      "systems": [],
@@ -15,12 +15,12 @@
       "service done"
      ],
      "outputs": [
-      "service record"
+      "card handled"
      ],
      "handoff_to": "none",
-     "share_pct": 25,
-     "fate": "person_does",
-     "remaining_pct": 40,
+     "share_pct": 9,
+     "fate": "gone",
+     "remaining_pct": 0,
      "block": "crud_app",
      "rung": "configure",
      "loop": null,
@@ -35,6 +35,64 @@
     },
     {
      "id": "s2",
+     "what": "Service attendant maintains customer records by recording the service type, date, licence plate and mileage of each service",
+     "actor": "service attendant",
+     "today_means": "document",
+     "systems": [
+      "OTHER"
+     ],
+     "inputs": [
+      "service done"
+     ],
+     "outputs": [
+      "service record"
+     ],
+     "handoff_to": "none",
+     "share_pct": 15,
+     "fate": "person_does",
+     "remaining_pct": 50,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "artefact",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "focal_role",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s3",
+     "what": "Customer gives a mobile number or e-mail address and agrees to service reminders",
+     "actor": "customer",
+     "today_means": "in_person",
+     "systems": [],
+     "inputs": [
+      "service done"
+     ],
+     "outputs": [
+      "contact consent"
+     ],
+     "handoff_to": "service attendant",
+     "share_pct": 1,
+     "fate": "person_does",
+     "remaining_pct": 100,
+     "block": "crud_app",
+     "rung": "configure",
+     "loop": null,
+     "authority": "write_internal",
+     "human_gate": false,
+     "boundary": "actor",
+     "workflow": "order-to-cash",
+     "approver": "none",
+     "labour_scope": "customer",
+     "shared_step_id": "",
+     "approval_refs": []
+    },
+    {
+     "id": "s4",
      "what": "Service attendant goes through the cards to find customers due for service",
      "actor": "service attendant",
      "today_means": "document",
@@ -62,13 +120,16 @@
      "approval_refs": []
     },
     {
-     "id": "s3",
-     "what": "Service attendant checks the reminder list",
+     "id": "s5",
+     "what": "Service attendant checks the due list: service due, due date and contact for each customer",
      "actor": "service attendant",
      "today_means": "document",
-     "systems": [],
+     "systems": [
+      "OTHER"
+     ],
      "inputs": [
-      "due list"
+      "due list",
+      "contact consent"
      ],
      "outputs": [
       "checked reminders"
@@ -90,12 +151,13 @@
      "approval_refs": []
     },
     {
-     "id": "s4",
-     "what": "Service attendant follows up with telephone or mail reminders of services due",
+     "id": "s6",
+     "what": "Service attendant follows up with reminders of services due; after the change the system sends each checked reminder (customer name, licence plate, service due, due date and booking link) by text or e-mail to the number or address the customer gave",
      "actor": "service attendant",
      "today_means": "paper_phone",
      "systems": [
-      "TELEPHONY"
+      "TELEPHONY",
+      "OTHER"
      ],
      "inputs": [
       "checked reminders"
@@ -122,7 +184,7 @@
      ]
     },
     {
-     "id": "s5",
+     "id": "s7",
      "what": "Service attendant phones regular customers who have no e-mail or mobile number",
      "actor": "service attendant",
      "today_means": "paper_phone",
@@ -152,8 +214,8 @@
      "approval_refs": []
     },
     {
-     "id": "s6",
-     "what": "Customer phones back to book the service",
+     "id": "s8",
+     "what": "Customer phones back or uses the booking link to book the service",
      "actor": "customer",
      "today_means": "paper_phone",
      "systems": [
@@ -182,7 +244,7 @@
      "approval_refs": []
     },
     {
-     "id": "s7",
+     "id": "s9",
      "what": "Service attendant enters the service bookings in the agenda",
      "actor": "service attendant",
      "today_means": "document",
@@ -211,7 +273,7 @@
      "approval_refs": []
     }
    ],
-   "design": "The till and service system ({OTHER}) records each service against the licence plate and computes the next due date, so cards are not kept or searched. The attendant checks the weekly due list, and once checked, text and e-mail reminders with a booking link go out; regulars without a number or address still get a call. Bookings made through the link land in the agenda.",
+   "design": "At the till the attendant records each service against the licence plate: the sale already carries the service type and date, the attendant types the plate and mileage, and the till and service system sets the next due date from the station's interval for that service type, so no card box is kept or searched. The customer gives a mobile number or e-mail address and agrees to reminders. Each week the system lists customers due from those records; the attendant checks the list, and only then each checked reminder (name, plate, service due, due date, booking link) goes by text or e-mail to the contact the customer gave. Regulars without a number or address still get a call. Bookings made through the link land in the agenda.",
    "previous_blocker": "Customer cards were paper and reminders were phone calls one by one.",
    "enabler_now": "Garage systems compute due dates from service records and send reminders with booking links.",
    "still_hard": "Older regulars expect a personal call.",
@@ -251,9 +313,10 @@
    ],
    "assumptions": [
     "Boundary: from the service done to the service booked; the service itself is outside.",
-    "Input contract: service intervals set by the station; contact details given by customers; fallback is cards and calls.",
-    "Customers book through the link in about the time a call took; priced as customer time.",
-    "Calls to regulars without e-mail stay."
+    "Input contract: the reminder's source is the service record from s2 (service type and date from the till sale, plate and mileage typed by the attendant, next due date from the station's interval per service type); its destination is the mobile number or e-mail address the customer gave with consent in s3; fallback is a call.",
+    "s1 is gone because no card box is kept; s2 keeps half because the sale already gives service type and date and only plate and mileage are typed; s4 keeps 10 for opening the weekly list; s9 keeps 40 for bookings made by phone.",
+    "Customers' time to give contact details and book through the link is shown in s3 and s8 and priced as customer time.",
+    "Calls to regulars without e-mail or mobile stay."
    ],
    "unknowns": [
     "Service customers per month."
@@ -279,23 +342,23 @@
    "approvals": [
     {
      "id": "a1",
-     "action_step_id": "s4",
-     "approved_version": "The reminder list as checked by the attendant in s3.",
-     "approval_step_id": "s3",
+     "action_step_id": "s6",
+     "approved_version": "The reminder list exactly as checked by the attendant in s5: for each listed customer the name, licence plate, service due, due date and booking link, sent once by text or e-mail to the contact the customer gave in s3; customers the attendant removes get nothing.",
+     "approval_step_id": "s5",
      "approver": "service attendant"
     }
    ],
    "time_saved_range_pct": {
-    "low": 20,
-    "high": 40,
-    "basis": "Low: many older regulars who need calls; high: most customers with e-mail or mobile numbers."
+    "low": 22,
+    "high": 47,
+    "basis": "Low: many older regulars who need calls and few contact details; high: most customers give a mobile number or e-mail."
    },
-   "focal_role_share_pct": 95,
-   "excluded_labour_share_pct": 5,
-   "gross_time_saved_pct": 62.105263,
+   "focal_role_share_pct": 94,
+   "excluded_labour_share_pct": 6,
+   "gross_time_saved_pct": 64.361702,
    "incremental_hours_per_100_baseline_hours": 1.5,
-   "time_saved_pct": 60.605263,
-   "speedup": 2.53841,
+   "time_saved_pct": 62.861702,
+   "speedup": 2.692638,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   },
   {
@@ -343,9 +406,9 @@
      "handoff_to": "customer",
      "share_pct": 50,
      "fate": "person_does",
-     "remaining_pct": 90,
+     "remaining_pct": 100,
      "block": "conversation",
-     "rung": "configure",
+     "rung": "stays_manual",
      "loop": null,
      "authority": "act_external",
      "human_gate": false,
@@ -358,7 +421,7 @@
     },
     {
      "id": "s3",
-     "what": "Service attendant looks up road works and closures",
+     "what": "Service attendant searches road works and closures on websites while the customer waits",
      "actor": "service attendant",
      "today_means": "system_screen",
      "systems": [
@@ -373,7 +436,7 @@
      "handoff_to": "none",
      "share_pct": 25,
      "fate": "person_does",
-     "remaining_pct": 50,
+     "remaining_pct": 60,
      "block": "answer_desk",
      "rung": "configure",
      "loop": null,
@@ -388,7 +451,7 @@
     },
     {
      "id": "s4",
-     "what": "Service attendant shows the route on a paper map",
+     "what": "Service attendant draws the route on a paper map",
      "actor": "service attendant",
      "today_means": "in_person",
      "systems": [],
@@ -415,8 +478,8 @@
      "approval_refs": []
     }
    ],
-   "design": "A screen at the counter shows live road works, closures and traffic from the public traffic feed, and a QR code opens the route in the customer's own navigation app, so fewer routes are drawn on paper maps. Giving directions from local knowledge stays with the attendant.",
-   "previous_blocker": "Road works were looked up by phone or memory and routes shown on paper maps.",
+   "design": "A screen at the counter shows live road works, closures and traffic for the area from the public traffic feed, so the attendant reads the item for the customer's road instead of searching websites while the customer waits. A QR code opens the route in the customer's own navigation app, so fewer routes are drawn on paper maps. Giving directions from local knowledge does not change and keeps its full time.",
+   "previous_blocker": "Road works were searched on websites while the customer waited, or remembered, and routes were drawn on paper maps.",
    "enabler_now": "Public traffic feeds and navigation apps give live road information.",
    "still_hard": "Local shortcuts and tricky junctions are not on any screen.",
    "human_edge": "Warning a caravan driver about a low bridge the app ignores.",
@@ -424,7 +487,7 @@
     "kind": "none",
     "what": ""
    },
-   "altitude": "Nothing changes.",
+   "altitude": "Less searching and map drawing; directions stay.",
    "reach": [
     {
      "role": "station manager",
@@ -450,8 +513,10 @@
    "assumptions": [
     "Boundary: from the customer's question to the route shown; selling maps is outside.",
     "Input contract: road information from the public traffic feed; fallback is local knowledge and paper maps.",
-    "Customers open the route on their phone in about the time it took to look at the map; priced as customer time.",
-    "Directions from local knowledge do not change."
+    "s2 keeps its full time: directions from local knowledge do not change.",
+    "s3 keeps 60: the website search is removed, but reading the item for the customer's road and explaining it stay.",
+    "s4 keeps 70: about 30% of customers take the QR route instead of a drawn map; the rest still get the paper map.",
+    "Customers open the route on their phone in about the time it took to look at the map; priced as customer time."
    ],
    "unknowns": [
     "Route questions per day."
@@ -476,16 +541,16 @@
    },
    "approvals": [],
    "time_saved_range_pct": {
-    "low": 8,
-    "high": 16,
-    "basis": "Low: mostly local regulars; high: a motorway station with many travellers."
+    "low": 5,
+    "high": 12,
+    "basis": "Low: mostly local regulars who ask for local directions; high: a motorway station with many travellers using the screen and QR route."
    },
    "focal_role_share_pct": 90,
    "excluded_labour_share_pct": 10,
-   "gross_time_saved_pct": 24.444444,
+   "gross_time_saved_pct": 16.111111,
    "incremental_hours_per_100_baseline_hours": 0.5,
-   "time_saved_pct": 23.944444,
-   "speedup": 1.314828,
+   "time_saved_pct": 15.611111,
+   "speedup": 1.18499,
    "savings_basis": "100 focal-role baseline hours; external labour excluded; incremental focal work deducted once; provisional"
   }
  ],
@@ -525,6 +590,6 @@
   "digest": "research/digests-minor/53-6.md",
   "digest_sha256": "bf8a97543056ddf8788a1772cdd2d6059d737704c83614e58ba93dbac69d2cdb",
   "schema_sha256": "f2fcf95ac870352ea45b1ae4561043473e2a763bbc9c872cf94e637495672046",
-  "finalized": "2026-10-16T17:05:10"
+  "finalized": "2026-10-17T05:28:06"
  }
 }
