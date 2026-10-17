@@ -1,33 +1,33 @@
 # Batch 3 second review (Q, pane 5, Opus 5.5)
 
-**Running verdict after round 7 (17 Oct 00:06): 58 files read, 44 fix, 3 good, 11 redo.** Not a model ranking:
-different jobs, fourteen to twenty-seven files each. All 58 passed the finalize checks when read; every fix is a
+**Running verdict after round 8 (17 Oct 02:14): 68 files read, 52 fix, 4 good, 12 redo.** Not a model ranking:
+different jobs, sixteen to thirty-one files each. All 68 passed the finalize checks when read; every fix is a
 semantic defect.
 
 | Model | Files read | Fix | Good | Redo |
 |---|---:|---:|---:|---:|
-| opus-5.5 | 14 | 14 | 0 | 0 |
-| sol-6.1 | 17 | 15 | 2 | 0 |
-| grok-4.7 | 27 | 15 | 1 | 11 |
+| opus-5.5 | 16 | 16 | 0 | 0 |
+| sol-6.1 | 21 | 18 | 3 | 0 |
+| grok-4.7 | 31 | 18 | 1 | 12 |
 
-Open defect classes (through round 7):
-- **All models:** a record write, lookup or send is folded into an in-person or conversation step, so the zero or
-  the cut sits on the wrong part; a fill, sync, feed or send the design names has no step or producer; cuts that
-  claim work belonging to a sibling task; authority labels on person-held steps.
-- **Grok:** only G1 still writes. G4's prior-fit (step shares equal the rounded time-share prior) starts at 15:59;
-  18 such G4 files (15:59-19:45) remain in the pass folder. G1 keeps self-approved "place/submit the accepted X"
-  steps on inflated baselines and cuts entry steps without counting the new entry.
-- **Sol:** the four panes disagree on human-class tasks: S1 4.0 gross points at 1.7 steps (81% zero), S2-S4 about 10
-  at about 6 steps. S1 folds record writes into talk; S2-S4 invent admin baselines and add self-approval ceremony.
-  Same-system save tails fell after the 22:00 alert, but S3's 19:50-22:00 files still carry them and S2's patch
-  keeps the inflated shares.
-- **Opus:** O1's bulk fixes partly back-solve to the old saving (18 of 67 tasks unchanged); sibling double counting
-  (`29-1215.00__2:7775`); approvals that bind the job, not the message sent (`49-9052.00__1:11858`).
+Open defect classes (through round 8):
+- **All models:** a record write, lookup or send is folded into an in-person, conversation or check step, so the
+  zero or the cut sits on the wrong part; a fill, sync, feed or send the design names has no step or producer; a
+  bundled step halved as a whole where only one part changes; authority labels on person-held steps.
+- **Sol:** the panes still disagree. S1 leaves 75% of human-class tasks at zero (64% one-step) and has not replied
+  to the 00:06 alert. S4 over-corrected after it: 4.9 gross points per task since 00:30 (automate 9.7 vs 19-22 for
+  S1-S3), leaving out or folding documented second-system entry and rule matching. S2/S3 still add an author's
+  self-approval before a gated same-system save.
+- **Grok:** only G1 writes. Watch: tasks whose only saving is one small machine step, some of them invented card or
+  copy steps (`29-1171.00__3` redo). G4's prior-fit and the G2/G3 families are pulled.
+- **Opus:** shares sized toward the steps being cut (`25-2022.00__6:6586`), and cuts that depend on a booking or
+  feed no step performs (`49-9043.00__2:11838`). O1's re-pricing of back-solved tasks is mostly honest.
 
-**R/Q comparison:** five files read by both at the same hash, all fix in both: Grok `41-2011.00__2`,
-`41-2011.00__4`, `41-2011.00__5`, Opus `35-3031.00__2`, Sol `39-3091.00__4` (same `:5127` finding). No open
-disagreement. Opus `49-9052.00__1` was read by R at an earlier hash; R's `:11858` a1 finding is still open in the
-23:41 version. Family level: R rated G4 `21-1013.00__4` fix; Q has not read it, but it is in the prior-fit family.
+**R/Q comparison:** six files read by both at the same hash, all fix in both: Grok `41-2011.00__2`,
+`41-2011.00__4`, `41-2011.00__5`, `35-1011.00__2`, Opus `35-3031.00__2`, Sol `39-3091.00__4`. No open
+disagreement; on `35-1011.00__2` the findings complement each other. R's `49-9052.00__1:11858` approval finding is
+still open in a new form (01:21). Family level: R rated G4 `21-1013.00__4` fix before the lead pulled the prior-fit
+files.
 
 ## Method
 
@@ -641,6 +641,89 @@ Findings per file:
 
 Next round about 02:05.
 
+### Round 8 — selected 02:06 CEST, written 02:14 (17 Oct)
+
+Seed `batch3-Q-round8-20261017`. Finalized passes 1593 (grok 106, opus 493, sol 994) after the lead moved 21 more
+G4 prior-fit files (00:10, Q's alert). Unreviewed populations opus 476, sol 966, grok 93 (G1 79, G2 2, G4 12).
+Selected: opus `25-2022.00__6`, `49-9043.00__2` (re-finalized 00:22); sol `15-1299.06__3` (S2), `43-4011.00__3`
+(S4), `49-9011.00__2` (S1), `17-2199.05__3` (S3); Grok `25-2022.00__5` (G1), `29-1141.03__2` (G2), `49-1011.00__2`
+(G4, 12:38, before both G4 families), `29-1171.00__3` (G1, top-up). All ten pass the finalize checks rerun
+read-only; hashes unchanged at 02:13. `uptake.py` now compares full timestamps (clock-only buckets would misplace
+files after midnight; round 7's figures predate midnight and stand).
+
+**Uptake of the 00:06 alerts.** The lead pulled the 15:59-19:45 G4 files. S3 re-finalized its 30 files from
+19:50-22:00 and S2 re-priced 30 (saves at 1%, kept). Since 00:30 the same-system tails cut below 100 carry 0.6
+points per task in S2 and 0 in S3 and S4. O1 re-priced the 18 back-solved tasks; against commit 2970739,
+`25-1071.00__2:6101` (40.5 to 41.9) and `29-9099.01__2:17483` (22.1 to 18.9) follow the design, while
+`27-3023.00__4:22625` (20.0 to 18.4) raises its reading cut from 40% to 50% with no design change, holding about
+2.6 points. S1 has posted no reply to the 00:06 alert.
+
+**New pattern: S4 over-corrected.** Since 00:30 S4 claims 4.9 gross points per task (automate class 9.7) against
+9.3-11.5 (automate 19-22) for S1-S3. It now leaves out or folds machine work the digests document:
+`25-1124.00__1:6337` has no student-information-system step although digest 25-1 [S12] reports Brightspace grades
+re-entered in OSIRIS (S2's `25-1032.00__4:5766` models that as a machine commit); `25-1125.00__2:6362` names an
+LMS-to-registry import and folds it into "Enter/import and check" at 80%; `41-2012.00__2:7005` keeps a rule match of
+daily summaries against book totals at person_reviews 90; `25-1125.00__2:6359` limits an exam to essays in the
+central case. Before the alert S4's `43-4011.00__3` (23:36, read this round) is good.
+
+**S1 human-class zeros unchanged.** Since 00:30, 75% of S1's 212 human-class tasks are zero and 64% are one step.
+Sampled: `29-1129.02__1:19176` "Observe and document client reactions" is one in-person step that swallows the
+session note (folded); `39-1013.00:23148` bundles bet record, receipt, ticket check and cash payment in one
+act_external step (zero plausible, unsplit); `39-4031.00:3334` honest. The opposite error also appears in S1:
+`49-9011.00__2:8402/s1` halves a step where only the document search changes.
+
+**Watch: G1 single small machine cuts.** In `29-1171.00__3` (14:05, redo) every saving is a 4-8% internal card or
+draft step that does not exist today, removed to machine 0, with already_counted hours equal to each cut. Across
+G1, tasks whose only cut is one machine-0 step of 8% or less: 23 of 104 (12:00-17:00), 6 of 122 (17:00-22:00), 19 of
+80 since 22:00. Some are real computation (`19-3033.00:22168` scaling raw scores against a norm table); some echo the
+pulled G3 frames (`33-3021.00__4:23042` "Copy stored exhibit dates into a prep list", `25-1122.00__1:6290` "Show
+the stored prompt for classroom discussions"). G1 does not fit steps to the prior (4 of 318 tasks).
+
+**R/Q comparison.** A sixth file read by both at the same hash: Grok `35-1011.00__2` (92ad8af3d34c), fix in both
+with complementary findings (R: `:11138/s3` labour costing has no wage-rate producer; Q: `:11136/s4`, `:11147/s2`
+entry cuts with the new entry uncounted, `:11148/s2` needless loop; Q's reader called `:11138/s6` legitimate, a
+different step). R's 01:21 alert finds `49-9052.00__1:11858` now hands printed guides while a1 binds e-mail, so the
+round-7 finding is still open in a new form.
+
+Findings per file:
+
+- **opus `25-2022.00__6` (fix).** `:6586/s4,s6` the two steps cut to 0 hold 25% of the task against priors of 4.2
+  and 2.6 while the unchanged meetings hold 20 against 40.8, so they carry 25 of 49 gross points; `:6603` the trip
+  form sent to parents has no step, authority or gate; `:6602` the action-list sync has no step and s3 is cut 30%
+  although the minute taker still enters actions; `:6591/s3` 50% on a plan whose content nothing fills; focal
+  library upkeep uncounted. Strengths: `:6586` loop checks meaning; other roles kept out of savings; [S16] raised.
+- **opus `49-9043.00__2` (fix).** `:11838/s1` halves stock counts on the strength of receipts booked by scan, but
+  s7 "receives and stores" hides that booking; [S1] supports nothing in the design; baseline has no system screens
+  against a 21.3% prior; `:11829/s2` the sensor feed and its review have no step; the barcode saving is counted in
+  no task. Strengths: `:11838` s3/s4 split predates the bulk fix; `:11829` lowered honestly at 00:22.
+- **sol `15-1299.06__3` (S2, fix).** `:21790/s5` filing priced at 5% and cut to 0 is half the gross; `/s4` the
+  analyst approves her own plan and gates her own filing; `:21801/s6` labels configure on a manual step.
+  Strength: `:21801` re-price returned points to real validation work, not spread to keep totals.
+- **sol `43-4011.00__3` (S4, good).** Gross 58.75 on an automate task, on reconciliation and assembly steps; 1%
+  send and save kept; a1 binds the package. Notes: `:8152/s7` gate on a same-platform save; s3-s5 check totals
+  three times (saving under-claimed by 4-6 points).
+- **sol `49-9011.00__2` (S1, fix).** `:8402/s1` bundles door identification, document search and revision check
+  and halves all of it; only the search changes (fair net about 3%, not 6%); `/s2` "observed installation
+  conditions" has no producer.
+- **sol `17-2199.05__3` (S3, fix).** `:16479/s3,s4` CAD object cuts of 40% and 50% with no coverage, against 20% in
+  sibling `:16467`; self-gated internal saves in all four tasks; `:16465/s1` 30% cut on a mixed read/find step.
+  Strength: delivery, inspection and contractor talks at 100%; the one loop checks meaning.
+- **Grok `25-2022.00__5` (G1, fix).** `:6594` shares equal the priors with filler s2 (16%) and s9 (6%); s1 records
+  the request fields inside a read conversation; s7/s8 lack the report table a1 binds; `:18639/s6` priority note
+  written in an in-person step. `:6593` honest zero; producer contracts and fallbacks named.
+- **Grok `29-1141.03__2` (G2, fix).** `:18339/s2,s3` pad and paper-slip baselines contradict the file's own
+  enabler (monitor feed and lab message exist); `:18335/s3,s4` the opens-on-the-id frame against an existing score
+  field; `:18337/s4` today's text describes the future; `:18341/s4` dictated lines have no producer.
+- **Grok `49-1011.00__2` (G4, fix).** `:2923/s4` halves resource-need judgement with the note typing;
+  `:2918/s3`, `:2912/s4` prefill from choices made in person with no capture; "phoned", "notebook" and "slips"
+  baselines on screen-means steps; `:2918/s4` releasing one's own requisition priced at 22%. No paper-card frame.
+- **Grok `29-1171.00__3` (G1, redo).** Every saving is an invented step: `:18394/s4` "Draft lines" (8%),
+  `:18388/s2` "Copy a stored interaction line onto an internal card" (4%; the medication check already shows
+  interactions [S6]), `:18383/s5-s7` redraft, self-check and same-system file of a line already written at s4,
+  `:18380/s4` "Fill quote lines" (6%); already_counted equals each cut; one range sentence in all four tasks.
+
+Next round about 04:15.
+
 ## Verdicts
 
 | File | Label | Pane | Round | Verdict | sha256[:12] | Reason |
@@ -703,3 +786,13 @@ Next round about 02:05.
 | 35-1012.00__6 | grok-4.7 | G2 | 7 | fix | f5577f209323 | 2166 s1/s4/s5 cut unchanged steps, gate binds s4 output; 18720 POS/cost fills no step, s2/s5 cuts no mechanism |
 | 19-3033.00__1 | grok-4.7 | G4 | 7 | redo | a9ab8e3c0dc9 | G4 prior-fit: shares equal the rounded prior in all four tasks; meeting filler 24-26%; 1% bucket step cut to 0 |
 | 35-1011.00__2 | grok-4.7 | G1 | 7 | fix | 92ad8af3d34c | 11136/s4 and 11147/s2 cut while the new entry is uncounted; 11148/s2 needless loop; act_external on internal staff |
+| 25-2022.00__6 | opus-5.5 | O1 | 8 | fix | 4806d5ef9f48 | 6586 s4/s6 cut steps sized 3-4x priors (25 of 49 gross); 6603 parent form send and 6602 action sync have no step |
+| 49-9043.00__2 | opus-5.5 | O1 | 8 | fix | 4cee97571632 | 11838/s1 count cut needs receipt booking no step does, [S1] off-target; 11829 sensor feed and review no step |
+| 15-1299.06__3 | sol-6.1 | S2 | 8 | fix | a5243942a24c | 21790/s5 5% filing cut to 0 is half the gross; s4 self-approval gates own filing; 21801/s6 labels |
+| 43-4011.00__3 | sol-6.1 | S4 | 8 | good | 2d11f9588f35 | Savings on real reconciliation steps; 1% send/save kept; a1 binds package; notes on s7 gate and triple check |
+| 49-9011.00__2 | sol-6.1 | S1 | 8 | fix | 8109fd88b99b | 8402/s1 halves a bundled step where only the search changes (net ~3 not 6); s2 input no producer |
+| 17-2199.05__3 | sol-6.1 | S3 | 8 | fix | 7c186beaa611 | 16479 s3/s4 CAD cuts 40/50% vs sibling 20%, no coverage; self-gated internal saves in all four tasks |
+| 25-2022.00__5 | grok-4.7 | G1 | 8 | fix | 35af368042be | 6594 shares equal priors with filler s2/s9; request fields written in a read talk; s7/s8 lack the report table |
+| 29-1141.03__2 | grok-4.7 | G2 | 8 | fix | ecbdb39b248e | 18339/18335/18337 entry cuts on retype baselines the enablers deny (opens-on-id in 18335); 18341 dictation no producer |
+| 49-1011.00__2 | grok-4.7 | G4 | 8 | fix | 7c6e92c23839 | 2923/s4 halves judgement with typing; 2918/s3, 2912/s4 prefill from uncaptured in-person choices; paper baselines |
+| 29-1171.00__3 | grok-4.7 | G1 | 8 | redo | b53306b8c6c1 | Every saving is an invented 4-8% card/draft step removed to 0 (18394, 18388, 18383, 18380); counted hours equal cuts |
