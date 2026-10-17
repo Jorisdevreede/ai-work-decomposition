@@ -1,36 +1,43 @@
 # Batch 3 second review (Q, pane 5, Opus 5.5)
 
-**Running verdict after round 10 (17 Oct 06:37): 88 files read, 72 fix, 4 good, 12 redo.** Not a model ranking:
-different jobs, twenty to thirty-nine files each. All 88 passed the finalize checks when read; every fix is a
-semantic defect. Targeted reads (ledger rounds 9t and 10t: 4 redo, 3 fix) are outside these totals.
+## FINAL VERDICT (Q, 17 Oct 2026 07:55 CEST, after round 11; queue done, 2,486 passed, 0 blocked)
 
-| Model | Files read | Fix | Good | Redo |
-|---|---:|---:|---:|---:|
-| opus-5.5 | 20 | 20 | 0 | 0 |
-| sol-6.1 | 29 | 26 | 3 | 0 |
-| grok-4.7 | 39 | 26 | 1 | 12 |
+98 files read in 11 seeded rounds, plus 7 targeted reads outside the totals (3 fix, 4 redo). All passed the finalize
+checks; every fix is a semantic defect. Different jobs per model, so this is not a ranking. No answers were edited.
 
-Open defect classes (through round 10):
-- **All models:** a record write, lookup or send is folded into an in-person, conversation or check step, so the
-  zero or the cut sits on the wrong part; a send, reminder, join or feed the design names has no step or producer
-  for its input; a step where only part of the work changes is cut as a whole; ranges set by a formula rather than
-  a task scenario.
-- **Swings after alerts:** each pane over-corrects after an alert. O1 fitted shares to the prior (pulled 04:22),
-  then hands savings to sibling tasks that do not claim them; G1 stopped decomposing (stood down 06:31); S1, once
-  the queued alerts reached it at 04:29, added trailing record steps and one flat cut on configure steps.
-- **Sol:** S1's zero rate fell from 78% to 2% when the lead's queued messages were delivered; its new splits are
-  mostly real. S3's range formula and the self-gated saves are gone since 04:30 in S3 and S4.
-- **Grok:** no pane writes. G1's files since 04:00 are pulled; G1's older files carry invented machine steps cut
-  to 0 (`19-2042.00__1:20390/s3`).
-- **Opus:** older files: machine sends or joins with no producer for their input, savings claimed in two sibling
-  tasks; O1's sweep of its pre-03:00 files is approved (04:30) and running.
+| Model | Files read | Fix | Good | Redo | Label savings usable as provisional figures? |
+|---|---:|---:|---:|---:|---|
+| opus-5.5 | 22 | 22 | 0 | 0 | Not yet: older files run high; usable after the sweep. Ranges: no |
+| sol-6.1 | 33 | 29 | 4 | 0 | Yes, as label-level figures (not per task); S1 before 04:29 is a floor |
+| grok-4.7 | 43 | 29 | 1 | 13 | No |
 
-**R/Q comparison:** eight files read by both at the same hash, all fix in both: Grok `41-2011.00__2`,
-`41-2011.00__4`, `41-2011.00__5`, `35-1011.00__2`, `27-1023.00__2`, Opus `35-3031.00__2`, Sol `39-3091.00__4`,
-`15-1299.06__3`. On `27-1023.00__2` the verdicts agree but the repair does not: R asks to make the note capture
-explicit in `:1727/s1`; Q finds the written care-line draft and check (s2/s3) invented and the loop needless, so
-capture time should lower the net, and adds `:1723/s5` and `:20751/s1`. `41-2011.00__4:2416` is unchanged at
-61dac988d7f8. R confirmed `49-9052.00__1:11858` fixed (05:20), closing the last open R/Q item.
+**opus-5.5.** Open: (1) cuts larger than the work a change removes, on steps that stay human or belong to another role
+(`33-1012.00__2:569`, 46% net); tasks finalized before 04:27 save 22.8 points on average, after 04:27 11.7, the sweep's
+re-finalized files 14.2. (2) A send, reply, join or record the design names sits inside a person step or has no
+producer for its input (`33-1012.00__2:565/s5`, `27-2012.03__6:7677/s6`). (3) Ranges by formula: low and high are the
+same two fractions of the net in most non-zero tasks since 04:27, sweep files included. Repair: O1 files finalized
+before 03:00 (sweep running since 07:44, 32 so far); the 81 files from 04:27 to 06:37 that hand savings to sibling
+tasks without checking them; range bases in all O1 files. Keep `runs/o1-priorfit-b3` (56) out.
+
+**sol-6.1.** Open: (1) a record write, note or send folded into a conversation or meeting step, so the task saves
+nothing or the cut sits on the wrong step (`21-1022.00__3:262/s2`); S1 before 04:29 is 767 files, 57% of tasks at
+zero. (2) Ranges by formula: S3 "Half eligible gives ..." (303 tasks, `11-9161.00__4`), S4 "Below provisional net ..."
+(106 tasks, `23-1023.00__3`), both gone since 04:27. (3) Labels: outside advice marked draft, internal direction
+act_external; an author's gated save of their own record in about 1,230 S2-S4 tasks before 04:27 (saves keep full
+time). Repair: S1 files before 04:29 (split folded writes); S3 files 22:00-04:27 and S4 files before 04:27 (ranges);
+S1 files 04:27-06:37 (73: trailing "Record" steps nothing reads, one flat configure cut); S2-S4 gated saves (labels).
+
+**grok-4.7.** Open: (1) templates: statement text sliced into person steps (`19-1022.00__2`, redo; 52 of the 115
+present files have a step that opens with the statement's own first words), plus the pulled paper-card, posted-line
+and list-step families. (2) Invented admin baselines and machine steps cut to 0 that feed nothing
+(`25-2021.00__4:6542/s4`, `29-1127.00__6:1882/s2-s4`). (3) Zeros reached by folding the first write into a person
+step (G1 02:15-04:00). Repair: re-answer rather than repair all 115 present files (G1 96, G4 16, G2 3), including the
+cash cycle `41-2011.00__4:2416`. Keep `runs/g{1,2,3,4,23}-rejected-b3` (171 files, re-answered elsewhere) out.
+
+**R/Q.** Ten files read by both at the same hash: all fix in both, findings match; on `27-1023.00__2` R does not treat
+the 8% send share at `:1723` as inflated on size alone. Calibration differs: R rates 15 of 24 Sol files good, no Grok
+redo, and clears no label-wide total; Q rates 4 of 33 Sol good, 13 of 43 Grok redo (different samples), and judges
+Sol's label total usable as provisional. Four pane swings followed Q's own alert wording; see the round notes.
 
 ## Method
 
@@ -920,6 +927,61 @@ Findings per file:
 
 Next round about 08:40.
 
+### Round 11 (final) — selected 07:48 CEST, written 07:55 (17 Oct)
+
+Seed `batch3-Q-round11-20261017`. Queue done (lead); 2,486 passed at 07:53 (grok 115, opus 665, sol 1706; S2
+re-answered the blocked `25-9042.00__1` at 07:50). Unreviewed populations opus 639, sol 1659, grok 92 (G1 83, G4 9).
+Selected: opus `33-1012.00__2` (Fri 15:40), `27-2012.03__6` (Fri 21:52); sol `21-1022.00__3` (S1, Fri 14:53),
+`23-1023.00__3` (S4, 01:14), `17-2199.08__3` (S2, 02:03), `11-9161.00__4` (S3, 03:30); Grok `25-2021.00__4` (G1, Fri
+22:20), `49-9071.00__2` (G4, Fri 11:23, also read by R), `29-1127.00__6` (G1, Fri 17:38), `19-1022.00__2` (G1, 02:33).
+All ten pass the finalize checks rerun read-only; hashes unchanged at 07:53. Result: 8 fix, 1 good, 1 redo.
+
+**Uptake since 06:37.** O1's "its saving is counted there" hand-off: 60 of 276 tasks from 04:27 to 06:37, 1 of 179
+from 06:37 to 07:44; the sweep's first 32 re-finalized files have it in 20 of 133 tasks. O1's range bases still set
+low and high as the same two fractions of the net (114 of 144 non-zero tasks after 06:37). S1's trailing "Record"
+steps fell from 51 of 271 tasks (04:27-06:37) to 4 of 143; its most common configure cut still covers 83 of 233
+configure cuts. A second Sol range formula, S4 "Below provisional net ...", is in 106 S4 tasks before 04:27 and none
+after. Q's earlier redo `19-3033.00__1` (G4) was pulled; the file now present is a G1 re-answer (Sat 00:27), unread.
+
+**R/Q comparison.** A tenth file read by both at the same hash: Grok `49-9071.00__2` (07c1f90d23c7), fix in both;
+both find `:3028/s1` cutting the fault reading the design does not touch and `:20676/s4` cutting a record that may not
+exist today. R's round 11 also picked Q's round-8 `49-1011.00__2` (7c6e92c23839): fix in both, same findings. R
+widened its `27-1023.00__2` repair at 07:21 to match Q's; one point stays: R does not treat `:1723`'s 8% send share as
+inflated on size alone. R's final (07:50): 72 files, 54 fix, 18 good, 0 redo.
+
+Findings per file:
+
+- **opus `33-1012.00__2` (fix).** `:565/s5` the answer desk replies inside a person step marked read, and its check
+  only finds a quote; `:565/s3` an e-mail of an approved summary priced at 5% and cut to 0; `:568/s4` attendance goes to
+  0 with no capture step (15% spreadsheet against a mostly in-person task); `:568/s1` planning cut 30% with no
+  mechanism; `:569/s2` 40% from required-field checks the records system already runs. Ranges explain the central
+  figure, not a conservative case. Strength: `:569` rejects narrative drafting with a correct E3 cite.
+- **opus `27-2012.03__6` (fix).** `:7677/s6` the director moves segments mid-campaign but no step or upkeep writes the
+  moves or re-approves a moved pitch; the pledge-to-playout join is integration code, not configure; `/s2` placing a
+  handful of segments sized like script writing. Strength: a1 binds the final scripts and voids on any change.
+- **sol `21-1022.00__3` (S1, fix).** `:262/s2` and `:268/s2` fold the meeting note into the talk step; `:262/s1` holds
+  consent talk, recipient check and the send in one step that its own approval gates; `:268/s2` internal direction
+  marked act_external; already_counted lists untouched counselling time. Strength: `:266` splits the plan write.
+- **sol `23-1023.00__3` (S4, fix).** All four range bases are one formula ("Below provisional net X% ..."); `:5650/s2`
+  and `:5648/s3` advice to parties in court marked draft; `:5651/s4` the judge gates their own save; no legal item
+  although the digest's AI Act and court-policy rows are why no model is used. Strength: judicial work at 100%.
+- **sol `17-2199.08__3` (S2, good).** Gated 1% saves stay at full time (label note only); already_counted points at
+  unchanged steps in `:16509` and `:16528`. The code loop in `:16528/s3` is bounded and checks meaning.
+- **sol `11-9161.00__4` (S3, fix).** All four tasks use "Half eligible gives ..."; `:7265/s1` 40% cut on reading an
+  agenda that comes with the invite; `:7255/s1` 40% on retrieving rule changes where only the version lookup changes;
+  `:7270/s6` input schema has no producer; `:7255/s6` a send marked draft. Strength: loops check meaning.
+- **grok `25-2021.00__4` (G1, fix).** `:6542/s4` an invented re-tick of items pupils already answered online, 8%, cut to
+  0, output unused (scan flag real); `:6544/s4` a spreadsheet sum with no step that types the ticks in. `:6548` 0/0/0
+  range is an honest zero (scan flag false positive). Strength: teaching and open grading at 100%.
+- **grok `49-9071.00__2` (G4, fix).** `:3028/s1` 60% cut on reading the fault; no producer for the asset-to-manual link;
+  `:20676/s1` reading a shift list cut 55% with no producer; `:20676/s4` a training record that is memory or paper today
+  cut to 40%. Both tasks open with a "Read X" step cut by "configure". Strength: site work at 100%.
+- **grok `29-1127.00__6` (G1, fix).** `:1882/s2-s4` an invented rebuild and load of an AAC setup each session, which
+  belongs to the sibling device task; `:1885/s6` a same-store file at 4% cut to 0; legal rows copied into both tasks.
+- **grok `19-1022.00__2` (G1, redo).** Person steps are the statements cut at commas (`:3677/s1-s3`, `:3680/s1-s3`);
+  `:3678/s3` screens notices after they were read; `:3681` never assembles or releases the report; `:3680/s4-s5`
+  restate written notes while the bench capture is folded away; ranges share one formula.
+
 ## Verdicts
 
 | File | Label | Pane | Round | Verdict | sha256[:12] | Reason |
@@ -1019,3 +1081,13 @@ Next round about 08:40.
 | 19-3094.00__1 | sol-6.1 | S1 | 10t | fix | 959e52ccbdbb | Targeted, outside totals: 5515/s5 invented class-progress record; flat configure cuts; 5516/s1 new capture |
 | 17-2151.00__2 | grok-4.7 | G1 | 10t | redo | 8eb6a0005f28 | Targeted, outside totals: statement restated as one step, zeros skip named valuation/evaluation work; pulled |
 | 25-4012.00__3 | grok-4.7 | G1 | 10t | redo | b82786bf40ad | Targeted, outside totals: statement split at commas, budget/insurance/booking work skipped; pulled |
+| 33-1012.00__2 | opus-5.5 | O1 | 11 | fix | f9a4824c5ec9 | 565/s5 answer desk inside read person step; 565/s3 send 5% to 0; 568/s4 no capture; 568/s1, 569/s2 cuts |
+| 27-2012.03__6 | opus-5.5 | O1 | 11 | fix | 65b3a8710027 | 7677/s6 mid-campaign moves with no step or upkeep; join is integration; s2 oversized |
+| 21-1022.00__3 | sol-6.1 | S1 | 11 | fix | ffe69fe5aef6 | 262/s2, 268/s2 notes folded into talk; 262/s1 send in person step self-gated; 268/s2 act_external |
+| 23-1023.00__3 | sol-6.1 | S4 | 11 | fix | ae939b6005e9 | 'Below provisional net' range formula x4; 5650/s2, 5648/s3 outside advice as draft; no legal item |
+| 17-2199.08__3 | sol-6.1 | S2 | 11 | good | ccb55896cec9 | Gated 1% saves kept at 100% (label note); already_counted on unchanged steps; bounded code loop |
+| 11-9161.00__4 | sol-6.1 | S3 | 11 | fix | ead709235ddb | 'Half eligible' range formula x4; 7265/s1, 7255/s1 lookup cuts; 7270/s6 no producer; 7255/s6 auth |
+| 25-2021.00__4 | grok-4.7 | G1 | 11 | fix | 6cc7cf574dfb | 6542/s4 invented re-tick cut to 0, unused; 6544/s4 sheet sum with no tick capture |
+| 49-9071.00__2 | grok-4.7 | G4 | 11 | fix | 07c1f90d23c7 | 3028/s1 fault read cut 60%; 20676/s1 shift list, s4 paper/memory record cut; R same hash fix |
+| 29-1127.00__6 | grok-4.7 | G1 | 11 | fix | c1f63bd1bab8 | 1882/s2-s4 invented setup rebuild (sibling device task); 1885/s6 same-store file 4% to 0 |
+| 19-1022.00__2 | grok-4.7 | G1 | 11 | redo | 913261235964 | Statements cut at commas into person steps; 3678 screen after reading; 3681 report never assembled |

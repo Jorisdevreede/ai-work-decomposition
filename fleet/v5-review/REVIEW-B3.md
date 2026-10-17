@@ -1,12 +1,36 @@
 # Batch 3 — reviewer R, pane 7
 
+## FINAL VERDICT — reviewer R, 17 October 2026
+
+Final review requested by the lead replaces the remaining weekend schedule. **72 files read: 54 fix / 18 good / 0 redo**, 260 tasks and 1173 steps.
+Counts below are seeded full-file verdicts, including historical reviewed versions later pulled or repaired; targeted structural/repair reads are separate and do not inflate verdict totals.
+Final snapshot: **2485 passed files** (Opus 665, Sol 1705, Grok 115), 8825 tasks, 38950 steps. Lead reports one blocked Sol `25-9042.00__1`; no passed replacement was present.
+Different tasks and small samples prevent a model quality ranking. “Good” means a coherent provisional design, never measured organisational savings.
+
+| Model | Files read | fix / good / redo | Top 3 open defect classes | Savings usable as provisional figures? |
+|---|---:|---|---|---|
+| opus-5.5 | 24 | 23 / 1 / 0 | 1. Unsupported cuts and unverified sibling deferrals. 2. Missing input/capture or generated-meaning checks. 3. Release gates bound to decisions rather than final payloads. | Only individually reviewed/repaired task scenarios; no label-wide total. |
+| sol-6.1 | 24 | 9 / 15 / 0 | 1. Absorbed/omitted real capture and write boundaries. 2. Invented save/admin work and unnecessary author gates. 3. Formula ranges or unpriced manual exceptions. | Reviewed good designs can support conditional internal scenarios; no label-wide total. |
+| grok-4.7 | 24 | 22 / 2 / 0 | 1. Invented paperwork or unchanged-human-work cuts. 2. Uncaptured inputs and incomplete task coverage. 3. Broken approval/dependency order. | Only the two good designs under their stated baselines; hold other positive figures for repair. |
+
+**Repair pass — Opus:** keep `runs/o1-priorfit-b3/` excluded until fresh task-based rewrites are checked, including still-pulled R9 map/mock-up/account/paper-search families.
+Sweep still-present pre-correction cuts, sibling deferrals, source/meaning checks and posting/routing gates: examples `25-2032__6`, `21-1021__1`, `29-1292__1`, `29-2072__1`, final-sample `39-9031__3` and `29-1131__4`.
+Specific repairs confirmed: `51-9061__1` scrap/maintenance gates and finding meaning; `25-2011__4:6484` photo split/gate; `53-5011__2:14474` unchanged ticking; `53-6031__2` named direction/capture/reminder findings. Remaining findings on those files stay open.
+**Repair pass — Sol:** still-present cash/grade/document commit boundaries, real input capture, omitted rental/payment work and range-formula families (`49-9041__2`, `25-4022__1`, `25-4031__7`, `33-1091__4`, `39-3091__4`, `15-1299.06__3`, `19-3099.01__2`); fix `21-1091__4:20237` attendance order.
+Audit S1's pre-alert folded work and later unused-record/flat-cut overshoot flagged by Q; resolve the lead-reported blocked teaching-assistant file. Later worker acknowledgements do not clear earlier files.
+**Repair pass — Grok:** keep paper-card, posted-line, list-only, prior-fit/blanket-zero and G1 lost-decomposition families in `runs/g{1,2,3,4,23}-rejected-b3/` excluded; re-review any replacement independently.
+Still-present cash cycle `41-2011__4:2416`, florist `27-1023__2`, supervisor `49-1011__2`, final `37-1011__5` and `25-2057__10` need capture/baseline/gate repairs; sweep unsupported cuts and evidence labels beyond these examples.
+No new confirmed template/cycle family in the final all-pass scan. Existing Grok cash cycle and Sol attendance-order defect remain.
+No answers were edited. **R FINAL DONE; scheduled reviewer work stopped.**
+
+
 | Model | fix | good | redo | Reviewed files |
 |---|---:|---:|---:|---:|
-| grok-4.7 | 20 | 2 | 0 | 22 |
-| opus-5.5 | 21 | 1 | 0 | 22 |
-| sol-6.1 | 9 | 13 | 0 | 22 |
+| grok-4.7 | 22 | 2 | 0 | 24 |
+| opus-5.5 | 23 | 1 | 0 | 24 |
+| sol-6.1 | 9 | 15 | 0 | 24 |
 
-Through round 11: **50 fix, 16 good, 0 redo** across 66 files, 240 tasks and 1094 steps, including one revised round-2 verdict. Savings remain provisional. Samples differ by job; these counts do not establish a model quality ranking.
+Through the final round: **54 fix, 18 good, 0 redo** across 72 files, 260 tasks and 1173 steps, including one revised round-2 verdict. Savings remain provisional. Samples differ by job; these counts do not establish a model quality ranking.
 
 ## Review protocol and continuation
 
@@ -670,3 +694,42 @@ There is still a narrower evidential difference with Q: :1723's 8% send share ne
 Lead stood G1 down at 06:31 and quarantined its post-04:00 files; no Grok writer is now active. Historical sampled verdicts remain tied to their recorded hashes and are not cleared by quarantine. Worker acknowledgements of repaired patterns are not blanket re-review receipts.
 
 Cumulative: **50 fix, 16 good, 0 redo; 66 random files, 240 tasks, 1094 steps**. Targeted follow-ups do not enlarge random totals. Next round **09:16 CEST Saturday**; weekend reviewer remains active.
+
+
+## Final round — 17 October 2026, 07:47 CEST onward
+
+The lead declared the queue done and requested this final round and stop. This supersedes the 09:16 next-round note. Selection at 07:47:42: Grok 115 passed / 100 eligible, seed `batch3-R-final-grok-4.7-20261017`; Opus 665/643, seed `batch3-R-final-opus-5.5-20261017`; Sol 1705/1683, seed `batch3-R-final-sol-6.1-20261017`. Sorted unreviewed paths, two per label. **Six files, 20 tasks, 79 steps; 4 fix, 2 good.**
+
+| File | Verdict | Concrete findings |
+|---|---|---|
+| `runs/v5/grok-4.7/37-1011.00__5.json` | fix | :9526/:9525/:9530/:9532 repeatedly allocate 8% to filing accepted wording and eliminate it without establishing a real second copy or filing action beyond normal authoring. Do not invent a separate acceptance and save baseline; merge ordinary checking into actual writing and keep the small native save fully retained. :9532 accepts offer terms but never separately produces the final offer letter that is sent; name/count actual letter assembly and check its final text/recipient before release. :9530's model loop restates a place/change already in the supervisor's notes; clarify why a native note/template is insufficient and ensure any rejected-sentence rewrite is counted once, rather than also treating routine checking as extra upkeep. Several lows use a month with no hire/action: per 100 hours of this task, lower task volume alone does not change its saving percentage. Retained observation, judgement, interviews and discussion are sound. |
+| `runs/v5/grok-4.7/25-2057.00__10.json` | fix | :6782 has a coherent read/copy/check/file order, but constructs a pre-visit “consultation record” by copying existing impairment/needs fields, then claims a 4% drafting and 3% filing baseline for that copy. Establish that such a duplicate record is actually made today; use the existing pupil record directly where it suffices. Normal same-system save is not a separate saving. Rejected-draft rewriting is counted, and travel/tutoring/consultation stay fully retained, but that does not validate the invented administrative baseline. No evidence supports an actual concluded consultation record before the visit; name it as a preparation sheet if that is its real use. |
+| `runs/v5/opus-5.5/39-9031.00__3.json` | fix | :4575/s2 cuts entering actual counted inventory to 30%; “entered once” does not identify a second entry in today's stated workflow, which already writes the count once. Isolate any removed row-finding/transcription and retain actual count entry. Its s5 combines actual defect/photo capture with release to the manager's work list without a final record/destination check. :4570 similarly writes a member-facing kit page without distinguishing completed content review/publication from draft creation; specify the actual release boundary where this is published, not an approval for a private save. Breathing teaching, physical kit work and spoken advice stay full. :4568 has an appropriate final adapted-handout gate, human material selection and a concrete conservative coverage case. |
+| `runs/v5/opus-5.5/29-1131.00__4.json` | fix | :4116's authority notification is gated by the decision whether to report, not by the completed portal payload, case identity and destination. Keep that decision, then count actual report preparation/final verification before submission. Its s4 also bundles creating and externally ordering a lab test without a final order/version gate or a complete animal/owner/test source contract. :4124's loop checks citation/quotation existence but not whether the summary accurately represents findings or limitations; retain an explicit meaning check and manual fallback. Reading papers and risk judgement are retained, which is helpful but does not make citation presence a semantic test. :4126 preserves treatment/observation and names actual tablet entry plus predetermined analysis; no clinical automation is claimed. |
+| `runs/v5/sol-6.1/25-3021.00__1.json` | good | Live teaching, encouragement and observation remain full, with explicit boundaries excluding separately assigned material/progress administration. The adaptation task counts the teacher's captured brief, source/version selection, semantic/accessibility check, manual fallback, final suitability and learner trial. It tries native reuse first, limits rewriting to a passage, and has a real manual/no-suitable-work low case. The self-reference on s3 is an intrinsic final suitability decision before actual learner use, not a circular machine action or an artificial author-save approval. LessonUp's digest capability is not presented as measured savings. |
+| `runs/v5/sol-6.1/19-1013.00__2.json` | good | Source/effects investigation, plant experiments and local soil-improvement judgement remain full. :9023 explicitly counts producing and reconciling plot/treatment/date/unit/replicate/exclusion fields and selecting formulas before repeat comparisons/plots. Field investigation and interpretation remain full; seven focal upkeep hours are deducted and data-steward work is outside the denominator. Existing automatic statistics runtime earns no saving and already-scripted work has a zero case. Good as a conditional design: verify that the proposed 20-point comparison/plot slice is actual manual work before using a positive number. The fully retained scientific tasks do not invent an extra administrative saving. |
+
+All original statements/header requirements were read. Digest checks used the supplied 37-1, 25-2, 39-9, 29-1, 25-3 and 19-1 material; no web/source-page verification or new legal advice. No source URL is offered as independently opened evidence. All six exact-prompt-task `checks` and `template_checks` return empty lists, using the complete filename to exclude self-comparison. An initial template-check invocation used the stem and reported each file matching itself; that invocation error was corrected and is not a template finding.
+
+Final sample hashes:
+
+- `runs/v5/grok-4.7/37-1011.00__5.json`: `155605ed45d742d2febb3d9c831df818cce83b8567f57843342ff2ef0e1990b9`.
+- `runs/v5/grok-4.7/25-2057.00__10.json`: `ea477473b13a447bb86583fcd6eb6857dc15f37b0ab36c7e2c181e9b4425f67e`.
+- `runs/v5/opus-5.5/39-9031.00__3.json`: `5e597d7d82653328221d8267d82bdf2e88af00b3146835aa1a61b002c4902977`.
+- `runs/v5/opus-5.5/29-1131.00__4.json`: `9fa5abd6d7e5821b7e2ea9b33084b2d8228b573a3ed472a1fe3ffd0e9713a433`.
+- `runs/v5/sol-6.1/25-3021.00__1.json`: `8e5c41be996433a47d7b8aea550294d26803357fcef4949211f4de5073e22b39`.
+- `runs/v5/sol-6.1/19-1013.00__2.json`: `408ade6c4546d04bbe148554c82fda909669a527f22189abaf84b68eab91a974`.
+
+Final all-pass snapshot 07:47:43: **2485 files, 8825 tasks, 38950 steps**; Grok 115/404/1878, Opus 665/2343/13695, Sol 1705/6078/23377. Distinct text/full/economic signatures: Grok 404/403/394, Opus 2343/2343/2330, Sol 6066/5699/3760; largest coarse groups 56/38/934. Full structural and chunked approval scans cover every passed path. Same six comparable Sol teaching text groups and 15 Opus adjacent-pair groups as round 11; no new later-draft candidate or confirmed template family. The one actual approval back-edge remains Grok cash :2416, and Sol :20237 retains the attendance forward dependency. Earlier existing-version false positives remain rejected. Supplemental chunk hashes are immediate per-chunk snapshots, not a frozen whole-population guarantee.
+
+Repair verification outside random totals:
+- Opus `51-9061.00__1`, SHA `affea6f358ea90d4d8288b15abd76c3cd81cc346458345ea5f844d92c037d9ee`: completed scrap postings now get a counted clerk check and exact ERP release gate; maintenance requests get a counted fault/urgency/queue check and gate; findings now check characteristic, defect and consequence, and report release names its recipient. Close these named findings only. The reason for a model rather than a deterministic finding template and the measurement/view split remain unresolved.
+- Opus `25-2011.00__4`, SHA `4cca84814a453aa231278206621df498cd52600ef23028d1f0089828c52f3c43`: :6484 now separates photography, consent lookup, final photo/caption/group check and gated post. Close that split/version finding. Door-check cuts, substantive curriculum coverage and parent-helper booking boundaries remain as recorded.
+- Opus `53-5011.00__2`, SHA `e53dde4b73cb93d5d10539a22d9552c7bf6fc55b3f502ff84ce96752a933c59a`: :14474 ticking is fully retained and the design explicitly removes no transcription. Named finding closed.
+- Opus `53-6031.00__2`, SHA `59d89b1f79f2788545c84aa3e1abf6e196617a4c1cf0305c5f9649072acaddd4`: directions are full; the shorter search now states its actual removed navigation; service records name sale/type/date and captured plate/mileage, customer contact and interval producer; the reminder gate names final payload and recipient. Close the named R10 findings, without certifying the whole label.
+- Quarantine directories are present: G1, G2, G3, G4 and G23 rejected families, plus O1 prior-fit. The five named R9 map/mock-up/accounts/paper-search examples remain in O1's pulled directory; replacement/order receipts from round 10 retain their limited scope. Do not re-add pulled versions to totals just because the prompt was reassigned.
+- The lead reports one blocked Sol teaching-assistant prompt. At final read neither its blocked wrapper nor a passed `runs/v5/sol-6.1/25-9042.00__1.json` was in that directory; it is not one of the 2485 passes and needs disposition, not an inferred pass.
+
+Q comparison: none of these six current sample hashes has a new independent full-file Q verdict found. Q's old mention of Grok `37-1011__5` belongs to the earlier paper-card family, not this current acceptance/filing version. Round-11 florist agreement and narrower send-share evidential difference remain recorded; no silent conversion of Q-only findings into R's random counts.
+
+Final running verdicts preserve reviewed-version history: Grok **22 fix / 2 good / 0 redo**, Opus **23 / 1 / 0**, Sol **9 / 15 / 0**. **54 fix / 18 good / 0 redo; 72 files, 260 tasks, 1173 steps**. Specific repair closures above do not pretend that a complete replacement file was re-reviewed and awarded a new good verdict. The top FINAL VERDICT is the final decision and repair scope. Reviewer schedule ends on the lead's instruction.
