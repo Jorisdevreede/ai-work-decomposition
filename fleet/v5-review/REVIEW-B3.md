@@ -2,11 +2,11 @@
 
 | Model | fix | good | redo | Reviewed files |
 |---|---:|---:|---:|---:|
-| grok-4.7 | 16 | 0 | 0 | 16 |
-| opus-5.5 | 15 | 1 | 0 | 16 |
-| sol-6.1 | 7 | 9 | 0 | 16 |
+| grok-4.7 | 18 | 0 | 0 | 18 |
+| opus-5.5 | 17 | 1 | 0 | 18 |
+| sol-6.1 | 8 | 10 | 0 | 18 |
 
-Through round 8: **38 fix, 10 good, 0 redo** across 48 files, 173 tasks and 785 steps, including one revised round-2 verdict. Savings remain provisional. Samples differ by job; these counts do not establish a model quality ranking.
+Through round 9: **43 fix, 11 good, 0 redo** across 54 files, 197 tasks and 902 steps, including one revised round-2 verdict. Savings remain provisional. Samples differ by job; these counts do not establish a model quality ranking.
 
 ## Review protocol and continuation
 
@@ -515,3 +515,71 @@ Q round 7 agrees on the earlier amusement-equipment overlap; none of this round'
 Round 8: **5 fix, 1 good, 0 redo**. Cumulative: **38 fix, 10 good, 0 redo**, 48 distinct sampled files, 173 tasks and 785 steps. Supplements excluded.
 
 Next scheduled round: **17 October 2026, 03:16 CEST**. Continue every two hours through Sunday 23:59 CEST.
+
+
+## Round 9 — 17 October 2026, 03:16–03:20 CEST
+
+Selection at 03:15:50 (within the scheduled 03:16 minute), sorted eligible paths, two new files per model:
+
+- `batch3-R-round9-grok-4.7-20261017`: 111 passes, 102 eligible.
+- `batch3-R-round9-opus-5.5-20261017`: 531 passes, 515 eligible.
+- `batch3-R-round9-sol-6.1-20261017`: 1,191 passes, 1,175 eligible.
+
+Read 24 originals and 117 steps. Exact-prompt read-only finalizer checks and template checks pass for all six, with sampled hashes unchanged. Evidence comparison uses supplied 25-1, 29-1 and 29-2; both Sol samples use only explicit E1 model knowledge. No fresh source/legal verification.
+
+| File | Verdict | Findings |
+|---|---|---|
+| `runs/v5/grok-4.7/25-1123.00__8.json` | fix | :6332/c3,c5 and :21130/d3 again assign positive focal baseline shares to system actors, although they describe replacing human draft/submit/lookup work; preserve today's human actor and distinguish future machine fate. :6332/c2 states aim/method in person, but c3 needs captured fields: split or explicitly represent capture in its retained 44h. Zero ongoing upkeep is justified only by no rewrite/lookup queue; that does not cover maintaining call-heading mappings/catalogue access, so name and cost upkeep or explain why existing native setup needs none. Original writing and student advising are fully retained; manuscript merit remains human. |
+| `runs/v5/grok-4.7/25-1113.00__6.json` | fix | :6252's grant loop receives call criteria and publication titles but no actual planned research aim, proposed methods or verified findings; those titles cannot supply a task-specific research proposal or verify claims about findings. Count the investigator's project-content producer and retain a semantic check against that content. :6254 reduces the broad department-head administrative task to a staffing meeting plus an unspecific duties step; state a defensible boundary and represent any actual record/budget/schedule work before concluding zero. Its other original tasks retain research execution, publication and consulting; no forced positive saving is requested. |
+| `runs/v5/opus-5.5/29-1292.00__1.json` | fix | :23921/a1 treats attending a course as approval of its later attendance certificate; name the actual provider-produced certificate and a counted final check before register write, including unsupported-provider fallback. :18537's send gate binds chosen tools/techniques but not the exact current instruction-sheet version and patient destination; represent the typed selection inside its retained or incremental capture. :418 calls training voice commands incremental ongoing work, although it reads as initial setup; distinguish recurring vocabulary maintenance from training. Patient entry is explicitly costed and clinical treatment/teaching/observation remain full. |
+| `runs/v5/opus-5.5/29-2072.00__1.json` | fix | :22890's diagnosis-code check verifies permitted codes and confirms mismatches, but does not explicitly test that quoted clinical meaning supports the code; unclear records go forward unflagged instead of to manual review. s3's approved list combines s1 completeness and s2 accuracy flags, while the approval step s2 never takes/checks the s1 list; bind the complete clinician-task payload and recipients. :22891's document-type check only requires membership in the allowed list; verify the extracted type's meaning before linkage, not just identity/code validity. :22880 automatically transfers fields to a registry with no approval binding the final checked transfer. Release compilation does count package checking before its send, and fax/source claims match the supplied digest. |
+| `runs/v5/sol-6.1/15-1299.06__3.json` | fix | Same SHA as Q round 8; agree that :21790/s5's five-point internal filing cut needs a demonstrated separate transfer/second entry, not an ordinary save after writing/checking. :21796/:21787 similarly remove two-point internal commits without establishing their old transport work. Keep ordinary completed-work checking without adding a new approval stage solely to gate saving. Recovery explicitly excludes machine runtime, retains active supervision/validation and prices profile upkeep. This file has not changed since Q's reading. |
+| `runs/v5/sol-6.1/53-2022.00__4.json` | good | All four originals covered with actual radio exchange, significant-event log, information-pack production/provision, equipment-needs writing and board posting separated. Native lookup/assembly gains are conditioned on current manual work; source applicability, mission suitability, status judgement and live radio remain full. Saves and routine sends retain real small shares; requested gates use existing completed-version checks without extra approval labour. Manual-board conversion is explicitly an E1 scenario, with already-digital zero/fallback cases and priced upkeep. |
+
+### Structural scan
+
+Frozen at 2026-10-17T03:15:51+02:00: **1,833 files, 6,543 tasks, 26,606 steps**. No frozen hash changed during chunked follow-up checks.
+
+| Model | Files | Tasks | Steps | Distinct task-step texts | Full shapes | Economic shapes | Largest coarse group |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| grok-4.7 | 111 | 390 | 1820 | 390 | 389 | 380 | 56 |
+| opus-5.5 | 531 | 1876 | 9926 | 1876 | 1876 | 1865 | 38 |
+| sol-6.1 | 1191 | 4277 | 14860 | 4267 | 3958 | 2344 | 817 |
+
+The old Grok cash-count cycle remains; four Grok prior-version candidates remain scoped. Sol training administration :20237 still uses the subsequent training attendance evidence. New Sol exact matches add chemistry advising/community participation to already read full-manual groups; these are legitimate same-duty text.
+
+Six new Opus exact forward references were read with their assumptions. No prior-cycle/material exception is stated:
+
+| File/task | Finding | SHA-256 |
+|---|---|---|
+| `17-1021.00__1/:3524` | s2 reviews the draft map before s3 draws it. | `8a4a3e317aa30434826277f5e1f3f9b361a0b87fdcd43e458d356114ddd80f29` |
+| `19-1029.01__4/:16784` | s2 runs usability sessions on mock-ups before s3 creates them. | `302b7e4dd9f4b5d607cbd304c18ca7055733cca26574868bc4b3ea0948a02ee0` |
+| `19-1029.03__3/:16840` | s3 reads candidate-gene literature before s4 identifies the candidate genes. | `983cd76477bb346322e288727136cd6ae7a61a66193707decc99e06cb58a76a2` |
+| `19-1029.03__6/:16824` | s6 adds accounts using access approval produced only at s9; separate unrelated backup work. | `49b436ee99056d261af9ab669cf69e1fe24ec16cc2a239687d06234f141d9bf5` |
+| `25-1063.00__1/:5988` | s1 reads the new papers that s2 subsequently searches for. | `2ec1b66698c0b1b1988b69f6e2fb5e0b97494aa65395ffe907681ad2dbe06eeb` |
+| `25-1193.00__2/:6430` | Same reading-before-search dependency. | `c6e6d4ca95a5407825f35ec2af8bce5b2497de9a8a1da14a4276e8cf773e61cf` |
+
+Nine repeated adjacent-pair groups occur in the frozen chunk scans. A later complete-population pair scan also includes the newly arrived Opus sociology file `25-1067.00__2` (absent from the frozen population), bringing the live count to 23 groups. Read the matched teaching, student advising, trips and inspection sequences: these describe comparable real duties with relevant domain changes and differing shares; do not infer a whole-file template/redo from exact segments alone.
+
+There is a concrete recurring research-order defect. Economics `25-1063.00__1/:5994` approves the final manuscript at s7, then produces a referee revision at s8 before s11 submits the earlier approved version. Sociology `25-1067.00__2/:6087` does the same at s8/s9/s12. Make initial submission/referee/revision cycles explicit and pass the final revision through approval. The latter also repeats the reading-before-search sequence at :6081. Supplemental sociology SHA-256 `7bcf6e3d1476476304d880bfc04e174b703087384e6a732f5aa4e87eb20fccf3`; it is outside frozen totals and sample verdicts.
+
+New Sol late-draft hits are not premature approval: biomedical resource budgets/inventory are distinct from the team schedule; toxicology's live discussion produces no replacement written result version and both gates void on edits; the supervised-prescription s5 only verifies the doctor's unchanged approval before transmission. Prior cleared candidates remain scoped.
+
+### Q comparison and follow-up
+
+Q round 8 and R now agree on the same forensic-file hash and its filing baseline. Q also agrees with R on the earlier Grok chef overlap, with complementary step findings. No open disagreement.
+
+Q's G1 small-machine-step watch remains relevant, but this round does not call all small lookups fictional; the literary manuscript lookup is a real separable candidate. Conversely, zero savings must still cover the original task's actual record work, and ordinary same-record checks must not grow into an invented approval activity. Worker reports of repairs and lead's quarantine remain reports unless the specific repaired version is read here. Historical sample verdicts retain their hashes.
+
+### Receipts and next round
+
+- `runs/v5/grok-4.7/25-1123.00__8.json` SHA-256 `3a8d85647b26e980de870353c41ac3cc1fcedf166e3dfef28785c5139bcfd0fc`.
+- `runs/v5/grok-4.7/25-1113.00__6.json` SHA-256 `fd7e1be01db77f07414a1908c6b18675a6f2fe8d38d38915d0fd3e8b41e1dc15`.
+- `runs/v5/opus-5.5/29-1292.00__1.json` SHA-256 `fc3d73438ba93b2e821049dbbadf766fd54cfa8cc93535d2b71a665b8b44e922`.
+- `runs/v5/opus-5.5/29-2072.00__1.json` SHA-256 `9de2b7bbb7ad10009e358b49aab74c84b4af48b816f4bbe74d783154e7ed041f`.
+- `runs/v5/sol-6.1/15-1299.06__3.json` SHA-256 `a5243942a24c06ce53a6a3784d7f7bb1512332eb74ec6d3eea7e66447dc80aa6`.
+- `runs/v5/sol-6.1/53-2022.00__4.json` SHA-256 `4f3ed963823412ec0c81aa1dbdcbee13d51f0e6795429f63f75f4ab0aafd777f`.
+
+Round 9: **5 fix, 1 good, 0 redo**. Cumulative: **43 fix, 11 good, 0 redo**, 54 distinct sampled files, 197 tasks and 902 steps. Supplements excluded.
+
+Next scheduled round: **17 October 2026, 05:16 CEST**. Continue every two hours through Sunday 23:59 CEST.
